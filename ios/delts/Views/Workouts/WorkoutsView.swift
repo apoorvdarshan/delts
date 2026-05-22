@@ -67,15 +67,20 @@ struct WorkoutsView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 44)
                     .background(
-                        isSelected ? Color.deltsElectricBlue.opacity(0.22) : Color.white.opacity(0.055),
+                        isSelected ? Color.deltsElectricBlue.opacity(0.18) : Color.white.opacity(0.035),
                         in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    )
+                    .deltsGlassSurface(
+                        cornerRadius: 15,
+                        tint: isSelected ? Color.deltsElectricBlue.opacity(0.18) : Color.white.opacity(0.1),
+                        interactive: true
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 15, style: .continuous)
                             .stroke(isSelected ? Color.deltsElectricBlue.opacity(0.75) : Color.white.opacity(0.08), lineWidth: 1)
                     )
                 }
-                .buttonStyle(.plain)
+                .deltsGlassButton()
             }
         }
     }
@@ -241,7 +246,8 @@ private struct ExerciseLibraryBrowserView: View {
                         .foregroundStyle(.white)
                 }
                 .padding(12)
-                .background(Color.white.opacity(0.065), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .deltsGlassSurface(cornerRadius: 14, tint: Color.white.opacity(0.1), interactive: true)
 
                 equipmentFamilyPicker
 
@@ -308,28 +314,14 @@ private struct ExerciseLibraryBrowserView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(ExerciseEquipmentFamily.allCases) { family in
-                    let isSelected = selectedEquipmentFamily == family
-                    Button {
+                    ExerciseEquipmentFamilyChip(
+                        family: family,
+                        isSelected: selectedEquipmentFamily == family
+                    ) {
                         withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
                             selectedEquipmentFamily = family
                         }
-                    } label: {
-                        Text(family.title)
-                            .font(.caption.weight(.black))
-                            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.7))
-                            .lineLimit(1)
-                            .padding(.vertical, 9)
-                            .padding(.horizontal, 12)
-                            .background(
-                                isSelected ? Color.deltsElectricBlue.opacity(0.24) : Color.white.opacity(0.06),
-                                in: Capsule()
-                            )
-                            .overlay(
-                                Capsule()
-                                    .stroke(isSelected ? Color.deltsElectricBlue : Color.white.opacity(0.08), lineWidth: 1)
-                            )
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
@@ -379,8 +371,35 @@ private struct ExerciseLibraryBrowserView: View {
                 Spacer(minLength: 0)
             }
             .padding(12)
-            .background(Color.white.opacity(0.065), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .deltsGlassSurface(cornerRadius: 14, tint: Color.deltsElectricBlue.opacity(0.12), interactive: true)
         }
+    }
+}
+
+private struct ExerciseEquipmentFamilyChip: View {
+    let family: ExerciseEquipmentFamily
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(family.title)
+                .font(.caption.weight(.black))
+                .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.7))
+                .lineLimit(1)
+                .padding(.vertical, 9)
+                .padding(.horizontal, 12)
+                .background(
+                    isSelected ? Color.deltsElectricBlue.opacity(0.18) : Color.white.opacity(0.035),
+                    in: Capsule()
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(isSelected ? Color.deltsElectricBlue : Color.white.opacity(0.08), lineWidth: 1)
+                )
+        }
+        .deltsGlassButton()
     }
 }
 

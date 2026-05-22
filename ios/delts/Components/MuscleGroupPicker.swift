@@ -22,19 +22,23 @@ struct MuscleGroupPicker: View {
                         .padding(.vertical, 11)
                         .padding(.horizontal, 14)
                         .background(
-                            selection == group ? Color.deltsElectricBlue.opacity(0.26) : Color.white.opacity(0.06),
+                            selection == group ? Color.deltsElectricBlue.opacity(0.2) : Color.white.opacity(0.035),
                             in: Capsule()
+                        )
+                        .deltsGlassSurface(
+                            cornerRadius: 22,
+                            tint: selection == group ? Color.deltsElectricBlue.opacity(0.2) : Color.white.opacity(0.1),
+                            interactive: true
                         )
                         .overlay(
                             Capsule()
                                 .stroke(selection == group ? Color.deltsElectricBlue : Color.white.opacity(0.08), lineWidth: 1)
                         )
                     }
-                    .buttonStyle(.plain)
+                    .deltsGlassButton()
                 }
             }
             .padding(.horizontal, 1)
         }
     }
 }
-

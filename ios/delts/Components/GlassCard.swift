@@ -17,10 +17,13 @@ struct GlassCard<Content: View>: View {
             .background(
                 ZStack {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(Color.deltsCard.opacity(0.78))
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(.ultraThinMaterial)
+                        .fill(Color.deltsCard.opacity(0.38))
                 }
+            )
+            .deltsGlassSurface(
+                cornerRadius: cornerRadius,
+                tint: Color.deltsPanel.opacity(0.22),
+                fallbackOpacity: 0
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -68,7 +71,8 @@ struct MetricPill: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
-        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .deltsGlassSurface(cornerRadius: 15, tint: tint.opacity(0.14), fallbackOpacity: 0.045)
         .overlay(
             RoundedRectangle(cornerRadius: 15, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)

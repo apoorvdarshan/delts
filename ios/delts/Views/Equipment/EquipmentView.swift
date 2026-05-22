@@ -92,9 +92,10 @@ struct EquipmentManualSelectionView: View {
                             .font(.subheadline.weight(.black))
                             .foregroundStyle(.white)
                             .padding(14)
-                            .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                            .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                            .deltsGlassSurface(cornerRadius: 15, tint: Color.deltsInferno.opacity(0.16), interactive: true)
                         }
-                        .buttonStyle(.plain)
+                        .deltsGlassButton(prominent: true)
                     }
 
                     Spacer()
@@ -103,7 +104,8 @@ struct EquipmentManualSelectionView: View {
                         .font(.system(size: 58, weight: .black))
                         .foregroundStyle(Color.white.opacity(0.92))
                         .frame(width: 96, height: 96)
-                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        .deltsGlassSurface(cornerRadius: 24, tint: Color.white.opacity(0.16))
                 }
                 .padding(18)
             }
@@ -164,8 +166,10 @@ struct EquipmentScanComingSoonView: View {
                             .font(.subheadline.weight(.bold))
                             .foregroundStyle(.white)
                             .padding(14)
-                            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                            .deltsGlassSurface(cornerRadius: 15, tint: Color.deltsElectricBlue.opacity(0.14), interactive: true)
                         }
+                        .deltsGlassButton()
 
                         Text(statusText)
                             .font(.footnote)

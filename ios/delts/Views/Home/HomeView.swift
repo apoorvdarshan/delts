@@ -90,16 +90,10 @@ struct HomeView: View {
                         .frame(maxWidth: 220)
                         .frame(height: 46)
                         .padding(.horizontal, 16)
-                        .background(
-                            LinearGradient(
-                                colors: [.deltsElectricBlue, .deltsInferno],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ),
-                            in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        )
+                        .background(Color.deltsElectricBlue.opacity(0.18), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .deltsGlassSurface(cornerRadius: 14, tint: Color.deltsElectricBlue.opacity(0.24), interactive: true)
                     }
-                    .buttonStyle(.plain)
+                    .deltsGlassButton(prominent: true)
                 }
                 .padding(18)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -186,7 +180,8 @@ struct HomeView: View {
                         .font(.caption.weight(.bold))
                         .padding(.vertical, 7)
                         .padding(.horizontal, 10)
-                        .background(Color.white.opacity(0.08), in: Capsule())
+                        .background(Color.white.opacity(0.035), in: Capsule())
+                        .deltsGlassSurface(cornerRadius: 18, tint: Color.white.opacity(0.1))
                 }
                 .foregroundStyle(.white)
 
@@ -237,9 +232,10 @@ struct HomeView: View {
                                     .foregroundStyle(Color.deltsMutedText)
                             }
                             .padding(13)
-                            .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .deltsGlassSurface(cornerRadius: 16, tint: Color.deltsInferno.opacity(0.1), interactive: true)
                         }
-                        .buttonStyle(.plain)
+                        .deltsGlassButton()
                     }
                 }
             }

@@ -48,6 +48,70 @@ extension View {
         background(DeltsBackground())
             .scrollContentBackground(.hidden)
     }
+
+    @ViewBuilder
+    func deltsGlassSurface(
+        cornerRadius: CGFloat = 22,
+        tint: Color? = Color.white.opacity(0.12),
+        interactive: Bool = false,
+        fallbackOpacity: Double = 0.06
+    ) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+        if #available(iOS 26.0, *) {
+            self
+                .glassEffect(deltsGlass(tint: tint, interactive: interactive), in: shape)
+        } else {
+            self
+                .background(Color.white.opacity(fallbackOpacity), in: shape)
+                .background(.ultraThinMaterial, in: shape)
+        }
+    }
+
+    @ViewBuilder
+    func deltsGlassButton(prominent: Bool = false) -> some View {
+        if #available(iOS 26.0, *) {
+            if prominent {
+                self.buttonStyle(.glassProminent)
+            } else {
+                self.buttonStyle(.glass)
+            }
+        } else {
+            self.buttonStyle(.plain)
+        }
+    }
+}
+
+@available(iOS 26.0, *)
+private func deltsGlass(tint: Color?, interactive: Bool) -> Glass {
+    var glass = Glass.regular
+    if let tint {
+        glass = glass.tint(tint)
+    }
+    if interactive {
+        glass = glass.interactive()
+    }
+    return glass
+}
+
+struct DeltsGlassGroup<Content: View>: View {
+    var spacing: CGFloat?
+    @ViewBuilder var content: Content
+
+    init(spacing: CGFloat? = nil, @ViewBuilder content: () -> Content) {
+        self.spacing = spacing
+        self.content = content()
+    }
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            GlassEffectContainer(spacing: spacing) {
+                content
+            }
+        } else {
+            content
+        }
+    }
 }
 
 struct DeltsHeader: View {
@@ -87,7 +151,8 @@ struct DeltsHeader: View {
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(width: 42, height: 42)
-                    .background(Color.white.opacity(0.08), in: Circle())
+                    .background(Color.white.opacity(0.045), in: Circle())
+                    .deltsGlassSurface(cornerRadius: 21, tint: Color.white.opacity(0.14), interactive: true)
                     .overlay(
                         Circle()
                             .stroke(Color.white.opacity(0.1), lineWidth: 1)
@@ -142,7 +207,8 @@ struct DeltsMetricTile: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
-        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .deltsGlassSurface(cornerRadius: 18, tint: tint.opacity(0.12))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
@@ -162,6 +228,7 @@ struct DeltsActionTile: View {
                 .foregroundStyle(tint)
                 .frame(width: 38, height: 38)
                 .background(tint.opacity(0.15), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .deltsGlassSurface(cornerRadius: 12, tint: tint.opacity(0.16), interactive: true)
 
             Text(title)
                 .font(.caption.weight(.bold))
@@ -172,7 +239,8 @@ struct DeltsActionTile: View {
         }
         .padding(13)
         .frame(maxWidth: .infinity, minHeight: 96, alignment: .leading)
-        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+        .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+        .deltsGlassSurface(cornerRadius: 17, tint: tint.opacity(0.12), interactive: true)
         .overlay(
             RoundedRectangle(cornerRadius: 17, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)

@@ -111,7 +111,8 @@ private struct ProfileEditorView: View {
                     .tint(.white)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
-                    .background(Color.white.opacity(0.065), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .deltsGlassSurface(cornerRadius: 14, tint: Color.white.opacity(0.1), interactive: true)
                 }
 
                 IntStepperField(title: "Age", value: ageBinding, range: 13...90)
@@ -159,7 +160,8 @@ private struct ProfileEditorView: View {
                     .tint(.white)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
-                    .background(Color.white.opacity(0.065), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .deltsGlassSurface(cornerRadius: 14, tint: Color.deltsElectricBlue.opacity(0.12), interactive: true)
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
@@ -204,7 +206,8 @@ private struct ProfileEditorView: View {
                     .tint(.white)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
-                    .background(Color.white.opacity(0.065), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .deltsGlassSurface(cornerRadius: 14, tint: Color.deltsElectricBlue.opacity(0.12), interactive: true)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -296,7 +299,8 @@ private struct ProfileEditorView: View {
         .foregroundStyle(.white)
         .padding(.vertical, 6)
         .padding(.horizontal, 8)
-        .background(tint.opacity(0.16), in: Capsule())
+        .background(tint.opacity(0.12), in: Capsule())
+        .deltsGlassSurface(cornerRadius: 16, tint: tint.opacity(0.16))
     }
 
     private var genderBinding: Binding<String> {

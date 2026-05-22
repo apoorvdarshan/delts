@@ -58,9 +58,10 @@ struct ExerciseCard: View {
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
-                        .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                        .deltsGlassSurface(cornerRadius: 15, tint: Color.deltsElectricBlue.opacity(0.14), interactive: true)
                     }
-                    .buttonStyle(.plain)
+                    .deltsGlassButton()
                 }
             }
         }

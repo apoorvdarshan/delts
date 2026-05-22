@@ -7,35 +7,52 @@ struct PrimaryButton: View {
     var action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                if isLoading {
-                    ProgressView()
-                        .tint(.white)
-                } else {
-                    Image(systemName: systemImage)
+        Group {
+            if #available(iOS 26.0, *) {
+                Button(action: action) {
+                    label
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
                 }
-                Text(title)
-                    .font(.headline.weight(.black))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                .deltsGlassButton(prominent: true)
+                .tint(Color.deltsElectricBlue)
+            } else {
+                Button(action: action) {
+                    label
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(
+                            LinearGradient(
+                                colors: [.deltsElectricBlue, .deltsInferno],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        )
+                        .shadow(color: Color.deltsElectricBlue.opacity(0.28), radius: 18, x: 0, y: 10)
+                }
+                .buttonStyle(.plain)
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .foregroundStyle(.white)
-            .background(
-                LinearGradient(
-                    colors: [.deltsElectricBlue, .deltsInferno],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                in: RoundedRectangle(cornerRadius: 15, style: .continuous)
-            )
-            .shadow(color: Color.deltsElectricBlue.opacity(0.28), radius: 18, x: 0, y: 10)
         }
-        .buttonStyle(.plain)
         .disabled(isLoading)
         .opacity(isLoading ? 0.72 : 1)
+    }
+
+    private var label: some View {
+        HStack(spacing: 10) {
+            if isLoading {
+                ProgressView()
+                    .tint(.white)
+            } else {
+                Image(systemName: systemImage)
+            }
+            Text(title)
+                .font(.headline.weight(.black))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 16)
     }
 }
 
@@ -64,12 +81,13 @@ struct GlassIconButton: View {
                     .foregroundStyle(.white.opacity(0.42))
             }
             .padding(14)
-            .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .deltsGlassSurface(cornerRadius: 16, tint: tint.opacity(0.14), interactive: true)
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .deltsGlassButton()
     }
 }

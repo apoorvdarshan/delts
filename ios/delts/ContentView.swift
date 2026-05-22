@@ -85,45 +85,47 @@ private struct DeltsFloatingTabBar: View {
     @Binding var selection: DeltsTab
 
     var body: some View {
-        HStack(spacing: 4) {
-            ForEach(DeltsTab.allCases) { tab in
-                let isSelected = selection == tab
-                Button {
-                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
-                        selection = tab
-                    }
-                } label: {
-                    VStack(spacing: 5) {
-                        Image(systemName: tab.systemImage)
-                            .font(.system(size: 20, weight: .bold))
-                        Text(tab.title)
-                            .font(.caption2.weight(.bold))
-                            .lineLimit(1)
-                    }
-                    .foregroundStyle(isSelected ? Color.deltsElectricBlue : Color.white.opacity(0.72))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 58)
-                    .background(
-                        Group {
-                            if isSelected {
-                                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                    .fill(Color.white.opacity(0.1))
-                            }
+        DeltsGlassGroup(spacing: 8) {
+            HStack(spacing: 4) {
+                ForEach(DeltsTab.allCases) { tab in
+                    let isSelected = selection == tab
+                    Button {
+                        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                            selection = tab
                         }
-                    )
+                    } label: {
+                        VStack(spacing: 5) {
+                            Image(systemName: tab.systemImage)
+                                .font(.system(size: 20, weight: .bold))
+                            Text(tab.title)
+                                .font(.caption2.weight(.bold))
+                                .lineLimit(1)
+                        }
+                        .foregroundStyle(isSelected ? Color.deltsElectricBlue : Color.white.opacity(0.72))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 58)
+                        .background(
+                            Group {
+                                if isSelected {
+                                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                        .fill(Color.white.opacity(0.055))
+                                }
+                            }
+                        )
+                        .deltsGlassSurface(
+                            cornerRadius: 22,
+                            tint: isSelected ? Color.deltsElectricBlue.opacity(0.16) : Color.white.opacity(0.08),
+                            interactive: true,
+                            fallbackOpacity: isSelected ? 0.08 : 0
+                        )
+                    }
+                    .deltsGlassButton()
                 }
-                .buttonStyle(.plain)
             }
         }
         .padding(7)
-        .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .fill(Color.black.opacity(0.45))
-                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            }
-        )
+        .background(Color.black.opacity(0.28), in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+        .deltsGlassSurface(cornerRadius: 30, tint: Color.deltsPanel.opacity(0.24), fallbackOpacity: 0.03)
         .overlay(
             RoundedRectangle(cornerRadius: 30, style: .continuous)
                 .stroke(

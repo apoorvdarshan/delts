@@ -120,14 +120,16 @@ struct ActiveWorkoutView: View {
                             .textFieldStyle(.plain)
                             .foregroundStyle(.white)
                             .padding(10)
-                            .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .deltsGlassSurface(cornerRadius: 12, tint: Color.white.opacity(0.1), interactive: true)
 
                         TextField("Reps", text: repsBinding(setIndex))
                             .keyboardType(.numberPad)
                             .textFieldStyle(.plain)
                             .foregroundStyle(.white)
                             .padding(10)
-                            .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .deltsGlassSurface(cornerRadius: 12, tint: Color.white.opacity(0.1), interactive: true)
                             .frame(width: 78)
                     }
                 }
@@ -178,9 +180,10 @@ struct ActiveWorkoutView: View {
                     .foregroundStyle(.white.opacity(0.72))
                     .frame(maxWidth: .infinity)
                     .frame(height: 48)
-                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .deltsGlassSurface(cornerRadius: 16, tint: Color.white.opacity(0.12), interactive: true)
             }
-            .buttonStyle(.plain)
+            .deltsGlassButton()
         }
     }
 

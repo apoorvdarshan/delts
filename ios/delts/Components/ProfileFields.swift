@@ -14,7 +14,8 @@ struct ProfileTextField: View {
                 .textFieldStyle(.plain)
                 .foregroundStyle(.white)
                 .padding(12)
-                .background(Color.white.opacity(0.065), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .deltsGlassSurface(cornerRadius: 14, tint: Color.white.opacity(0.1), interactive: true)
         }
     }
 }
@@ -45,7 +46,8 @@ struct ProfileNumberField: View {
                     .foregroundStyle(.white.opacity(0.5))
             }
             .padding(12)
-            .background(Color.white.opacity(0.065), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .deltsGlassSurface(cornerRadius: 14, tint: Color.white.opacity(0.1), interactive: true)
         }
     }
 }
@@ -69,7 +71,8 @@ struct IntStepperField: View {
         }
         .tint(Color.deltsElectricBlue)
         .padding(12)
-        .background(Color.white.opacity(0.065), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .deltsGlassSurface(cornerRadius: 14, tint: Color.deltsElectricBlue.opacity(0.12), interactive: true)
     }
 }
 
@@ -110,15 +113,20 @@ struct MultiSelectChipGrid<Option: Identifiable & Hashable>: View {
                     .padding(.vertical, 11)
                     .padding(.horizontal, 12)
                     .background(
-                        isSelected ? Color.deltsElectricBlue.opacity(0.22) : Color.white.opacity(0.055),
+                        isSelected ? Color.deltsElectricBlue.opacity(0.18) : Color.white.opacity(0.035),
                         in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    )
+                    .deltsGlassSurface(
+                        cornerRadius: 15,
+                        tint: isSelected ? Color.deltsElectricBlue.opacity(0.2) : Color.white.opacity(0.1),
+                        interactive: true
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 15, style: .continuous)
                             .stroke(isSelected ? Color.deltsElectricBlue.opacity(0.9) : Color.white.opacity(0.08), lineWidth: 1)
                     )
                 }
-                .buttonStyle(.plain)
+                .deltsGlassButton()
             }
         }
     }

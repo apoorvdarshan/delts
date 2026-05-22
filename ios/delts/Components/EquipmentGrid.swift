@@ -38,15 +38,20 @@ struct EquipmentGrid: View {
                     .padding(12)
                     .frame(minHeight: 58)
                     .background(
-                        isSelected ? Color.deltsElectricBlue.opacity(0.22) : Color.white.opacity(0.055),
+                        isSelected ? Color.deltsElectricBlue.opacity(0.18) : Color.white.opacity(0.035),
                         in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    )
+                    .deltsGlassSurface(
+                        cornerRadius: 18,
+                        tint: isSelected ? Color.deltsElectricBlue.opacity(0.2) : Color.white.opacity(0.1),
+                        interactive: true
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
                             .stroke(isSelected ? Color.deltsElectricBlue.opacity(0.9) : Color.white.opacity(0.08), lineWidth: 1)
                     )
                 }
-                .buttonStyle(.plain)
+                .deltsGlassButton()
             }
         }
     }
