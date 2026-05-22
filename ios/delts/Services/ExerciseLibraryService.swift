@@ -3,7 +3,19 @@ import Foundation
 struct ExerciseLibraryService {
     static let shared = ExerciseLibraryService()
 
-    let exercises: [ExerciseLibraryItem] = [
+    let exercises: [ExerciseLibraryItem]
+
+    init(exercises: [ExerciseLibraryItem]? = nil) {
+        if let exercises {
+            self.exercises = exercises
+            return
+        }
+
+        let bundledExercises = FreeExerciseDBLoader.load()
+        self.exercises = bundledExercises.isEmpty ? Self.fallbackExercises : bundledExercises
+    }
+
+    private static let fallbackExercises: [ExerciseLibraryItem] = [
         .item("bench_press_barbell", "Barbell Bench Press", .chest, .barbell, .intermediate, .muscleGain, 4, "6-10", 90, "Pack shoulders down, touch the lower chest, and press through a stable arch."),
         .item("incline_db_press", "Incline Dumbbell Press", .chest, .dumbbells, .intermediate, .muscleGain, 4, "8-12", 75, "Keep elbows under wrists and press slightly back toward the top of the bench."),
         .item("chest_press_machine", "Chest Press Machine", .chest, .chestPress, .beginner, .beginnerForm, 3, "10-12", 60, "Adjust the seat so handles start around mid-chest and avoid shrugging."),

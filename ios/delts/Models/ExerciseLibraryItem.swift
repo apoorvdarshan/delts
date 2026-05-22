@@ -11,6 +11,36 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
     let reps: String
     let restSeconds: Int
     let formTip: String
+    let imagePaths: [String]
+    let source: String
+
+    init(
+        id: String,
+        name: String,
+        muscleGroup: MuscleGroup,
+        equipment: Equipment,
+        level: ExperienceLevel,
+        goal: FitnessGoal,
+        sets: Int,
+        reps: String,
+        restSeconds: Int,
+        formTip: String,
+        imagePaths: [String] = [],
+        source: String = "delts"
+    ) {
+        self.id = id
+        self.name = name
+        self.muscleGroup = muscleGroup
+        self.equipment = equipment
+        self.level = level
+        self.goal = goal
+        self.sets = sets
+        self.reps = reps
+        self.restSeconds = restSeconds
+        self.formTip = formTip
+        self.imagePaths = imagePaths
+        self.source = source
+    }
 
     var difficulty: String {
         level.title
@@ -36,7 +66,8 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
             level.title,
             goal.title,
             machineLabel,
-            formTip
+            formTip,
+            source
         ]
         .joined(separator: " ")
         .lowercased()

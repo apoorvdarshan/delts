@@ -362,6 +362,7 @@ private struct ExerciseLibraryRow: View {
                     muscleGroup: item.muscleGroup,
                     assetName: item.visualAssetName,
                     exerciseName: item.name,
+                    imagePaths: item.imagePaths,
                     equipment: item.equipment,
                     height: 92
                 )
@@ -417,6 +418,7 @@ private struct ExerciseLibraryDetailView: View {
                             muscleGroup: item.muscleGroup,
                             assetName: item.visualAssetName,
                             exerciseName: item.name,
+                            imagePaths: item.imagePaths,
                             equipment: item.equipment,
                             height: 220
                         )
@@ -430,6 +432,9 @@ private struct ExerciseLibraryDetailView: View {
                             Text("\(item.muscleGroup.title) - \(item.equipment.title) - \(item.machineLabel)")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(Color.deltsElectricBlue)
+                            Text(item.source)
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.white.opacity(0.55))
                         }
 
                         HStack(spacing: 8) {
