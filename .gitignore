@@ -8,3 +8,5 @@ xcuserdata/
 ios/Secrets.xcconfig
 ios/**/Secrets.xcconfig
 
+# Local downloaded dataset/media samples for manual inspection.
+downloads/
