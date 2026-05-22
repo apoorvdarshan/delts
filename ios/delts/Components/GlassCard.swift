@@ -2,25 +2,34 @@ import SwiftUI
 
 struct GlassCard<Content: View>: View {
     var padding: CGFloat
+    var cornerRadius: CGFloat
     @ViewBuilder var content: Content
 
-    init(padding: CGFloat = 18, @ViewBuilder content: () -> Content) {
+    init(padding: CGFloat = 18, cornerRadius: CGFloat = 22, @ViewBuilder content: () -> Content) {
         self.padding = padding
+        self.cornerRadius = cornerRadius
         self.content = content()
     }
 
     var body: some View {
         content
             .padding(padding)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(Color.deltsCard.opacity(0.78))
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                }
+            )
             .overlay(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0.26),
-                                Color.deltsElectricBlue.opacity(0.18),
-                                Color.white.opacity(0.06)
+                                Color.white.opacity(0.22),
+                                Color.deltsElectricBlue.opacity(0.16),
+                                Color.deltsInferno.opacity(0.08)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -28,7 +37,7 @@ struct GlassCard<Content: View>: View {
                         lineWidth: 1
                     )
             )
-            .shadow(color: Color.black.opacity(0.35), radius: 24, x: 0, y: 14)
+            .shadow(color: Color.black.opacity(0.42), radius: 22, x: 0, y: 16)
     }
 }
 
@@ -59,7 +68,10 @@ struct MetricPill: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
-        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 15, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 }
-

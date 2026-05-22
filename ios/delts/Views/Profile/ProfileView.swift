@@ -10,7 +10,9 @@ struct ProfileView: View {
             ScrollView {
                 if let profile = profiles.first {
                     ProfileEditorView(profile: profile)
-                        .padding(20)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+                        .padding(.bottom, 18)
                 } else {
                     GlassCard {
                         Text("Creating your default profile...")
@@ -18,12 +20,12 @@ struct ProfileView: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                     }
-                    .padding(20)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
                 }
             }
             .deltsScreen()
-            .navigationTitle("Profile")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
             .onDisappear {
                 try? modelContext.save()
             }
@@ -40,6 +42,7 @@ private struct ProfileEditorView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             header
+            profileSnapshot
             identitySection
             goalSection
             scheduleSection
@@ -50,16 +53,42 @@ private struct ProfileEditorView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Training profile")
-                .font(.largeTitle.weight(.black))
-                .foregroundStyle(.white)
-                .lineLimit(2)
-                .minimumScaleFactor(0.72)
-            Text("Saved locally with SwiftData. This shapes plans and equipment recommendations.")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.66))
-                .fixedSize(horizontal: false, vertical: true)
+        DeltsHeader(
+            eyebrow: "Profile",
+            title: profile.name.isEmpty ? "Training Profile" : profile.name,
+            subtitle: "Saved locally with SwiftData. This shapes plans and equipment recommendations.",
+            trailingSystemImage: "person.crop.circle.fill"
+        )
+    }
+
+    private var profileSnapshot: some View {
+        GlassCard(padding: 16, cornerRadius: 24) {
+            HStack(spacing: 14) {
+                DeltsProgressRing(
+                    progress: bodyFatProgress,
+                    label: "Body Fat",
+                    tint: .deltsInferno
+                )
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(profile.mainGoal.title)
+                        .font(.title3.weight(.black))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    Text("\(profile.experienceLevel.title) - \(profile.workoutSplit.title)")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+
+                    HStack(spacing: 8) {
+                        miniPill("\(profile.workoutFrequencyPerWeek)x/week", "calendar", .deltsElectricBlue)
+                        miniPill("\(profile.workoutDurationMinutes)m", "timer", .deltsGold)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
         }
     }
 
@@ -248,6 +277,28 @@ private struct ProfileEditorView: View {
         }
     }
 
+    private var bodyFatProgress: Double {
+        guard profile.currentBodyFatPercentage > 0 else {
+            return 0.75
+        }
+
+        let current = profile.currentBodyFatPercentage
+        let desired = max(profile.desiredBodyFatPercentage, 1)
+        return min(max(desired / current, 0.08), 1)
+    }
+
+    private func miniPill(_ text: String, _ systemImage: String, _ tint: Color) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: systemImage)
+            Text(text)
+        }
+        .font(.caption.weight(.black))
+        .foregroundStyle(.white)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .background(tint.opacity(0.16), in: Capsule())
+    }
+
     private var genderBinding: Binding<String> {
         Binding {
             profile.gender
@@ -373,4 +424,3 @@ private struct ProfileEditorView: View {
         }
     }
 }
-

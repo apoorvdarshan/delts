@@ -10,23 +10,24 @@ struct AnimatedExerciseVisual: View {
     var imagePaths: [String] = []
     var equipment: Equipment?
     var height: CGFloat = 170
+    var fillsWidth = true
     @State private var animate = false
 
     var body: some View {
         ZStack {
-            if let resourceName = GIFAssetResolver.resourceName(
+            if !resolvedImageURLs.isEmpty {
+                ExerciseImageSequenceView(urls: resolvedImageURLs)
+            } else if let resourceName = GIFAssetResolver.resourceName(
                 assetName: assetName,
                 exerciseName: exerciseName,
                 muscleGroup: muscleGroup
             ) {
                 AnimatedGIFView(resourceName: resourceName)
-            } else if !resolvedImageURLs.isEmpty {
-                ExerciseImageSequenceView(urls: resolvedImageURLs)
             } else {
                 fallbackVisual
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: fillsWidth ? .infinity : nil)
         .frame(height: height)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(

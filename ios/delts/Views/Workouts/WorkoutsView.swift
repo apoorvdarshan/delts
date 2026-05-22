@@ -31,34 +31,53 @@ struct WorkoutsView: View {
                         }
                     }
                 }
-                .padding(20)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 18)
             }
             .deltsScreen()
-            .navigationTitle("Workouts")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Workout library")
-                .font(.largeTitle.weight(.black))
-                .foregroundStyle(.white)
-                .lineLimit(2)
-                .minimumScaleFactor(0.72)
-            Text("Browse exercises by body part, level, goal, and equipment. History stays one tap away.")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.66))
-        }
+        DeltsHeader(
+            eyebrow: selectedMode == .library ? "Free Exercise DB" : "Training Logs",
+            title: selectedMode == .library ? "Exercise Library" : "Workout History",
+            subtitle: selectedMode == .library ? "Browse offline exercises by body part, level, goal, and equipment." : "Completed sessions saved locally on this device.",
+            trailingSystemImage: selectedMode == .library ? "line.3.horizontal.decrease.circle" : "checkmark.seal.fill"
+        )
     }
 
     private var modePicker: some View {
-        Picker("Workouts", selection: $selectedMode) {
+        HStack(spacing: 8) {
             ForEach(WorkoutsMode.allCases) { mode in
-                Text(mode.title).tag(mode)
+                let isSelected = selectedMode == mode
+                Button {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+                        selectedMode = mode
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: mode.systemImage)
+                        Text(mode.title)
+                    }
+                    .font(.subheadline.weight(.black))
+                    .foregroundStyle(isSelected ? .white : Color.deltsMutedText)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(
+                        isSelected ? Color.deltsElectricBlue.opacity(0.22) : Color.white.opacity(0.055),
+                        in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 15, style: .continuous)
+                            .stroke(isSelected ? Color.deltsElectricBlue.opacity(0.75) : Color.white.opacity(0.08), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
             }
         }
-        .pickerStyle(.segmented)
     }
 
     private var emptyState: some View {
@@ -122,6 +141,13 @@ private enum WorkoutsMode: String, CaseIterable, Identifiable {
         case .history: return "History"
         }
     }
+
+    var systemImage: String {
+        switch self {
+        case .library: return "square.grid.2x2.fill"
+        case .history: return "clock.arrow.circlepath"
+        }
+    }
 }
 
 private struct ExerciseLibraryBrowserView: View {
@@ -157,6 +183,12 @@ private struct ExerciseLibraryBrowserView: View {
                     .font(.headline.weight(.bold))
                     .foregroundStyle(.white)
                 Spacer()
+                Text("Media offline")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.deltsAcidGreen)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 9)
+                    .background(Color.deltsAcidGreen.opacity(0.12), in: Capsule())
                 Button("Reset") {
                     withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
                         searchText = ""
@@ -356,17 +388,19 @@ private struct ExerciseLibraryRow: View {
     let item: ExerciseLibraryItem
 
     var body: some View {
-        GlassCard(padding: 12) {
-            HStack(spacing: 13) {
+        GlassCard(padding: 0, cornerRadius: 22) {
+            HStack(spacing: 14) {
                 AnimatedExerciseVisual(
                     muscleGroup: item.muscleGroup,
                     assetName: item.visualAssetName,
                     exerciseName: item.name,
                     imagePaths: item.imagePaths,
                     equipment: item.equipment,
-                    height: 92
+                    height: 108,
+                    fillsWidth: false
                 )
-                .frame(width: 116)
+                .frame(width: 118, height: 108)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(item.name)
@@ -391,6 +425,8 @@ private struct ExerciseLibraryRow: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.white.opacity(0.35))
             }
+            .padding(12)
+            .frame(minHeight: 132)
         }
     }
 
@@ -459,11 +495,12 @@ private struct ExerciseLibraryDetailView: View {
                     }
                 }
             }
-            .padding(20)
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 18)
         }
         .deltsScreen()
-        .navigationTitle("Exercise")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .navigationDestination(item: $activePlan) { plan in
             ActiveWorkoutView(plan: plan)
         }
@@ -534,11 +571,12 @@ struct CompletedWorkoutDetailView: View {
                     }
                 }
             }
-            .padding(20)
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 18)
         }
         .deltsScreen()
-        .navigationTitle("Summary")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
     }
 
     private func weightRepText(for set: CompletedSetLog) -> String {

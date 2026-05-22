@@ -14,10 +14,10 @@ struct EquipmentManualSelectionView: View {
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                header
-                scannerShell
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    header
+                    scannerShell
 
                 if let profile = profiles.first {
                     GlassCard {
@@ -38,60 +38,76 @@ struct EquipmentManualSelectionView: View {
                     missingProfile
                 }
             }
-            .padding(20)
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 18)
         }
         .deltsScreen()
-        .navigationTitle("Equipment")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Equipment coach")
-                .font(.largeTitle.weight(.black))
-                .foregroundStyle(.white)
-                .lineLimit(2)
-                .minimumScaleFactor(0.72)
-            Text("Select what your gym has now. The generator filters plans around this list.")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.66))
-        }
+        DeltsHeader(
+            eyebrow: "Equipment Coach",
+            title: "Train Around Your Gym",
+            subtitle: "Select what your gym has now. Plans adapt around this list.",
+            trailingSystemImage: "camera.viewfinder"
+        )
     }
 
     private var scannerShell: some View {
-        GlassCard {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Scan equipment")
-                            .font(.headline.weight(.bold))
-                            .foregroundStyle(.white)
-                        Text("Camera and Vision classification will plug into this shell.")
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.62))
-                    }
-                    Spacer()
-                    Image(systemName: "camera.viewfinder")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(Color.deltsInferno)
-                }
+        GlassCard(padding: 0, cornerRadius: 24) {
+            ZStack(alignment: .leading) {
+                LinearGradient(
+                    colors: [
+                        Color.deltsElectricBlue.opacity(0.18),
+                        Color.deltsCard,
+                        Color.deltsInferno.opacity(0.18)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
 
-                NavigationLink {
-                    EquipmentScanComingSoonView()
-                } label: {
-                    HStack {
-                        Image(systemName: "camera.fill")
-                        Text("Open scanner")
-                        Spacer()
-                        Image(systemName: "chevron.right")
+                HStack {
+                    VStack(alignment: .leading, spacing: 14) {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("Scan Equipment")
+                                .font(.title2.weight(.black))
+                                .foregroundStyle(.white)
+                            Text("Camera shell is ready for Vision or Gemini Vision later.")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.deltsMutedText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        NavigationLink {
+                            EquipmentScanComingSoonView()
+                        } label: {
+                            HStack {
+                                Image(systemName: "camera.fill")
+                                Text("Open Scanner")
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                            }
+                            .font(.subheadline.weight(.black))
+                            .foregroundStyle(.white)
+                            .padding(14)
+                            .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.white)
-                    .padding(14)
-                    .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+
+                    Spacer()
+
+                    Image(systemName: "camera.metering.matrix")
+                        .font(.system(size: 58, weight: .black))
+                        .foregroundStyle(Color.white.opacity(0.92))
+                        .frame(width: 96, height: 96)
+                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                 }
-                .buttonStyle(.plain)
+                .padding(18)
             }
+            .frame(minHeight: 170)
         }
     }
 
@@ -157,11 +173,12 @@ struct EquipmentScanComingSoonView: View {
                     }
                 }
             }
-            .padding(20)
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 18)
         }
         .deltsScreen()
-        .navigationTitle("Scanner")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .onChange(of: selectedPhoto) { _, newValue in
             Task {
                 do {

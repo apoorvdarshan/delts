@@ -16,12 +16,12 @@ struct PrimaryButton: View {
                     Image(systemName: systemImage)
                 }
                 Text(title)
-                    .font(.headline)
+                    .font(.headline.weight(.black))
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 54)
+            .frame(height: 52)
             .foregroundStyle(.white)
             .background(
                 LinearGradient(
@@ -29,9 +29,9 @@ struct PrimaryButton: View {
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 ),
-                in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                in: RoundedRectangle(cornerRadius: 15, style: .continuous)
             )
-            .shadow(color: Color.deltsElectricBlue.opacity(0.25), radius: 18, x: 0, y: 10)
+            .shadow(color: Color.deltsElectricBlue.opacity(0.28), radius: 18, x: 0, y: 10)
         }
         .buttonStyle(.plain)
         .disabled(isLoading)
@@ -64,9 +64,12 @@ struct GlassIconButton: View {
                     .foregroundStyle(.white.opacity(0.42))
             }
             .padding(14)
-            .background(Color.white.opacity(0.065), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
     }
 }
-

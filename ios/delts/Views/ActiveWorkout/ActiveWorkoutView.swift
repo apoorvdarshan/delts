@@ -31,17 +31,22 @@ struct ActiveWorkoutView: View {
                     emptyState
                 }
             }
-            .padding(20)
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 18)
         }
         .deltsScreen()
-        .navigationTitle("Active Workout")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
     }
 
     private var header: some View {
-        GlassCard {
-            HStack {
+        GlassCard(padding: 16, cornerRadius: 24) {
+            HStack(spacing: 14) {
                 VStack(alignment: .leading, spacing: 5) {
+                    Text("Active Workout")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .textCase(.uppercase)
                     Text(viewModel.plan.title)
                         .font(.headline.weight(.bold))
                         .foregroundStyle(.white)
@@ -51,9 +56,7 @@ struct ActiveWorkoutView: View {
                         .foregroundStyle(.white.opacity(0.62))
                 }
                 Spacer()
-                Text("\(Int(progress * 100))%")
-                    .font(.title3.weight(.black))
-                    .foregroundStyle(Color.deltsElectricBlue)
+                DeltsProgressRing(progress: progress, label: "Done", tint: .deltsElectricBlue)
             }
 
             ProgressView(value: progress)
