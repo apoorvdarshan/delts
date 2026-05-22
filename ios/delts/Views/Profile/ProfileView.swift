@@ -17,7 +17,7 @@ struct ProfileView: View {
                     GlassCard {
                         Text("Creating your default profile...")
                             .font(.headline)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
                     }
                     .padding(.horizontal, 20)
@@ -73,7 +73,8 @@ private struct ProfileEditorView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(profile.mainGoal.title)
                         .font(.title3.weight(.black))
-                        .foregroundStyle(.white)
+                        .fontDesign(.rounded)
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                     Text("\(profile.experienceLevel.title) - \(profile.workoutSplit.title)")
                         .font(.subheadline.weight(.semibold))
@@ -101,18 +102,21 @@ private struct ProfileEditorView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Gender")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.58))
+                        .foregroundStyle(.secondary)
                     Picker("Gender", selection: genderBinding) {
                         ForEach(genderOptions, id: \.self) { gender in
                             Text(gender).tag(gender)
                         }
                     }
                     .pickerStyle(.menu)
-                    .tint(.white)
+                    .tint(Color.deltsElectricBlue)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
-                    .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .deltsGlassSurface(cornerRadius: 14, tint: Color.white.opacity(0.1), interactive: true)
+                    .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color.deltsInk.opacity(0.5), lineWidth: 1)
+                    )
                 }
 
                 IntStepperField(title: "Age", value: ageBinding, range: 13...90)
@@ -138,7 +142,7 @@ private struct ProfileEditorView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Experience")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.58))
+                        .foregroundStyle(.secondary)
                     Picker("Experience", selection: experienceBinding) {
                         ForEach(ExperienceLevel.allCases) { level in
                             Text(level.title).tag(level)
@@ -150,24 +154,27 @@ private struct ProfileEditorView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Main goal")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.58))
+                        .foregroundStyle(.secondary)
                     Picker("Main goal", selection: mainGoalBinding) {
                         ForEach(FitnessGoal.profileCases) { goal in
                             Text(goal.title).tag(goal)
                         }
                     }
                     .pickerStyle(.menu)
-                    .tint(.white)
+                    .tint(Color.deltsElectricBlue)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
-                    .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .deltsGlassSurface(cornerRadius: 14, tint: Color.deltsElectricBlue.opacity(0.12), interactive: true)
+                    .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color.deltsInk.opacity(0.5), lineWidth: 1)
+                    )
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Body parts to build")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.58))
+                        .foregroundStyle(.secondary)
                     MultiSelectChipGrid(
                         options: BodyFocus.allCases,
                         selection: bodyFocusBinding,
@@ -196,24 +203,27 @@ private struct ProfileEditorView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Workout split")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.58))
+                        .foregroundStyle(.secondary)
                     Picker("Workout split", selection: splitBinding) {
                         ForEach(WorkoutSplit.allCases) { split in
                             Text(split.title).tag(split)
                         }
                     }
                     .pickerStyle(.menu)
-                    .tint(.white)
+                    .tint(Color.deltsElectricBlue)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
-                    .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .deltsGlassSurface(cornerRadius: 14, tint: Color.deltsElectricBlue.opacity(0.12), interactive: true)
+                    .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color.deltsInk.opacity(0.5), lineWidth: 1)
+                    )
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Workout duration")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.58))
+                        .foregroundStyle(.secondary)
                     Picker("Workout duration", selection: durationBinding) {
                         ForEach(durationOptions, id: \.self) { duration in
                             Text("\(duration) min").tag(duration)
@@ -233,7 +243,7 @@ private struct ProfileEditorView: View {
                     Spacer()
                     Text("\(profile.availableEquipment.count) selected")
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(.white.opacity(0.58))
+                        .foregroundStyle(.secondary)
                 }
                 EquipmentGrid(selection: equipmentBinding)
             }
@@ -276,7 +286,7 @@ private struct ProfileEditorView: View {
                 .foregroundStyle(Color.deltsElectricBlue)
             Text(title)
                 .font(.headline.weight(.bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
         }
     }
 
@@ -296,11 +306,11 @@ private struct ProfileEditorView: View {
             Text(text)
         }
         .font(.caption.weight(.black))
-        .foregroundStyle(.white)
+        .foregroundStyle(.primary)
         .padding(.vertical, 6)
         .padding(.horizontal, 8)
         .background(tint.opacity(0.12), in: Capsule())
-        .deltsGlassSurface(cornerRadius: 16, tint: tint.opacity(0.16))
+        .overlay(Capsule().stroke(Color.deltsInk.opacity(0.48), lineWidth: 1))
     }
 
     private var genderBinding: Binding<String> {

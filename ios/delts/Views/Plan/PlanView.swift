@@ -52,36 +52,20 @@ struct PlanBuilderView: View {
 
     private var coachHero: some View {
         GlassCard(padding: 0, cornerRadius: 24) {
-            ZStack(alignment: .leading) {
-                AnimatedExerciseVisual(
-                    muscleGroup: viewModel.selectedMuscleGroup,
-                    equipment: viewModel.selectedEquipment.first,
-                    height: 188
-                )
-                .overlay(
-                    LinearGradient(
-                        colors: [
-                            Color.black.opacity(0.88),
-                            Color.black.opacity(0.44),
-                            Color.black.opacity(0.08)
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-
+            HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Today's Plan")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(Color.deltsMutedText)
                     Text("\(viewModel.selectedMuscleGroup.title) Day")
                         .font(.title.weight(.black))
-                        .foregroundStyle(.white)
+                        .fontDesign(.rounded)
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
                     Text("\(viewModel.selectedDuration) min - \(viewModel.selectedGoal.title)")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.78))
+                        .foregroundStyle(.secondary)
 
                     HStack(spacing: 10) {
                         smallStat("Level", viewModel.selectedExperience.title, .deltsElectricBlue)
@@ -89,8 +73,13 @@ struct PlanBuilderView: View {
                     }
                 }
                 .padding(18)
-                .frame(maxWidth: 260, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                DoodleCoachIllustration(tint: Color.deltsPurple)
+                    .frame(width: 92, height: 116)
+                    .padding(.trailing, 16)
             }
+            .background(Color.deltsPurple.opacity(0.08))
         }
     }
 
@@ -146,7 +135,7 @@ struct PlanBuilderView: View {
                         Spacer()
                         Text("\(viewModel.selectedEquipment.count) selected")
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(.white.opacity(0.58))
+                            .foregroundStyle(.secondary)
                     }
                     EquipmentGrid(selection: $viewModel.selectedEquipment)
                 }
@@ -169,7 +158,7 @@ struct PlanBuilderView: View {
             if let statusMessage = viewModel.statusMessage {
                 Text(statusMessage)
                     .font(.footnote)
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -178,7 +167,7 @@ struct PlanBuilderView: View {
     private func label(_ text: String) -> some View {
         Text(text)
             .font(.caption.weight(.bold))
-            .foregroundStyle(.white.opacity(0.62))
+            .foregroundStyle(.secondary)
             .textCase(.uppercase)
     }
 
@@ -189,13 +178,16 @@ struct PlanBuilderView: View {
                 .foregroundStyle(Color.deltsMutedText)
             Text(value)
                 .font(.caption.weight(.black))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 10)
         .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .deltsGlassSurface(cornerRadius: 12, tint: tint.opacity(0.16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.deltsInk.opacity(0.5), lineWidth: 1)
+        )
     }
 }
 
@@ -221,13 +213,6 @@ struct WorkoutPlanView: View {
                             muscleGroup: plan.muscleGroup,
                             height: 180
                         )
-                        .overlay(
-                            LinearGradient(
-                                colors: [Color.black.opacity(0.72), Color.black.opacity(0.04)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
 
                         HStack(alignment: .top) {
                             VStack(alignment: .leading, spacing: 6) {
@@ -237,7 +222,8 @@ struct WorkoutPlanView: View {
                                     .textCase(.uppercase)
                                 Text(plan.title)
                                     .font(.largeTitle.weight(.black))
-                                    .foregroundStyle(.white)
+                                    .fontDesign(.rounded)
+                                    .foregroundStyle(.primary)
                                     .lineLimit(2)
                                     .minimumScaleFactor(0.72)
                             }
@@ -250,7 +236,7 @@ struct WorkoutPlanView: View {
 
                         Text(plan.summary)
                             .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.7))
+                            .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .padding(.horizontal, 18)
 
@@ -271,7 +257,7 @@ struct WorkoutPlanView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Exercises")
                         .font(.headline.weight(.bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
                         ExerciseCard(exercise: exercise) {

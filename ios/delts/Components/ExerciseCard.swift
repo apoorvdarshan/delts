@@ -20,19 +20,20 @@ struct ExerciseCard: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(exercise.name)
                                 .font(.title3.weight(.bold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.primary)
                                 .lineLimit(2)
                             Text("\(exercise.targetMuscle.title) - \(exercise.equipment.title)")
                                 .font(.subheadline)
-                                .foregroundStyle(.white.opacity(0.64))
+                                .foregroundStyle(.secondary)
                         }
                         Spacer()
                         Text(exercise.difficulty)
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color.deltsInk)
                             .padding(.vertical, 7)
                             .padding(.horizontal, 10)
-                            .background(Color.deltsInferno.opacity(0.24), in: Capsule())
+                            .background(Color.deltsGold, in: Capsule())
+                            .overlay(Capsule().stroke(Color.deltsInk.opacity(0.7), lineWidth: 1))
                     }
 
                     HStack(spacing: 8) {
@@ -43,7 +44,7 @@ struct ExerciseCard: View {
 
                     Text(exercise.formTip)
                         .font(.footnote)
-                        .foregroundStyle(.white.opacity(0.72))
+                        .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 2)
                 }
@@ -55,13 +56,16 @@ struct ExerciseCard: View {
                             Text("Start")
                         }
                         .font(.subheadline.weight(.bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.deltsInk)
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
-                        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-                        .deltsGlassSurface(cornerRadius: 15, tint: Color.deltsElectricBlue.opacity(0.14), interactive: true)
+                        .background(Color.deltsElectricBlue.opacity(0.14), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 15, style: .continuous)
+                                .stroke(Color.deltsInk.opacity(0.62), lineWidth: 1.2)
+                        )
                     }
-                    .deltsGlassButton()
+                    .buttonStyle(.plain)
                 }
             }
         }

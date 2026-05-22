@@ -25,11 +25,11 @@ struct EquipmentManualSelectionView: View {
                             HStack {
                                 Text("Available equipment")
                                     .font(.headline.weight(.bold))
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(.primary)
                                 Spacer()
                                 Text("\(profile.availableEquipment.count) selected")
                                     .font(.caption.weight(.bold))
-                                    .foregroundStyle(.white.opacity(0.58))
+                                    .foregroundStyle(.secondary)
                             }
                             EquipmentGrid(selection: equipmentBinding(for: profile))
                         }
@@ -60,9 +60,9 @@ struct EquipmentManualSelectionView: View {
             ZStack(alignment: .leading) {
                 LinearGradient(
                     colors: [
-                        Color.deltsElectricBlue.opacity(0.18),
-                        Color.deltsCard,
-                        Color.deltsInferno.opacity(0.18)
+                        Color.deltsElectricBlue.opacity(0.12),
+                        Color.deltsPaperAlt,
+                        Color.deltsGold.opacity(0.16)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -73,7 +73,8 @@ struct EquipmentManualSelectionView: View {
                         VStack(alignment: .leading, spacing: 5) {
                             Text("Scan Equipment")
                                 .font(.title2.weight(.black))
-                                .foregroundStyle(.white)
+                                .fontDesign(.rounded)
+                                .foregroundStyle(.primary)
                             Text("Camera shell is ready for Vision or Gemini Vision later.")
                                 .font(.subheadline)
                                 .foregroundStyle(Color.deltsMutedText)
@@ -84,28 +85,34 @@ struct EquipmentManualSelectionView: View {
                             EquipmentScanComingSoonView()
                         } label: {
                             HStack {
-                                Image(systemName: "camera.fill")
-                                Text("Open Scanner")
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                            }
-                            .font(.subheadline.weight(.black))
-                            .foregroundStyle(.white)
-                            .padding(14)
-                            .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-                            .deltsGlassSurface(cornerRadius: 15, tint: Color.deltsInferno.opacity(0.16), interactive: true)
+                            Image(systemName: "camera.fill")
+                            Text("Open Scanner")
+                            Spacer()
+                            Image(systemName: "chevron.right")
                         }
-                        .deltsGlassButton(prominent: true)
+                        .font(.subheadline.weight(.black))
+                        .foregroundStyle(Color.deltsInk)
+                        .padding(14)
+                        .background(Color.deltsGold, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 15, style: .continuous)
+                                .stroke(Color.deltsInk, lineWidth: 1.3)
+                        )
+                    }
+                    .buttonStyle(.plain)
                     }
 
                     Spacer()
 
                     Image(systemName: "camera.metering.matrix")
                         .font(.system(size: 58, weight: .black))
-                        .foregroundStyle(Color.white.opacity(0.92))
+                        .foregroundStyle(Color.deltsElectricBlue)
                         .frame(width: 96, height: 96)
-                        .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                        .deltsGlassSurface(cornerRadius: 24, tint: Color.white.opacity(0.16))
+                        .background(Color.deltsCard, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                .stroke(Color.deltsInk.opacity(0.58), lineWidth: 1.2)
+                        )
                 }
                 .padding(18)
             }
@@ -117,7 +124,7 @@ struct EquipmentManualSelectionView: View {
         GlassCard {
             Text("Profile is being created. Reopen this tab in a moment.")
                 .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -147,12 +154,13 @@ struct EquipmentScanComingSoonView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Equipment scanning coming soon")
                                 .font(.largeTitle.weight(.black))
-                                .foregroundStyle(.white)
+                                .fontDesign(.rounded)
+                                .foregroundStyle(.primary)
                                 .lineLimit(3)
                                 .minimumScaleFactor(0.72)
                             Text("The MVP includes the UI shell and service placeholder for a future Vision or Gemini Vision classifier.")
                                 .font(.subheadline)
-                                .foregroundStyle(.white.opacity(0.66))
+                                .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
 
@@ -161,19 +169,22 @@ struct EquipmentScanComingSoonView: View {
                                 Image(systemName: "photo.on.rectangle")
                                 Text("Choose equipment photo")
                                 Spacer()
-                                Image(systemName: "chevron.right")
-                            }
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(.white)
-                            .padding(14)
-                            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-                            .deltsGlassSurface(cornerRadius: 15, tint: Color.deltsElectricBlue.opacity(0.14), interactive: true)
+                            Image(systemName: "chevron.right")
                         }
-                        .deltsGlassButton()
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(.primary)
+                        .padding(14)
+                        .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 15, style: .continuous)
+                                .stroke(Color.deltsInk.opacity(0.52), lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
 
-                        Text(statusText)
-                            .font(.footnote)
-                            .foregroundStyle(.white.opacity(0.58))
+                    Text(statusText)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                     }
                 }
             }

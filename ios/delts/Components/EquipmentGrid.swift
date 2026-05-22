@@ -24,13 +24,14 @@ struct EquipmentGrid: View {
                     HStack(spacing: 10) {
                         Image(systemName: item.icon)
                             .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(isSelected ? Color.white : Color.deltsElectricBlue)
+                            .foregroundStyle(isSelected ? Color.deltsInk : Color.deltsElectricBlue)
                             .frame(width: 30, height: 30)
-                            .background(isSelected ? Color.deltsElectricBlue : Color.deltsElectricBlue.opacity(0.12), in: Circle())
+                            .background(isSelected ? Color.deltsGold : Color.deltsElectricBlue.opacity(0.12), in: Circle())
+                            .overlay(Circle().stroke(Color.deltsInk.opacity(0.58), lineWidth: 1))
 
                         Text(item.title)
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .lineLimit(2)
                             .minimumScaleFactor(0.82)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -38,20 +39,15 @@ struct EquipmentGrid: View {
                     .padding(12)
                     .frame(minHeight: 58)
                     .background(
-                        isSelected ? Color.deltsElectricBlue.opacity(0.18) : Color.white.opacity(0.035),
+                        isSelected ? Color.deltsElectricBlue.opacity(0.13) : Color.deltsPanel,
                         in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    )
-                    .deltsGlassSurface(
-                        cornerRadius: 18,
-                        tint: isSelected ? Color.deltsElectricBlue.opacity(0.2) : Color.white.opacity(0.1),
-                        interactive: true
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .stroke(isSelected ? Color.deltsElectricBlue.opacity(0.9) : Color.white.opacity(0.08), lineWidth: 1)
+                            .stroke(isSelected ? Color.deltsElectricBlue.opacity(0.9) : Color.deltsInk.opacity(0.5), lineWidth: 1.2)
                     )
                 }
-                .deltsGlassButton()
+                .buttonStyle(.plain)
             }
         }
     }
