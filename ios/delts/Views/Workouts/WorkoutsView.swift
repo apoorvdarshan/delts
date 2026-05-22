@@ -7,130 +7,35 @@ struct WorkoutsView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    header
-                    modePicker
+            VStack(spacing: 0) {
+                modePicker
 
-                    if selectedMode == .library {
+                Group {
+                    switch selectedMode {
+                    case .library:
                         ExerciseLibraryBrowserView()
-                    } else {
-                        if workouts.isEmpty {
-                            emptyState
-                        } else {
-                            VStack(spacing: 12) {
-                                ForEach(workouts) { workout in
-                                    NavigationLink {
-                                        CompletedWorkoutDetailView(workout: workout)
-                                    } label: {
-                                        workoutRow(workout)
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                        }
+                    case .history:
+                        WorkoutHistoryListView(workouts: workouts)
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-                .padding(.bottom, 18)
             }
-            .deltsScreen()
-            .toolbar(.hidden, for: .navigationBar)
+            .background(WorkoutsScreenBackground())
+            .navigationTitle("Workouts")
+            .navigationBarTitleDisplayMode(.large)
         }
-    }
-
-    private var header: some View {
-        DeltsHeader(
-            eyebrow: selectedMode == .library ? "Free Exercise DB" : "Training Logs",
-            title: selectedMode == .library ? "Exercise Library" : "Workout History",
-            subtitle: selectedMode == .library ? "Browse offline exercises by body part, level, goal, and equipment." : "Completed sessions saved locally on this device.",
-            trailingSystemImage: selectedMode == .library ? "line.3.horizontal.decrease.circle" : "checkmark.seal.fill"
-        )
     }
 
     private var modePicker: some View {
-        HStack(spacing: 8) {
+        Picker("Workouts", selection: $selectedMode) {
             ForEach(WorkoutsMode.allCases) { mode in
-                let isSelected = selectedMode == mode
-                Button {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                        selectedMode = mode
-                    }
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: mode.systemImage)
-                        Text(mode.title)
-                    }
-                    .font(.subheadline.weight(.black))
-                    .foregroundStyle(isSelected ? .white : Color.deltsMutedText)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(
-                        isSelected ? Color.deltsElectricBlue.opacity(0.18) : Color.white.opacity(0.035),
-                        in: RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    )
-                    .deltsGlassSurface(
-                        cornerRadius: 15,
-                        tint: isSelected ? Color.deltsElectricBlue.opacity(0.18) : Color.white.opacity(0.1),
-                        interactive: true
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 15, style: .continuous)
-                            .stroke(isSelected ? Color.deltsElectricBlue.opacity(0.75) : Color.white.opacity(0.08), lineWidth: 1)
-                    )
-                }
-                .deltsGlassButton()
+                Text(mode.title).tag(mode)
             }
         }
-    }
-
-    private var emptyState: some View {
-        GlassCard {
-            VStack(spacing: 14) {
-                Image(systemName: "list.bullet.clipboard")
-                    .font(.system(size: 38, weight: .bold))
-                    .foregroundStyle(Color.deltsElectricBlue)
-                Text("No completed workouts yet")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(.white)
-                Text("Generate a plan, start it, then finish to create your first log.")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.62))
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-        }
-    }
-
-    private func workoutRow(_ workout: CompletedWorkout) -> some View {
-        GlassCard(padding: 14) {
-            HStack(spacing: 14) {
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.title2)
-                    .foregroundStyle(Color.deltsElectricBlue)
-                    .frame(width: 44, height: 44)
-                    .background(Color.deltsElectricBlue.opacity(0.13), in: Circle())
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(workout.title)
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                    Text(workout.date.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.56))
-                    Text("\(workout.exerciseLogs.count) exercises - \(workout.durationMinutes)m")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.68))
-                }
-
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.4))
-            }
-        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+        .background(.bar)
     }
 }
 
@@ -144,13 +49,6 @@ private enum WorkoutsMode: String, CaseIterable, Identifiable {
         switch self {
         case .library: return "Library"
         case .history: return "History"
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .library: return "square.grid.2x2.fill"
-        case .history: return "clock.arrow.circlepath"
         }
     }
 }
@@ -179,79 +77,122 @@ private struct ExerciseLibraryBrowserView: View {
         )
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            filterPanel
+    private var hasActiveFilters: Bool {
+        !searchText.isEmpty ||
+            selectedMuscleGroup != nil ||
+            selectedLevel != nil ||
+            selectedGoal != nil ||
+            selectedEquipment != nil ||
+            selectedEquipmentFamily != .all ||
+            selectedSort != .bodyPart
+    }
 
-            HStack {
-                Text("\(items.count) exercises")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(.white)
-                Spacer()
-                Text("Media offline")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.deltsAcidGreen)
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 9)
-                    .background(Color.deltsAcidGreen.opacity(0.12), in: Capsule())
-                Button("Reset") {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                        searchText = ""
-                        selectedMuscleGroup = nil
-                        selectedLevel = nil
-                        selectedGoal = nil
-                        selectedEquipment = nil
-                        selectedEquipmentFamily = .all
-                        selectedSort = .bodyPart
-                    }
-                }
-                .font(.caption.weight(.bold))
-                .foregroundStyle(Color.deltsElectricBlue)
+    var body: some View {
+        List {
+            Section {
+                librarySummary
+                    .listRowSeparator(.hidden)
             }
 
-            if !items.isEmpty {
-                PrimaryButton(title: "Build From Top \(min(items.count, 8))", systemImage: "wand.and.stars") {
-                    generatedPlan = service.makePlan(from: items)
-                }
+            Section {
+                filters
+                    .listRowSeparator(.hidden)
             }
 
             if items.isEmpty {
-                noResults
+                Section {
+                    ContentUnavailableView(
+                        "No exercises match",
+                        systemImage: "line.3.horizontal.decrease.circle",
+                        description: Text("Reset filters or search a different body part, machine, or exercise.")
+                    )
+                    .frame(maxWidth: .infinity, minHeight: 260)
+                    .listRowSeparator(.hidden)
+                }
             } else {
-                LazyVStack(spacing: 12) {
+                Section {
                     ForEach(items) { item in
                         NavigationLink {
                             ExerciseLibraryDetailView(item: item)
                         } label: {
                             ExerciseLibraryRow(item: item)
                         }
-                        .buttonStyle(.plain)
                     }
+                } header: {
+                    ResultsHeader(
+                        count: items.count,
+                        subtitle: selectedSort.title,
+                        trailingTitle: "Offline media"
+                    )
                 }
             }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .contentMargins(.bottom, 104, for: .scrollContent)
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search exercises")
         .navigationDestination(item: $generatedPlan) { plan in
             WorkoutPlanView(plan: plan)
         }
     }
 
-    private var filterPanel: some View {
-        GlassCard {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(spacing: 10) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.white.opacity(0.5))
-                    TextField("Search exercises, machines, equipment", text: $searchText)
-                        .textFieldStyle(.plain)
-                        .foregroundStyle(.white)
+    private var librarySummary: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Free Exercise DB")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+
+                    Text("\(service.exercises.count) offline exercises")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
-                .padding(12)
-                .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .deltsGlassSurface(cornerRadius: 14, tint: Color.white.opacity(0.1), interactive: true)
 
-                equipmentFamilyPicker
+                Spacer(minLength: 12)
 
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                Label("Bundled", systemImage: "checkmark.seal.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.deltsAcidGreen)
+            }
+
+            Button {
+                generatedPlan = service.makePlan(from: items)
+            } label: {
+                Label("Build From Top \(min(items.count, 8))", systemImage: "wand.and.stars")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .tint(Color.deltsElectricBlue)
+            .disabled(items.isEmpty)
+        }
+        .padding(.vertical, 8)
+    }
+
+    private var filters: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Filter")
+                    .font(.headline.weight(.semibold))
+
+                Spacer()
+
+                if hasActiveFilters {
+                    Button("Reset") {
+                        withAnimation(.snappy) {
+                            resetFilters()
+                        }
+                    }
+                    .font(.subheadline.weight(.semibold))
+                }
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
                     filterMenu(
                         title: "Body",
                         value: selectedMuscleGroup?.title ?? "All",
@@ -306,43 +247,36 @@ private struct ExerciseLibraryBrowserView: View {
                         }
                     }
                 }
+                .padding(.trailing, 20)
             }
-        }
-    }
 
-    private var equipmentFamilyPicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(ExerciseEquipmentFamily.allCases) { family in
-                    ExerciseEquipmentFamilyChip(
-                        family: family,
-                        isSelected: selectedEquipmentFamily == family
-                    ) {
-                        withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                            selectedEquipmentFamily = family
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(ExerciseEquipmentFamily.allCases) { family in
+                        ExerciseEquipmentFamilyChip(
+                            family: family,
+                            isSelected: selectedEquipmentFamily == family
+                        ) {
+                            withAnimation(.snappy) {
+                                selectedEquipmentFamily = family
+                            }
                         }
                     }
                 }
+                .padding(.trailing, 20)
             }
         }
+        .padding(.vertical, 6)
     }
 
-    private var noResults: some View {
-        GlassCard {
-            VStack(spacing: 10) {
-                Image(systemName: "line.3.horizontal.decrease.circle")
-                    .font(.system(size: 36, weight: .bold))
-                    .foregroundStyle(Color.deltsInferno)
-                Text("No exercises match")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(.white)
-                Text("Reset filters or search a different body part or machine.")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.62))
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-        }
+    private func resetFilters() {
+        searchText = ""
+        selectedMuscleGroup = nil
+        selectedLevel = nil
+        selectedGoal = nil
+        selectedEquipment = nil
+        selectedEquipmentFamily = .all
+        selectedSort = .bodyPart
     }
 
     private func filterMenu<Content: View>(
@@ -354,26 +288,89 @@ private struct ExerciseLibraryBrowserView: View {
         Menu {
             content()
         } label: {
-            HStack(spacing: 10) {
-                Image(systemName: systemImage)
-                    .foregroundStyle(Color.deltsElectricBlue)
-                    .frame(width: 24)
-                VStack(alignment: .leading, spacing: 2) {
+            Label {
+                VStack(alignment: .leading, spacing: 1) {
                     Text(title)
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.secondary)
                     Text(value)
-                        .font(.footnote.weight(.bold))
-                        .foregroundStyle(.white)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.75)
                 }
-                Spacer(minLength: 0)
+            } icon: {
+                Image(systemName: systemImage)
             }
-            .padding(12)
-            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .deltsGlassSurface(cornerRadius: 14, tint: Color.deltsElectricBlue.opacity(0.12), interactive: true)
         }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .tint(.secondary)
+    }
+}
+
+private struct WorkoutHistoryListView: View {
+    let workouts: [CompletedWorkout]
+
+    var body: some View {
+        List {
+            if workouts.isEmpty {
+                ContentUnavailableView(
+                    "No completed workouts yet",
+                    systemImage: "list.bullet.clipboard",
+                    description: Text("Generate a plan, start it, then finish to create your first log.")
+                )
+                .frame(maxWidth: .infinity, minHeight: 360)
+                .listRowSeparator(.hidden)
+            } else {
+                Section {
+                    ForEach(workouts) { workout in
+                        NavigationLink {
+                            CompletedWorkoutDetailView(workout: workout)
+                        } label: {
+                            CompletedWorkoutRow(workout: workout)
+                        }
+                    }
+                } header: {
+                    ResultsHeader(
+                        count: workouts.count,
+                        subtitle: "Completed",
+                        trailingTitle: "Local logs"
+                    )
+                }
+            }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .contentMargins(.bottom, 104, for: .scrollContent)
+    }
+}
+
+private struct ResultsHeader: View {
+    let count: Int
+    let subtitle: String
+    let trailingTitle: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(count) \(count == 1 ? "item" : "items")")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .textCase(nil)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .textCase(nil)
+            }
+
+            Spacer()
+
+            Text(trailingTitle)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(nil)
+        }
+        .padding(.top, 6)
     }
 }
 
@@ -383,23 +380,23 @@ private struct ExerciseEquipmentFamilyChip: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Text(family.title)
-                .font(.caption.weight(.black))
-                .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.7))
-                .lineLimit(1)
-                .padding(.vertical, 9)
-                .padding(.horizontal, 12)
-                .background(
-                    isSelected ? Color.deltsElectricBlue.opacity(0.18) : Color.white.opacity(0.035),
-                    in: Capsule()
-                )
-                .overlay(
-                    Capsule()
-                        .stroke(isSelected ? Color.deltsElectricBlue : Color.white.opacity(0.08), lineWidth: 1)
-                )
+        if isSelected {
+            Button(action: action) {
+                Text(family.title)
+                    .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+            .tint(Color.deltsElectricBlue)
+        } else {
+            Button(action: action) {
+                Text(family.title)
+                    .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .tint(.secondary)
         }
-        .deltsGlassButton()
     }
 }
 
@@ -407,56 +404,85 @@ private struct ExerciseLibraryRow: View {
     let item: ExerciseLibraryItem
 
     var body: some View {
-        GlassCard(padding: 0, cornerRadius: 22) {
-            HStack(spacing: 14) {
-                AnimatedExerciseVisual(
-                    muscleGroup: item.muscleGroup,
-                    assetName: item.visualAssetName,
-                    exerciseName: item.name,
-                    imagePaths: item.imagePaths,
-                    equipment: item.equipment,
-                    height: 108,
-                    fillsWidth: false
-                )
-                .frame(width: 118, height: 108)
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        HStack(spacing: 14) {
+            AnimatedExerciseVisual(
+                muscleGroup: item.muscleGroup,
+                assetName: item.visualAssetName,
+                exerciseName: item.name,
+                imagePaths: item.imagePaths,
+                equipment: item.equipment,
+                height: 84,
+                fillsWidth: false
+            )
+            .frame(width: 88, height: 84)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .accessibilityHidden(true)
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(item.name)
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.82)
+            VStack(alignment: .leading, spacing: 7) {
+                Text(item.name)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.84)
 
-                    Text("\(item.muscleGroup.title) - \(item.equipment.title)")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.58))
-                        .lineLimit(1)
+                Text("\(item.muscleGroup.title) - \(item.equipment.title)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.84)
 
-                    HStack(spacing: 6) {
-                        libraryTag(item.level.title, tint: .deltsElectricBlue)
-                        libraryTag(item.machineLabel, tint: .deltsInferno)
-                    }
+                HStack(spacing: 6) {
+                    LibraryTag(title: item.level.title, systemImage: "chart.bar.fill", tint: .deltsElectricBlue)
+                    LibraryTag(title: item.machineLabel, systemImage: "dumbbell.fill", tint: .deltsInferno)
                 }
-
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.35))
             }
-            .padding(12)
-            .frame(minHeight: 132)
         }
+        .padding(.vertical, 8)
     }
+}
 
-    private func libraryTag(_ title: String, tint: Color) -> some View {
-        Text(title)
-            .font(.caption2.weight(.black))
-            .foregroundStyle(.white)
+private struct CompletedWorkoutRow: View {
+    let workout: CompletedWorkout
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(Color.deltsElectricBlue)
+                .frame(width: 36, height: 36)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(workout.title)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+
+                Text(workout.date.formatted(date: .abbreviated, time: .shortened))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                Text("\(workout.exerciseLogs.count) exercises - \(workout.durationMinutes)m")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+private struct LibraryTag: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        Label(title, systemImage: systemImage)
+            .font(.caption2.weight(.semibold))
+            .labelStyle(.titleAndIcon)
+            .foregroundStyle(tint)
             .lineLimit(1)
-            .padding(.vertical, 5)
-            .padding(.horizontal, 8)
-            .background(tint.opacity(0.18), in: Capsule())
+            .accessibilityElement(children: .combine)
     }
 }
 
@@ -466,60 +492,63 @@ private struct ExerciseLibraryDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                GlassCard {
-                    VStack(alignment: .leading, spacing: 16) {
-                        AnimatedExerciseVisual(
-                            muscleGroup: item.muscleGroup,
-                            assetName: item.visualAssetName,
-                            exerciseName: item.name,
-                            imagePaths: item.imagePaths,
-                            equipment: item.equipment,
-                            height: 220
-                        )
+            VStack(alignment: .leading, spacing: 22) {
+                AnimatedExerciseVisual(
+                    muscleGroup: item.muscleGroup,
+                    assetName: item.visualAssetName,
+                    exerciseName: item.name,
+                    imagePaths: item.imagePaths,
+                    equipment: item.equipment,
+                    height: 260
+                )
+                .accessibilityLabel(Text("\(item.name) exercise visual"))
 
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(item.name)
-                                .font(.largeTitle.weight(.black))
-                                .foregroundStyle(.white)
-                                .lineLimit(3)
-                                .minimumScaleFactor(0.68)
-                            Text("\(item.muscleGroup.title) - \(item.equipment.title) - \(item.machineLabel)")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(Color.deltsElectricBlue)
-                            Text(item.source)
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(.white.opacity(0.55))
-                        }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(item.name)
+                        .font(.largeTitle.weight(.bold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.7)
 
-                        HStack(spacing: 8) {
-                            MetricPill(title: "Level", value: item.level.title, systemImage: "chart.bar.fill")
-                            MetricPill(title: "Goal", value: item.goal.title, systemImage: "target", tint: .deltsInferno)
-                        }
+                    Text("\(item.muscleGroup.title) - \(item.equipment.title) - \(item.machineLabel)")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.deltsElectricBlue)
 
-                        HStack(spacing: 8) {
-                            MetricPill(title: "Sets", value: "\(item.sets)", systemImage: "number")
-                            MetricPill(title: "Reps", value: item.reps, systemImage: "repeat", tint: .deltsInferno)
-                            MetricPill(title: "Rest", value: restText, systemImage: "timer", tint: .white.opacity(0.78))
-                        }
-
-                        Text(item.formTip)
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.72))
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        PrimaryButton(title: "Start Exercise", systemImage: "play.fill") {
-                            activePlan = item.singleExercisePlan()
-                        }
-                    }
+                    Text(item.source)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
                 }
+
+                Divider()
+
+                DetailMetricGrid(item: item, restText: restText)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Form tip")
+                        .font(.headline.weight(.semibold))
+                    Text(item.formTip)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Button {
+                    activePlan = item.singleExercisePlan()
+                } label: {
+                    Label("Start Exercise", systemImage: "play.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .tint(Color.deltsElectricBlue)
             }
             .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 18)
+            .padding(.top, 18)
+            .padding(.bottom, 122)
         }
-        .deltsScreen()
-        .toolbar(.hidden, for: .navigationBar)
+        .background(WorkoutsScreenBackground())
+        .navigationTitle("Exercise")
+        .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $activePlan) { plan in
             ActiveWorkoutView(plan: plan)
         }
@@ -530,77 +559,158 @@ private struct ExerciseLibraryDetailView: View {
     }
 }
 
+private struct DetailMetricGrid: View {
+    let item: ExerciseLibraryItem
+    let restText: String
+
+    var body: some View {
+        Grid(alignment: .leading, horizontalSpacing: 22, verticalSpacing: 14) {
+            GridRow {
+                DetailMetric(title: "Level", value: item.level.title, systemImage: "chart.bar.fill")
+                DetailMetric(title: "Goal", value: item.goal.title, systemImage: "target")
+            }
+
+            GridRow {
+                DetailMetric(title: "Sets", value: "\(item.sets)", systemImage: "number")
+                DetailMetric(title: "Reps", value: item.reps, systemImage: "repeat")
+            }
+
+            GridRow {
+                DetailMetric(title: "Rest", value: restText, systemImage: "timer")
+                DetailMetric(title: "Equipment", value: item.equipment.title, systemImage: "dumbbell.fill")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct DetailMetric: View {
+    let title: String
+    let value: String
+    let systemImage: String
+
+    var body: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(value)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+        } icon: {
+            Image(systemName: systemImage)
+                .foregroundStyle(Color.deltsElectricBlue)
+        }
+    }
+}
+
 struct CompletedWorkoutDetailView: View {
     let workout: CompletedWorkout
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                GlassCard {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(workout.title)
-                            .font(.largeTitle.weight(.black))
-                            .foregroundStyle(.white)
-                            .lineLimit(3)
-                            .minimumScaleFactor(0.72)
-                        Text(workout.date.formatted(date: .complete, time: .shortened))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.deltsElectricBlue)
-                        Text(workout.planSummary)
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.68))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(workout.title)
+                        .font(.title.weight(.bold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.76)
+
+                    Text(workout.date.formatted(date: .complete, time: .shortened))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.deltsElectricBlue)
+
+                    Text(workout.planSummary)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .padding(.vertical, 8)
+            }
 
-                ForEach(workout.exerciseLogs) { exercise in
-                    GlassCard {
-                        VStack(alignment: .leading, spacing: 14) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(exercise.name)
-                                        .font(.headline.weight(.bold))
-                                        .foregroundStyle(.white)
-                                    Text("\(exercise.targetMuscle) - \(exercise.equipment)")
-                                        .font(.caption)
-                                        .foregroundStyle(.white.opacity(0.58))
-                                }
-                                Spacer()
-                                Text("\(exercise.sets.filter(\.completed).count)/\(exercise.sets.count)")
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(.white)
-                                    .padding(.vertical, 7)
-                                    .padding(.horizontal, 10)
-                                    .background(Color.deltsElectricBlue.opacity(0.18), in: Capsule())
-                            }
+            ForEach(workout.exerciseLogs) { exercise in
+                Section {
+                    ForEach(exercise.sets) { set in
+                        HStack(spacing: 12) {
+                            Image(systemName: set.completed ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(set.completed ? Color.deltsElectricBlue : .secondary)
+                                .accessibilityHidden(true)
 
-                            ForEach(exercise.sets) { set in
-                                HStack {
-                                    Image(systemName: set.completed ? "checkmark.circle.fill" : "circle")
-                                        .foregroundStyle(set.completed ? Color.deltsElectricBlue : Color.white.opacity(0.35))
-                                    Text("Set \(set.setNumber)")
-                                        .foregroundStyle(.white)
-                                    Spacer()
-                                    Text(weightRepText(for: set))
-                                        .foregroundStyle(.white.opacity(0.66))
-                                }
-                                .font(.subheadline)
-                            }
+                            Text("Set \(set.setNumber)")
+                                .foregroundStyle(.primary)
+
+                            Spacer()
+
+                            Text(weightRepText(for: set))
+                                .foregroundStyle(.secondary)
                         }
+                        .font(.subheadline)
                     }
+                } header: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(exercise.name)
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .textCase(nil)
+                        Text("\(exercise.targetMuscle) - \(exercise.equipment) - \(exercise.sets.filter(\.completed).count)/\(exercise.sets.count) sets")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .textCase(nil)
+                    }
+                    .padding(.top, 6)
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 18)
         }
-        .deltsScreen()
-        .toolbar(.hidden, for: .navigationBar)
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(WorkoutsScreenBackground())
+        .contentMargins(.bottom, 104, for: .scrollContent)
+        .navigationTitle("Summary")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func weightRepText(for set: CompletedSetLog) -> String {
         let weight = set.weight.isEmpty ? "--" : set.weight
         let reps = set.reps.isEmpty ? "--" : set.reps
         return "\(weight) x \(reps)"
+    }
+}
+
+private struct WorkoutsScreenBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        ZStack {
+            Color(uiColor: colorScheme == .dark ? .systemBackground : .secondarySystemBackground)
+                .ignoresSafeArea()
+
+            LinearGradient(
+                colors: gradientColors,
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+        }
+    }
+
+    private var gradientColors: [Color] {
+        if colorScheme == .dark {
+            return [
+                Color.deltsElectricBlue.opacity(0.12),
+                Color.clear,
+                Color.deltsInferno.opacity(0.08)
+            ]
+        }
+
+        return [
+            Color.deltsElectricBlue.opacity(0.08),
+            Color.clear,
+            Color.deltsInferno.opacity(0.04)
+        ]
     }
 }

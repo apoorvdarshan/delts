@@ -22,7 +22,6 @@ struct ContentView: View {
                     .padding(.bottom, 6)
                     .background(Color.clear)
             }
-            .preferredColorScheme(.dark)
             .task {
                 ensureDefaultProfile()
             }
