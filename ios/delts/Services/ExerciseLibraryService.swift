@@ -73,27 +73,92 @@ struct ExerciseLibraryService {
         level: ExperienceLevel?,
         goal: FitnessGoal?,
         equipment: Equipment?,
+        equipmentFamily: ExerciseEquipmentFamily,
+        sort: ExerciseLibrarySort,
         searchText: String
     ) -> [ExerciseLibraryItem] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
-        return exercises.filter { item in
+        let filteredItems = exercises.filter { item in
             let matchesMuscle = muscleGroup == nil || item.muscleGroup == muscleGroup
             let matchesLevel = level == nil || item.level == level
             let matchesGoal = goal == nil || item.goal == goal
             let matchesEquipment = equipment == nil || item.equipment == equipment
-            let matchesSearch = query.isEmpty
-                || item.name.lowercased().contains(query)
-                || item.equipment.title.lowercased().contains(query)
-                || item.machineLabel.lowercased().contains(query)
+            let matchesFamily = equipmentFamily == .all || item.equipmentFamily == equipmentFamily
+            let matchesSearch = query.isEmpty || item.searchableText.contains(query)
 
-            return matchesMuscle && matchesLevel && matchesGoal && matchesEquipment && matchesSearch
+            return matchesMuscle && matchesLevel && matchesGoal && matchesEquipment && matchesFamily && matchesSearch
         }
-        .sorted { lhs, rhs in
-            if lhs.muscleGroup.title == rhs.muscleGroup.title {
+
+        return filteredItems.sorted { lhs, rhs in
+            switch sort {
+            case .bodyPart:
+                if lhs.muscleGroup.title == rhs.muscleGroup.title {
+                    return lhs.name < rhs.name
+                }
+                return lhs.muscleGroup.title < rhs.muscleGroup.title
+            case .name:
                 return lhs.name < rhs.name
+            case .level:
+                if lhs.level.sortRank == rhs.level.sortRank {
+                    return lhs.name < rhs.name
+                }
+                return lhs.level.sortRank < rhs.level.sortRank
+            case .equipment:
+                if lhs.equipment.title == rhs.equipment.title {
+                    return lhs.name < rhs.name
+                }
+                return lhs.equipment.title < rhs.equipment.title
+            case .goal:
+                if lhs.goal.title == rhs.goal.title {
+                    return lhs.name < rhs.name
+                }
+                return lhs.goal.title < rhs.goal.title
             }
-            return lhs.muscleGroup.title < rhs.muscleGroup.title
+        }
+    }
+
+    func makePlan(from items: [ExerciseLibraryItem]) -> WorkoutPlan {
+        let selectedItems = Array(items.prefix(8))
+        let primaryMuscle = selectedItems.first?.muscleGroup ?? .fullBody
+        let primaryGoal = selectedItems.first?.goal ?? .generalFitness
+        let duration = selectedItems.count <= 4 ? 30 : selectedItems.count <= 6 ? 45 : 60
+
+        let exercises = selectedItems.enumerated().map { index, item in
+            item.workoutExercise(orderIndex: index)
+        }
+
+        return WorkoutPlan(
+            title: libraryPlanTitle(for: selectedItems),
+            summary: "Built from the filtered exercise library with \(selectedItems.count) movements.",
+            muscleGroup: primaryMuscle,
+            goal: primaryGoal,
+            durationMinutes: duration,
+            generatedByAI: false,
+            exercises: exercises
+        )
+    }
+
+    private func libraryPlanTitle(for items: [ExerciseLibraryItem]) -> String {
+        guard let first = items.first else {
+            return "Library Workout"
+        }
+
+        let bodyParts = Set(items.map(\.muscleGroup)).count
+        if bodyParts == 1 {
+            return "\(first.muscleGroup.title) Library Workout"
+        }
+
+        return "Custom Library Workout"
+    }
+}
+
+private extension ExperienceLevel {
+    var sortRank: Int {
+        switch self {
+        case .beginner: return 0
+        case .intermediate: return 1
+        case .advanced: return 2
         }
     }
 }
@@ -125,4 +190,3 @@ private extension ExerciseLibraryItem {
         )
     }
 }
-

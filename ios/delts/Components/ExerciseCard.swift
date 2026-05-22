@@ -10,6 +10,7 @@ struct ExerciseCard: View {
             VStack(alignment: .leading, spacing: 16) {
                 AnimatedExerciseVisual(
                     muscleGroup: exercise.targetMuscle,
+                    exerciseName: exercise.name,
                     equipment: exercise.equipment,
                     height: 150
                 )
@@ -65,4 +66,3 @@ struct ExerciseCard: View {
         }
     }
 }
-

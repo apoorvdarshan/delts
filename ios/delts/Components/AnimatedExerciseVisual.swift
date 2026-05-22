@@ -4,14 +4,20 @@ import UIKit
 
 struct AnimatedExerciseVisual: View {
     let muscleGroup: MuscleGroup
+    var assetName: String?
+    var exerciseName: String?
     var equipment: Equipment?
     var height: CGFloat = 170
     @State private var animate = false
 
     var body: some View {
         ZStack {
-            if GIFAssetResolver.url(for: muscleGroup) != nil {
-                AnimatedGIFView(resourceName: GIFAssetResolver.assetName(for: muscleGroup))
+            if let resourceName = GIFAssetResolver.resourceName(
+                assetName: assetName,
+                exerciseName: exerciseName,
+                muscleGroup: muscleGroup
+            ) {
+                AnimatedGIFView(resourceName: resourceName)
             } else {
                 fallbackVisual
             }
@@ -120,4 +126,3 @@ private extension UIImage {
         return duration < 0.02 ? defaultDuration : duration
     }
 }
-

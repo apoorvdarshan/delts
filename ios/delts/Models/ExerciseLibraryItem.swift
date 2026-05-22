@@ -17,14 +17,29 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
     }
 
     var machineLabel: String {
-        switch equipment {
-        case .chestPress, .shoulderPress, .latPulldown, .rowMachine, .legPress, .legExtension, .legCurl, .smithMachine, .cableMachine, .treadmill:
-            return "Machine"
-        case .dumbbells, .barbell, .bench, .pullUpBar:
-            return "Free Weight"
-        case .bodyweight:
-            return "Bodyweight"
-        }
+        equipmentFamily.title
+    }
+
+    var equipmentFamily: ExerciseEquipmentFamily {
+        ExerciseEquipmentFamily(equipment: equipment)
+    }
+
+    var visualAssetName: String {
+        id
+    }
+
+    var searchableText: String {
+        [
+            name,
+            muscleGroup.title,
+            equipment.title,
+            level.title,
+            goal.title,
+            machineLabel,
+            formTip
+        ]
+        .joined(separator: " ")
+        .lowercased()
     }
 
     func workoutExercise(orderIndex: Int = 0) -> WorkoutExercise {
@@ -54,3 +69,34 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
     }
 }
 
+enum ExerciseEquipmentFamily: String, CaseIterable, Identifiable, Hashable {
+    case all = "All"
+    case machines = "Machines"
+    case freeWeights = "Free Weights"
+    case bodyweight = "Bodyweight"
+
+    var id: String { rawValue }
+    var title: String { rawValue }
+
+    init(equipment: Equipment) {
+        switch equipment {
+        case .chestPress, .shoulderPress, .latPulldown, .rowMachine, .legPress, .legExtension, .legCurl, .smithMachine, .cableMachine, .treadmill:
+            self = .machines
+        case .dumbbells, .barbell, .bench, .pullUpBar:
+            self = .freeWeights
+        case .bodyweight:
+            self = .bodyweight
+        }
+    }
+}
+
+enum ExerciseLibrarySort: String, CaseIterable, Identifiable, Hashable {
+    case bodyPart = "Body Part"
+    case name = "Name"
+    case level = "Level"
+    case equipment = "Equipment"
+    case goal = "Goal"
+
+    var id: String { rawValue }
+    var title: String { rawValue }
+}

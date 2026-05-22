@@ -18,6 +18,7 @@ struct ActiveWorkoutView: View {
                 if let exercise = viewModel.currentExercise {
                     AnimatedExerciseVisual(
                         muscleGroup: exercise.targetMuscle,
+                        exerciseName: exercise.name,
                         equipment: exercise.equipment,
                         height: 210
                     )
@@ -238,4 +239,3 @@ private extension Collection {
         indices.contains(index) ? self[index] : nil
     }
 }
-

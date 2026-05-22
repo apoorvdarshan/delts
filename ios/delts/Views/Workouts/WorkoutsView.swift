@@ -130,6 +130,9 @@ private struct ExerciseLibraryBrowserView: View {
     @State private var selectedLevel: ExperienceLevel?
     @State private var selectedGoal: FitnessGoal?
     @State private var selectedEquipment: Equipment?
+    @State private var selectedEquipmentFamily: ExerciseEquipmentFamily = .all
+    @State private var selectedSort: ExerciseLibrarySort = .bodyPart
+    @State private var generatedPlan: WorkoutPlan?
 
     private let service = ExerciseLibraryService.shared
 
@@ -139,6 +142,8 @@ private struct ExerciseLibraryBrowserView: View {
             level: selectedLevel,
             goal: selectedGoal,
             equipment: selectedEquipment,
+            equipmentFamily: selectedEquipmentFamily,
+            sort: selectedSort,
             searchText: searchText
         )
     }
@@ -159,10 +164,18 @@ private struct ExerciseLibraryBrowserView: View {
                         selectedLevel = nil
                         selectedGoal = nil
                         selectedEquipment = nil
+                        selectedEquipmentFamily = .all
+                        selectedSort = .bodyPart
                     }
                 }
                 .font(.caption.weight(.bold))
                 .foregroundStyle(Color.deltsElectricBlue)
+            }
+
+            if !items.isEmpty {
+                PrimaryButton(title: "Build From Top \(min(items.count, 8))", systemImage: "wand.and.stars") {
+                    generatedPlan = service.makePlan(from: items)
+                }
             }
 
             if items.isEmpty {
@@ -180,6 +193,9 @@ private struct ExerciseLibraryBrowserView: View {
                 }
             }
         }
+        .navigationDestination(item: $generatedPlan) { plan in
+            WorkoutPlanView(plan: plan)
+        }
     }
 
     private var filterPanel: some View {
@@ -194,6 +210,8 @@ private struct ExerciseLibraryBrowserView: View {
                 }
                 .padding(12)
                 .background(Color.white.opacity(0.065), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                equipmentFamilyPicker
 
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                     filterMenu(
@@ -239,6 +257,47 @@ private struct ExerciseLibraryBrowserView: View {
                             Button(equipment.title) { selectedEquipment = equipment }
                         }
                     }
+
+                    filterMenu(
+                        title: "Sort",
+                        value: selectedSort.title,
+                        systemImage: "arrow.up.arrow.down"
+                    ) {
+                        ForEach(ExerciseLibrarySort.allCases) { sort in
+                            Button(sort.title) { selectedSort = sort }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var equipmentFamilyPicker: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(ExerciseEquipmentFamily.allCases) { family in
+                    let isSelected = selectedEquipmentFamily == family
+                    Button {
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+                            selectedEquipmentFamily = family
+                        }
+                    } label: {
+                        Text(family.title)
+                            .font(.caption.weight(.black))
+                            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.7))
+                            .lineLimit(1)
+                            .padding(.vertical, 9)
+                            .padding(.horizontal, 12)
+                            .background(
+                                isSelected ? Color.deltsElectricBlue.opacity(0.24) : Color.white.opacity(0.06),
+                                in: Capsule()
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(isSelected ? Color.deltsElectricBlue : Color.white.opacity(0.08), lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -301,6 +360,8 @@ private struct ExerciseLibraryRow: View {
             HStack(spacing: 13) {
                 AnimatedExerciseVisual(
                     muscleGroup: item.muscleGroup,
+                    assetName: item.visualAssetName,
+                    exerciseName: item.name,
                     equipment: item.equipment,
                     height: 92
                 )
@@ -354,6 +415,8 @@ private struct ExerciseLibraryDetailView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         AnimatedExerciseVisual(
                             muscleGroup: item.muscleGroup,
+                            assetName: item.visualAssetName,
+                            exerciseName: item.name,
                             equipment: item.equipment,
                             height: 220
                         )
