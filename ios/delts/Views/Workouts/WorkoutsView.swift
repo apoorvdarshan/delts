@@ -460,13 +460,11 @@ private struct ExerciseLibraryRow: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.84)
 
-                HStack(spacing: 8) {
-                    LibraryTag(title: item.goal.title, systemImage: "target", tint: .deltsAccent)
-                    LibraryTag(title: item.machineLabel, systemImage: "dumbbell.fill", tint: .deltsInferno)
-                    if item.imagePaths.count > 1 {
-                        LibraryTag(title: "\(item.imagePaths.count) media", systemImage: "photo.stack", tint: .deltsAcidGreen)
-                    }
-                }
+                Label(rowMetadata, systemImage: item.imagePaths.count > 1 ? "photo.stack" : "target")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
             }
 
             Spacer(minLength: 8)
@@ -492,6 +490,13 @@ private struct ExerciseLibraryRow: View {
         .frame(width: 104, height: 104)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityHidden(true)
+    }
+
+    private var rowMetadata: String {
+        if item.imagePaths.count > 1 {
+            return "\(item.machineLabel) - \(item.imagePaths.count) media"
+        }
+        return item.machineLabel
     }
 }
 

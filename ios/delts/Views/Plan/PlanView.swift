@@ -96,34 +96,31 @@ struct PlanBuilderView: View {
             Divider()
 
             planControl("Goal") {
-                Picker("Goal", selection: $viewModel.selectedGoal) {
-                    ForEach(FitnessGoal.planCases) { goal in
-                        Text(goal.title).tag(goal)
-                    }
-                }
-                .pickerStyle(.segmented)
+                PlanChoiceRail(
+                    options: FitnessGoal.planCases,
+                    selection: $viewModel.selectedGoal,
+                    title: { $0.title }
+                )
             }
 
             Divider()
 
             planControl("Experience") {
-                Picker("Experience", selection: $viewModel.selectedExperience) {
-                    ForEach(ExperienceLevel.allCases) { level in
-                        Text(level.title).tag(level)
-                    }
-                }
-                .pickerStyle(.segmented)
+                PlanChoiceRail(
+                    options: ExperienceLevel.allCases,
+                    selection: $viewModel.selectedExperience,
+                    title: { $0.title }
+                )
             }
 
             Divider()
 
             planControl("Duration") {
-                Picker("Duration", selection: $viewModel.selectedDuration) {
-                    ForEach(durationOptions, id: \.self) { duration in
-                        Text("\(duration)").tag(duration)
-                    }
-                }
-                .pickerStyle(.segmented)
+                PlanChoiceRail(
+                    options: durationOptions,
+                    selection: $viewModel.selectedDuration,
+                    title: { "\($0) min" }
+                )
             }
 
             Divider()
@@ -181,6 +178,49 @@ struct PlanBuilderView: View {
             content()
         }
         .padding(.vertical, 18)
+    }
+}
+
+private struct PlanChoiceRail<Option: Hashable>: View {
+    let options: [Option]
+    @Binding var selection: Option
+    let title: (Option) -> String
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(options, id: \.self) { option in
+                    let isSelected = option == selection
+
+                    Button {
+                        let animation: Animation? = reduceMotion ? nil : .snappy(duration: 0.18)
+                        withAnimation(animation) {
+                            selection = option
+                        }
+                    } label: {
+                        Text(title(option))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsCharcoal)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                            .padding(.horizontal, 14)
+                            .frame(height: 40)
+                            .background(
+                                isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.48),
+                                in: Capsule()
+                            )
+                            .overlay {
+                                Capsule()
+                                    .stroke(Color.deltsHairline.opacity(isSelected ? 0.2 : 0.46), lineWidth: 0.5)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityValue(isSelected ? "Selected" : "Not selected")
+                }
+            }
+            .padding(.horizontal, 1)
+        }
     }
 }
 
