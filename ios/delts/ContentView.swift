@@ -82,65 +82,46 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
 
 private struct DeltsFloatingTabBar: View {
     @Binding var selection: DeltsTab
+    @Namespace private var indicatorNamespace
 
     var body: some View {
-        DeltsGlassGroup(spacing: 8) {
-            HStack(spacing: 4) {
-                ForEach(DeltsTab.allCases) { tab in
-                    let isSelected = selection == tab
-                    Button {
-                        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
-                            selection = tab
-                        }
-                    } label: {
-                        VStack(spacing: 5) {
-                            Image(systemName: tab.systemImage)
-                                .font(.system(size: 20, weight: .bold))
-                            Text(tab.title)
-                                .font(.caption2.weight(.bold))
-                                .lineLimit(1)
-                        }
-                        .foregroundStyle(isSelected ? Color.deltsElectricBlue : Color.white.opacity(0.72))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 58)
-                        .background(
-                            Group {
-                                if isSelected {
-                                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                        .fill(Color.white.opacity(0.055))
-                                }
-                            }
-                        )
-                        .deltsGlassSurface(
-                            cornerRadius: 22,
-                            tint: isSelected ? Color.deltsElectricBlue.opacity(0.16) : Color.white.opacity(0.08),
-                            interactive: true,
-                            fallbackOpacity: isSelected ? 0.08 : 0
-                        )
+        HStack(spacing: 2) {
+            ForEach(DeltsTab.allCases) { tab in
+                let isSelected = selection == tab
+                Button {
+                    withAnimation(.snappy(duration: 0.28)) {
+                        selection = tab
                     }
-                    .deltsGlassButton()
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: tab.systemImage)
+                            .font(.system(size: 19, weight: .semibold))
+                        Text(tab.title)
+                            .font(.caption2.weight(.semibold))
+                            .lineLimit(1)
+                    }
+                    .foregroundStyle(isSelected ? Color.deltsElectricBlue : Color.deltsMutedText)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background {
+                        if isSelected {
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .fill(Color.deltsElectricBlue.opacity(0.12))
+                                .matchedGeometryEffect(id: "tab-selection", in: indicatorNamespace)
+                        }
+                    }
                 }
+                .buttonStyle(.plain)
             }
         }
         .padding(7)
-        .background(Color.black.opacity(0.28), in: RoundedRectangle(cornerRadius: 30, style: .continuous))
-        .deltsGlassSurface(cornerRadius: 30, tint: Color.deltsPanel.opacity(0.24), fallbackOpacity: 0.03)
+        .background(Color(uiColor: .systemBackground).opacity(0.72), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .deltsLiquidBarSurface(cornerRadius: 28)
         .overlay(
             RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.18),
-                            Color.deltsInferno.opacity(0.28),
-                            Color.deltsElectricBlue.opacity(0.16)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
+                .stroke(Color(uiColor: .separator).opacity(0.28), lineWidth: 0.5)
         )
-        .shadow(color: Color.black.opacity(0.45), radius: 22, x: 0, y: 10)
+        .shadow(color: Color.black.opacity(0.12), radius: 18, x: 0, y: 8)
     }
 }
 

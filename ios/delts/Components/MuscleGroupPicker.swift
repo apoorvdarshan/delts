@@ -18,24 +18,19 @@ struct MuscleGroupPicker: View {
                                 .lineLimit(1)
                         }
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(selection == group ? .white : .white.opacity(0.72))
+                        .foregroundStyle(selection == group ? .white : .primary)
                         .padding(.vertical, 11)
                         .padding(.horizontal, 14)
                         .background(
-                            selection == group ? Color.deltsElectricBlue.opacity(0.2) : Color.white.opacity(0.035),
+                            selection == group ? Color.deltsElectricBlue : Color.deltsCard,
                             in: Capsule()
-                        )
-                        .deltsGlassSurface(
-                            cornerRadius: 22,
-                            tint: selection == group ? Color.deltsElectricBlue.opacity(0.2) : Color.white.opacity(0.1),
-                            interactive: true
                         )
                         .overlay(
                             Capsule()
-                                .stroke(selection == group ? Color.deltsElectricBlue : Color.white.opacity(0.08), lineWidth: 1)
+                                .stroke(selection == group ? Color.deltsElectricBlue : Color(uiColor: .separator).opacity(0.35), lineWidth: 0.5)
                         )
                     }
-                    .deltsGlassButton()
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 1)

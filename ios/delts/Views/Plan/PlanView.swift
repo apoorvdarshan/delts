@@ -52,45 +52,36 @@ struct PlanBuilderView: View {
 
     private var coachHero: some View {
         GlassCard(padding: 0, cornerRadius: 24) {
-            ZStack(alignment: .leading) {
+            HStack(spacing: 14) {
                 AnimatedExerciseVisual(
                     muscleGroup: viewModel.selectedMuscleGroup,
                     equipment: viewModel.selectedEquipment.first,
-                    height: 188
+                    height: 132,
+                    fillsWidth: false
                 )
-                .overlay(
-                    LinearGradient(
-                        colors: [
-                            Color.black.opacity(0.88),
-                            Color.black.opacity(0.44),
-                            Color.black.opacity(0.08)
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+                .frame(width: 116, height: 132)
 
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Today's Plan")
-                        .font(.caption.weight(.bold))
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.deltsMutedText)
                     Text("\(viewModel.selectedMuscleGroup.title) Day")
-                        .font(.title.weight(.black))
-                        .foregroundStyle(.white)
+                        .font(.title.weight(.bold))
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
                     Text("\(viewModel.selectedDuration) min - \(viewModel.selectedGoal.title)")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.78))
+                        .foregroundStyle(.secondary)
 
                     HStack(spacing: 10) {
                         smallStat("Level", viewModel.selectedExperience.title, .deltsElectricBlue)
                         smallStat("Gear", "\(viewModel.selectedEquipment.count)", .deltsInferno)
                     }
                 }
-                .padding(18)
-                .frame(maxWidth: 260, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(16)
         }
     }
 
@@ -146,7 +137,7 @@ struct PlanBuilderView: View {
                         Spacer()
                         Text("\(viewModel.selectedEquipment.count) selected")
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(.white.opacity(0.58))
+                            .foregroundStyle(.secondary)
                     }
                     EquipmentGrid(selection: $viewModel.selectedEquipment)
                 }
@@ -169,7 +160,7 @@ struct PlanBuilderView: View {
             if let statusMessage = viewModel.statusMessage {
                 Text(statusMessage)
                     .font(.footnote)
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -177,8 +168,8 @@ struct PlanBuilderView: View {
 
     private func label(_ text: String) -> some View {
         Text(text)
-            .font(.caption.weight(.bold))
-            .foregroundStyle(.white.opacity(0.62))
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
             .textCase(.uppercase)
     }
 
@@ -188,14 +179,13 @@ struct PlanBuilderView: View {
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(Color.deltsMutedText)
             Text(value)
-                .font(.caption.weight(.black))
-                .foregroundStyle(.white)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.primary)
                 .lineLimit(1)
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 10)
-        .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .deltsGlassSurface(cornerRadius: 12, tint: tint.opacity(0.16))
+        .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -221,14 +211,6 @@ struct WorkoutPlanView: View {
                             muscleGroup: plan.muscleGroup,
                             height: 180
                         )
-                        .overlay(
-                            LinearGradient(
-                                colors: [Color.black.opacity(0.72), Color.black.opacity(0.04)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-
                         HStack(alignment: .top) {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(plan.generatedByAI ? "AI generated" : "Offline generated")
@@ -236,8 +218,8 @@ struct WorkoutPlanView: View {
                                     .foregroundStyle(plan.generatedByAI ? Color.deltsElectricBlue : Color.deltsInferno)
                                     .textCase(.uppercase)
                                 Text(plan.title)
-                                    .font(.largeTitle.weight(.black))
-                                    .foregroundStyle(.white)
+                                    .font(.largeTitle.weight(.bold))
+                                    .foregroundStyle(.primary)
                                     .lineLimit(2)
                                     .minimumScaleFactor(0.72)
                             }
@@ -250,7 +232,7 @@ struct WorkoutPlanView: View {
 
                         Text(plan.summary)
                             .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.7))
+                            .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .padding(.horizontal, 18)
 
@@ -271,7 +253,7 @@ struct WorkoutPlanView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Exercises")
                         .font(.headline.weight(.bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
                         ExerciseCard(exercise: exercise) {

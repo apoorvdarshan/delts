@@ -9,13 +9,12 @@ struct ProfileTextField: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.58))
+                .foregroundStyle(.secondary)
             TextField(title, text: $text, axis: axis)
                 .textFieldStyle(.plain)
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .padding(12)
-                .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .deltsGlassSurface(cornerRadius: 14, tint: Color.white.opacity(0.1), interactive: true)
+                .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 }
@@ -35,19 +34,18 @@ struct ProfileNumberField: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.58))
+                .foregroundStyle(.secondary)
             HStack {
                 TextField(title, value: $value, format: .number.precision(.fractionLength(1)))
                     .keyboardType(.decimalPad)
                     .textFieldStyle(.plain)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text(suffix)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(.secondary)
             }
             .padding(12)
-            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .deltsGlassSurface(cornerRadius: 14, tint: Color.white.opacity(0.1), interactive: true)
+            .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 }
@@ -63,16 +61,15 @@ struct IntStepperField: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.58))
+                    .foregroundStyle(.secondary)
                 Text(suffix.isEmpty ? "\(value)" : "\(value) \(suffix)")
                     .font(.headline)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
             }
         }
         .tint(Color.deltsElectricBlue)
         .padding(12)
-        .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .deltsGlassSurface(cornerRadius: 14, tint: Color.deltsElectricBlue.opacity(0.12), interactive: true)
+        .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -109,24 +106,19 @@ struct MultiSelectChipGrid<Option: Identifiable & Hashable>: View {
                             .minimumScaleFactor(0.82)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(isSelected ? .white : .primary)
                     .padding(.vertical, 11)
                     .padding(.horizontal, 12)
                     .background(
-                        isSelected ? Color.deltsElectricBlue.opacity(0.18) : Color.white.opacity(0.035),
+                        isSelected ? Color.deltsElectricBlue : Color.deltsCard,
                         in: RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    )
-                    .deltsGlassSurface(
-                        cornerRadius: 15,
-                        tint: isSelected ? Color.deltsElectricBlue.opacity(0.2) : Color.white.opacity(0.1),
-                        interactive: true
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 15, style: .continuous)
-                            .stroke(isSelected ? Color.deltsElectricBlue.opacity(0.9) : Color.white.opacity(0.08), lineWidth: 1)
+                            .stroke(isSelected ? Color.deltsElectricBlue.opacity(0.8) : Color(uiColor: .separator).opacity(0.35), lineWidth: 0.5)
                     )
                 }
-                .deltsGlassButton()
+                .buttonStyle(.plain)
             }
         }
     }

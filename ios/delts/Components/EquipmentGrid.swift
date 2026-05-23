@@ -30,7 +30,7 @@ struct EquipmentGrid: View {
 
                         Text(item.title)
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .lineLimit(2)
                             .minimumScaleFactor(0.82)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -38,20 +38,15 @@ struct EquipmentGrid: View {
                     .padding(12)
                     .frame(minHeight: 58)
                     .background(
-                        isSelected ? Color.deltsElectricBlue.opacity(0.18) : Color.white.opacity(0.035),
+                        isSelected ? Color.deltsElectricBlue.opacity(0.12) : Color.deltsCard,
                         in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    )
-                    .deltsGlassSurface(
-                        cornerRadius: 18,
-                        tint: isSelected ? Color.deltsElectricBlue.opacity(0.2) : Color.white.opacity(0.1),
-                        interactive: true
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .stroke(isSelected ? Color.deltsElectricBlue.opacity(0.9) : Color.white.opacity(0.08), lineWidth: 1)
+                            .stroke(isSelected ? Color.deltsElectricBlue.opacity(0.8) : Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
                     )
                 }
-                .deltsGlassButton()
+                .buttonStyle(.plain)
             }
         }
     }

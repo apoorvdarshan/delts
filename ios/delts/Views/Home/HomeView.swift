@@ -38,66 +38,34 @@ struct HomeView: View {
 
     private var todayWorkout: some View {
         GlassCard(padding: 0, cornerRadius: 24) {
-            ZStack(alignment: .bottomLeading) {
-                AnimatedExerciseVisual(muscleGroup: recommendedMuscle, height: 214)
-                    .overlay(
-                        LinearGradient(
-                            colors: [
-                                Color.black.opacity(0.88),
-                                Color.black.opacity(0.34),
-                                Color.black.opacity(0.08)
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .overlay(
-                        LinearGradient(
-                            colors: [
-                                Color.black.opacity(0.02),
-                                Color.black.opacity(0.76)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+            HStack(spacing: 14) {
+                AnimatedExerciseVisual(muscleGroup: recommendedMuscle, height: 136, fillsWidth: false)
+                    .frame(width: 118, height: 136)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 16) {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Today's Focus")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.white.opacity(0.72))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
                         Text(recommendedTitle)
-                            .font(.title2.weight(.black))
-                            .foregroundStyle(.white)
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(.primary)
                             .lineLimit(2)
                             .minimumScaleFactor(0.82)
                         Text("\(recommendedExerciseCount) exercises - \(profile?.workoutDurationMinutes ?? 60) min")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white.opacity(0.78))
+                            .foregroundStyle(.secondary)
                     }
 
-                    NavigationLink {
-                        PlanBuilderView()
-                    } label: {
-                        HStack {
-                            Text("Start Workout")
-                            Spacer()
-                            Image(systemName: "play.fill")
-                        }
-                        .font(.subheadline.weight(.black))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: 220)
-                        .frame(height: 46)
-                        .padding(.horizontal, 16)
-                        .background(Color.deltsElectricBlue.opacity(0.18), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .deltsGlassSurface(cornerRadius: 14, tint: Color.deltsElectricBlue.opacity(0.24), interactive: true)
-                    }
-                    .deltsGlassButton(prominent: true)
+                    NavigationLink("Start Workout", destination: PlanBuilderView())
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.regular)
+                        .tint(Color.deltsElectricBlue)
                 }
-                .padding(18)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(16)
         }
     }
 
@@ -162,7 +130,7 @@ struct HomeView: View {
                     }
                     .buttonStyle(.plain)
                 } else {
-                    DeltsActionTile(title: "History", systemImage: "clock.arrow.circlepath", tint: .white.opacity(0.5))
+                    DeltsActionTile(title: "History", systemImage: "clock.arrow.circlepath", tint: .secondary)
                         .opacity(0.58)
                 }
             }
@@ -180,14 +148,13 @@ struct HomeView: View {
                         .font(.caption.weight(.bold))
                         .padding(.vertical, 7)
                         .padding(.horizontal, 10)
-                        .background(Color.white.opacity(0.035), in: Capsule())
-                        .deltsGlassSurface(cornerRadius: 18, tint: Color.white.opacity(0.1))
+                        .background(Color.deltsPanel, in: Capsule())
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
                 Text(focusText)
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 10) {
@@ -219,7 +186,7 @@ struct HomeView: View {
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(workout.title)
                                         .font(.subheadline.weight(.bold))
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(.primary)
                                         .lineLimit(1)
                                     Text("\(workout.exerciseLogs.count) exercises")
                                         .font(.caption)
@@ -232,10 +199,9 @@ struct HomeView: View {
                                     .foregroundStyle(Color.deltsMutedText)
                             }
                             .padding(13)
-                            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .deltsGlassSurface(cornerRadius: 16, tint: Color.deltsInferno.opacity(0.1), interactive: true)
+                            .background(Color.deltsCard, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
-                        .deltsGlassButton()
+                        .buttonStyle(.plain)
                     }
                 }
             }

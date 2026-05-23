@@ -20,11 +20,11 @@ struct ExerciseCard: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(exercise.name)
                                 .font(.title3.weight(.bold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.primary)
                                 .lineLimit(2)
                             Text("\(exercise.targetMuscle.title) - \(exercise.equipment.title)")
                                 .font(.subheadline)
-                                .foregroundStyle(.white.opacity(0.64))
+                                .foregroundStyle(.secondary)
                         }
                         Spacer()
                         Text(exercise.difficulty)
@@ -43,7 +43,7 @@ struct ExerciseCard: View {
 
                     Text(exercise.formTip)
                         .font(.footnote)
-                        .foregroundStyle(.white.opacity(0.72))
+                        .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 2)
                 }
@@ -58,10 +58,9 @@ struct ExerciseCard: View {
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
-                        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-                        .deltsGlassSurface(cornerRadius: 15, tint: Color.deltsElectricBlue.opacity(0.14), interactive: true)
+                        .background(Color.deltsElectricBlue, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
-                    .deltsGlassButton()
+                    .buttonStyle(.plain)
                 }
             }
         }

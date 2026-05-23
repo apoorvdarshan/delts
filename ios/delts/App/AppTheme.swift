@@ -1,45 +1,21 @@
 import SwiftUI
 
 extension Color {
-    static let deltsBackground = Color(red: 0.012, green: 0.018, blue: 0.026)
-    static let deltsCharcoal = Color(red: 0.046, green: 0.055, blue: 0.067)
-    static let deltsCard = Color(red: 0.086, green: 0.096, blue: 0.112)
-    static let deltsPanel = Color(red: 0.12, green: 0.13, blue: 0.145)
-    static let deltsElectricBlue = Color(red: 0.0, green: 0.56, blue: 1.0)
-    static let deltsInferno = Color(red: 1.0, green: 0.25, blue: 0.12)
-    static let deltsAcidGreen = Color(red: 0.08, green: 0.86, blue: 0.37)
-    static let deltsGold = Color(red: 1.0, green: 0.72, blue: 0.1)
-    static let deltsMutedText = Color.white.opacity(0.66)
+    static let deltsBackground = Color(uiColor: .systemGroupedBackground)
+    static let deltsCharcoal = Color(uiColor: .label)
+    static let deltsCard = Color(uiColor: .secondarySystemGroupedBackground)
+    static let deltsPanel = Color(uiColor: .tertiarySystemGroupedBackground)
+    static let deltsElectricBlue = Color(red: 0.00, green: 0.37, blue: 0.86)
+    static let deltsInferno = Color(red: 0.86, green: 0.22, blue: 0.12)
+    static let deltsAcidGreen = Color(red: 0.10, green: 0.58, blue: 0.28)
+    static let deltsGold = Color(red: 0.84, green: 0.55, blue: 0.08)
+    static let deltsMutedText = Color(uiColor: .secondaryLabel)
 }
 
 struct DeltsBackground: View {
     var body: some View {
-        ZStack {
-            Color.deltsBackground
-                .ignoresSafeArea()
-
-            LinearGradient(
-                colors: [
-                    Color(red: 0.02, green: 0.08, blue: 0.12).opacity(0.95),
-                    Color.deltsBackground,
-                    Color.black
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+        Color.deltsBackground
             .ignoresSafeArea()
-
-            LinearGradient(
-                colors: [
-                    Color.deltsElectricBlue.opacity(0.18),
-                    Color.clear,
-                    Color.deltsInferno.opacity(0.1)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-        }
     }
 }
 
@@ -49,49 +25,31 @@ extension View {
             .scrollContentBackground(.hidden)
     }
 
-    @ViewBuilder
     func deltsGlassSurface(
         cornerRadius: CGFloat = 22,
-        tint: Color? = Color.white.opacity(0.12),
+        tint: Color? = nil,
         interactive: Bool = false,
-        fallbackOpacity: Double = 0.06
+        fallbackOpacity: Double = 0
     ) -> some View {
+        self
+    }
+
+    @ViewBuilder
+    func deltsLiquidBarSurface(cornerRadius: CGFloat = 28) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 
         if #available(iOS 26.0, *) {
             self
-                .glassEffect(deltsGlass(tint: tint, interactive: interactive), in: shape)
+                .glassEffect(.regular.interactive(), in: shape)
         } else {
             self
-                .background(Color.white.opacity(fallbackOpacity), in: shape)
                 .background(.ultraThinMaterial, in: shape)
         }
     }
 
-    @ViewBuilder
     func deltsGlassButton(prominent: Bool = false) -> some View {
-        if #available(iOS 26.0, *) {
-            if prominent {
-                self.buttonStyle(.glassProminent)
-            } else {
-                self.buttonStyle(.glass)
-            }
-        } else {
-            self.buttonStyle(.plain)
-        }
+        buttonStyle(.plain)
     }
-}
-
-@available(iOS 26.0, *)
-private func deltsGlass(tint: Color?, interactive: Bool) -> Glass {
-    var glass = Glass.regular
-    if let tint {
-        glass = glass.tint(tint)
-    }
-    if interactive {
-        glass = glass.interactive()
-    }
-    return glass
 }
 
 struct DeltsGlassGroup<Content: View>: View {
@@ -104,13 +62,7 @@ struct DeltsGlassGroup<Content: View>: View {
     }
 
     var body: some View {
-        if #available(iOS 26.0, *) {
-            GlassEffectContainer(spacing: spacing) {
-                content
-            }
-        } else {
-            content
-        }
+        content
     }
 }
 
@@ -125,21 +77,20 @@ struct DeltsHeader: View {
             VStack(alignment: .leading, spacing: 6) {
                 if !eyebrow.isEmpty {
                     Text(eyebrow)
-                        .font(.caption.weight(.bold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.deltsMutedText)
-                        .textCase(.uppercase)
                 }
 
                 Text(title)
-                    .font(.system(size: 30, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
+                    .font(.largeTitle.weight(.bold))
+                    .foregroundStyle(.primary)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.74)
+                    .minimumScaleFactor(0.78)
 
                 if let subtitle {
                     Text(subtitle)
                         .font(.subheadline)
-                        .foregroundStyle(Color.deltsMutedText)
+                        .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -148,15 +99,10 @@ struct DeltsHeader: View {
 
             if let trailingSystemImage {
                 Image(systemName: trailingSystemImage)
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 42, height: 42)
-                    .background(Color.white.opacity(0.045), in: Circle())
-                    .deltsGlassSurface(cornerRadius: 21, tint: Color.white.opacity(0.14), interactive: true)
-                    .overlay(
-                        Circle()
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                    )
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Color.deltsElectricBlue)
+                    .frame(width: 38, height: 38)
+                    .background(Color.deltsElectricBlue.opacity(0.12), in: Circle())
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -170,12 +116,12 @@ struct DeltsSectionHeader: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
-                .font(.headline.weight(.black))
-                .foregroundStyle(.white)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.primary)
             Spacer()
             if let detail {
                 Text(detail)
-                    .font(.caption.weight(.bold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.deltsMutedText)
             }
         }
@@ -191,28 +137,23 @@ struct DeltsMetricTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .bold))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(tint)
 
             Text(value)
-                .font(.title3.weight(.black))
-                .foregroundStyle(.white)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
 
             Text(title)
-                .font(.caption2.weight(.bold))
+                .font(.caption2.weight(.semibold))
                 .foregroundStyle(Color.deltsMutedText)
                 .lineLimit(1)
         }
         .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
-        .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .deltsGlassSurface(cornerRadius: 18, tint: tint.opacity(0.12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
+        .frame(maxWidth: .infinity, minHeight: 88, alignment: .leading)
+        .background(Color.deltsCard, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 
@@ -224,27 +165,21 @@ struct DeltsActionTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .black))
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(tint)
                 .frame(width: 38, height: 38)
-                .background(tint.opacity(0.15), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .deltsGlassSurface(cornerRadius: 12, tint: tint.opacity(0.16), interactive: true)
+                .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
             Text(title)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.white)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.primary)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(13)
-        .frame(maxWidth: .infinity, minHeight: 96, alignment: .leading)
-        .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-        .deltsGlassSurface(cornerRadius: 17, tint: tint.opacity(0.12), interactive: true)
-        .overlay(
-            RoundedRectangle(cornerRadius: 17, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
+        .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
+        .background(Color.deltsCard, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 
@@ -256,21 +191,21 @@ struct DeltsProgressRing: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.11), lineWidth: 8)
+                .stroke(Color(uiColor: .tertiaryLabel).opacity(0.25), lineWidth: 8)
             Circle()
                 .trim(from: 0, to: min(max(progress, 0), 1))
                 .stroke(
-                    AngularGradient(colors: [tint, .white, tint], center: .center),
+                    tint,
                     style: StrokeStyle(lineWidth: 8, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
 
             VStack(spacing: 1) {
                 Text("\(Int(progress * 100))%")
-                    .font(.headline.weight(.black))
-                    .foregroundStyle(.white)
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.primary)
                 Text(label)
-                    .font(.system(size: 8, weight: .bold))
+                    .font(.system(size: 8, weight: .semibold))
                     .foregroundStyle(Color.deltsMutedText)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)

@@ -7,33 +7,13 @@ struct PrimaryButton: View {
     var action: () -> Void
 
     var body: some View {
-        Group {
-            if #available(iOS 26.0, *) {
-                Button(action: action) {
-                    label
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                }
-                .deltsGlassButton(prominent: true)
-                .tint(Color.deltsElectricBlue)
-            } else {
-                Button(action: action) {
-                    label
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(
-                            LinearGradient(
-                                colors: [.deltsElectricBlue, .deltsInferno],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            in: RoundedRectangle(cornerRadius: 15, style: .continuous)
-                        )
-                        .shadow(color: Color.deltsElectricBlue.opacity(0.28), radius: 18, x: 0, y: 10)
-                }
-                .buttonStyle(.plain)
-            }
+        Button(action: action) {
+            label
+                .frame(maxWidth: .infinity)
         }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.large)
+        .tint(Color.deltsElectricBlue)
         .disabled(isLoading)
         .opacity(isLoading ? 0.72 : 1)
     }
@@ -72,22 +52,17 @@ struct GlassIconButton: View {
                     .background(tint.opacity(0.15), in: Circle())
                 Text(title)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.42))
+                    .foregroundStyle(.secondary)
             }
             .padding(14)
-            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .deltsGlassSurface(cornerRadius: 16, tint: tint.opacity(0.14), interactive: true)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
-            )
+            .background(Color.deltsCard, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
-        .deltsGlassButton()
+        .buttonStyle(.plain)
     }
 }

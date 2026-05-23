@@ -32,7 +32,7 @@ struct AnimatedExerciseVisual: View {
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Color(uiColor: .separator).opacity(0.35), lineWidth: 0.5)
         )
     }
 
@@ -68,10 +68,10 @@ struct AnimatedExerciseVisual: View {
                 if let equipment {
                     Text(equipment.title)
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.secondary)
                 }
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(.primary)
         }
         .onAppear { animate = true }
     }
