@@ -38,21 +38,43 @@ struct HomeView: View {
 
     private var todayWorkout: some View {
         GlassCard(padding: 0, cornerRadius: 24) {
-            HStack(alignment: .bottom, spacing: 12) {
+            ZStack(alignment: .bottomLeading) {
+                AnimatedExerciseVisual(muscleGroup: recommendedMuscle, height: 214)
+                    .overlay(
+                        LinearGradient(
+                            colors: [
+                                Color.black.opacity(0.88),
+                                Color.black.opacity(0.34),
+                                Color.black.opacity(0.08)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .overlay(
+                        LinearGradient(
+                            colors: [
+                                Color.black.opacity(0.02),
+                                Color.black.opacity(0.76)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+
                 VStack(alignment: .leading, spacing: 16) {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Today's Focus")
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.white.opacity(0.72))
                         Text(recommendedTitle)
                             .font(.title2.weight(.black))
-                            .fontDesign(.rounded)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(.white)
                             .lineLimit(2)
                             .minimumScaleFactor(0.82)
                         Text("\(recommendedExerciseCount) exercises - \(profile?.workoutDurationMinutes ?? 60) min")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.white.opacity(0.78))
                     }
 
                     NavigationLink {
@@ -61,30 +83,21 @@ struct HomeView: View {
                         HStack {
                             Text("Start Workout")
                             Spacer()
-                            Image(systemName: "arrow.right")
+                            Image(systemName: "play.fill")
                         }
                         .font(.subheadline.weight(.black))
-                        .foregroundStyle(Color.deltsInk)
+                        .foregroundStyle(.white)
                         .frame(maxWidth: 220)
                         .frame(height: 46)
                         .padding(.horizontal, 16)
-                        .background(Color.deltsGold, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .stroke(Color.deltsInk, lineWidth: 1.3)
-                        )
+                        .background(Color.deltsElectricBlue.opacity(0.18), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .deltsGlassSurface(cornerRadius: 14, tint: Color.deltsElectricBlue.opacity(0.24), interactive: true)
                     }
-                    .buttonStyle(.plain)
+                    .deltsGlassButton(prominent: true)
                 }
                 .padding(18)
                 .frame(maxWidth: .infinity, alignment: .leading)
-
-                DoodleCoachIllustration(tint: accentForRecommendedMuscle)
-                    .frame(width: 92, height: 112)
-                    .padding(.trailing, 12)
-                    .padding(.bottom, 10)
             }
-            .background(accentForRecommendedMuscle.opacity(0.08))
         }
     }
 
@@ -167,14 +180,14 @@ struct HomeView: View {
                         .font(.caption.weight(.bold))
                         .padding(.vertical, 7)
                         .padding(.horizontal, 10)
-                        .background(Color.deltsGold.opacity(0.65), in: Capsule())
-                        .overlay(Capsule().stroke(Color.deltsInk.opacity(0.55), lineWidth: 1))
+                        .background(Color.white.opacity(0.035), in: Capsule())
+                        .deltsGlassSurface(cornerRadius: 18, tint: Color.white.opacity(0.1))
                 }
-                .foregroundStyle(.primary)
+                .foregroundStyle(.white)
 
                 Text(focusText)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white.opacity(0.7))
                     .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 10) {
@@ -206,7 +219,7 @@ struct HomeView: View {
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(workout.title)
                                         .font(.subheadline.weight(.bold))
-                                        .foregroundStyle(.primary)
+                                        .foregroundStyle(.white)
                                         .lineLimit(1)
                                     Text("\(workout.exerciseLogs.count) exercises")
                                         .font(.caption)
@@ -219,13 +232,10 @@ struct HomeView: View {
                                     .foregroundStyle(Color.deltsMutedText)
                             }
                             .padding(13)
-                            .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .stroke(Color.deltsInk.opacity(0.5), lineWidth: 1)
-                            )
+                            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .deltsGlassSurface(cornerRadius: 16, tint: Color.deltsInferno.opacity(0.1), interactive: true)
                         }
-                        .buttonStyle(.plain)
+                        .deltsGlassButton()
                     }
                 }
             }
@@ -247,21 +257,6 @@ struct HomeView: View {
 
     private var recommendedTitle: String {
         "\(recommendedMuscle.title) \(profile?.mainGoal.title ?? "Muscle Gain")"
-    }
-
-    private var accentForRecommendedMuscle: Color {
-        switch recommendedMuscle {
-        case .chest, .arms:
-            return .deltsPink
-        case .back, .shoulders:
-            return .deltsElectricBlue
-        case .legs:
-            return .deltsAcidGreen
-        case .core:
-            return .deltsGold
-        case .fullBody:
-            return .deltsPurple
-        }
     }
 
     private var recommendedExerciseCount: Int {

@@ -17,33 +17,30 @@ struct GlassCard<Content: View>: View {
             .background(
                 ZStack {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(Color.deltsCard)
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(Color.deltsGold.opacity(0.05))
+                        .fill(Color.deltsCard.opacity(0.38))
                 }
+            )
+            .deltsGlassSurface(
+                cornerRadius: cornerRadius,
+                tint: Color.deltsPanel.opacity(0.22),
+                fallbackOpacity: 0
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(
                         LinearGradient(
                             colors: [
-                                Color.deltsInk.opacity(0.86),
-                                Color.deltsInk.opacity(0.62),
-                                Color.deltsElectricBlue.opacity(0.42)
+                                Color.white.opacity(0.22),
+                                Color.deltsElectricBlue.opacity(0.16),
+                                Color.deltsInferno.opacity(0.08)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 1.5
+                        lineWidth: 1
                     )
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(Color.deltsInferno.opacity(0.22), lineWidth: 1)
-                    .offset(x: 2, y: 2)
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            )
-            .shadow(color: Color.deltsInk.opacity(0.08), radius: 8, x: 0, y: 4)
+            .shadow(color: Color.black.opacity(0.42), radius: 22, x: 0, y: 16)
     }
 }
 
@@ -64,20 +61,21 @@ struct MetricPill: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white.opacity(0.58))
                 Text(value)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
-        .background(tint.opacity(0.1), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .deltsGlassSurface(cornerRadius: 15, tint: tint.opacity(0.14), fallbackOpacity: 0.045)
         .overlay(
             RoundedRectangle(cornerRadius: 15, style: .continuous)
-                .stroke(Color.deltsInk.opacity(0.54), lineWidth: 1.2)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
     }
 }

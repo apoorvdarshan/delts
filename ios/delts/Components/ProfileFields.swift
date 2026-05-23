@@ -9,16 +9,13 @@ struct ProfileTextField: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.white.opacity(0.58))
             TextField(title, text: $text, axis: axis)
                 .textFieldStyle(.plain)
-                .foregroundStyle(.primary)
+                .foregroundStyle(.white)
                 .padding(12)
-                .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.deltsInk.opacity(0.5), lineWidth: 1)
-                )
+                .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .deltsGlassSurface(cornerRadius: 14, tint: Color.white.opacity(0.1), interactive: true)
         }
     }
 }
@@ -38,22 +35,19 @@ struct ProfileNumberField: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.white.opacity(0.58))
             HStack {
                 TextField(title, value: $value, format: .number.precision(.fractionLength(1)))
                     .keyboardType(.decimalPad)
                     .textFieldStyle(.plain)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
                 Text(suffix)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white.opacity(0.5))
             }
             .padding(12)
-            .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.deltsInk.opacity(0.5), lineWidth: 1)
-            )
+            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .deltsGlassSurface(cornerRadius: 14, tint: Color.white.opacity(0.1), interactive: true)
         }
     }
 }
@@ -69,19 +63,16 @@ struct IntStepperField: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white.opacity(0.58))
                 Text(suffix.isEmpty ? "\(value)" : "\(value) \(suffix)")
                     .font(.headline)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
             }
         }
         .tint(Color.deltsElectricBlue)
         .padding(12)
-        .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.deltsInk.opacity(0.5), lineWidth: 1)
-        )
+        .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .deltsGlassSurface(cornerRadius: 14, tint: Color.deltsElectricBlue.opacity(0.12), interactive: true)
     }
 }
 
@@ -111,26 +102,31 @@ struct MultiSelectChipGrid<Option: Identifiable & Hashable>: View {
                     HStack(spacing: 9) {
                         Image(systemName: icon(option))
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(isSelected ? Color.deltsInk : Color.deltsElectricBlue)
+                            .foregroundStyle(isSelected ? Color.white : Color.deltsElectricBlue)
                         Text(title(option))
                             .font(.footnote.weight(.semibold))
                             .lineLimit(2)
                             .minimumScaleFactor(0.82)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
                     .padding(.vertical, 11)
                     .padding(.horizontal, 12)
                     .background(
-                        isSelected ? Color.deltsGold.opacity(0.95) : Color.deltsPanel,
+                        isSelected ? Color.deltsElectricBlue.opacity(0.18) : Color.white.opacity(0.035),
                         in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    )
+                    .deltsGlassSurface(
+                        cornerRadius: 15,
+                        tint: isSelected ? Color.deltsElectricBlue.opacity(0.2) : Color.white.opacity(0.1),
+                        interactive: true
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 15, style: .continuous)
-                            .stroke(isSelected ? Color.deltsInk : Color.deltsInk.opacity(0.46), lineWidth: 1)
+                            .stroke(isSelected ? Color.deltsElectricBlue.opacity(0.9) : Color.white.opacity(0.08), lineWidth: 1)
                     )
                 }
-                .buttonStyle(.plain)
+                .deltsGlassButton()
             }
         }
     }

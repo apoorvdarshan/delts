@@ -7,24 +7,33 @@ struct PrimaryButton: View {
     var action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            label
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(Color.deltsGold, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 15, style: .continuous)
-                        .stroke(Color.deltsInk, lineWidth: 1.6)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 15, style: .continuous)
-                        .stroke(Color.deltsInferno.opacity(0.32), lineWidth: 1)
-                        .offset(x: 2, y: 2)
-                        .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
-                )
-                .shadow(color: Color.deltsInk.opacity(0.1), radius: 6, x: 0, y: 3)
+        Group {
+            if #available(iOS 26.0, *) {
+                Button(action: action) {
+                    label
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                }
+                .deltsGlassButton(prominent: true)
+                .tint(Color.deltsElectricBlue)
+            } else {
+                Button(action: action) {
+                    label
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(
+                            LinearGradient(
+                                colors: [.deltsElectricBlue, .deltsInferno],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        )
+                        .shadow(color: Color.deltsElectricBlue.opacity(0.28), radius: 18, x: 0, y: 10)
+                }
+                .buttonStyle(.plain)
+            }
         }
-        .buttonStyle(.plain)
         .disabled(isLoading)
         .opacity(isLoading ? 0.72 : 1)
     }
@@ -33,7 +42,7 @@ struct PrimaryButton: View {
         HStack(spacing: 10) {
             if isLoading {
                 ProgressView()
-                    .tint(Color.deltsInk)
+                    .tint(.white)
             } else {
                 Image(systemName: systemImage)
             }
@@ -42,7 +51,7 @@ struct PrimaryButton: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
         }
-        .foregroundStyle(Color.deltsInk)
+        .foregroundStyle(.white)
         .padding(.horizontal, 16)
     }
 }
@@ -63,21 +72,22 @@ struct GlassIconButton: View {
                     .background(tint.opacity(0.15), in: Circle())
                 Text(title)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white.opacity(0.42))
             }
             .padding(14)
-            .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .deltsGlassSurface(cornerRadius: 16, tint: tint.opacity(0.14), interactive: true)
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.deltsInk.opacity(0.56), lineWidth: 1.2)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .deltsGlassButton()
     }
 }

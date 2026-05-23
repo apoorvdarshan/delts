@@ -1,48 +1,45 @@
 import SwiftUI
 
 extension Color {
-    static let deltsBackground = Color(uiColor: .systemGroupedBackground)
-    static let deltsCharcoal = Color(uiColor: .label)
-    static let deltsCard = Color(uiColor: .secondarySystemGroupedBackground)
-    static let deltsPanel = Color(uiColor: .tertiarySystemGroupedBackground)
-    static let deltsInk = Color(uiColor: .label)
-    static let deltsPaper = Color(red: 1.0, green: 0.965, blue: 0.875)
-    static let deltsPaperAlt = Color(red: 0.93, green: 0.98, blue: 1.0)
-    static let deltsElectricBlue = Color(red: 0.05, green: 0.44, blue: 0.92)
-    static let deltsInferno = Color(red: 1.0, green: 0.48, blue: 0.18)
-    static let deltsAcidGreen = Color(red: 0.26, green: 0.70, blue: 0.24)
-    static let deltsGold = Color(red: 1.0, green: 0.77, blue: 0.14)
-    static let deltsPink = Color(red: 1.0, green: 0.43, blue: 0.62)
-    static let deltsPurple = Color(red: 0.55, green: 0.34, blue: 0.82)
-    static let deltsMutedText = Color(uiColor: .secondaryLabel)
+    static let deltsBackground = Color(red: 0.012, green: 0.018, blue: 0.026)
+    static let deltsCharcoal = Color(red: 0.046, green: 0.055, blue: 0.067)
+    static let deltsCard = Color(red: 0.086, green: 0.096, blue: 0.112)
+    static let deltsPanel = Color(red: 0.12, green: 0.13, blue: 0.145)
+    static let deltsElectricBlue = Color(red: 0.0, green: 0.56, blue: 1.0)
+    static let deltsInferno = Color(red: 1.0, green: 0.25, blue: 0.12)
+    static let deltsAcidGreen = Color(red: 0.08, green: 0.86, blue: 0.37)
+    static let deltsGold = Color(red: 1.0, green: 0.72, blue: 0.1)
+    static let deltsMutedText = Color.white.opacity(0.66)
 }
 
 struct DeltsBackground: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     var body: some View {
         ZStack {
-            Color(uiColor: colorScheme == .dark ? .systemBackground : .systemGroupedBackground)
+            Color.deltsBackground
                 .ignoresSafeArea()
 
             LinearGradient(
                 colors: [
-                    backgroundWash.opacity(colorScheme == .dark ? 0.34 : 0.78),
-                    Color.clear,
-                    Color.deltsInferno.opacity(colorScheme == .dark ? 0.08 : 0.10)
+                    Color(red: 0.02, green: 0.08, blue: 0.12).opacity(0.95),
+                    Color.deltsBackground,
+                    Color.black
                 ],
                 startPoint: .top,
                 endPoint: .bottom
             )
             .ignoresSafeArea()
 
-            DoodleBackgroundMarks()
-                .opacity(colorScheme == .dark ? 0.42 : 0.62)
+            LinearGradient(
+                colors: [
+                    Color.deltsElectricBlue.opacity(0.18),
+                    Color.clear,
+                    Color.deltsInferno.opacity(0.1)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
         }
-    }
-
-    private var backgroundWash: Color {
-        colorScheme == .dark ? Color.deltsElectricBlue.opacity(0.16) : Color.deltsPaper
     }
 }
 
@@ -55,27 +52,46 @@ extension View {
     @ViewBuilder
     func deltsGlassSurface(
         cornerRadius: CGFloat = 22,
-        tint: Color? = Color.deltsPanel,
+        tint: Color? = Color.white.opacity(0.12),
         interactive: Bool = false,
         fallbackOpacity: Double = 0.06
     ) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 
-        self
-            .background((tint ?? Color.deltsPanel).opacity(0.16), in: shape)
-            .overlay(shape.stroke(Color.deltsInk.opacity(0.68), lineWidth: 1.4))
-            .overlay(
-                shape
-                    .stroke((tint ?? Color.deltsGold).opacity(interactive ? 0.42 : 0.22), lineWidth: 1)
-                    .offset(x: 1.5, y: 1.5)
-                    .clipShape(shape)
-            )
+        if #available(iOS 26.0, *) {
+            self
+                .glassEffect(deltsGlass(tint: tint, interactive: interactive), in: shape)
+        } else {
+            self
+                .background(Color.white.opacity(fallbackOpacity), in: shape)
+                .background(.ultraThinMaterial, in: shape)
+        }
     }
 
     @ViewBuilder
     func deltsGlassButton(prominent: Bool = false) -> some View {
-        self.buttonStyle(.plain)
+        if #available(iOS 26.0, *) {
+            if prominent {
+                self.buttonStyle(.glassProminent)
+            } else {
+                self.buttonStyle(.glass)
+            }
+        } else {
+            self.buttonStyle(.plain)
+        }
     }
+}
+
+@available(iOS 26.0, *)
+private func deltsGlass(tint: Color?, interactive: Bool) -> Glass {
+    var glass = Glass.regular
+    if let tint {
+        glass = glass.tint(tint)
+    }
+    if interactive {
+        glass = glass.interactive()
+    }
+    return glass
 }
 
 struct DeltsGlassGroup<Content: View>: View {
@@ -88,7 +104,13 @@ struct DeltsGlassGroup<Content: View>: View {
     }
 
     var body: some View {
-        content
+        if #available(iOS 26.0, *) {
+            GlassEffectContainer(spacing: spacing) {
+                content
+            }
+        } else {
+            content
+        }
     }
 }
 
@@ -103,23 +125,16 @@ struct DeltsHeader: View {
             VStack(alignment: .leading, spacing: 6) {
                 if !eyebrow.isEmpty {
                     Text(eyebrow)
-                        .font(.caption.weight(.semibold))
+                        .font(.caption.weight(.bold))
                         .foregroundStyle(Color.deltsMutedText)
                         .textCase(.uppercase)
                 }
 
-                HStack(spacing: 6) {
-                    Text(title)
-                        .font(.largeTitle.weight(.black))
-                        .fontDesign(.rounded)
-                        .foregroundStyle(.primary)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.74)
-
-                    DoodleSparkle(tint: .deltsGold)
-                        .frame(width: 18, height: 18)
-                        .offset(y: -4)
-                }
+                Text(title)
+                    .font(.system(size: 30, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.74)
 
                 if let subtitle {
                     Text(subtitle)
@@ -134,12 +149,13 @@ struct DeltsHeader: View {
             if let trailingSystemImage {
                 Image(systemName: trailingSystemImage)
                     .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(Color.deltsInk)
+                    .foregroundStyle(.white)
                     .frame(width: 42, height: 42)
-                    .background(Color.deltsGold.opacity(0.22), in: Circle())
+                    .background(Color.white.opacity(0.045), in: Circle())
+                    .deltsGlassSurface(cornerRadius: 21, tint: Color.white.opacity(0.14), interactive: true)
                     .overlay(
                         Circle()
-                            .stroke(Color.deltsInk.opacity(0.72), lineWidth: 1.4)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
                     )
             }
         }
@@ -155,7 +171,7 @@ struct DeltsSectionHeader: View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
                 .font(.headline.weight(.black))
-                .foregroundStyle(.primary)
+                .foregroundStyle(.white)
             Spacer()
             if let detail {
                 Text(detail)
@@ -180,7 +196,7 @@ struct DeltsMetricTile: View {
 
             Text(value)
                 .font(.title3.weight(.black))
-                .foregroundStyle(.primary)
+                .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
 
@@ -191,11 +207,11 @@ struct DeltsMetricTile: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
-        .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .deltsGlassSurface(cornerRadius: 18, tint: tint.opacity(0.16))
+        .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .deltsGlassSurface(cornerRadius: 18, tint: tint.opacity(0.12))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.deltsInk.opacity(0.54), lineWidth: 1)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
     }
 }
@@ -216,18 +232,18 @@ struct DeltsActionTile: View {
 
             Text(title)
                 .font(.caption.weight(.bold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(.white)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(13)
         .frame(maxWidth: .infinity, minHeight: 96, alignment: .leading)
-        .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+        .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
         .deltsGlassSurface(cornerRadius: 17, tint: tint.opacity(0.12), interactive: true)
         .overlay(
             RoundedRectangle(cornerRadius: 17, style: .continuous)
-                .stroke(Color.deltsInk.opacity(0.5), lineWidth: 1)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
     }
 }
@@ -240,7 +256,7 @@ struct DeltsProgressRing: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.deltsInk.opacity(0.14), lineWidth: 8)
+                .stroke(Color.white.opacity(0.11), lineWidth: 8)
             Circle()
                 .trim(from: 0, to: min(max(progress, 0), 1))
                 .stroke(
@@ -252,7 +268,7 @@ struct DeltsProgressRing: View {
             VStack(spacing: 1) {
                 Text("\(Int(progress * 100))%")
                     .font(.headline.weight(.black))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
                 Text(label)
                     .font(.system(size: 8, weight: .bold))
                     .foregroundStyle(Color.deltsMutedText)
@@ -261,112 +277,5 @@ struct DeltsProgressRing: View {
             }
         }
         .frame(width: 68, height: 68)
-    }
-}
-
-struct DoodleSparkle: View {
-    var tint: Color = .deltsGold
-
-    var body: some View {
-        Canvas { context, size in
-            var path = Path()
-            path.move(to: CGPoint(x: size.width * 0.5, y: 0))
-            path.addLine(to: CGPoint(x: size.width * 0.62, y: size.height * 0.38))
-            path.addLine(to: CGPoint(x: size.width, y: size.height * 0.5))
-            path.addLine(to: CGPoint(x: size.width * 0.62, y: size.height * 0.62))
-            path.addLine(to: CGPoint(x: size.width * 0.5, y: size.height))
-            path.addLine(to: CGPoint(x: size.width * 0.38, y: size.height * 0.62))
-            path.addLine(to: CGPoint(x: 0, y: size.height * 0.5))
-            path.addLine(to: CGPoint(x: size.width * 0.38, y: size.height * 0.38))
-            path.closeSubpath()
-
-            context.fill(path, with: .color(tint.opacity(0.75)))
-            context.stroke(path, with: .color(.deltsInk.opacity(0.7)), lineWidth: 1.3)
-        }
-    }
-}
-
-struct DoodleCoachIllustration: View {
-    var tint: Color = .deltsElectricBlue
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(tint.opacity(0.16))
-                .frame(width: 118, height: 118)
-                .overlay(Circle().stroke(Color.deltsInk.opacity(0.7), lineWidth: 1.6))
-
-            VStack(spacing: 0) {
-                Circle()
-                    .fill(Color(red: 0.96, green: 0.74, blue: 0.54))
-                    .frame(width: 42, height: 42)
-                    .overlay(Circle().stroke(Color.deltsInk, lineWidth: 1.6))
-                    .overlay(
-                        HStack(spacing: 10) {
-                            Circle().fill(Color.deltsInk).frame(width: 3, height: 3)
-                            Circle().fill(Color.deltsInk).frame(width: 3, height: 3)
-                        }
-                        .offset(y: 2)
-                    )
-
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(tint.opacity(0.75))
-                    .frame(width: 58, height: 52)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.deltsInk, lineWidth: 1.6)
-                    )
-            }
-            .offset(y: 8)
-
-            arm(rotation: -28)
-                .offset(x: -42, y: 18)
-            arm(rotation: 28)
-                .offset(x: 42, y: 18)
-
-            DoodleSparkle(tint: .deltsGold)
-                .frame(width: 18, height: 18)
-                .offset(x: 44, y: -48)
-        }
-        .accessibilityHidden(true)
-    }
-
-    private func arm(rotation: Double) -> some View {
-        RoundedRectangle(cornerRadius: 9, style: .continuous)
-            .fill(Color(red: 0.96, green: 0.74, blue: 0.54))
-            .frame(width: 16, height: 58)
-            .overlay(
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .stroke(Color.deltsInk, lineWidth: 1.4)
-            )
-            .rotationEffect(.degrees(rotation))
-    }
-}
-
-private struct DoodleBackgroundMarks: View {
-    var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                mark("sparkle", color: .deltsGold)
-                    .frame(width: 18, height: 18)
-                    .position(x: proxy.size.width * 0.12, y: 92)
-                mark("bolt.fill", color: .deltsInferno)
-                    .frame(width: 16, height: 16)
-                    .position(x: proxy.size.width * 0.84, y: 146)
-                mark("circle", color: .deltsElectricBlue)
-                    .frame(width: 13, height: 13)
-                    .position(x: proxy.size.width * 0.18, y: proxy.size.height * 0.70)
-                mark("leaf.fill", color: .deltsAcidGreen)
-                    .frame(width: 15, height: 15)
-                    .position(x: proxy.size.width * 0.86, y: proxy.size.height * 0.62)
-            }
-            .ignoresSafeArea()
-        }
-    }
-
-    private func mark(_ systemImage: String, color: Color) -> some View {
-        Image(systemName: systemImage)
-            .font(.caption.weight(.black))
-            .foregroundStyle(color.opacity(0.38))
     }
 }

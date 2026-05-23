@@ -100,36 +100,39 @@ private struct DeltsFloatingTabBar: View {
                                 .font(.caption2.weight(.bold))
                                 .lineLimit(1)
                         }
-                        .foregroundStyle(isSelected ? Color.deltsInk : Color.deltsMutedText)
+                        .foregroundStyle(isSelected ? Color.deltsElectricBlue : Color.white.opacity(0.72))
                         .frame(maxWidth: .infinity)
                         .frame(height: 58)
                         .background(
                             Group {
                                 if isSelected {
                                     RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                        .fill(Color.deltsGold.opacity(0.95))
+                                        .fill(Color.white.opacity(0.055))
                                 }
                             }
                         )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                .stroke(isSelected ? Color.deltsInk.opacity(0.72) : Color.clear, lineWidth: 1)
+                        .deltsGlassSurface(
+                            cornerRadius: 22,
+                            tint: isSelected ? Color.deltsElectricBlue.opacity(0.16) : Color.white.opacity(0.08),
+                            interactive: true,
+                            fallbackOpacity: isSelected ? 0.08 : 0
                         )
                     }
-                    .buttonStyle(.plain)
+                    .deltsGlassButton()
                 }
             }
         }
         .padding(7)
-        .background(Color.deltsCard, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+        .background(Color.black.opacity(0.28), in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+        .deltsGlassSurface(cornerRadius: 30, tint: Color.deltsPanel.opacity(0.24), fallbackOpacity: 0.03)
         .overlay(
             RoundedRectangle(cornerRadius: 30, style: .continuous)
                 .stroke(
                     LinearGradient(
                         colors: [
-                            Color.deltsInk.opacity(0.72),
-                            Color.deltsInferno.opacity(0.36),
-                            Color.deltsElectricBlue.opacity(0.36)
+                            Color.white.opacity(0.18),
+                            Color.deltsInferno.opacity(0.28),
+                            Color.deltsElectricBlue.opacity(0.16)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -137,7 +140,7 @@ private struct DeltsFloatingTabBar: View {
                     lineWidth: 1
                 )
         )
-        .shadow(color: Color.deltsInk.opacity(0.14), radius: 12, x: 0, y: 6)
+        .shadow(color: Color.black.opacity(0.45), radius: 22, x: 0, y: 10)
     }
 }
 

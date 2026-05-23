@@ -682,7 +682,35 @@ struct CompletedWorkoutDetailView: View {
 }
 
 private struct WorkoutsScreenBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
-        DeltsBackground()
+        ZStack {
+            Color(uiColor: colorScheme == .dark ? .systemBackground : .secondarySystemBackground)
+                .ignoresSafeArea()
+
+            LinearGradient(
+                colors: gradientColors,
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+        }
+    }
+
+    private var gradientColors: [Color] {
+        if colorScheme == .dark {
+            return [
+                Color.deltsElectricBlue.opacity(0.12),
+                Color.clear,
+                Color.deltsInferno.opacity(0.08)
+            ]
+        }
+
+        return [
+            Color.deltsElectricBlue.opacity(0.08),
+            Color.clear,
+            Color.deltsInferno.opacity(0.04)
+        ]
     }
 }

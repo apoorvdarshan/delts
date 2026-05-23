@@ -32,7 +32,7 @@ struct AnimatedExerciseVisual: View {
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.deltsInk.opacity(0.55), lineWidth: 1.2)
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
     }
 
@@ -49,9 +49,9 @@ struct AnimatedExerciseVisual: View {
         ZStack {
             LinearGradient(
                 colors: [
-                    Color.deltsGold.opacity(animate ? 0.80 : 0.45),
-                    Color.deltsPaperAlt,
-                    Color.deltsPink.opacity(animate ? 0.22 : 0.40)
+                    Color.deltsElectricBlue.opacity(animate ? 0.45 : 0.18),
+                    Color.deltsCard,
+                    Color.deltsInferno.opacity(animate ? 0.2 : 0.34)
                 ],
                 startPoint: animate ? .topLeading : .bottomLeading,
                 endPoint: animate ? .bottomTrailing : .topTrailing
@@ -68,10 +68,10 @@ struct AnimatedExerciseVisual: View {
                 if let equipment {
                     Text(equipment.title)
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.7))
                 }
             }
-            .foregroundStyle(.primary)
+            .foregroundStyle(.white)
         }
         .onAppear { animate = true }
     }

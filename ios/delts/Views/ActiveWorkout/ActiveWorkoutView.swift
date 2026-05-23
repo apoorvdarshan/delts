@@ -49,11 +49,11 @@ struct ActiveWorkoutView: View {
                         .textCase(.uppercase)
                     Text(viewModel.plan.title)
                         .font(.headline.weight(.bold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.white)
                         .lineLimit(2)
                     Text("Exercise \(viewModel.progressText)")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.62))
                 }
                 Spacer()
                 DeltsProgressRing(progress: progress, label: "Done", tint: .deltsElectricBlue)
@@ -70,14 +70,13 @@ struct ActiveWorkoutView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text(exercise.name)
                     .font(.title.weight(.black))
-                    .fontDesign(.rounded)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
                     .lineLimit(2)
                     .minimumScaleFactor(0.72)
 
                 Text("\(exercise.targetMuscle.title) - \(exercise.equipment.title)")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white.opacity(0.64))
 
                 HStack(spacing: 8) {
                     MetricPill(title: "Sets", value: "\(exercise.sets)", systemImage: "number")
@@ -87,7 +86,7 @@ struct ActiveWorkoutView: View {
 
                 Text(exercise.formTip)
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white.opacity(0.72))
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -98,7 +97,7 @@ struct ActiveWorkoutView: View {
             VStack(alignment: .leading, spacing: 14) {
                 Text("Sets")
                     .font(.headline.weight(.bold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
 
                 ForEach(0..<max(exercise.sets, 1), id: \.self) { setIndex in
                     HStack(spacing: 12) {
@@ -107,36 +106,30 @@ struct ActiveWorkoutView: View {
                         } label: {
                             Image(systemName: isSetComplete(setIndex) ? "checkmark.circle.fill" : "circle")
                                 .font(.title3)
-                                .foregroundStyle(isSetComplete(setIndex) ? Color.deltsElectricBlue : Color.secondary)
+                                .foregroundStyle(isSetComplete(setIndex) ? Color.deltsElectricBlue : Color.white.opacity(0.45))
                         }
                         .buttonStyle(.plain)
 
                         Text("Set \(setIndex + 1)")
                             .font(.subheadline.weight(.bold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(.white)
                             .frame(width: 58, alignment: .leading)
 
                         TextField("Weight", text: weightBinding(setIndex))
                             .keyboardType(.decimalPad)
                             .textFieldStyle(.plain)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(.white)
                             .padding(10)
-                            .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(Color.deltsInk.opacity(0.5), lineWidth: 1)
-                            )
+                            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .deltsGlassSurface(cornerRadius: 12, tint: Color.white.opacity(0.1), interactive: true)
 
                         TextField("Reps", text: repsBinding(setIndex))
                             .keyboardType(.numberPad)
                             .textFieldStyle(.plain)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(.white)
                             .padding(10)
-                            .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(Color.deltsInk.opacity(0.5), lineWidth: 1)
-                            )
+                            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .deltsGlassSurface(cornerRadius: 12, tint: Color.white.opacity(0.1), interactive: true)
                             .frame(width: 78)
                     }
                 }
@@ -155,10 +148,10 @@ struct ActiveWorkoutView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Rest timer")
                         .font(.headline.weight(.bold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.white)
                     Text("\(exercise.restSeconds) seconds placeholder")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.62))
                 }
                 Spacer()
             }
@@ -184,16 +177,13 @@ struct ActiveWorkoutView: View {
             } label: {
                 Text("Save and exit")
                     .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white.opacity(0.72))
                     .frame(maxWidth: .infinity)
                     .frame(height: 48)
-                    .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.deltsInk.opacity(0.52), lineWidth: 1)
-                    )
+                    .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .deltsGlassSurface(cornerRadius: 16, tint: Color.white.opacity(0.12), interactive: true)
             }
-            .buttonStyle(.plain)
+            .deltsGlassButton()
         }
     }
 
@@ -205,7 +195,7 @@ struct ActiveWorkoutView: View {
                     .foregroundStyle(Color.deltsInferno)
                 Text("No exercises found")
                     .font(.headline.weight(.bold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
             }
             .frame(maxWidth: .infinity)
         }
