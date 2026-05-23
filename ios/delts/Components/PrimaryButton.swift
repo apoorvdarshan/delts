@@ -11,28 +11,91 @@ struct PrimaryButton: View {
             label
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
-        .tint(Color.deltsAccent)
+        .buttonStyle(DeltsPrimaryButtonStyle(isLoading: isLoading))
         .disabled(isLoading)
-        .opacity(isLoading ? 0.72 : 1)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text(title))
+        .accessibilityValue(isLoading ? Text("In progress") : Text(""))
     }
 
     private var label: some View {
         HStack(spacing: 10) {
             if isLoading {
                 ProgressView()
-                    .tint(.white)
+                    .controlSize(.small)
+                    .tint(Color.deltsOnAccent)
             } else {
                 Image(systemName: systemImage)
+                    .font(.headline.weight(.semibold))
             }
             Text(title)
-                .font(.headline.weight(.black))
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
+                .font(.headline.weight(.semibold))
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
+                .multilineTextAlignment(.center)
         }
-        .foregroundStyle(.white)
-        .padding(.horizontal, 16)
+        .foregroundStyle(Color.deltsOnAccent)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 14)
+    }
+}
+
+private struct DeltsPrimaryButtonStyle: ButtonStyle {
+    var isLoading: Bool
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.colorScheme) private var colorScheme
+
+    func makeBody(configuration: Configuration) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 15, style: .continuous)
+        let pressed = configuration.isPressed && isEnabled && !isLoading
+
+        configuration.label
+            .frame(maxWidth: .infinity, minHeight: 52)
+            .background(
+                LinearGradient(
+                    colors: fillColors(isPressed: pressed),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                in: shape
+            )
+            .overlay(
+                shape.stroke(Color.deltsHairline.opacity(isEnabled ? 0.42 : 0.24), lineWidth: 0.5)
+            )
+            .shadow(
+                color: Color.deltsAccent.opacity(isEnabled && !isLoading ? shadowOpacity : 0),
+                radius: 10,
+                x: 0,
+                y: 5
+            )
+            .scaleEffect(pressed ? 0.985 : 1)
+            .opacity(isEnabled ? 1 : 0.68)
+            .animation(.easeOut(duration: 0.16), value: pressed)
+    }
+
+    private var shadowOpacity: Double {
+        colorScheme == .dark ? 0.16 : 0.11
+    }
+
+    private func fillColors(isPressed: Bool) -> [Color] {
+        if !isEnabled {
+            return [
+                Color.deltsAccent.opacity(0.50),
+                Color.deltsAccent.opacity(0.40)
+            ]
+        }
+
+        if isLoading {
+            return [
+                Color.deltsAccent.opacity(0.72),
+                Color.deltsAccent.opacity(0.62)
+            ]
+        }
+
+        return [
+            Color.deltsAccent.opacity(isPressed ? 0.86 : 1),
+            Color.deltsInferno.opacity(isPressed ? 0.76 : 0.92)
+        ]
     }
 }
 
@@ -52,7 +115,7 @@ struct GlassIconButton: View {
                     .background(tint.opacity(0.15), in: Circle())
                 Text(title)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
                 Spacer(minLength: 0)
@@ -61,7 +124,11 @@ struct GlassIconButton: View {
                     .foregroundStyle(.secondary)
             }
             .padding(14)
-            .background(Color.deltsCard, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
+            )
         }
         .buttonStyle(.plain)
     }

@@ -88,47 +88,54 @@ private struct ExerciseLibraryBrowserView: View {
     }
 
     var body: some View {
-        List {
-            Section {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
                 librarySummary
-                    .listRowSeparator(.hidden)
-            }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 14)
+                    .padding(.bottom, 18)
 
-            Section {
                 filters
-                    .listRowSeparator(.hidden)
-            }
+                    .padding(.bottom, 18)
 
-            if items.isEmpty {
-                Section {
+                if items.isEmpty {
                     ContentUnavailableView(
                         "No exercises match",
                         systemImage: "line.3.horizontal.decrease.circle",
                         description: Text("Reset filters or search a different body part, machine, or exercise.")
                     )
-                    .frame(maxWidth: .infinity, minHeight: 260)
-                    .listRowSeparator(.hidden)
-                }
-            } else {
-                Section {
+                    .frame(maxWidth: .infinity, minHeight: 300)
+                    .padding(.horizontal, 20)
+                } else {
+                    ResultsHeader(
+                        count: items.count,
+                        noun: "exercise",
+                        subtitle: selectedSort.title,
+                        trailingTitle: "Offline media"
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 4)
+
                     ForEach(items) { item in
                         NavigationLink {
                             ExerciseLibraryDetailView(item: item)
                         } label: {
                             ExerciseLibraryRow(item: item)
                         }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 20)
+
+                        if item.id != items.last?.id {
+                            Divider()
+                                .padding(.leading, 144)
+                                .padding(.horizontal, 20)
+                        }
                     }
-                } header: {
-                    ResultsHeader(
-                        count: items.count,
-                        subtitle: selectedSort.title,
-                        trailingTitle: "Offline media"
-                    )
                 }
             }
+            .padding(.bottom, 112)
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
+        .deltsScreen()
         .contentMargins(.bottom, 104, for: .scrollContent)
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search exercises")
         .navigationDestination(item: $generatedPlan) { plan in
@@ -137,73 +144,72 @@ private struct ExerciseLibraryBrowserView: View {
     }
 
     private var librarySummary: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Free Exercise DB")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Exercise library")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
 
-                    Text("\(service.exercises.count) offline exercises")
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                }
+                Text("\(service.exercises.count) offline exercises")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
-                Spacer(minLength: 12)
-
-                Label("Bundled", systemImage: "checkmark.seal.fill")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.deltsAcidGreen)
+                Text("\(items.count) shown")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
+
+            Spacer(minLength: 12)
 
             Button {
                 generatedPlan = service.makePlan(from: items)
             } label: {
-                Label("Build From Top \(min(items.count, 8))", systemImage: "wand.and.stars")
-                    .frame(maxWidth: .infinity)
+                Label("Build Top \(min(items.count, 8))", systemImage: "wand.and.stars")
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
             }
             .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .controlSize(.regular)
             .tint(Color.deltsAccent)
             .disabled(items.isEmpty)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 4)
     }
 
     private var filters: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("Filter")
-                    .font(.headline.weight(.semibold))
-
-                Spacer()
-
-                if hasActiveFilters {
-                    Button("Reset") {
+        VStack(alignment: .leading, spacing: 12) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    BodyPartFilterChip(
+                        title: "All",
+                        systemImage: "square.grid.2x2",
+                        isSelected: selectedMuscleGroup == nil
+                    ) {
                         withAnimation(.snappy) {
-                            resetFilters()
+                            selectedMuscleGroup = nil
                         }
                     }
-                    .font(.subheadline.weight(.semibold))
+
+                    ForEach(MuscleGroup.allCases) { group in
+                        BodyPartFilterChip(
+                            title: group.title,
+                            systemImage: group.icon,
+                            isSelected: selectedMuscleGroup == group
+                        ) {
+                            withAnimation(.snappy) {
+                                selectedMuscleGroup = group
+                            }
+                        }
+                    }
                 }
+                .padding(.horizontal, 20)
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    filterMenu(
-                        title: "Body",
-                        value: selectedMuscleGroup?.title ?? "All",
-                        systemImage: "figure.strengthtraining.traditional"
-                    ) {
-                        Button("All Body Parts") { selectedMuscleGroup = nil }
-                        ForEach(MuscleGroup.allCases) { group in
-                            Button(group.title) { selectedMuscleGroup = group }
-                        }
-                    }
-
+                HStack(spacing: 8) {
                     filterMenu(
                         title: "Level",
                         value: selectedLevel?.title ?? "All",
@@ -228,12 +234,28 @@ private struct ExerciseLibraryBrowserView: View {
 
                     filterMenu(
                         title: "Equipment",
-                        value: selectedEquipment?.title ?? "All",
+                        value: equipmentFilterTitle,
                         systemImage: "dumbbell.fill"
                     ) {
-                        Button("All Equipment") { selectedEquipment = nil }
-                        ForEach(Equipment.allCases) { equipment in
-                            Button(equipment.title) { selectedEquipment = equipment }
+                        Button("All Equipment") {
+                            selectedEquipment = nil
+                            selectedEquipmentFamily = .all
+                        }
+                        Section("Family") {
+                            ForEach(ExerciseEquipmentFamily.allCases.filter { $0 != .all }) { family in
+                                Button(family.title) {
+                                    selectedEquipment = nil
+                                    selectedEquipmentFamily = family
+                                }
+                            }
+                        }
+                        Section("Specific") {
+                            ForEach(Equipment.allCases) { equipment in
+                                Button(equipment.title) {
+                                    selectedEquipment = equipment
+                                    selectedEquipmentFamily = .all
+                                }
+                            }
                         }
                     }
 
@@ -246,27 +268,33 @@ private struct ExerciseLibraryBrowserView: View {
                             Button(sort.title) { selectedSort = sort }
                         }
                     }
-                }
-                .padding(.trailing, 20)
-            }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(ExerciseEquipmentFamily.allCases) { family in
-                        ExerciseEquipmentFamilyChip(
-                            family: family,
-                            isSelected: selectedEquipmentFamily == family
-                        ) {
+                    if hasActiveFilters {
+                        Button {
                             withAnimation(.snappy) {
-                                selectedEquipmentFamily = family
+                                resetFilters()
                             }
+                        } label: {
+                            Label("Reset", systemImage: "arrow.counterclockwise")
                         }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .tint(Color.deltsInferno)
                     }
                 }
-                .padding(.trailing, 20)
+                .padding(.horizontal, 20)
             }
         }
-        .padding(.vertical, 6)
+    }
+
+    private var equipmentFilterTitle: String {
+        if let selectedEquipment {
+            return selectedEquipment.title
+        }
+        if selectedEquipmentFamily != .all {
+            return selectedEquipmentFamily.title
+        }
+        return "All"
     }
 
     private func resetFilters() {
@@ -289,15 +317,10 @@ private struct ExerciseLibraryBrowserView: View {
             content()
         } label: {
             Label {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(title)
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.secondary)
-                    Text(value)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                }
+                Text(value == "All" ? title : "\(title): \(value)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
             } icon: {
                 Image(systemName: systemImage)
             }
@@ -312,48 +335,61 @@ private struct WorkoutHistoryListView: View {
     let workouts: [CompletedWorkout]
 
     var body: some View {
-        List {
-            if workouts.isEmpty {
-                ContentUnavailableView(
-                    "No completed workouts yet",
-                    systemImage: "list.bullet.clipboard",
-                    description: Text("Generate a plan, start it, then finish to create your first log.")
-                )
-                .frame(maxWidth: .infinity, minHeight: 360)
-                .listRowSeparator(.hidden)
-            } else {
-                Section {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                if workouts.isEmpty {
+                    ContentUnavailableView(
+                        "No completed workouts yet",
+                        systemImage: "list.bullet.clipboard",
+                        description: Text("Generate a plan, start it, then finish to create your first log.")
+                    )
+                    .frame(maxWidth: .infinity, minHeight: 360)
+                    .padding(.horizontal, 20)
+                } else {
+                    ResultsHeader(
+                        count: workouts.count,
+                        noun: "workout",
+                        subtitle: "Completed",
+                        trailingTitle: "Local logs"
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.top, 14)
+                    .padding(.bottom, 4)
+
                     ForEach(workouts) { workout in
                         NavigationLink {
                             CompletedWorkoutDetailView(workout: workout)
                         } label: {
                             CompletedWorkoutRow(workout: workout)
                         }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 20)
+
+                        if workout.id != workouts.last?.id {
+                            Divider()
+                                .padding(.leading, 88)
+                                .padding(.horizontal, 20)
+                        }
                     }
-                } header: {
-                    ResultsHeader(
-                        count: workouts.count,
-                        subtitle: "Completed",
-                        trailingTitle: "Local logs"
-                    )
                 }
             }
+            .padding(.bottom, 112)
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
+        .deltsScreen()
         .contentMargins(.bottom, 104, for: .scrollContent)
     }
 }
 
 private struct ResultsHeader: View {
     let count: Int
+    let noun: String
     let subtitle: String
     let trailingTitle: String
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("\(count) \(count == 1 ? "item" : "items")")
+                Text("\(count) \(count == 1 ? noun : "\(noun)s")")
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .textCase(nil)
@@ -374,29 +410,33 @@ private struct ResultsHeader: View {
     }
 }
 
-private struct ExerciseEquipmentFamilyChip: View {
-    let family: ExerciseEquipmentFamily
+private struct BodyPartFilterChip: View {
+    let title: String
+    let systemImage: String
     let isSelected: Bool
     let action: () -> Void
 
     var body: some View {
-        if isSelected {
-            Button(action: action) {
-                Text(family.title)
+        Button(action: action) {
+            Label {
+                Text(title)
                     .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+            } icon: {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.bold))
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
-            .tint(Color.deltsAccent)
-        } else {
-            Button(action: action) {
-                Text(family.title)
-                    .font(.subheadline.weight(.semibold))
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .tint(.secondary)
         }
+        .buttonStyle(.plain)
+        .foregroundStyle(isSelected ? Color.white : Color.primary)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(isSelected ? Color.deltsAccent : Color.clear, in: Capsule())
+        .overlay {
+            Capsule()
+                .stroke(isSelected ? Color.deltsAccent.opacity(0.75) : Color(uiColor: .separator).opacity(0.36), lineWidth: 0.75)
+        }
+        .contentShape(Capsule())
     }
 }
 
@@ -404,40 +444,54 @@ private struct ExerciseLibraryRow: View {
     let item: ExerciseLibraryItem
 
     var body: some View {
-        HStack(spacing: 14) {
-            AnimatedExerciseVisual(
-                muscleGroup: item.muscleGroup,
-                assetName: item.visualAssetName,
-                exerciseName: item.name,
-                imagePaths: item.imagePaths,
-                equipment: item.equipment,
-                height: 84,
-                fillsWidth: false
-            )
-            .frame(width: 88, height: 84)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .accessibilityHidden(true)
+        HStack(spacing: 16) {
+            thumbnail
 
-            VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: 9) {
                 Text(item.name)
-                    .font(.body.weight(.semibold))
+                    .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.84)
+                    .minimumScaleFactor(0.82)
 
-                Text("\(item.muscleGroup.title) - \(item.equipment.title)")
+                Text("\(item.muscleGroup.title) - \(item.equipment.title) - \(item.level.title)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.84)
 
-                HStack(spacing: 6) {
-                    LibraryTag(title: item.level.title, systemImage: "chart.bar.fill", tint: .deltsAccent)
+                HStack(spacing: 8) {
+                    LibraryTag(title: item.goal.title, systemImage: "target", tint: .deltsAccent)
                     LibraryTag(title: item.machineLabel, systemImage: "dumbbell.fill", tint: .deltsInferno)
+                    if item.imagePaths.count > 1 {
+                        LibraryTag(title: "\(item.imagePaths.count) media", systemImage: "photo.stack", tint: .deltsAcidGreen)
+                    }
                 }
             }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Color(uiColor: .tertiaryLabel))
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 14)
+        .contentShape(Rectangle())
+    }
+
+    private var thumbnail: some View {
+        AnimatedExerciseVisual(
+            muscleGroup: item.muscleGroup,
+            assetName: item.visualAssetName,
+            exerciseName: item.name,
+            imagePaths: item.imagePaths,
+            equipment: item.equipment,
+            height: 104,
+            fillsWidth: false
+        )
+        .frame(width: 104, height: 104)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .accessibilityHidden(true)
     }
 }
 
@@ -446,15 +500,11 @@ private struct CompletedWorkoutRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(Color.deltsAccent)
-                .frame(width: 36, height: 36)
-                .accessibilityHidden(true)
+            WorkoutHistoryGlyph(workout: workout)
 
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(workout.title)
-                    .font(.body.weight(.semibold))
+                    .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(2)
 
@@ -462,12 +512,97 @@ private struct CompletedWorkoutRow: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
-                Text("\(workout.exerciseLogs.count) exercises - \(workout.durationMinutes)m")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                historySummaryStrip
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Color(uiColor: .tertiaryLabel))
+        }
+        .padding(.vertical, 14)
+        .contentShape(Rectangle())
+    }
+
+    private var logs: [CompletedExerciseLog] {
+        workout.exerciseLogs
+    }
+
+    private var completedSets: Int {
+        logs.reduce(0) { total, exercise in
+            total + exercise.sets.filter(\.completed).count
+        }
+    }
+
+    private var totalSets: Int {
+        logs.reduce(0) { total, exercise in
+            total + exercise.sets.count
+        }
+    }
+
+    private var historySummaryStrip: some View {
+        HStack(spacing: 10) {
+            HistorySummaryItem(value: "\(logs.count)", label: logs.count == 1 ? "exercise" : "exercises", systemImage: "figure.strengthtraining.traditional")
+            HistorySummaryItem(value: "\(completedSets)/\(totalSets)", label: "sets", systemImage: "checkmark.circle")
+            HistorySummaryItem(value: "\(workout.durationMinutes)m", label: "duration", systemImage: "clock")
+        }
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.secondary)
+    }
+}
+
+private struct WorkoutHistoryGlyph: View {
+    let workout: CompletedWorkout
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.deltsAccent.opacity(0.12))
+
+            if let iconName {
+                Image(systemName: iconName)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.deltsAccent)
+            } else {
+                Text(initial)
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
             }
         }
-        .padding(.vertical, 8)
+        .frame(width: 58, height: 58)
+        .accessibilityHidden(true)
+    }
+
+    private var primaryExercise: CompletedExerciseLog? {
+        workout.exerciseLogs.first
+    }
+
+    private var iconName: String? {
+        guard let target = primaryExercise?.targetMuscle else { return nil }
+        return MuscleGroup(rawValue: target)?.icon
+    }
+
+    private var initial: String {
+        let trimmedTitle = workout.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedTitle.first.map { String($0).uppercased() } ?? "W"
+    }
+}
+
+private struct HistorySummaryItem: View {
+    let value: String
+    let label: String
+    let systemImage: String
+
+    var body: some View {
+        Label {
+            Text("\(value) \(label)")
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
+        } icon: {
+            Image(systemName: systemImage)
+        }
+        .labelStyle(.titleAndIcon)
     }
 }
 
@@ -492,66 +627,107 @@ private struct ExerciseLibraryDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                AnimatedExerciseVisual(
-                    muscleGroup: item.muscleGroup,
-                    assetName: item.visualAssetName,
-                    exerciseName: item.name,
-                    imagePaths: item.imagePaths,
-                    equipment: item.equipment,
-                    height: 260
-                )
-                .accessibilityLabel(Text("\(item.name) exercise visual"))
+            VStack(alignment: .leading, spacing: 0) {
+                detailHero
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(item.name)
-                        .font(.largeTitle.weight(.bold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(3)
-                        .minimumScaleFactor(0.7)
+                VStack(alignment: .leading, spacing: 24) {
+                    DetailMetricGrid(item: item, restText: restText)
 
-                    Text("\(item.muscleGroup.title) - \(item.equipment.title) - \(item.machineLabel)")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.deltsAccent)
+                    Divider()
 
-                    Text(item.source)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Form tip")
+                            .font(.headline.weight(.semibold))
+                        Text(item.formTip)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    VStack(spacing: 0) {
+                        DetailInfoRow(title: "Goal", value: item.goal.title, systemImage: "target")
+                        Divider()
+                        DetailInfoRow(title: "Equipment", value: "\(item.equipment.title) - \(item.machineLabel)", systemImage: "dumbbell.fill")
+                        Divider()
+                        DetailInfoRow(title: "Source", value: item.source, systemImage: "checkmark.seal")
+                    }
                 }
-
-                Divider()
-
-                DetailMetricGrid(item: item, restText: restText)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Form tip")
-                        .font(.headline.weight(.semibold))
-                    Text(item.formTip)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Button {
-                    activePlan = item.singleExercisePlan()
-                } label: {
-                    Label("Start Exercise", systemImage: "play.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .tint(Color.deltsAccent)
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
+                .padding(.bottom, 126)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 18)
-            .padding(.bottom, 122)
         }
-        .background(WorkoutsScreenBackground())
-        .navigationTitle("Exercise")
+        .deltsScreen()
+        .contentMargins(.bottom, 104, for: .scrollContent)
+        .safeAreaInset(edge: .bottom) {
+            startExerciseBar
+        }
+        .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $activePlan) { plan in
             ActiveWorkoutView(plan: plan)
         }
+    }
+
+    private var detailHero: some View {
+        AnimatedExerciseVisual(
+            muscleGroup: item.muscleGroup,
+            assetName: item.visualAssetName,
+            exerciseName: item.name,
+            imagePaths: item.imagePaths,
+            equipment: item.equipment,
+            height: 326
+        )
+        .frame(maxWidth: .infinity)
+        .overlay {
+            LinearGradient(
+                colors: [.clear, .black.opacity(0.18), .black.opacity(0.72)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+        .overlay(alignment: .bottomLeading) {
+            VStack(alignment: .leading, spacing: 8) {
+                if item.imagePaths.count > 1 {
+                    Label("\(item.imagePaths.count) media", systemImage: "photo.stack")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white.opacity(0.82))
+                }
+
+                Text(item.name)
+                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.7)
+
+                Text("\(item.muscleGroup.title) - \(item.equipment.title) - \(item.level.title)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.82))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("\(item.name) exercise visual"))
+    }
+
+    private var startExerciseBar: some View {
+        Button {
+            activePlan = item.singleExercisePlan()
+        } label: {
+            Label("Start Exercise", systemImage: "play.fill")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.large)
+        .tint(Color.deltsAccent)
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+        .background(.bar)
     }
 
     private var restText: String {
@@ -564,19 +740,22 @@ private struct DetailMetricGrid: View {
     let restText: String
 
     var body: some View {
-        Grid(alignment: .leading, horizontalSpacing: 22, verticalSpacing: 14) {
-            GridRow {
-                DetailMetric(title: "Level", value: item.level.title, systemImage: "chart.bar.fill")
-                DetailMetric(title: "Goal", value: item.goal.title, systemImage: "target")
-            }
-
-            GridRow {
+        VStack(spacing: 14) {
+            HStack(spacing: 0) {
                 DetailMetric(title: "Sets", value: "\(item.sets)", systemImage: "number")
+                Divider().frame(height: 46)
                 DetailMetric(title: "Reps", value: item.reps, systemImage: "repeat")
+                Divider().frame(height: 46)
+                DetailMetric(title: "Rest", value: restText, systemImage: "timer")
             }
 
-            GridRow {
-                DetailMetric(title: "Rest", value: restText, systemImage: "timer")
+            Divider()
+
+            HStack(spacing: 0) {
+                DetailMetric(title: "Level", value: item.level.title, systemImage: "chart.bar.fill")
+                Divider().frame(height: 46)
+                DetailMetric(title: "Body", value: item.muscleGroup.title, systemImage: item.muscleGroup.icon)
+                Divider().frame(height: 46)
                 DetailMetric(title: "Equipment", value: item.equipment.title, systemImage: "dumbbell.fill")
             }
         }
@@ -590,21 +769,52 @@ private struct DetailMetric: View {
     let systemImage: String
 
     var body: some View {
-        Label {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(value)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
-        } icon: {
+        VStack(alignment: .leading, spacing: 5) {
             Image(systemName: systemImage)
+                .font(.caption.weight(.bold))
                 .foregroundStyle(Color.deltsAccent)
+
+            Text(value)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+    }
+}
+
+private struct DetailInfoRow: View {
+    let title: String
+    let value: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.deltsAccent)
+                .frame(width: 28, height: 28)
+
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+
+            Spacer(minLength: 12)
+
+            Text(value)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.vertical, 12)
     }
 }
 
@@ -612,9 +822,48 @@ struct CompletedWorkoutDetailView: View {
     let workout: CompletedWorkout
 
     var body: some View {
-        List {
-            Section {
-                VStack(alignment: .leading, spacing: 10) {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                detailHeader
+                    .padding(.horizontal, 20)
+                    .padding(.top, 18)
+                    .padding(.bottom, 18)
+
+                ForEach(workout.exerciseLogs) { exercise in
+                    CompletedExerciseLogSection(exercise: exercise)
+
+                    if exercise.id != workout.exerciseLogs.last?.id {
+                        Divider()
+                            .padding(.horizontal, 20)
+                    }
+                }
+            }
+            .padding(.bottom, 112)
+        }
+        .deltsScreen()
+        .contentMargins(.bottom, 104, for: .scrollContent)
+        .navigationTitle("Summary")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var completedSets: Int {
+        workout.exerciseLogs.reduce(0) { total, exercise in
+            total + exercise.sets.filter(\.completed).count
+        }
+    }
+
+    private var totalSets: Int {
+        workout.exerciseLogs.reduce(0) { total, exercise in
+            total + exercise.sets.count
+        }
+    }
+
+    private var detailHeader: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 14) {
+                WorkoutHistoryGlyph(workout: workout)
+
+                VStack(alignment: .leading, spacing: 6) {
                     Text(workout.title)
                         .font(.title.weight(.bold))
                         .foregroundStyle(.primary)
@@ -624,60 +873,120 @@ struct CompletedWorkoutDetailView: View {
                     Text(workout.date.formatted(date: .complete, time: .shortened))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.deltsAccent)
-
-                    Text(workout.planSummary)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.vertical, 8)
             }
 
-            ForEach(workout.exerciseLogs) { exercise in
-                Section {
-                    ForEach(exercise.sets) { set in
-                        HStack(spacing: 12) {
-                            Image(systemName: set.completed ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(set.completed ? Color.deltsAccent : .secondary)
-                                .accessibilityHidden(true)
+            Text(workout.planSummary)
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
-                            Text("Set \(set.setNumber)")
-                                .foregroundStyle(.primary)
+            HStack(spacing: 0) {
+                WorkoutSummaryMetric(value: "\(workout.exerciseLogs.count)", title: "Exercises")
+                Divider().frame(height: 38)
+                WorkoutSummaryMetric(value: "\(completedSets)/\(totalSets)", title: "Sets")
+                Divider().frame(height: 38)
+                WorkoutSummaryMetric(value: "\(workout.durationMinutes)m", title: "Duration")
+            }
+        }
+    }
+}
 
-                            Spacer()
+private struct CompletedExerciseLogSection: View {
+    let exercise: CompletedExerciseLog
 
-                            Text(weightRepText(for: set))
-                                .foregroundStyle(.secondary)
-                        }
-                        .font(.subheadline)
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(exercise.name)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+
+                    Text("\(exercise.targetMuscle) - \(exercise.equipment)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 12)
+
+                Text("\(completedSets)/\(exercise.sets.count)")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .padding(.vertical, 5)
+                    .padding(.horizontal, 8)
+                    .background(Color.deltsAccent.opacity(0.12), in: Capsule())
+            }
+
+            VStack(spacing: 0) {
+                ForEach(exercise.sets) { set in
+                    CompletedSetLogRow(set: set)
+
+                    if set.id != exercise.sets.last?.id {
+                        Divider()
+                            .padding(.leading, 34)
                     }
-                } header: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(exercise.name)
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .textCase(nil)
-                        Text("\(exercise.targetMuscle) - \(exercise.equipment) - \(exercise.sets.filter(\.completed).count)/\(exercise.sets.count) sets")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .textCase(nil)
-                    }
-                    .padding(.top, 6)
                 }
             }
         }
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
-        .background(WorkoutsScreenBackground())
-        .contentMargins(.bottom, 104, for: .scrollContent)
-        .navigationTitle("Summary")
-        .navigationBarTitleDisplayMode(.inline)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
     }
 
-    private func weightRepText(for set: CompletedSetLog) -> String {
+    private var completedSets: Int {
+        exercise.sets.filter(\.completed).count
+    }
+}
+
+private struct CompletedSetLogRow: View {
+    let set: CompletedSetLog
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: set.completed ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(set.completed ? Color.deltsAccent : .secondary)
+                .accessibilityHidden(true)
+
+            Text("Set \(set.setNumber)")
+                .foregroundStyle(.primary)
+
+            Spacer()
+
+            Text(weightRepText)
+                .foregroundStyle(.secondary)
+        }
+        .font(.subheadline)
+        .padding(.vertical, 10)
+    }
+
+    private var weightRepText: String {
         let weight = set.weight.isEmpty ? "--" : set.weight
         let reps = set.reps.isEmpty ? "--" : set.reps
         return "\(weight) x \(reps)"
+    }
+}
+
+private struct WorkoutSummaryMetric: View {
+    let value: String
+    let title: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(value)
+                .font(.headline.weight(.bold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
     }
 }
 

@@ -18,23 +18,24 @@ struct PlanBuilderView: View {
     private let durationOptions = [30, 45, 60, 90]
 
     var body: some View {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    header
-                    coachHero
-                    generatorControls
-                    generateButton
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-                .padding(.bottom, 18)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 26) {
+                coachHero
+                generatorControls
             }
-            .deltsScreen()
-            .contentMargins(.bottom, 110, for: .scrollContent)
-            .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(item: $generatedPlan) { plan in
-                WorkoutPlanView(plan: plan)
-            }
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+            .padding(.bottom, 110)
+        }
+        .deltsScreen()
+        .navigationTitle("Plan")
+        .navigationBarTitleDisplayMode(.large)
+        .safeAreaInset(edge: .bottom) {
+            generateBar
+        }
+        .navigationDestination(item: $generatedPlan) { plan in
+            WorkoutPlanView(plan: plan)
+        }
         .onAppear {
             guard !didSyncProfile else { return }
             viewModel.syncDefaults(from: profiles.first)
@@ -42,111 +43,98 @@ struct PlanBuilderView: View {
         }
     }
 
-    private var header: some View {
-        DeltsHeader(
-            eyebrow: "Workout Planner",
-            title: "Build Your Best Session",
-            subtitle: GeminiConfig.hasAPIKey ? "Gemini AI is enabled. Local fallback stays ready." : "Offline generator active. Add a local Gemini key for AI plans.",
-            trailingSystemImage: GeminiConfig.hasAPIKey ? "sparkles" : "bolt.fill"
-        )
-    }
-
     private var coachHero: some View {
-        GlassCard(padding: 0, cornerRadius: 24) {
-            HStack(spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
+            ZStack(alignment: .bottomLeading) {
                 AnimatedExerciseVisual(
                     muscleGroup: viewModel.selectedMuscleGroup,
                     equipment: viewModel.selectedEquipment.first,
-                    height: 132,
-                    fillsWidth: false
+                    height: 232
                 )
-                .frame(width: 116, height: 132)
+                .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
 
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Today's Plan")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.deltsMutedText)
+                LinearGradient(
+                    colors: [.black.opacity(0.03), .black.opacity(0.16), .black.opacity(0.72)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(GeminiConfig.hasAPIKey ? "AI planner ready" : "Offline planner")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white.opacity(0.76))
+                        .textCase(.uppercase)
                     Text("\(viewModel.selectedMuscleGroup.title) Day")
-                        .font(.title.weight(.bold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
+                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.76)
                     Text("\(viewModel.selectedDuration) min - \(viewModel.selectedGoal.title)")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    HStack(spacing: 10) {
-                        smallStat("Level", viewModel.selectedExperience.title, .deltsAccent)
-                        smallStat("Gear", "\(viewModel.selectedEquipment.count)", .deltsInferno)
-                    }
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.78))
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(18)
             }
-            .padding(16)
+
+            HStack(spacing: 0) {
+                PlanInlineMetric(title: "Level", value: viewModel.selectedExperience.title)
+                Divider().frame(height: 42)
+                PlanInlineMetric(title: "Gear", value: "\(viewModel.selectedEquipment.count)")
+                Divider().frame(height: 42)
+                PlanInlineMetric(title: "Mode", value: GeminiConfig.hasAPIKey ? "AI" : "Local")
+            }
         }
     }
 
     private var generatorControls: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            GlassCard {
-                VStack(alignment: .leading, spacing: 14) {
-                    label("Muscle group")
-                    MuscleGroupPicker(selection: $viewModel.selectedMuscleGroup)
-                }
+        VStack(alignment: .leading, spacing: 0) {
+            planControl("Muscle group") {
+                MuscleGroupPicker(selection: $viewModel.selectedMuscleGroup)
             }
 
-            GlassCard {
-                VStack(alignment: .leading, spacing: 14) {
-                    label("Goal")
-                    Picker("Goal", selection: $viewModel.selectedGoal) {
-                        ForEach(FitnessGoal.planCases) { goal in
-                            Text(goal.title).tag(goal)
-                        }
+            Divider()
+
+            planControl("Goal") {
+                Picker("Goal", selection: $viewModel.selectedGoal) {
+                    ForEach(FitnessGoal.planCases) { goal in
+                        Text(goal.title).tag(goal)
                     }
-                    .pickerStyle(.segmented)
                 }
+                .pickerStyle(.segmented)
             }
 
-            GlassCard {
-                VStack(alignment: .leading, spacing: 14) {
-                    label("Experience")
-                    Picker("Experience", selection: $viewModel.selectedExperience) {
-                        ForEach(ExperienceLevel.allCases) { level in
-                            Text(level.title).tag(level)
-                        }
+            Divider()
+
+            planControl("Experience") {
+                Picker("Experience", selection: $viewModel.selectedExperience) {
+                    ForEach(ExperienceLevel.allCases) { level in
+                        Text(level.title).tag(level)
                     }
-                    .pickerStyle(.segmented)
                 }
+                .pickerStyle(.segmented)
             }
 
-            GlassCard {
-                VStack(alignment: .leading, spacing: 14) {
-                    label("Duration")
-                    Picker("Duration", selection: $viewModel.selectedDuration) {
-                        ForEach(durationOptions, id: \.self) { duration in
-                            Text("\(duration) min").tag(duration)
-                        }
+            Divider()
+
+            planControl("Duration") {
+                Picker("Duration", selection: $viewModel.selectedDuration) {
+                    ForEach(durationOptions, id: \.self) { duration in
+                        Text("\(duration)").tag(duration)
                     }
-                    .pickerStyle(.segmented)
                 }
+                .pickerStyle(.segmented)
             }
 
-            GlassCard {
-                VStack(alignment: .leading, spacing: 14) {
-                    HStack {
-                        label("Equipment available")
-                        Spacer()
-                        Text("\(viewModel.selectedEquipment.count) selected")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.secondary)
-                    }
-                    EquipmentGrid(selection: $viewModel.selectedEquipment)
-                }
+            Divider()
+
+            planControl("Equipment", detail: "\(viewModel.selectedEquipment.count) selected") {
+                EquipmentGrid(selection: $viewModel.selectedEquipment)
             }
         }
     }
 
-    private var generateButton: some View {
+    private var generateBar: some View {
         VStack(spacing: 10) {
             PrimaryButton(
                 title: "Generate Workout",
@@ -165,28 +153,55 @@ struct PlanBuilderView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+        .background(.bar)
     }
 
-    private func label(_ text: String) -> some View {
-        Text(text)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .textCase(.uppercase)
-    }
-
-    private func smallStat(_ title: String, _ value: String, _ tint: Color) -> some View {
+    private func planControl<Content: View>(
+        _ title: String,
+        detail: String? = nil,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(Color.deltsMutedText)
+            HStack(alignment: .firstTextBaseline) {
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Spacer()
+                if let detail {
+                    Text(detail)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.bottom, 10)
+
+            content()
+        }
+        .padding(.vertical, 18)
+    }
+}
+
+private struct PlanInlineMetric: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
             Text(value)
-                .font(.caption.weight(.bold))
+                .font(.headline.weight(.bold))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 10)
-        .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
     }
 }
 
@@ -205,73 +220,82 @@ struct WorkoutPlanView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                GlassCard(padding: 0, cornerRadius: 24) {
-                    VStack(alignment: .leading, spacing: 16) {
-                        AnimatedExerciseVisual(
-                            muscleGroup: plan.muscleGroup,
-                            height: 180
-                        )
-                        HStack(alignment: .top) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(plan.generatedByAI ? "AI generated" : "Offline generated")
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(plan.generatedByAI ? Color.deltsAccent : Color.deltsInferno)
-                                    .textCase(.uppercase)
-                                Text(plan.title)
-                                    .font(.largeTitle.weight(.bold))
-                                    .foregroundStyle(.primary)
-                                    .lineLimit(2)
-                                    .minimumScaleFactor(0.72)
-                            }
-                            Spacer()
-                            Image(systemName: plan.generatedByAI ? "sparkles" : "bolt.fill")
-                                .font(.title2)
-                                .foregroundStyle(plan.generatedByAI ? Color.deltsAccent : Color.deltsInferno)
-                        }
-                        .padding(.horizontal, 18)
+            VStack(alignment: .leading, spacing: 22) {
+                planHero
 
-                        Text(plan.summary)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.horizontal, 18)
-
-                        HStack(spacing: 8) {
-                            MetricPill(title: "Exercises", value: "\(exercises.count)", systemImage: "list.number")
-                            MetricPill(title: "Duration", value: "\(plan.durationMinutes)m", systemImage: "clock", tint: .deltsInferno)
-                        }
-                        .padding(.horizontal, 18)
-
-                        PrimaryButton(title: "Start Workout", systemImage: "play.fill") {
-                            startRoute = ExerciseStartRoute(index: 0)
-                        }
-                        .padding(.horizontal, 18)
-                        .padding(.bottom, 18)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 14) {
-                    Text("Exercises")
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.primary)
-
+                VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
                         ExerciseCard(exercise: exercise) {
                             startRoute = ExerciseStartRoute(index: index)
+                        }
+                        if exercise.id != exercises.last?.id {
+                            Divider()
+                                .padding(.leading, 118)
                         }
                     }
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 18)
+            .padding(.top, 12)
+            .padding(.bottom, 112)
         }
         .deltsScreen()
-        .contentMargins(.bottom, 110, for: .scrollContent)
-        .toolbar(.hidden, for: .navigationBar)
+        .navigationTitle("Workout")
+        .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            PrimaryButton(title: "Start Workout", systemImage: "play.fill") {
+                startRoute = ExerciseStartRoute(index: 0)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
+            .padding(.bottom, 6)
+            .background(.bar)
+        }
         .navigationDestination(item: $startRoute) { route in
             ActiveWorkoutView(plan: plan, startIndex: route.index)
+        }
+    }
+
+    private var planHero: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            ZStack(alignment: .topLeading) {
+                AnimatedExerciseVisual(
+                    muscleGroup: plan.muscleGroup,
+                    height: 236
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+
+                Label(plan.generatedByAI ? "AI generated" : "Offline generated", systemImage: plan.generatedByAI ? "sparkles" : "bolt.fill")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white)
+                    .padding(.vertical, 7)
+                    .padding(.horizontal, 10)
+                    .background(.black.opacity(0.50), in: Capsule())
+                    .padding(14)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(plan.title)
+                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.72)
+
+                Text(plan.summary)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack(spacing: 0) {
+                PlanInlineMetric(title: "Exercises", value: "\(exercises.count)")
+                Divider().frame(height: 42)
+                PlanInlineMetric(title: "Duration", value: "\(plan.durationMinutes)m")
+                Divider().frame(height: 42)
+                PlanInlineMetric(title: "Goal", value: plan.goal.title)
+            }
+
+            Divider()
         }
     }
 }

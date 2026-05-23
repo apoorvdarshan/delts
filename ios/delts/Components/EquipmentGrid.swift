@@ -3,52 +3,146 @@ import SwiftUI
 struct EquipmentGrid: View {
     var equipment: [Equipment] = Equipment.allCases
     @Binding var selection: Set<Equipment>
+    @State private var feedbackTrigger = false
 
-    private let columns = [
-        GridItem(.adaptive(minimum: 150), spacing: 10)
-    ]
+    private var sections: [EquipmentSection] {
+        EquipmentSection.all.compactMap { section in
+            let availableItems = section.items.filter { equipment.contains($0) }
+            guard !availableItems.isEmpty else { return nil }
+            return EquipmentSection(title: section.title, items: availableItems)
+        }
+    }
 
     var body: some View {
-        LazyVGrid(columns: columns, spacing: 12) {
-            ForEach(equipment) { item in
-                let isSelected = selection.contains(item)
-                Button {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
-                        if isSelected {
-                            selection.remove(item)
-                        } else {
-                            selection.insert(item)
+        VStack(alignment: .leading, spacing: 18) {
+            ForEach(sections) { section in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(section.title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                        .padding(.horizontal, 2)
+
+                    VStack(spacing: 0) {
+                        ForEach(section.items.indices, id: \.self) { index in
+                            let item = section.items[index]
+                            EquipmentChecklistRow(
+                                item: item,
+                                isSelected: selection.contains(item)
+                            ) {
+                                toggle(item)
+                            }
+
+                            if index < section.items.count - 1 {
+                                Divider()
+                                    .padding(.leading, 58)
+                            }
                         }
                     }
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: item.icon)
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(isSelected ? Color.white : Color.deltsAccent)
-                            .frame(width: 30, height: 30)
-                            .background(isSelected ? Color.deltsAccent : Color.deltsAccent.opacity(0.12), in: Circle())
-
-                        Text(item.title)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.82)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color(uiColor: .separator).opacity(0.18), lineWidth: 0.5)
                     }
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 4)
-                    .frame(minHeight: 54)
-                    .background(
-                        isSelected ? Color.deltsAccent.opacity(0.14) : Color.clear,
-                        in: Capsule()
-                    )
-                    .overlay(
-                        Capsule()
-                            .stroke(isSelected ? Color.deltsAccent.opacity(0.6) : Color(uiColor: .separator).opacity(0.22), lineWidth: 0.5)
-                    )
                 }
-                .buttonStyle(.plain)
             }
+        }
+        .sensoryFeedback(.selection, trigger: feedbackTrigger)
+    }
+
+    private func toggle(_ item: Equipment) {
+        withAnimation(.snappy(duration: 0.18)) {
+            if selection.contains(item) {
+                selection.remove(item)
+            } else {
+                selection.insert(item)
+            }
+        }
+        feedbackTrigger.toggle()
+    }
+}
+
+private struct EquipmentSection: Identifiable {
+    let title: String
+    let items: [Equipment]
+
+    var id: String { title }
+
+    static let all: [EquipmentSection] = [
+        EquipmentSection(
+            title: "Free Weights",
+            items: [.dumbbells, .barbell, .bench]
+        ),
+        EquipmentSection(
+            title: "Machines",
+            items: [
+                .cableMachine,
+                .smithMachine,
+                .chestPress,
+                .shoulderPress,
+                .latPulldown,
+                .rowMachine,
+                .legPress,
+                .legExtension,
+                .legCurl
+            ]
+        ),
+        EquipmentSection(
+            title: "Bodyweight & Cardio",
+            items: [.pullUpBar, .treadmill, .bodyweight]
+        )
+    ]
+}
+
+private struct EquipmentChecklistRow: View {
+    let item: Equipment
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: item.icon)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(isSelected ? Color.deltsAccent : Color.secondary)
+                    .frame(width: 34, height: 34)
+                    .background(Color(uiColor: .tertiarySystemFill), in: Circle())
+                    .accessibilityHidden(true)
+
+                Text(item.title)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.88)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Image(systemName: "checkmark")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .frame(width: 24, height: 24)
+                    .opacity(isSelected ? 1 : 0)
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, 14)
+            .frame(minHeight: 54)
+            .background(isSelected ? Color.deltsAccent.opacity(0.08) : Color.clear)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(item.title)
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .accessibilityHint(isSelected ? "Double tap to remove from available equipment." : "Double tap to add to available equipment.")
+        .equipmentSelectedTrait(isSelected)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func equipmentSelectedTrait(_ isSelected: Bool) -> some View {
+        if isSelected {
+            accessibilityAddTraits(.isSelected)
+        } else {
+            self
         }
     }
 }

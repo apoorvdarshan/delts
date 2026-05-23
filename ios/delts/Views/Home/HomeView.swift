@@ -11,7 +11,6 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
-                    header
                     todayWorkout
                     glanceStats
                     quickActions
@@ -24,60 +23,67 @@ struct HomeView: View {
             }
             .deltsScreen()
             .contentMargins(.bottom, 110, for: .scrollContent)
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationTitle("Today")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Text("delts")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                    } label: {
+                        Image(systemName: "bell")
+                    }
+                    .tint(Color.deltsAccent)
+                    .accessibilityLabel("Notifications")
+                }
+            }
         }
     }
 
-    private var header: some View {
-        DeltsHeader(
-            eyebrow: "delts",
-            title: "Hey, \(displayName)",
-            subtitle: "Ready to crush your goals today?",
-            trailingSystemImage: "bell"
-        )
-    }
-
     private var todayWorkout: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        ZStack(alignment: .bottomLeading) {
             AnimatedExerciseVisual(muscleGroup: recommendedMuscle, height: 228)
                 .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                .overlay(alignment: .bottomLeading) {
+                .overlay {
                     LinearGradient(
-                        colors: [.clear, .black.opacity(0.55)],
+                        colors: [.black.opacity(0.05), .black.opacity(0.15), .black.opacity(0.78)],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
                 }
 
-            HStack(alignment: .bottom, spacing: 16) {
+            VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Today's Focus")
+                    Text("Ready, \(displayName)")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.74))
                     Text(recommendedTitle)
-                        .font(.title.weight(.bold))
-                        .foregroundStyle(.primary)
+                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                        .foregroundStyle(.white)
                         .lineLimit(2)
-                        .minimumScaleFactor(0.78)
+                        .minimumScaleFactor(0.76)
                     Text("\(recommendedExerciseCount) exercises - \(profile?.workoutDurationMinutes ?? 60) min")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.78))
                 }
-
-                Spacer(minLength: 12)
 
                 NavigationLink {
                     PlanBuilderView()
                 } label: {
-                    Label("Start", systemImage: "play.fill")
+                    Label("Start Workout", systemImage: "play.fill")
                         .font(.headline.weight(.bold))
-                        .labelStyle(.titleAndIcon)
+                        .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .tint(Color.deltsAccent)
             }
+            .padding(18)
         }
     }
 
@@ -85,34 +91,12 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 12) {
             DeltsSectionHeader(title: "At a Glance")
 
-            HStack(spacing: 0) {
-                DeltsMetricTile(
-                    title: "Goal",
-                    value: profile?.mainGoal.shortTitle ?? "Muscle",
-                    systemImage: "flame.fill",
-                    tint: .deltsInferno
-                )
-                DeltsMetricTile(
-                    title: "Weekly",
-                    value: "\(profile?.workoutFrequencyPerWeek ?? 4)x",
-                    systemImage: "calendar",
-                    tint: .deltsAcidGreen
-                )
-                DeltsMetricTile(
-                    title: "History",
-                    value: "\(completedWorkouts.count)",
-                    systemImage: "checkmark.seal.fill",
-                    tint: .deltsAccent
-                )
-            }
-            .overlay(alignment: .center) {
-                HStack(spacing: 0) {
-                    Spacer()
-                    Divider().frame(height: 52)
-                    Spacer()
-                    Divider().frame(height: 52)
-                    Spacer()
-                }
+            HStack(alignment: .top, spacing: 0) {
+                HomeInlineStat(title: "Goal", value: profile?.mainGoal.shortTitle ?? "Muscle")
+                Divider().frame(height: 44)
+                HomeInlineStat(title: "Weekly", value: "\(profile?.workoutFrequencyPerWeek ?? 4)x")
+                Divider().frame(height: 44)
+                HomeInlineStat(title: "History", value: "\(completedWorkouts.count)")
             }
         }
     }
@@ -121,25 +105,25 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 12) {
             DeltsSectionHeader(title: "Quick Actions")
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 10) {
+            HStack(spacing: 10) {
                 NavigationLink {
                     PlanBuilderView()
                 } label: {
-                    DeltsActionTile(title: "Build Plan", systemImage: "sparkles", tint: .deltsAccent)
+                    HomeActionButton(title: "Build", systemImage: "sparkles", tint: .deltsAccent)
                 }
                 .buttonStyle(.plain)
 
                 NavigationLink {
                     EquipmentScanComingSoonView()
                 } label: {
-                    DeltsActionTile(title: "Scan", systemImage: "camera.viewfinder", tint: .deltsInferno)
+                    HomeActionButton(title: "Scan", systemImage: "camera.viewfinder", tint: .deltsInferno)
                 }
                 .buttonStyle(.plain)
 
                 NavigationLink {
                     EquipmentManualSelectionView()
                 } label: {
-                    DeltsActionTile(title: "Gear", systemImage: "dumbbell.fill", tint: .deltsAcidGreen)
+                    HomeActionButton(title: "Gear", systemImage: "dumbbell.fill", tint: .deltsAcidGreen)
                 }
                 .buttonStyle(.plain)
 
@@ -147,11 +131,11 @@ struct HomeView: View {
                     NavigationLink {
                         CompletedWorkoutDetailView(workout: latest)
                     } label: {
-                        DeltsActionTile(title: "History", systemImage: "clock.arrow.circlepath", tint: .deltsGold)
+                        HomeActionButton(title: "History", systemImage: "clock.arrow.circlepath", tint: .deltsGold)
                     }
                     .buttonStyle(.plain)
                 } else {
-                    DeltsActionTile(title: "History", systemImage: "clock.arrow.circlepath", tint: .secondary)
+                    HomeActionButton(title: "History", systemImage: "clock.arrow.circlepath", tint: .secondary)
                         .opacity(0.58)
                 }
             }
@@ -177,10 +161,12 @@ struct HomeView: View {
 
             Divider()
 
-            HStack(spacing: 18) {
-                MetricPill(title: "Split", value: profile?.workoutSplit.title ?? "PPL", systemImage: "calendar")
-                MetricPill(title: "Duration", value: "\(profile?.workoutDurationMinutes ?? 60)m", systemImage: "timer", tint: .deltsInferno)
+            VStack(spacing: 10) {
+                LabeledContent("Split", value: profile?.workoutSplit.title ?? "PPL")
+                Divider()
+                LabeledContent("Duration", value: "\(profile?.workoutDurationMinutes ?? 60)m")
             }
+            .font(.subheadline.weight(.semibold))
         }
         .padding(.vertical, 4)
     }
@@ -197,12 +183,6 @@ struct HomeView: View {
                             CompletedWorkoutDetailView(workout: workout)
                         } label: {
                             HStack(spacing: 12) {
-                                Image(systemName: "flame.fill")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundStyle(Color.deltsInferno)
-                                    .frame(width: 36, height: 36)
-                                    .background(Color.deltsInferno.opacity(0.14), in: Circle())
-
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(workout.title)
                                         .font(.subheadline.weight(.bold))
@@ -217,6 +197,9 @@ struct HomeView: View {
                                 Text(workout.date.formatted(date: .abbreviated, time: .omitted))
                                     .font(.caption.weight(.bold))
                                     .foregroundStyle(Color.deltsMutedText)
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.tertiary)
                             }
                             .padding(.vertical, 10)
                         }
@@ -272,6 +255,49 @@ struct HomeView: View {
         return "\(profile?.mainGoal.title ?? "Muscle Gain") with emphasis on \(focus)."
     }
 
+}
+
+private struct HomeInlineStat: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(value)
+                .font(.title2.weight(.bold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 2)
+        .padding(.horizontal, 12)
+    }
+}
+
+private struct HomeActionButton: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.system(size: 21, weight: .semibold))
+                .foregroundStyle(tint)
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 66)
+        .contentShape(Rectangle())
+    }
 }
 
 private extension FitnessGoal {

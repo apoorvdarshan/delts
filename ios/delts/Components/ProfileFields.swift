@@ -6,15 +6,20 @@ struct ProfileTextField: View {
     var axis: Axis = .horizontal
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-            TextField(title, text: $text, axis: axis)
-                .textFieldStyle(.plain)
-                .foregroundStyle(.primary)
-                .padding(12)
-                .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        if axis == .vertical {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(title)
+                TextField(title, text: $text, axis: axis)
+                    .textFieldStyle(.plain)
+            }
+        } else {
+            LabeledContent {
+                TextField(title, text: $text, axis: axis)
+                    .multilineTextAlignment(.trailing)
+                    .textFieldStyle(.plain)
+            } label: {
+                Text(title)
+            }
         }
     }
 }
@@ -31,21 +36,19 @@ struct ProfileNumberField: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-            HStack {
+        LabeledContent {
+            HStack(spacing: 4) {
                 TextField(title, value: $value, format: .number.precision(.fractionLength(1)))
                     .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
                     .textFieldStyle(.plain)
-                    .foregroundStyle(.primary)
+
                 Text(suffix)
-                    .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            .padding(12)
-            .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        } label: {
+            Text(title)
         }
     }
 }
@@ -58,68 +61,61 @@ struct IntStepperField: View {
 
     var body: some View {
         Stepper(value: $value, in: range) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.caption.weight(.semibold))
+            LabeledContent {
+                Text(displayValue)
                     .foregroundStyle(.secondary)
-                Text(suffix.isEmpty ? "\(value)" : "\(value) \(suffix)")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+            } label: {
+                Text(title)
             }
         }
-        .tint(Color.deltsAccent)
-        .padding(12)
-        .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var displayValue: String {
+        suffix.isEmpty ? "\(value)" : "\(value) \(suffix)"
     }
 }
 
-struct MultiSelectChipGrid<Option: Identifiable & Hashable>: View {
+struct MultiSelectChecklist<Option: Identifiable & Hashable>: View {
     let options: [Option]
     @Binding var selection: Set<Option>
     let title: (Option) -> String
     let icon: (Option) -> String
 
-    private let columns = [
-        GridItem(.adaptive(minimum: 155), spacing: 10)
-    ]
-
     var body: some View {
-        LazyVGrid(columns: columns, spacing: 10) {
-            ForEach(options) { option in
-                let isSelected = selection.contains(option)
-                Button {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
-                        if isSelected {
-                            selection.remove(option)
-                        } else {
-                            selection.insert(option)
-                        }
+        ForEach(options) { option in
+            let isSelected = selection.contains(option)
+
+            Button {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    if isSelected {
+                        selection.remove(option)
+                    } else {
+                        selection.insert(option)
                     }
-                } label: {
-                    HStack(spacing: 9) {
-                        Image(systemName: icon(option))
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(isSelected ? Color.white : Color.deltsAccent)
-                        Text(title(option))
-                            .font(.footnote.weight(.semibold))
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.82)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .foregroundStyle(isSelected ? .white : .primary)
-                    .padding(.vertical, 11)
-                    .padding(.horizontal, 12)
-                    .background(
-                        isSelected ? Color.deltsAccent : Color.clear,
-                        in: Capsule()
-                    )
-                    .overlay(
-                        Capsule()
-                            .stroke(isSelected ? Color.deltsAccent.opacity(0.8) : Color(uiColor: .separator).opacity(0.28), lineWidth: 0.5)
-                    )
                 }
-                .buttonStyle(.plain)
+            } label: {
+                HStack(spacing: 12) {
+                    Label {
+                        Text(title(option))
+                            .foregroundStyle(.primary)
+                    } icon: {
+                        Image(systemName: icon(option))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer(minLength: 12)
+
+                    if isSelected {
+                        Image(systemName: "checkmark")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(Color.deltsAccent)
+                    }
+                }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityValue(isSelected ? "Selected" : "Not selected")
+            .accessibilityHint(isSelected ? "Double tap to remove." : "Double tap to select.")
         }
     }
 }

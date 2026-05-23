@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 import UIKit
 
@@ -14,8 +13,8 @@ struct AnimatedExerciseVisual: View {
 
     var body: some View {
         ZStack {
-            if !resolvedImageURLs.isEmpty {
-                ExerciseImageSequenceView(urls: resolvedImageURLs)
+            if let imageURL = resolvedImageURLs.first {
+                ExerciseImageView(url: imageURL)
             } else {
                 fallbackVisual
             }
@@ -82,11 +81,8 @@ struct AnimatedExerciseVisual: View {
     }
 }
 
-private struct ExerciseImageSequenceView: View {
-    let urls: [URL]
-    @State private var selectedIndex = 0
-
-    private let timer = Timer.publish(every: 1.15, on: .main, in: .common).autoconnect()
+private struct ExerciseImageView: View {
+    let url: URL
 
     var body: some View {
         ZStack {
@@ -99,29 +95,14 @@ private struct ExerciseImageSequenceView: View {
             if let image = currentImage {
                 Image(uiImage: image)
                     .resizable()
-                    .scaledToFit()
-                    .transition(.opacity)
-                    .id(selectedIndex)
-                    .padding(4)
-            }
-        }
-        .onReceive(timer) { _ in
-            guard urls.count > 1 else {
-                return
-            }
-
-            withAnimation(.easeInOut(duration: 0.28)) {
-                selectedIndex = (selectedIndex + 1) % urls.count
+                    .scaledToFill()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
             }
         }
     }
 
     private var currentImage: UIImage? {
-        guard !urls.isEmpty else {
-            return nil
-        }
-
-        let safeIndex = min(selectedIndex, urls.count - 1)
-        return UIImage(contentsOfFile: urls[safeIndex].path)
+        UIImage(contentsOfFile: url.path)
     }
 }

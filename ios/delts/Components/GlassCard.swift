@@ -15,13 +15,35 @@ struct GlassCard<Content: View>: View {
         content
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .overlay(alignment: .bottom) {
-                if padding > 0 {
-                    Rectangle()
-                        .fill(Color(uiColor: .separator).opacity(0.28))
-                        .frame(height: 0.5)
+            .background {
+                if padding == 0 {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(Color.deltsPanel.opacity(0.16))
                 }
             }
+            .overlay {
+                if padding == 0 {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(Color.deltsHairline.opacity(0.40), lineWidth: 0.5)
+                }
+            }
+            .overlay(alignment: .top) {
+                if padding > 0 {
+                    separator.opacity(0.46)
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if padding > 0 {
+                    separator
+                }
+            }
+    }
+
+    private var separator: some View {
+        Rectangle()
+            .fill(Color.deltsHairline.opacity(0.42))
+            .frame(height: 0.5)
+            .padding(.horizontal, padding > 8 ? 2 : 0)
     }
 }
 
@@ -42,10 +64,10 @@ struct MetricPill: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.deltsMutedText)
                 Text(value)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
