@@ -19,7 +19,7 @@ struct EquipmentManualSelectionView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 22) {
                 scannerShell
 
                 if let profile = profiles.first {
@@ -29,10 +29,13 @@ struct EquipmentManualSelectionView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 18)
+            .padding(.top, 8)
+            .padding(.bottom, 24)
+            .frame(maxWidth: 680, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .deltsScreen()
+        .tint(Color.deltsAccent)
         .navigationTitle("Equipment")
         .navigationBarTitleDisplayMode(.large)
         .contentMargins(.bottom, 110, for: .scrollContent)
@@ -48,14 +51,14 @@ struct EquipmentManualSelectionView: View {
     private var scannerShell: some View {
         EquipmentScannerShell(
             title: "Scan Equipment",
-            subtitle: "Photo scan or manual check-in",
+            subtitle: "Rack photo or manual check-in",
             selectedCount: selectedEquipmentCount,
             statusText: scannerStatusText
         ) {
             PhotosPicker(selection: $selectedPhoto, matching: .images) {
                 EquipmentScannerControlLabel(
                     title: "Photo",
-                    systemImage: "photo.on.rectangle",
+                    systemImage: "camera.viewfinder",
                     isProminent: true
                 )
             }
@@ -75,18 +78,11 @@ struct EquipmentManualSelectionView: View {
     }
 
     private func equipmentSection(for profile: UserProfile) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Available Equipment")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Spacer()
-
-                Text("\(profile.availableEquipment.count) selected")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
+        VStack(alignment: .leading, spacing: 14) {
+            DeltsSectionHeader(
+                title: "Available Equipment",
+                detail: "\(profile.availableEquipment.count) selected"
+            )
 
             EquipmentGrid(selection: equipmentBinding(for: profile))
         }
@@ -98,20 +94,21 @@ struct EquipmentManualSelectionView: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(Color.deltsAccent)
                 .frame(width: 34, height: 34)
-                .background(Color.deltsAccent.opacity(0.12), in: Circle())
+                .background(Color.deltsAccent.opacity(0.13), in: Circle())
 
             Text("Profile is being created. Reopen this tab in a moment.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Color.deltsMutedText)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(Color.deltsPanel.opacity(0.28), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color(uiColor: .separator).opacity(0.18), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.42), lineWidth: 0.5)
         }
+        .accessibilityElement(children: .combine)
     }
 
     private func equipmentBinding(for profile: UserProfile) -> Binding<Set<Equipment>> {
@@ -154,10 +151,13 @@ struct EquipmentScanComingSoonView: View {
                 scannerShell
             }
             .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 18)
+            .padding(.top, 8)
+            .padding(.bottom, 24)
+            .frame(maxWidth: 680, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .deltsScreen()
+        .tint(Color.deltsAccent)
         .navigationTitle("Scan Equipment")
         .navigationBarTitleDisplayMode(.inline)
         .contentMargins(.bottom, 110, for: .scrollContent)
@@ -169,14 +169,14 @@ struct EquipmentScanComingSoonView: View {
     private var scannerShell: some View {
         EquipmentScannerShell(
             title: "Equipment Scanner",
-            subtitle: "Photo scan or manual check-in",
+            subtitle: "Rack photo or manual check-in",
             selectedCount: nil,
             statusText: statusText
         ) {
             PhotosPicker(selection: $selectedPhoto, matching: .images) {
                 EquipmentScannerControlLabel(
                     title: "Photo",
-                    systemImage: "photo.on.rectangle",
+                    systemImage: "camera.viewfinder",
                     isProminent: true
                 )
             }
@@ -216,6 +216,8 @@ struct EquipmentScanComingSoonView: View {
 }
 
 private struct EquipmentScannerShell<PrimaryControl: View, SecondaryControl: View>: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let title: String
     let subtitle: String
     let selectedCount: Int?
@@ -246,21 +248,21 @@ private struct EquipmentScannerShell<PrimaryControl: View, SecondaryControl: Vie
                 .fill(scannerBackground)
 
             EquipmentScannerCornerBrackets()
-                .stroke(Color.primary.opacity(0.28), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
-                .padding(4)
+                .stroke(Color.deltsHairline.opacity(0.48), style: StrokeStyle(lineWidth: 2.25, lineCap: .round, lineJoin: .round))
+                .padding(6)
 
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 5) {
                         Text(title)
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(.primary)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(Color.deltsCharcoal)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.85)
+                            .minimumScaleFactor(0.82)
 
                         Text(subtitle)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.deltsMutedText)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                     }
@@ -268,8 +270,14 @@ private struct EquipmentScannerShell<PrimaryControl: View, SecondaryControl: Vie
                     Spacer(minLength: 12)
 
                     Image(systemName: "camera.viewfinder")
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(Color.deltsAccent)
+                        .frame(width: 42, height: 42)
+                        .background(Color.deltsAccent.opacity(0.12), in: Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
+                        }
                         .accessibilityHidden(true)
                 }
 
@@ -280,15 +288,25 @@ private struct EquipmentScannerShell<PrimaryControl: View, SecondaryControl: Vie
 
                 Spacer(minLength: 16)
 
-                Image(systemName: "viewfinder")
-                    .font(.system(size: 54, weight: .thin))
-                    .foregroundStyle(Color.primary.opacity(0.16))
-                    .frame(maxWidth: .infinity)
-                    .accessibilityHidden(true)
+                ZStack {
+                    Circle()
+                        .stroke(Color.deltsHairline.opacity(0.26), lineWidth: 1)
+                        .frame(width: 112, height: 112)
+
+                    Circle()
+                        .fill(Color.deltsSecondaryAccent.opacity(0.08))
+                        .frame(width: 82, height: 82)
+
+                    Image(systemName: "viewfinder")
+                        .font(.system(size: 52, weight: .thin))
+                        .foregroundStyle(Color.deltsCharcoal.opacity(0.18))
+                        .accessibilityHidden(true)
+                }
+                .frame(maxWidth: .infinity)
 
                 Spacer(minLength: 76)
             }
-            .padding(18)
+            .padding(20)
 
             VStack {
                 Spacer()
@@ -297,13 +315,14 @@ private struct EquipmentScannerShell<PrimaryControl: View, SecondaryControl: Vie
                     primaryControl
                     secondaryControl
                 }
-                .padding(8)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .padding(7)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 23, style: .continuous))
+                .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 23, style: .continuous))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .stroke(Color(uiColor: .separator).opacity(0.22), lineWidth: 0.5)
+                    RoundedRectangle(cornerRadius: 23, style: .continuous)
+                        .stroke(Color.deltsHairline.opacity(0.42), lineWidth: 0.5)
                 }
-                .padding(12)
+                .padding(13)
             }
         }
         .frame(maxWidth: .infinity)
@@ -312,16 +331,18 @@ private struct EquipmentScannerShell<PrimaryControl: View, SecondaryControl: Vie
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(Color(uiColor: .separator).opacity(0.18), lineWidth: 0.5)
+                .stroke(Color.deltsHairline.opacity(0.45), lineWidth: 0.5)
         }
+        .shadow(color: Color.deltsHairline.opacity(colorScheme == .dark ? 0.18 : 0.16), radius: 18, x: 0, y: 12)
     }
 
     private var scannerBackground: LinearGradient {
         LinearGradient(
             colors: [
-                Color(uiColor: .secondarySystemGroupedBackground),
-                Color(uiColor: .tertiarySystemGroupedBackground),
-                Color.deltsAccent.opacity(0.10)
+                Color.deltsCard.opacity(colorScheme == .dark ? 0.86 : 0.70),
+                Color.deltsPanel.opacity(colorScheme == .dark ? 0.54 : 0.42),
+                Color.deltsSecondaryAccent.opacity(0.10),
+                Color.deltsAccent.opacity(0.07)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -334,28 +355,66 @@ private struct EquipmentScannerStatusPill: View {
     let statusText: String
 
     var body: some View {
-        HStack(spacing: 7) {
-            Circle()
-                .fill(Color.deltsAccent)
-                .frame(width: 7, height: 7)
+        HStack(spacing: 8) {
+            Image(systemName: statusImage)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(statusTint)
 
-            Text(label)
+            if let selectedCount {
+                Text("\(selectedCount) selected")
+                    .foregroundStyle(Color.deltsCharcoal)
+
+                Capsule()
+                    .fill(Color.deltsHairline.opacity(0.48))
+                    .frame(width: 1, height: 12)
+            }
+
+            Text(statusText)
+                .foregroundStyle(Color.deltsMutedText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.78)
         }
         .font(.caption.weight(.semibold))
-        .foregroundStyle(.primary)
-        .padding(.horizontal, 11)
+        .padding(.horizontal, 12)
         .padding(.vertical, 7)
         .background(.regularMaterial, in: Capsule())
+        .background(Color.deltsCard.opacity(0.26), in: Capsule())
+        .overlay {
+            Capsule()
+                .stroke(Color.deltsHairline.opacity(0.36), lineWidth: 0.5)
+        }
         .accessibilityLabel(label)
     }
 
     private var label: String {
         if let selectedCount {
-            return "\(selectedCount) selected - \(statusText)"
+            return "\(selectedCount) selected, \(statusText)"
         }
         return statusText
+    }
+
+    private var statusImage: String {
+        switch statusText {
+        case "Scan complete":
+            return "checkmark.circle.fill"
+        case "Reading photo":
+            return "camera.metering.center.weighted"
+        case "Manual mode":
+            return "checklist"
+        default:
+            return "circle.fill"
+        }
+    }
+
+    private var statusTint: Color {
+        switch statusText {
+        case "Scan complete", "Manual mode":
+            return Color.deltsSecondaryAccent
+        case "Reading photo":
+            return Color.deltsAccent
+        default:
+            return Color.deltsMutedText
+        }
     }
 }
 
@@ -374,12 +433,24 @@ private struct EquipmentScannerControlLabel: View {
                 .minimumScaleFactor(0.86)
         }
         .font(.subheadline.weight(.semibold))
-        .foregroundStyle(isProminent ? Color.white : Color.primary)
+        .foregroundStyle(isProminent ? Color.deltsOnAccent : Color.deltsCharcoal)
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
+        .padding(.vertical, 11)
         .padding(.horizontal, 12)
-        .background(isProminent ? Color.deltsAccent : Color(uiColor: .tertiarySystemFill), in: Capsule())
+        .background(backgroundColor, in: Capsule())
+        .overlay {
+            Capsule()
+                .stroke(borderColor, lineWidth: 0.5)
+        }
         .contentShape(Capsule())
+    }
+
+    private var backgroundColor: Color {
+        isProminent ? Color.deltsAccent : Color.deltsSecondaryAccent.opacity(0.14)
+    }
+
+    private var borderColor: Color {
+        isProminent ? Color.deltsAccent.opacity(0.35) : Color.deltsHairline.opacity(0.42)
     }
 }
 

@@ -1,3 +1,4 @@
+import Foundation
 import SwiftData
 import SwiftUI
 
@@ -11,15 +12,7 @@ struct ProfileView: View {
                 if let profile = profiles.first {
                     ProfileEditorView(profile: profile)
                 } else {
-                    Form {
-                        Section {
-                            HStack(spacing: 12) {
-                                ProgressView()
-                                Text("Creating your default profile...")
-                            }
-                        }
-                    }
-                    .formStyle(.grouped)
+                    ProfileLoadingView()
                 }
             }
             .navigationTitle("Profile")
@@ -38,143 +31,210 @@ private struct ProfileEditorView: View {
     private let durationOptions = [30, 45, 60, 90]
 
     var body: some View {
-        Form {
-            identitySection
-            goalSection
-            bodyFocusSection
-            scheduleSection
-            equipmentSection
-            strengthSection
-            issuesSection
+        ScrollView {
+            VStack(alignment: .leading, spacing: 26) {
+                ProfileHero(profile: profile)
+                identitySection
+                goalSection
+                bodyFocusSection
+                scheduleSection
+                equipmentSection
+                strengthSection
+                issuesSection
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 14)
+            .padding(.bottom, 18)
         }
-        .formStyle(.grouped)
+        .deltsScreen()
         .contentMargins(.bottom, 110, for: .scrollContent)
         .scrollDismissesKeyboard(.interactively)
         .tint(Color.deltsAccent)
     }
 
     private var identitySection: some View {
-        Section {
-            ProfileTextField(title: "Name", text: nameBinding)
-
-            Picker("Gender", selection: genderBinding) {
-                ForEach(genderOptions, id: \.self) { gender in
-                    Text(gender).tag(gender)
-                }
+        ProfileSection(
+            title: "Body Profile",
+            subtitle: "Saved locally and used to shape plans and equipment recommendations.",
+            systemImage: "person.text.rectangle"
+        ) {
+            ProfileRowStack {
+                ProfileTextInputRow(title: "Name", systemImage: "person.crop.circle", text: nameBinding)
+                ProfileDivider()
+                ProfileMenuPicker(
+                    title: "Gender",
+                    systemImage: "person.2",
+                    selection: genderBinding,
+                    options: genderOptions,
+                    label: { $0 }
+                )
+                ProfileDivider()
+                ProfileStepperRow(title: "Age", systemImage: "calendar", value: ageBinding, range: 13...90)
+                ProfileDivider()
+                ProfileNumberInputRow(title: "Height", systemImage: "ruler", suffix: "cm", value: heightBinding)
+                ProfileDivider()
+                ProfileNumberInputRow(title: "Weight", systemImage: "scalemass", suffix: "kg", value: weightBinding)
+                ProfileDivider()
+                ProfileNumberInputRow(title: "Current body fat", systemImage: "percent", suffix: "%", value: currentBodyFatBinding)
+                ProfileDivider()
+                ProfileNumberInputRow(title: "Desired body fat", systemImage: "scope", suffix: "%", value: desiredBodyFatBinding)
             }
-            .pickerStyle(.menu)
-
-            IntStepperField(title: "Age", value: ageBinding, range: 13...90)
-            ProfileNumberField(title: "Height", suffix: "cm", value: heightBinding)
-            ProfileNumberField(title: "Weight", suffix: "kg", value: weightBinding)
-            ProfileNumberField(title: "Current body fat", suffix: "%", value: currentBodyFatBinding)
-            ProfileNumberField(title: "Desired body fat", suffix: "%", value: desiredBodyFatBinding)
-        } header: {
-            Text("Body Profile")
-        } footer: {
-            Text("Saved locally with SwiftData and used to shape plans and equipment recommendations.")
         }
     }
 
     private var goalSection: some View {
-        Section {
-            Picker("Experience", selection: experienceBinding) {
-                ForEach(ExperienceLevel.allCases) { level in
-                    Text(level.title).tag(level)
-                }
+        ProfileSection(
+            title: "Goals",
+            subtitle: "Set the training bias before plans are generated.",
+            systemImage: "scope"
+        ) {
+            ProfileRowStack {
+                ProfileSegmentedPicker(
+                    title: "Experience",
+                    systemImage: "chart.line.uptrend.xyaxis",
+                    selection: experienceBinding,
+                    options: ExperienceLevel.allCases,
+                    label: { $0.title }
+                )
+                ProfileDivider()
+                ProfileMenuPicker(
+                    title: "Main goal",
+                    systemImage: "flag.checkered",
+                    selection: mainGoalBinding,
+                    options: FitnessGoal.profileCases,
+                    label: { $0.title }
+                )
+                ProfileDivider()
+                ProfileTextAreaRow(title: "Extra goals", systemImage: "text.alignleft", text: extraGoalsBinding)
             }
-            .pickerStyle(.segmented)
-
-            Picker("Main goal", selection: mainGoalBinding) {
-                ForEach(FitnessGoal.profileCases) { goal in
-                    Text(goal.title).tag(goal)
-                }
-            }
-            .pickerStyle(.menu)
-
-            ProfileTextField(title: "Extra goals", text: extraGoalsBinding, axis: .vertical)
-                .lineLimit(3...6)
-        } header: {
-            Text("Goals")
         }
     }
 
     private var bodyFocusSection: some View {
-        Section {
-            MultiSelectChecklist(
+        ProfileSection(
+            title: "Body Parts To Build",
+            subtitle: "Choose the areas your workouts should emphasize.",
+            systemImage: "figure.strengthtraining.functional",
+            badge: "\(profile.selectedBodyFocus.count)"
+        ) {
+            ProfileChecklistGrid(
                 options: BodyFocus.allCases,
                 selection: bodyFocusBinding,
                 title: { $0.title },
                 icon: { $0.icon }
             )
-        } header: {
-            Text("Body Parts To Build")
         }
     }
 
     private var scheduleSection: some View {
-        Section {
-            IntStepperField(
-                title: "Workout frequency",
-                value: frequencyBinding,
-                range: 1...7,
-                suffix: "days/week"
-            )
-
-            Picker("Workout split", selection: splitBinding) {
-                ForEach(WorkoutSplit.allCases) { split in
-                    Text(split.title).tag(split)
-                }
+        ProfileSection(
+            title: "Schedule",
+            subtitle: "Tune how training fits into the week.",
+            systemImage: "calendar.badge.clock"
+        ) {
+            ProfileRowStack {
+                ProfileStepperRow(
+                    title: "Workout frequency",
+                    systemImage: "calendar",
+                    value: frequencyBinding,
+                    range: 1...7,
+                    suffix: "days/week"
+                )
+                ProfileDivider()
+                ProfileMenuPicker(
+                    title: "Workout split",
+                    systemImage: "square.split.2x2",
+                    selection: splitBinding,
+                    options: WorkoutSplit.allCases,
+                    label: { $0.title }
+                )
+                ProfileDivider()
+                ProfileSegmentedPicker(
+                    title: "Workout duration",
+                    systemImage: "timer",
+                    selection: durationBinding,
+                    options: durationOptions,
+                    label: { "\($0) min" }
+                )
             }
-            .pickerStyle(.menu)
-
-            Picker("Workout duration", selection: durationBinding) {
-                ForEach(durationOptions, id: \.self) { duration in
-                    Text("\(duration) min").tag(duration)
-                }
-            }
-            .pickerStyle(.segmented)
-        } header: {
-            Text("Schedule")
         }
     }
 
     private var equipmentSection: some View {
-        Section {
-            LabeledContent("Selected", value: "\(profile.availableEquipment.count)")
+        ProfileSection(
+            title: "Equipment",
+            subtitle: "Keep available gear current for better exercise picks.",
+            systemImage: "dumbbell.fill",
+            badge: "\(profile.availableEquipment.count)"
+        ) {
+            VStack(alignment: .leading, spacing: 14) {
+                ProfileCountSummaryRow(
+                    title: "Selected",
+                    systemImage: "checklist",
+                    value: "\(profile.availableEquipment.count)"
+                )
 
-            MultiSelectChecklist(
-                options: Equipment.allCases,
-                selection: equipmentBinding,
-                title: { $0.title },
-                icon: { $0.icon }
-            )
-        } header: {
-            Text("Equipment")
+                ProfileChecklistGrid(
+                    options: Equipment.allCases,
+                    selection: equipmentBinding,
+                    title: { $0.title },
+                    icon: { $0.icon }
+                )
+            }
         }
     }
 
     private var strengthSection: some View {
-        Section {
-            ProfileNumberField(title: "Bench Press", suffix: "kg", value: benchBinding)
-            ProfileNumberField(title: "Squat", suffix: "kg", value: squatBinding)
-            ProfileNumberField(title: "Deadlift", suffix: "kg", value: deadliftBinding)
-            ProfileNumberField(title: "Overhead Press", suffix: "kg", value: overheadPressBinding)
-        } header: {
-            Text("1RM Numbers")
+        ProfileSection(
+            title: "1RM Numbers",
+            subtitle: "Optional strength anchors for load guidance.",
+            systemImage: "scalemass.fill"
+        ) {
+            ProfileRowStack {
+                ProfileNumberInputRow(
+                    title: "Bench Press",
+                    systemImage: "figure.strengthtraining.traditional",
+                    suffix: "kg",
+                    value: benchBinding
+                )
+                ProfileDivider()
+                ProfileNumberInputRow(
+                    title: "Squat",
+                    systemImage: "figure.strengthtraining.functional",
+                    suffix: "kg",
+                    value: squatBinding
+                )
+                ProfileDivider()
+                ProfileNumberInputRow(
+                    title: "Deadlift",
+                    systemImage: "figure.core.training",
+                    suffix: "kg",
+                    value: deadliftBinding
+                )
+                ProfileDivider()
+                ProfileNumberInputRow(
+                    title: "Overhead Press",
+                    systemImage: "arrow.up.circle",
+                    suffix: "kg",
+                    value: overheadPressBinding
+                )
+            }
         }
     }
 
     private var issuesSection: some View {
-        Section {
-            MultiSelectChecklist(
+        ProfileSection(
+            title: "Friction Points",
+            subtitle: "Flag what usually gets in the way.",
+            systemImage: "exclamationmark.triangle.fill",
+            badge: "\(profile.fitnessIssues.count)"
+        ) {
+            ProfileChecklistGrid(
                 options: FitnessIssue.allCases,
                 selection: issuesBinding,
                 title: { $0.title },
                 icon: { $0.icon }
             )
-        } header: {
-            Text("Friction Points")
         }
     }
 
@@ -324,6 +384,590 @@ private struct ProfileEditorView: View {
         } set: { newValue in
             profile[keyPath: keyPath] = newValue
             profile.updatedAt = Date()
+        }
+    }
+}
+
+private struct ProfileLoadingView: View {
+    var body: some View {
+        ScrollView {
+            HStack(alignment: .center, spacing: 14) {
+                ProgressView()
+                    .tint(Color.deltsAccent)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Creating your default profile")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.deltsCharcoal)
+
+                    Text("This only takes a moment.")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.deltsMutedText)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 18)
+        }
+        .deltsScreen()
+        .contentMargins(.bottom, 110, for: .scrollContent)
+    }
+}
+
+private struct ProfileHero: View {
+    let profile: UserProfile
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private var displayName: String {
+        let trimmedName = profile.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedName.isEmpty ? "Athlete" : trimmedName
+    }
+
+    private var metricColumns: [GridItem] {
+        [
+            GridItem(
+                .adaptive(minimum: dynamicTypeSize.isAccessibilitySize ? 240 : 118),
+                spacing: 12,
+                alignment: .top
+            )
+        ]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .top, spacing: 14) {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.system(size: 42, weight: .semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(Color.deltsAccent)
+                    .frame(width: 58, height: 58)
+                    .background(Color.deltsAccent.opacity(0.12), in: Circle())
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(displayName)
+                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.78)
+
+                    Text("\(profile.experienceLevel.title) - \(profile.mainGoal.title)")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 8)
+
+                if !dynamicTypeSize.isAccessibilitySize {
+                    Label("Local", systemImage: "lock.fill")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.deltsSecondaryAccent)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.deltsSecondaryAccent.opacity(0.12), in: Capsule())
+                }
+            }
+
+            LazyVGrid(columns: metricColumns, alignment: .leading, spacing: 12) {
+                ProfileHeroMetric(title: "Weekly", value: "\(profile.workoutFrequencyPerWeek)x", systemImage: "calendar")
+                ProfileHeroMetric(title: "Duration", value: "\(profile.workoutDurationMinutes) min", systemImage: "timer")
+                ProfileHeroMetric(title: "Gear", value: "\(profile.availableEquipment.count)", systemImage: "dumbbell.fill")
+                ProfileHeroMetric(title: "Focus", value: "\(profile.selectedBodyFocus.count)", systemImage: "scope")
+            }
+        }
+        .padding(.bottom, 2)
+    }
+}
+
+private struct ProfileHeroMetric: View {
+    let title: String
+    let value: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.deltsAccent)
+                .frame(width: 28, height: 28)
+                .background(Color.deltsAccent.opacity(0.10), in: Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(1)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct ProfileSection<Content: View>: View {
+    let title: String
+    let subtitle: String?
+    let systemImage: String
+    let badge: String?
+    let content: Content
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        systemImage: String,
+        badge: String? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.systemImage = systemImage
+        self.badge = badge
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Rectangle()
+                .fill(Color.deltsHairline.opacity(0.42))
+                .frame(height: 0.5)
+
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 16, weight: .semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(Color.deltsAccent)
+                    .frame(width: 34, height: 34)
+                    .background(Color.deltsAccent.opacity(0.11), in: Circle())
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(.subheadline)
+                            .foregroundStyle(Color.deltsMutedText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                Spacer(minLength: 10)
+
+                if let badge {
+                    Text(badge)
+                        .font(.caption.weight(.bold))
+                        .monospacedDigit()
+                        .foregroundStyle(Color.deltsAccent)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.deltsAccent.opacity(0.11), in: Capsule())
+                }
+            }
+
+            content
+        }
+    }
+}
+
+private struct ProfileRowStack<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            content
+        }
+    }
+}
+
+private struct ProfileDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(Color.deltsHairline.opacity(0.28))
+            .frame(height: 0.5)
+            .padding(.leading, 48)
+    }
+}
+
+private struct ProfileFieldLabel: View {
+    let title: String
+    let systemImage: String
+    var tint: Color = .deltsSecondaryAccent
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 11) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(tint)
+                .frame(width: 34, height: 34)
+                .background(tint.opacity(0.11), in: Circle())
+
+            Text(title)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+private struct ProfileFieldRow<Content: View>: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+    let content: Content
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    init(
+        title: String,
+        systemImage: String,
+        tint: Color = .deltsSecondaryAccent,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.systemImage = systemImage
+        self.tint = tint
+        self.content = content()
+    }
+
+    var body: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 10) {
+                ProfileFieldLabel(title: title, systemImage: systemImage, tint: tint)
+                content
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        } else {
+            HStack(alignment: .center, spacing: 12) {
+                ProfileFieldLabel(title: title, systemImage: systemImage, tint: tint)
+                    .layoutPriority(1)
+
+                Spacer(minLength: 12)
+
+                content
+                    .layoutPriority(2)
+            }
+            .padding(.vertical, 11)
+            .contentShape(Rectangle())
+        }
+    }
+}
+
+private struct ProfileControlBlock<Content: View>: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+    let content: Content
+
+    init(
+        title: String,
+        systemImage: String,
+        tint: Color = .deltsSecondaryAccent,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.systemImage = systemImage
+        self.tint = tint
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ProfileFieldLabel(title: title, systemImage: systemImage, tint: tint)
+
+            content
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 12)
+    }
+}
+
+private struct ProfileTextInputRow: View {
+    let title: String
+    let systemImage: String
+    @Binding var text: String
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            TextField(title, text: $text)
+                .textFieldStyle(.plain)
+                .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+                .foregroundStyle(Color.deltsCharcoal)
+                .frame(minWidth: dynamicTypeSize.isAccessibilitySize ? 0 : 120)
+                .textInputAutocapitalization(.words)
+        }
+    }
+}
+
+private struct ProfileTextAreaRow: View {
+    let title: String
+    let systemImage: String
+    @Binding var text: String
+
+    var body: some View {
+        ProfileControlBlock(title: title, systemImage: systemImage) {
+            TextField(title, text: $text, axis: .vertical)
+                .lineLimit(3...6)
+                .textFieldStyle(.plain)
+                .foregroundStyle(Color.deltsCharcoal)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 11)
+                .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
+                }
+        }
+    }
+}
+
+private struct ProfileNumberInputRow: View {
+    let title: String
+    let systemImage: String
+    let suffix: String
+    @Binding var value: Double
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                TextField(title, value: $value, format: .number.precision(.fractionLength(1)))
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+                    .textFieldStyle(.plain)
+                    .font(.body.monospacedDigit())
+                    .foregroundStyle(Color.deltsCharcoal)
+
+                Text(suffix)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+            }
+            .frame(width: dynamicTypeSize.isAccessibilitySize ? nil : 128, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+        }
+    }
+}
+
+private struct ProfileStepperRow: View {
+    let title: String
+    let systemImage: String
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+    var suffix: String = ""
+
+    private var displayValue: String {
+        suffix.isEmpty ? "\(value)" : "\(value) \(suffix)"
+    }
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            HStack(spacing: 12) {
+                Text(displayValue)
+                    .font(.body.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+
+                Stepper(title, value: $value, in: range)
+                    .labelsHidden()
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(title)
+            .accessibilityValue(displayValue)
+        }
+    }
+}
+
+private struct ProfileMenuPicker<Option: Hashable>: View {
+    let title: String
+    let systemImage: String
+    @Binding var selection: Option
+    let options: [Option]
+    let label: (Option) -> String
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            Picker(selection: $selection) {
+                ForEach(options, id: \.self) { option in
+                    Text(label(option)).tag(option)
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Text(label(selection))
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.trailing)
+
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.deltsMutedText)
+                }
+            }
+            .pickerStyle(.menu)
+        }
+    }
+}
+
+private struct ProfileSegmentedPicker<Option: Hashable>: View {
+    let title: String
+    let systemImage: String
+    @Binding var selection: Option
+    let options: [Option]
+    let label: (Option) -> String
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        ProfileControlBlock(title: title, systemImage: systemImage) {
+            if dynamicTypeSize.isAccessibilitySize {
+                Picker(selection: $selection) {
+                    ForEach(options, id: \.self) { option in
+                        Text(label(option)).tag(option)
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(label(selection))
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(Color.deltsCharcoal)
+
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(Color.deltsMutedText)
+                    }
+                }
+                .pickerStyle(.menu)
+            } else {
+                Picker(title, selection: $selection) {
+                    ForEach(options, id: \.self) { option in
+                        Text(label(option)).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+        }
+    }
+}
+
+private struct ProfileCountSummaryRow: View {
+    let title: String
+    let systemImage: String
+    let value: String
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            ProfileFieldLabel(title: title, systemImage: systemImage)
+
+            Spacer(minLength: 12)
+
+            Text(value)
+                .font(.headline.monospacedDigit().weight(.bold))
+                .foregroundStyle(Color.deltsAccent)
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+private struct ProfileChecklistGrid<Option: Identifiable & Hashable>: View {
+    let options: [Option]
+    @Binding var selection: Set<Option>
+    let title: (Option) -> String
+    let icon: (Option) -> String
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private var columns: [GridItem] {
+        [
+            GridItem(
+                .adaptive(minimum: dynamicTypeSize.isAccessibilitySize ? 260 : 150),
+                spacing: 10,
+                alignment: .top
+            )
+        ]
+    }
+
+    var body: some View {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: 10) {
+            ForEach(options) { option in
+                let isSelected = selection.contains(option)
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.16)) {
+                        var updatedSelection = selection
+                        if isSelected {
+                            updatedSelection.remove(option)
+                        } else {
+                            updatedSelection.insert(option)
+                        }
+                        selection = updatedSelection
+                    }
+                } label: {
+                    ProfileChecklistChip(
+                        title: title(option),
+                        systemImage: icon(option),
+                        isSelected: isSelected
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityValue(isSelected ? "Selected" : "Not selected")
+                .accessibilityHint(isSelected ? "Double tap to remove." : "Double tap to select.")
+            }
+        }
+    }
+}
+
+private struct ProfileChecklistChip: View {
+    let title: String
+    let systemImage: String
+    let isSelected: Bool
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 9) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsSecondaryAccent)
+                .frame(width: 28, height: 28)
+                .background(
+                    (isSelected ? Color.deltsAccent : Color.deltsSecondaryAccent).opacity(0.11),
+                    in: Circle()
+                )
+
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                .minimumScaleFactor(0.86)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsHairline)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
+        .background(
+            (isSelected ? Color.deltsAccent.opacity(0.11) : Color.deltsPanel.opacity(0.14)),
+            in: Capsule()
+        )
+        .overlay {
+            Capsule()
+                .stroke(
+                    isSelected ? Color.deltsAccent.opacity(0.38) : Color.deltsHairline.opacity(0.22),
+                    lineWidth: 0.75
+                )
         }
     }
 }

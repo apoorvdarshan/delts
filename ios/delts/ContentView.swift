@@ -70,7 +70,7 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .home: return "house.fill"
-        case .plan: return "sparkles"
+        case .plan: return "figure.strengthtraining.traditional"
         case .equipment: return "dumbbell.fill"
         case .workouts: return "list.clipboard.fill"
         case .profile: return "person.crop.circle.fill"

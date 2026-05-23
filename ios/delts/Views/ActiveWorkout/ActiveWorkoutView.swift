@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 private enum ActiveWorkoutLogField: Hashable {
     case weight(exerciseIndex: Int, setIndex: Int)
@@ -9,6 +10,7 @@ private enum ActiveWorkoutLogField: Hashable {
 struct ActiveWorkoutView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @StateObject private var viewModel: ActiveWorkoutViewModel
     @FocusState private var focusedField: ActiveWorkoutLogField?
 
@@ -32,7 +34,7 @@ struct ActiveWorkoutView: View {
             .padding(.bottom, 24)
         }
         .deltsScreen()
-        .contentMargins(.bottom, 106, for: .scrollContent)
+        .contentMargins(.bottom, dynamicTypeSize.isAccessibilitySize ? 148 : 106, for: .scrollContent)
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Active Workout")
         .navigationBarTitleDisplayMode(.inline)
@@ -48,8 +50,10 @@ struct ActiveWorkoutView: View {
         .toolbar {
             if viewModel.currentExercise != nil {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save & Exit") {
+                    Button {
                         finishWorkout()
+                    } label: {
+                        Label("Save & Exit", systemImage: "tray.and.arrow.down.fill")
                     }
                     .tint(Color.deltsAccent)
                 }
@@ -66,87 +70,18 @@ struct ActiveWorkoutView: View {
     }
 
     private func exerciseSection(_ exercise: WorkoutExercise) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            ZStack(alignment: .bottomLeading) {
-                AnimatedExerciseVisual(
-                    muscleGroup: exercise.targetMuscle,
-                    exerciseName: exercise.name,
-                    equipment: exercise.equipment,
-                    height: 252
-                )
-
-                LinearGradient(
-                    colors: [
-                        .black.opacity(0.00),
-                        .black.opacity(0.16),
-                        .black.opacity(0.74)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 8) {
-                        Text(currentPositionText)
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.white)
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 10)
-                            .background(.black.opacity(0.52), in: Capsule())
-
-                        Spacer(minLength: 8)
-
-                        Text(viewModel.plan.title)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.white.opacity(0.86))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.75)
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 10)
-                            .background(.black.opacity(0.38), in: Capsule())
-                    }
-
-                    Text(exercise.name)
-                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.66)
-
-                    Text("\(exercise.targetMuscle.title) - \(exercise.equipment.title)")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.86))
-                }
-                .padding(16)
-            }
-
-            VStack(alignment: .leading, spacing: 13) {
-                HStack(spacing: 0) {
-                    exerciseMetric(title: "Sets", value: "\(exercise.sets)", systemImage: "number")
-                    metricDivider
-                    exerciseMetric(title: "Reps", value: exercise.reps, systemImage: "repeat", tint: .deltsInferno)
-                    metricDivider
-                    exerciseMetric(title: "Rest", value: exercise.restDisplay, systemImage: "timer", tint: .deltsSecondaryAccent)
-                }
-
-                ProgressView(value: positionProgress)
-                    .tint(Color.deltsAccent)
-                    .accessibilityLabel(currentPositionText)
-
-                Text(exercise.formTip)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+        VStack(alignment: .leading, spacing: 18) {
+            exerciseHero(exercise)
+            exerciseDetails(exercise)
         }
     }
 
     private func setLogger(for exercise: WorkoutExercise) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Set Logger")
+                Text("Working Sets")
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.deltsCharcoal)
 
                 Spacer()
 
@@ -156,112 +91,62 @@ struct ActiveWorkoutView: View {
             }
 
             VStack(spacing: 0) {
-                setLoggerHeader
-
                 ForEach(0..<max(exercise.sets, 1), id: \.self) { setIndex in
-                    Divider()
-                        .padding(.leading, 12)
+                    if setIndex > 0 {
+                        Divider()
+                            .overlay(Color.deltsHairline.opacity(0.38))
+                            .padding(.leading, dynamicTypeSize.isAccessibilitySize ? 0 : 58)
+                    }
 
                     setLoggerRow(setIndex)
                 }
             }
-            .background(Color.deltsCard.opacity(0.58), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color(uiColor: .separator).opacity(0.22), lineWidth: 0.5)
+            .overlay(alignment: .top) {
+                stripSeparator.opacity(0.72)
+            }
+            .overlay(alignment: .bottom) {
+                stripSeparator.opacity(0.72)
             }
         }
-    }
-
-    private var setLoggerHeader: some View {
-        HStack(spacing: 10) {
-            Text("Set")
-                .frame(width: 44, alignment: .leading)
-            Text("Weight")
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Text("Reps")
-                .frame(width: 74, alignment: .leading)
-            Image(systemName: "checkmark.circle")
-                .opacity(0)
-                .frame(width: 42)
-        }
-        .font(.caption.weight(.bold))
-        .foregroundStyle(Color.deltsMutedText)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 9)
     }
 
     private func setLoggerRow(_ setIndex: Int) -> some View {
-        HStack(spacing: 10) {
-            Text("\(setIndex + 1)")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
-                .frame(width: 44, alignment: .leading)
-
-            TextField("0", text: weightBinding(setIndex))
-                .keyboardType(.decimalPad)
-                .textFieldStyle(.plain)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
-                .padding(.horizontal, 10)
-                .frame(height: 38)
-                .background(Color.deltsPanel.opacity(0.72), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .focused(
-                    $focusedField,
-                    equals: .weight(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex)
-                )
-
-            TextField("0", text: repsBinding(setIndex))
-                .keyboardType(.numberPad)
-                .textFieldStyle(.plain)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
-                .padding(.horizontal, 10)
-                .frame(width: 74, height: 38)
-                .background(Color.deltsPanel.opacity(0.72), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .focused(
-                    $focusedField,
-                    equals: .reps(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex)
-                )
-
-            Button {
-                viewModel.toggleSet(setIndex)
-            } label: {
-                Image(systemName: isSetComplete(setIndex) ? "checkmark.circle.fill" : "circle")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(isSetComplete(setIndex) ? Color.deltsAccent : Color.secondary)
-                    .frame(width: 42, height: 38)
-                    .contentShape(Rectangle())
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                stackedSetLoggerRow(setIndex)
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    standardSetLoggerRow(setIndex)
+                        .frame(minWidth: 310)
+                    stackedSetLoggerRow(setIndex)
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(isSetComplete(setIndex) ? "Mark set \(setIndex + 1) incomplete" : "Mark set \(setIndex + 1) complete")
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .background(isSetComplete(setIndex) ? Color.deltsSecondaryAccent.opacity(0.08) : Color.clear)
     }
 
     private func restStrip(_ exercise: WorkoutExercise) -> some View {
         HStack(spacing: 12) {
             Image(systemName: "timer")
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.deltsInferno)
+                .foregroundStyle(Color.deltsSecondaryAccent)
                 .frame(width: 32, height: 32)
-                .background(Color.deltsInferno.opacity(0.13), in: Circle())
+                .background(Color.deltsSecondaryAccent.opacity(0.14), in: Circle())
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Rest")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.deltsCharcoal)
                 Text("Between sets")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.deltsMutedText)
             }
 
             Spacer()
 
             Text(exercise.restDisplay)
                 .font(.title3.weight(.bold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.deltsCharcoal)
                 .monospacedDigit()
         }
         .padding(.vertical, 12)
@@ -281,13 +166,305 @@ struct ActiveWorkoutView: View {
                 finishWorkout()
             }
         } else {
-            PrimaryButton(title: "Next Exercise", systemImage: "arrow.right") {
+            PrimaryButton(title: "Next Exercise", systemImage: "arrow.right.circle.fill") {
                 focusedField = nil
                 withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
                     viewModel.nextExercise()
                 }
             }
         }
+    }
+
+    private func exerciseHero(_ exercise: WorkoutExercise) -> some View {
+        ZStack(alignment: .bottomLeading) {
+            AnimatedExerciseVisual(
+                muscleGroup: exercise.targetMuscle,
+                exerciseName: exercise.name,
+                equipment: exercise.equipment,
+                height: dynamicTypeSize.isAccessibilitySize ? 308 : 254
+            )
+
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(0.00),
+                    Color.black.opacity(0.18),
+                    Color.black.opacity(0.78)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 12) {
+                heroPills
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(exercise.name)
+                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.62)
+
+                    exerciseMeta(exercise)
+                }
+            }
+            .padding(16)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(currentPositionText), \(exercise.name), \(exercise.targetMuscle.title), \(exercise.equipment.title)")
+    }
+
+    private var heroPills: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                statusPill(title: currentPositionText, systemImage: "figure.strengthtraining.traditional")
+
+                Spacer(minLength: 8)
+
+                statusPill(title: viewModel.plan.title, systemImage: "list.bullet")
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                statusPill(title: currentPositionText, systemImage: "figure.strengthtraining.traditional")
+                statusPill(title: viewModel.plan.title, systemImage: "list.bullet")
+            }
+        }
+    }
+
+    private func statusPill(title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.caption.weight(.bold))
+            .foregroundStyle(.white.opacity(0.92))
+            .lineLimit(1)
+            .minimumScaleFactor(0.78)
+            .padding(.vertical, 7)
+            .padding(.horizontal, 10)
+            .background(Color.black.opacity(0.48), in: Capsule())
+    }
+
+    @ViewBuilder
+    private func exerciseMeta(_ exercise: WorkoutExercise) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 7) {
+                heroMetaLabel(exercise.targetMuscle.title, systemImage: exercise.targetMuscle.icon)
+                heroMetaLabel(exercise.equipment.title, systemImage: exercise.equipment.icon)
+            }
+        } else {
+            HStack(spacing: 10) {
+                heroMetaLabel(exercise.targetMuscle.title, systemImage: exercise.targetMuscle.icon)
+                heroMetaLabel(exercise.equipment.title, systemImage: exercise.equipment.icon)
+            }
+        }
+    }
+
+    private func heroMetaLabel(_ title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.white.opacity(0.88))
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
+    }
+
+    private func exerciseDetails(_ exercise: WorkoutExercise) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            metricGroup(exercise)
+
+            ProgressView(value: positionProgress)
+                .tint(Color.deltsAccent)
+                .accessibilityLabel(currentPositionText)
+
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "lightbulb.fill")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(Color.deltsWarning)
+                    .frame(width: 24, height: 24)
+                    .background(Color.deltsWarning.opacity(0.13), in: Circle())
+
+                Text(exercise.formTip)
+                    .font(.footnote)
+                    .foregroundStyle(Color.deltsMutedText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func metricGroup(_ exercise: WorkoutExercise) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(spacing: 12) {
+                exerciseMetric(title: "Sets", value: "\(exercise.sets)", systemImage: "number")
+                stripSeparator
+                exerciseMetric(title: "Reps", value: exercise.reps, systemImage: "repeat", tint: .deltsInferno)
+                stripSeparator
+                exerciseMetric(title: "Rest", value: exercise.restDisplay, systemImage: "timer", tint: .deltsSecondaryAccent)
+            }
+        } else {
+            HStack(spacing: 0) {
+                exerciseMetric(title: "Sets", value: "\(exercise.sets)", systemImage: "number")
+                metricDivider
+                exerciseMetric(title: "Reps", value: exercise.reps, systemImage: "repeat", tint: .deltsInferno)
+                metricDivider
+                exerciseMetric(title: "Rest", value: exercise.restDisplay, systemImage: "timer", tint: .deltsSecondaryAccent)
+            }
+        }
+    }
+
+    private func standardSetLoggerRow(_ setIndex: Int) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            setNumberBadge(setIndex)
+
+            setEntryField(
+                title: "Weight",
+                placeholder: "0",
+                text: weightBinding(setIndex),
+                keyboardType: .decimalPad,
+                field: .weight(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex),
+                accessibilityLabel: "Weight for set \(setIndex + 1)"
+            )
+            .layoutPriority(1)
+
+            setEntryField(
+                title: "Reps",
+                placeholder: "0",
+                text: repsBinding(setIndex),
+                keyboardType: .numberPad,
+                field: .reps(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex),
+                accessibilityLabel: "Reps for set \(setIndex + 1)",
+                alignment: .center
+            )
+            .frame(width: 88)
+
+            setCompleteButton(setIndex)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 10)
+    }
+
+    private func stackedSetLoggerRow(_ setIndex: Int) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                setNumberBadge(setIndex)
+
+                Text("Set \(setIndex + 1)")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Color.deltsCharcoal)
+
+                Spacer(minLength: 8)
+
+                setCompleteButton(setIndex)
+            }
+
+            setEntryFields(setIndex)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 12)
+    }
+
+    @ViewBuilder
+    private func setEntryFields(_ setIndex: Int) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 10) {
+                weightEntryField(setIndex)
+                repsEntryField(setIndex)
+            }
+        } else {
+            HStack(alignment: .top, spacing: 10) {
+                weightEntryField(setIndex)
+                repsEntryField(setIndex)
+            }
+        }
+    }
+
+    private func weightEntryField(_ setIndex: Int) -> some View {
+        setEntryField(
+            title: "Weight",
+            placeholder: "0",
+            text: weightBinding(setIndex),
+            keyboardType: .decimalPad,
+            field: .weight(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex),
+            accessibilityLabel: "Weight for set \(setIndex + 1)"
+        )
+    }
+
+    private func repsEntryField(_ setIndex: Int) -> some View {
+        setEntryField(
+            title: "Reps",
+            placeholder: "0",
+            text: repsBinding(setIndex),
+            keyboardType: .numberPad,
+            field: .reps(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex),
+            accessibilityLabel: "Reps for set \(setIndex + 1)",
+            alignment: .center
+        )
+    }
+
+    private func setNumberBadge(_ setIndex: Int) -> some View {
+        Text("\(setIndex + 1)")
+            .font(.callout.weight(.bold))
+            .monospacedDigit()
+            .foregroundStyle(isSetComplete(setIndex) ? Color.deltsSecondaryAccent : Color.deltsCharcoal)
+            .frame(width: 38, height: 38)
+            .background(
+                isSetComplete(setIndex)
+                    ? Color.deltsSecondaryAccent.opacity(0.14)
+                    : Color.deltsPanel.opacity(0.42),
+                in: Circle()
+            )
+            .accessibilityHidden(true)
+    }
+
+    private func setEntryField(
+        title: String,
+        placeholder: String,
+        text: Binding<String>,
+        keyboardType: UIKeyboardType,
+        field: ActiveWorkoutLogField,
+        accessibilityLabel: String,
+        alignment: TextAlignment = .leading
+    ) -> some View {
+        let isFocused = focusedField == field
+
+        return VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(1)
+
+            TextField(placeholder, text: text)
+                .keyboardType(keyboardType)
+                .textFieldStyle(.plain)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .monospacedDigit()
+                .multilineTextAlignment(alignment)
+                .focused($focusedField, equals: field)
+                .accessibilityLabel(accessibilityLabel)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+        .background(Color.deltsPanel.opacity(isFocused ? 0.62 : 0.38), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(isFocused ? Color.deltsAccent.opacity(0.78) : Color.deltsHairline.opacity(0.38), lineWidth: isFocused ? 1 : 0.5)
+        }
+    }
+
+    private func setCompleteButton(_ setIndex: Int) -> some View {
+        let complete = isSetComplete(setIndex)
+
+        return Button {
+            viewModel.toggleSet(setIndex)
+        } label: {
+            Image(systemName: complete ? "checkmark.circle.fill" : "circle")
+                .font(.title3.weight(.semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(complete ? Color.deltsSecondaryAccent : Color.deltsMutedText)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(complete ? "Mark set \(setIndex + 1) incomplete" : "Mark set \(setIndex + 1) complete")
     }
 
     private func exerciseMetric(
@@ -303,7 +480,7 @@ struct ActiveWorkoutView: View {
                     .foregroundStyle(tint)
                 Text(value)
                     .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
             }
@@ -312,34 +489,33 @@ struct ActiveWorkoutView: View {
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(Color.deltsMutedText)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: dynamicTypeSize.isAccessibilitySize ? .center : .leading)
     }
 
     private var metricDivider: some View {
         Rectangle()
-            .fill(Color(uiColor: .separator).opacity(0.25))
+            .fill(Color.deltsHairline.opacity(0.34))
             .frame(width: 0.5, height: 36)
             .padding(.horizontal, 10)
     }
 
     private var stripSeparator: some View {
         Rectangle()
-            .fill(Color(uiColor: .separator).opacity(0.24))
+            .fill(Color.deltsHairline.opacity(0.34))
             .frame(height: 0.5)
     }
 
     private var emptyState: some View {
-        GlassCard {
-            VStack(spacing: 10) {
-                Image(systemName: "exclamationmark.triangle")
-                    .font(.largeTitle)
-                    .foregroundStyle(Color.deltsInferno)
-                Text("No exercises found")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(.primary)
-            }
-            .frame(maxWidth: .infinity)
+        VStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.largeTitle)
+                .foregroundStyle(Color.deltsInferno)
+            Text("No exercises found")
+                .font(.headline.weight(.bold))
+                .foregroundStyle(Color.deltsCharcoal)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 32)
     }
 
     private var positionProgress: Double {

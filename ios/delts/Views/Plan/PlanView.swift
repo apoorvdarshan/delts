@@ -11,15 +11,24 @@ struct PlanView: View {
 
 struct PlanBuilderView: View {
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @StateObject private var viewModel = PlanViewModel()
     @State private var generatedPlan: WorkoutPlan?
     @State private var didSyncProfile = false
 
     private let durationOptions = [30, 45, 60, 90]
 
+    private var heroHeight: CGFloat {
+        horizontalSizeClass == .compact ? 236 : 270
+    }
+
+    private var equipmentDetail: String {
+        viewModel.selectedEquipment.isEmpty ? "Profile gear" : "\(viewModel.selectedEquipment.count) selected"
+    }
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 26) {
+            LazyVStack(alignment: .leading, spacing: 24) {
                 coachHero
                 generatorControls
             }
@@ -44,89 +53,114 @@ struct PlanBuilderView: View {
     }
 
     private var coachHero: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
             ZStack(alignment: .bottomLeading) {
                 AnimatedExerciseVisual(
                     muscleGroup: viewModel.selectedMuscleGroup,
                     equipment: viewModel.selectedEquipment.first,
-                    height: 232
+                    height: heroHeight
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
 
                 LinearGradient(
-                    colors: [.black.opacity(0.03), .black.opacity(0.16), .black.opacity(0.72)],
+                    colors: [.black.opacity(0.02), .black.opacity(0.18), .black.opacity(0.78)],
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(GeminiConfig.hasAPIKey ? "AI planner ready" : "Offline planner")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.white.opacity(0.76))
-                        .textCase(.uppercase)
-                    Text("\(viewModel.selectedMuscleGroup.title) Day")
-                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.76)
-                    Text("\(viewModel.selectedDuration) min - \(viewModel.selectedGoal.title)")
+                VStack(alignment: .leading, spacing: 0) {
+                    PlanHeroBadge(
+                        title: GeminiConfig.hasAPIKey ? "AI planner ready" : "Offline planner",
+                        systemImage: GeminiConfig.hasAPIKey ? "sparkles" : "bolt.fill"
+                    )
+
+                    Spacer(minLength: 46)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("\(viewModel.selectedMuscleGroup.title) Day")
+                            .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                            .foregroundStyle(.white)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.72)
+
+                        Label {
+                            Text("\(viewModel.selectedDuration) min - \(viewModel.selectedGoal.title)")
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.76)
+                        } icon: {
+                            Image(systemName: planGoalIcon(viewModel.selectedGoal))
+                        }
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.78))
+                        .foregroundStyle(.white.opacity(0.84))
+                    }
                 }
                 .padding(18)
             }
-
-            HStack(spacing: 0) {
-                PlanInlineMetric(title: "Level", value: viewModel.selectedExperience.title)
-                Divider().frame(height: 42)
-                PlanInlineMetric(title: "Gear", value: "\(viewModel.selectedEquipment.count)")
-                Divider().frame(height: 42)
-                PlanInlineMetric(title: "Mode", value: GeminiConfig.hasAPIKey ? "AI" : "Local")
+            .overlay {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(Color.deltsHairline.opacity(0.32), lineWidth: 0.5)
             }
+
+            PlanMetricStrip(metrics: [
+                PlanMetric(title: "Level", value: viewModel.selectedExperience.title, systemImage: planExperienceIcon(viewModel.selectedExperience), tint: .deltsSecondaryAccent),
+                PlanMetric(title: "Gear", value: viewModel.selectedEquipment.isEmpty ? "Profile" : "\(viewModel.selectedEquipment.count)", systemImage: "dumbbell.fill"),
+                PlanMetric(title: "Mode", value: GeminiConfig.hasAPIKey ? "AI" : "Local", systemImage: GeminiConfig.hasAPIKey ? "sparkles" : "bolt.fill", tint: GeminiConfig.hasAPIKey ? .deltsAccent : .deltsWarning)
+            ])
         }
     }
 
     private var generatorControls: some View {
         VStack(alignment: .leading, spacing: 0) {
-            planControl("Muscle group") {
+            planControl(
+                "Muscle group",
+                systemImage: viewModel.selectedMuscleGroup.icon,
+                detail: viewModel.selectedMuscleGroup.title
+            ) {
                 MuscleGroupPicker(selection: $viewModel.selectedMuscleGroup)
             }
 
-            Divider()
+            PlanControlDivider()
 
-            planControl("Goal") {
+            planControl("Goal", systemImage: planGoalIcon(viewModel.selectedGoal), detail: viewModel.selectedGoal.title) {
                 PlanChoiceRail(
                     options: FitnessGoal.planCases,
                     selection: $viewModel.selectedGoal,
+                    systemImage: planGoalIcon,
                     title: { $0.title }
                 )
             }
 
-            Divider()
+            PlanControlDivider()
 
-            planControl("Experience") {
+            planControl(
+                "Experience",
+                systemImage: planExperienceIcon(viewModel.selectedExperience),
+                detail: viewModel.selectedExperience.title
+            ) {
                 PlanChoiceRail(
                     options: ExperienceLevel.allCases,
                     selection: $viewModel.selectedExperience,
+                    systemImage: planExperienceIcon,
                     title: { $0.title }
                 )
             }
 
-            Divider()
+            PlanControlDivider()
 
-            planControl("Duration") {
+            planControl("Duration", systemImage: planDurationIcon(viewModel.selectedDuration), detail: "\(viewModel.selectedDuration) min") {
                 PlanChoiceRail(
                     options: durationOptions,
                     selection: $viewModel.selectedDuration,
+                    systemImage: planDurationIcon,
                     title: { "\($0) min" }
                 )
             }
 
-            Divider()
+            PlanControlDivider()
 
-            planControl("Equipment", detail: "\(viewModel.selectedEquipment.count) selected") {
-                EquipmentGrid(selection: $viewModel.selectedEquipment)
+            planControl("Equipment", systemImage: "dumbbell.fill", detail: equipmentDetail) {
+                PlanEquipmentSelector(selection: $viewModel.selectedEquipment)
             }
         }
     }
@@ -134,7 +168,7 @@ struct PlanBuilderView: View {
     private var generateBar: some View {
         VStack(spacing: 10) {
             PrimaryButton(
-                title: "Generate Workout",
+                title: viewModel.isGenerating ? "Building Workout" : "Generate Workout",
                 systemImage: GeminiConfig.hasAPIKey ? "sparkles" : "bolt.fill",
                 isLoading: viewModel.isGenerating
             ) {
@@ -143,11 +177,23 @@ struct PlanBuilderView: View {
                 }
             }
 
-            if let statusMessage = viewModel.statusMessage {
-                Text(statusMessage)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            if let generationStatusText {
+                Label {
+                    Text(generationStatusText)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: generationStatusIcon)
+                }
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(generationStatusTint)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .background(generationStatusTint.opacity(0.10), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
+                }
             }
         }
         .padding(.horizontal, 20)
@@ -156,34 +202,57 @@ struct PlanBuilderView: View {
         .background(.bar)
     }
 
+    private var generationStatusText: String? {
+        if viewModel.isGenerating {
+            return GeminiConfig.hasAPIKey ? "Building a tailored AI session." : "Building an offline session from your profile."
+        }
+
+        return viewModel.statusMessage
+    }
+
+    private var generationStatusIcon: String {
+        if viewModel.isGenerating {
+            return GeminiConfig.hasAPIKey ? "sparkles" : "bolt.fill"
+        }
+
+        if viewModel.statusMessage?.localizedCaseInsensitiveContains("failed") == true {
+            return "exclamationmark.triangle.fill"
+        }
+
+        return "checkmark.circle.fill"
+    }
+
+    private var generationStatusTint: Color {
+        if viewModel.isGenerating {
+            return Color.deltsAccent
+        }
+
+        if viewModel.statusMessage?.localizedCaseInsensitiveContains("failed") == true {
+            return Color.deltsWarning
+        }
+
+        return Color.deltsSecondaryAccent
+    }
+
     private func planControl<Content: View>(
         _ title: String,
+        systemImage: String,
         detail: String? = nil,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(title)
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                Spacer()
-                if let detail {
-                    Text(detail)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .padding(.bottom, 10)
+        VStack(alignment: .leading, spacing: 12) {
+            PlanControlHeader(title: title, systemImage: systemImage, detail: detail)
 
             content()
         }
-        .padding(.vertical, 18)
+        .padding(.vertical, 20)
     }
 }
 
 private struct PlanChoiceRail<Option: Hashable>: View {
     let options: [Option]
     @Binding var selection: Option
+    let systemImage: (Option) -> String
     let title: (Option) -> String
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -199,23 +268,31 @@ private struct PlanChoiceRail<Option: Hashable>: View {
                             selection = option
                         }
                     } label: {
-                        Text(title(option))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsCharcoal)
-                            .lineLimit(1)
-                            .fixedSize(horizontal: true, vertical: false)
-                            .padding(.horizontal, 14)
-                            .frame(height: 40)
-                            .background(
-                                isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.48),
-                                in: Capsule()
-                            )
-                            .overlay {
-                                Capsule()
-                                    .stroke(Color.deltsHairline.opacity(isSelected ? 0.2 : 0.46), lineWidth: 0.5)
-                            }
+                        HStack(spacing: 7) {
+                            Image(systemName: systemImage(option))
+                                .font(.caption.weight(.bold))
+                                .accessibilityHidden(true)
+
+                            Text(title(option))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.82)
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsCharcoal.opacity(0.88))
+                        .padding(.horizontal, 13)
+                        .frame(minHeight: 42)
+                        .background(
+                            isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.34),
+                            in: Capsule()
+                        )
+                        .overlay {
+                            Capsule()
+                                .stroke(Color.deltsHairline.opacity(isSelected ? 0.22 : 0.42), lineWidth: 0.5)
+                        }
+                        .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(Text(title(option)))
                     .accessibilityValue(isSelected ? "Selected" : "Not selected")
                 }
             }
@@ -224,24 +301,301 @@ private struct PlanChoiceRail<Option: Hashable>: View {
     }
 }
 
-private struct PlanInlineMetric: View {
+private struct PlanControlHeader: View {
     let title: String
-    let value: String
+    let systemImage: String
+    let detail: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(value)
-                .font(.headline.weight(.bold))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center, spacing: 10) {
+                leadingLabel
+                Spacer(minLength: 12)
+                detailLabel
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                leadingLabel
+                detailLabel
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
+    }
+
+    private var leadingLabel: some View {
+        HStack(spacing: 9) {
+            Image(systemName: systemImage)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(Color.deltsSecondaryAccent)
+                .frame(width: 28, height: 28)
+                .background(Color.deltsSecondaryAccent.opacity(0.12), in: Circle())
+                .accessibilityHidden(true)
+
+            Text(title)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+                .minimumScaleFactor(0.86)
+        }
+    }
+
+    @ViewBuilder
+    private var detailLabel: some View {
+        if let detail {
+            Text(detail)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+                .padding(.vertical, 5)
+                .padding(.horizontal, 9)
+                .background(Color.deltsPanel.opacity(0.26), in: Capsule())
+        }
+    }
+}
+
+private struct PlanControlDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(Color.deltsHairline.opacity(0.32))
+            .frame(height: 0.5)
+    }
+}
+
+private struct PlanHeroBadge: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        Label {
+            Text(title)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+        } icon: {
+            Image(systemName: systemImage)
+        }
+        .font(.caption.weight(.bold))
+        .foregroundStyle(.white.opacity(0.92))
+        .padding(.vertical, 7)
+        .padding(.horizontal, 10)
+        .background(.black.opacity(0.44), in: Capsule())
+    }
+}
+
+private struct PlanMetric {
+    let title: String
+    let value: String
+    let systemImage: String
+    var tint: Color = .deltsAccent
+}
+
+private struct PlanMetricStrip: View {
+    let metrics: [PlanMetric]
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(metrics.indices, id: \.self) { index in
+                PlanMetricColumn(metric: metrics[index])
+
+                if index < metrics.count - 1 {
+                    Rectangle()
+                        .fill(Color.deltsHairline.opacity(0.34))
+                        .frame(width: 0.5, height: 54)
+                        .padding(.horizontal, 2)
+                }
+            }
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 4)
+        .deltsGlassSurface(cornerRadius: 18, tint: .deltsPanel, fallbackOpacity: 0.18)
+    }
+}
+
+private struct PlanMetricColumn: View {
+    let metric: PlanMetric
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: metric.systemImage)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(metric.tint)
+                .frame(width: 26, height: 26)
+                .background(metric.tint.opacity(0.13), in: Circle())
+                .accessibilityHidden(true)
+
+            Text(metric.value)
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+                .minimumScaleFactor(0.68)
+
+            Text(metric.title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, minHeight: 74, alignment: .leading)
+        .padding(.horizontal, 8)
+    }
+}
+
+private struct PlanEquipmentSelector: View {
+    @Binding var selection: Set<Equipment>
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var feedbackTrigger = false
+
+    private let columns = [
+        GridItem(.adaptive(minimum: 148), spacing: 10, alignment: .top)
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if selection.isEmpty {
+                Label("Profile equipment will be used", systemImage: "person.crop.circle")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .background(Color.deltsPanel.opacity(0.22), in: Capsule())
+            }
+
+            ForEach(PlanEquipmentSection.all) { section in
+                VStack(alignment: .leading, spacing: 9) {
+                    Label(section.title, systemImage: section.systemImage)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .textCase(.uppercase)
+                        .labelStyle(.titleAndIcon)
+                        .padding(.horizontal, 2)
+
+                    LazyVGrid(columns: columns, alignment: .leading, spacing: 10) {
+                        ForEach(section.items) { item in
+                            PlanEquipmentToggle(
+                                item: item,
+                                isSelected: selection.contains(item)
+                            ) {
+                                toggle(item)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .sensoryFeedback(.selection, trigger: feedbackTrigger)
+    }
+
+    private func toggle(_ item: Equipment) {
+        let animation: Animation? = reduceMotion ? nil : .snappy(duration: 0.18)
+
+        withAnimation(animation) {
+            if selection.contains(item) {
+                selection.remove(item)
+            } else {
+                selection.insert(item)
+            }
+        }
+
+        feedbackTrigger.toggle()
+    }
+}
+
+private struct PlanEquipmentSection: Identifiable {
+    let title: String
+    let systemImage: String
+    let items: [Equipment]
+
+    var id: String { title }
+
+    static let all: [PlanEquipmentSection] = [
+        PlanEquipmentSection(
+            title: "Free Weights",
+            systemImage: "dumbbell.fill",
+            items: [.dumbbells, .barbell, .bench]
+        ),
+        PlanEquipmentSection(
+            title: "Machines",
+            systemImage: "gearshape.2.fill",
+            items: [
+                .cableMachine,
+                .smithMachine,
+                .chestPress,
+                .shoulderPress,
+                .latPulldown,
+                .rowMachine,
+                .legPress,
+                .legExtension,
+                .legCurl
+            ]
+        ),
+        PlanEquipmentSection(
+            title: "Bodyweight & Cardio",
+            systemImage: "figure.run",
+            items: [.pullUpBar, .treadmill, .bodyweight]
+        )
+    ]
+}
+
+private struct PlanEquipmentToggle: View {
+    let item: Equipment
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: item.icon)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsSecondaryAccent)
+                    .frame(width: 31, height: 31)
+                    .background(
+                        isSelected ? Color.deltsAccent : Color.deltsSecondaryAccent.opacity(0.12),
+                        in: Circle()
+                    )
+                    .accessibilityHidden(true)
+
+                Text(item.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.78)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsHairline.opacity(0.72))
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, 11)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+            .background(
+                isSelected ? Color.deltsAccent.opacity(0.11) : Color.deltsPanel.opacity(0.22),
+                in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .stroke(
+                        isSelected ? Color.deltsAccent.opacity(0.52) : Color.deltsHairline.opacity(0.32),
+                        lineWidth: 0.5
+                    )
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(item.title))
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .equipmentSelectedTrait(isSelected)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func equipmentSelectedTrait(_ isSelected: Bool) -> some View {
+        if isSelected {
+            accessibilityAddTraits(.isSelected)
+        } else {
+            self
+        }
     }
 }
 
@@ -252,24 +606,36 @@ private struct ExerciseStartRoute: Identifiable, Hashable {
 
 struct WorkoutPlanView: View {
     let plan: WorkoutPlan
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var startRoute: ExerciseStartRoute?
 
     private var exercises: [WorkoutExercise] {
         plan.exercises.sorted { $0.orderIndex < $1.orderIndex }
     }
 
+    private var heroHeight: CGFloat {
+        horizontalSizeClass == .compact ? 236 : 270
+    }
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
+            LazyVStack(alignment: .leading, spacing: 24) {
                 planHero
 
                 VStack(alignment: .leading, spacing: 0) {
+                    PlanControlHeader(
+                        title: "Exercise order",
+                        systemImage: "list.number",
+                        detail: "\(exercises.count) moves"
+                    )
+                    .padding(.bottom, 8)
+
                     ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
                         ExerciseCard(exercise: exercise) {
                             startRoute = ExerciseStartRoute(index: index)
                         }
                         if exercise.id != exercises.last?.id {
-                            Divider()
+                            PlanControlDivider()
                                 .padding(.leading, 118)
                         }
                     }
@@ -298,44 +664,97 @@ struct WorkoutPlanView: View {
 
     private var planHero: some View {
         VStack(alignment: .leading, spacing: 14) {
-            ZStack(alignment: .topLeading) {
+            ZStack(alignment: .bottomLeading) {
                 AnimatedExerciseVisual(
                     muscleGroup: plan.muscleGroup,
-                    height: 236
+                    height: heroHeight
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
 
-                Label(plan.generatedByAI ? "AI generated" : "Offline generated", systemImage: plan.generatedByAI ? "sparkles" : "bolt.fill")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.white)
-                    .padding(.vertical, 7)
-                    .padding(.horizontal, 10)
-                    .background(.black.opacity(0.50), in: Capsule())
-                    .padding(14)
+                LinearGradient(
+                    colors: [.black.opacity(0.02), .black.opacity(0.18), .black.opacity(0.78)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 0) {
+                    PlanHeroBadge(
+                        title: plan.generatedByAI ? "AI generated" : "Offline generated",
+                        systemImage: plan.generatedByAI ? "sparkles" : "bolt.fill"
+                    )
+
+                    Spacer(minLength: 44)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(plan.title)
+                            .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                            .foregroundStyle(.white)
+                            .lineLimit(3)
+                            .minimumScaleFactor(0.62)
+
+                        Text(plan.summary)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.84))
+                            .lineLimit(3)
+                            .minimumScaleFactor(0.82)
+                    }
+                }
+                .padding(18)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(Color.deltsHairline.opacity(0.32), lineWidth: 0.5)
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text(plan.title)
-                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.72)
-
-                Text(plan.summary)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            HStack(spacing: 0) {
-                PlanInlineMetric(title: "Exercises", value: "\(exercises.count)")
-                Divider().frame(height: 42)
-                PlanInlineMetric(title: "Duration", value: "\(plan.durationMinutes)m")
-                Divider().frame(height: 42)
-                PlanInlineMetric(title: "Goal", value: plan.goal.title)
-            }
-
-            Divider()
+            PlanMetricStrip(metrics: [
+                PlanMetric(title: "Exercises", value: "\(exercises.count)", systemImage: "list.clipboard.fill", tint: .deltsSecondaryAccent),
+                PlanMetric(title: "Duration", value: "\(plan.durationMinutes)m", systemImage: planDurationIcon(plan.durationMinutes)),
+                PlanMetric(title: "Goal", value: plan.goal.title, systemImage: planGoalIcon(plan.goal), tint: .deltsAccent)
+            ])
         }
+    }
+}
+
+private func planGoalIcon(_ goal: FitnessGoal) -> String {
+    switch goal {
+    case .muscleGain:
+        return "figure.strengthtraining.traditional"
+    case .endurance:
+        return "lungs.fill"
+    case .maxStrength:
+        return "scalemass.fill"
+    case .fatLoss:
+        return "flame.fill"
+    case .generalFitness:
+        return "figure.highintensity.intervaltraining"
+    case .athleticPerformance:
+        return "bolt.fill"
+    case .beginnerForm:
+        return "figure.cooldown"
+    }
+}
+
+private func planExperienceIcon(_ experience: ExperienceLevel) -> String {
+    switch experience {
+    case .beginner:
+        return "1.circle.fill"
+    case .intermediate:
+        return "2.circle.fill"
+    case .advanced:
+        return "3.circle.fill"
+    }
+}
+
+private func planDurationIcon(_ minutes: Int) -> String {
+    switch minutes {
+    case ..<45:
+        return "timer"
+    case 45..<60:
+        return "clock"
+    case 60..<90:
+        return "clock.fill"
+    default:
+        return "hourglass"
     }
 }

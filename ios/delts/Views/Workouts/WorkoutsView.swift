@@ -32,10 +32,19 @@ struct WorkoutsView: View {
             }
         }
         .pickerStyle(.segmented)
+        .tint(Color.deltsAccent)
         .padding(.horizontal, 20)
         .padding(.top, 10)
         .padding(.bottom, 8)
-        .background(.bar)
+        .background {
+            Rectangle()
+                .fill(Color.deltsBackground.opacity(0.94))
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(Color.deltsHairline.opacity(0.34))
+                        .frame(height: 0.5)
+                }
+        }
     }
 }
 
@@ -111,7 +120,8 @@ private struct ExerciseLibraryBrowserView: View {
                         count: items.count,
                         noun: "exercise",
                         subtitle: selectedSort.title,
-                        trailingTitle: "Offline media"
+                        trailingTitle: "Offline media",
+                        trailingSystemImage: "wifi.slash"
                     )
                     .padding(.horizontal, 20)
                     .padding(.bottom, 4)
@@ -127,6 +137,7 @@ private struct ExerciseLibraryBrowserView: View {
 
                         if item.id != items.last?.id {
                             Divider()
+                                .overlay(Color.deltsHairline.opacity(0.28))
                                 .padding(.leading, 144)
                                 .padding(.horizontal, 20)
                         }
@@ -148,18 +159,18 @@ private struct ExerciseLibraryBrowserView: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text("Exercise library")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.deltsMutedText)
                     .textCase(.uppercase)
 
                 Text("\(service.exercises.count) offline exercises")
                     .font(.title3.weight(.bold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
 
                 Text("\(items.count) shown")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.deltsMutedText)
             }
 
             Spacer(minLength: 12)
@@ -168,12 +179,20 @@ private struct ExerciseLibraryBrowserView: View {
                 generatedPlan = service.makePlan(from: items)
             } label: {
                 Label("Build Top \(min(items.count, 8))", systemImage: "wand.and.stars")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.deltsOnAccent)
                     .lineLimit(1)
                     .minimumScaleFactor(0.76)
+                    .padding(.horizontal, 14)
+                    .frame(height: 42)
+                    .background(Color.deltsAccent, in: Capsule())
+                    .overlay {
+                        Capsule()
+                            .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
+                    }
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.regular)
-            .tint(Color.deltsAccent)
+            .buttonStyle(.plain)
+            .opacity(items.isEmpty ? 0.48 : 1)
             .disabled(items.isEmpty)
         }
         .padding(.vertical, 4)
@@ -185,7 +204,7 @@ private struct ExerciseLibraryBrowserView: View {
                 HStack(spacing: 8) {
                     BodyPartFilterChip(
                         title: "All",
-                        systemImage: "square.grid.2x2",
+                        systemImage: "square.grid.2x2.fill",
                         isSelected: selectedMuscleGroup == nil
                     ) {
                         withAnimation(.snappy) {
@@ -215,9 +234,9 @@ private struct ExerciseLibraryBrowserView: View {
                         value: selectedLevel?.title ?? "All",
                         systemImage: "chart.bar.fill"
                     ) {
-                        Button("All Levels") { selectedLevel = nil }
+                        menuChoice("All Levels", isSelected: selectedLevel == nil) { selectedLevel = nil }
                         ForEach(ExperienceLevel.allCases) { level in
-                            Button(level.title) { selectedLevel = level }
+                            menuChoice(level.title, isSelected: selectedLevel == level) { selectedLevel = level }
                         }
                     }
 
@@ -226,9 +245,9 @@ private struct ExerciseLibraryBrowserView: View {
                         value: selectedGoal?.title ?? "All",
                         systemImage: "target"
                     ) {
-                        Button("All Goals") { selectedGoal = nil }
+                        menuChoice("All Goals", isSelected: selectedGoal == nil) { selectedGoal = nil }
                         ForEach(FitnessGoal.profileCases + [.beginnerForm]) { goal in
-                            Button(goal.title) { selectedGoal = goal }
+                            menuChoice(goal.title, isSelected: selectedGoal == goal) { selectedGoal = goal }
                         }
                     }
 
@@ -237,13 +256,13 @@ private struct ExerciseLibraryBrowserView: View {
                         value: equipmentFilterTitle,
                         systemImage: "dumbbell.fill"
                     ) {
-                        Button("All Equipment") {
+                        menuChoice("All Equipment", isSelected: selectedEquipment == nil && selectedEquipmentFamily == .all) {
                             selectedEquipment = nil
                             selectedEquipmentFamily = .all
                         }
                         Section("Family") {
                             ForEach(ExerciseEquipmentFamily.allCases.filter { $0 != .all }) { family in
-                                Button(family.title) {
+                                menuChoice(family.title, isSelected: selectedEquipment == nil && selectedEquipmentFamily == family) {
                                     selectedEquipment = nil
                                     selectedEquipmentFamily = family
                                 }
@@ -251,7 +270,7 @@ private struct ExerciseLibraryBrowserView: View {
                         }
                         Section("Specific") {
                             ForEach(Equipment.allCases) { equipment in
-                                Button(equipment.title) {
+                                menuChoice(equipment.title, isSelected: selectedEquipment == equipment) {
                                     selectedEquipment = equipment
                                     selectedEquipmentFamily = .all
                                 }
@@ -265,7 +284,7 @@ private struct ExerciseLibraryBrowserView: View {
                         systemImage: "arrow.up.arrow.down"
                     ) {
                         ForEach(ExerciseLibrarySort.allCases) { sort in
-                            Button(sort.title) { selectedSort = sort }
+                            menuChoice(sort.title, isSelected: selectedSort == sort) { selectedSort = sort }
                         }
                     }
 
@@ -276,10 +295,18 @@ private struct ExerciseLibraryBrowserView: View {
                             }
                         } label: {
                             Label("Reset", systemImage: "arrow.counterclockwise")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Color.deltsInferno)
+                                .lineLimit(1)
+                                .padding(.horizontal, 12)
+                                .frame(height: 36)
+                                .background(Color.deltsInferno.opacity(0.10), in: Capsule())
+                                .overlay {
+                                    Capsule()
+                                        .stroke(Color.deltsInferno.opacity(0.34), lineWidth: 0.5)
+                                }
                         }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .tint(Color.deltsInferno)
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -316,18 +343,43 @@ private struct ExerciseLibraryBrowserView: View {
         Menu {
             content()
         } label: {
-            Label {
+            HStack(spacing: 7) {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(value == "All" ? Color.deltsSecondaryAccent : Color.deltsAccent)
+
                 Text(value == "All" ? title : "\(title): \(value)")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(1)
-            } icon: {
-                Image(systemName: systemImage)
+                    .minimumScaleFactor(0.82)
+
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color.deltsMutedText)
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 36)
+            .background(Color.deltsPanel.opacity(value == "All" ? 0.42 : 0.56), in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(
+                        (value == "All" ? Color.deltsHairline : Color.deltsAccent).opacity(value == "All" ? 0.44 : 0.36),
+                        lineWidth: 0.5
+                    )
             }
         }
-        .buttonStyle(.bordered)
-        .controlSize(.small)
-        .tint(.secondary)
+        .buttonStyle(.plain)
+    }
+
+    private func menuChoice(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            if isSelected {
+                Label(title, systemImage: "checkmark")
+            } else {
+                Text(title)
+            }
+        }
     }
 }
 
@@ -350,7 +402,8 @@ private struct WorkoutHistoryListView: View {
                         count: workouts.count,
                         noun: "workout",
                         subtitle: "Completed",
-                        trailingTitle: "Local logs"
+                        trailingTitle: "Local logs",
+                        trailingSystemImage: "clock.arrow.circlepath"
                     )
                     .padding(.horizontal, 20)
                     .padding(.top, 14)
@@ -367,6 +420,7 @@ private struct WorkoutHistoryListView: View {
 
                         if workout.id != workouts.last?.id {
                             Divider()
+                                .overlay(Color.deltsHairline.opacity(0.28))
                                 .padding(.leading, 88)
                                 .padding(.horizontal, 20)
                         }
@@ -385,26 +439,34 @@ private struct ResultsHeader: View {
     let noun: String
     let subtitle: String
     let trailingTitle: String
+    var trailingSystemImage: String?
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(count) \(count == 1 ? noun : "\(noun)s")")
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.deltsCharcoal)
                     .textCase(nil)
                 Text(subtitle)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.deltsMutedText)
                     .textCase(nil)
             }
 
             Spacer()
 
-            Text(trailingTitle)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .textCase(nil)
+            Label {
+                Text(trailingTitle)
+                    .textCase(nil)
+            } icon: {
+                if let trailingSystemImage {
+                    Image(systemName: trailingSystemImage)
+                }
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Color.deltsMutedText)
+            .lineLimit(1)
         }
         .padding(.top, 6)
     }
@@ -428,15 +490,17 @@ private struct BodyPartFilterChip: View {
             }
         }
         .buttonStyle(.plain)
-        .foregroundStyle(isSelected ? Color.white : Color.primary)
-        .padding(.vertical, 8)
-        .padding(.horizontal, 12)
-        .background(isSelected ? Color.deltsAccent : Color.clear, in: Capsule())
+        .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsCharcoal)
+        .padding(.horizontal, 13)
+        .frame(height: 38)
+        .fixedSize(horizontal: true, vertical: false)
+        .background(isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.46), in: Capsule())
         .overlay {
             Capsule()
-                .stroke(isSelected ? Color.deltsAccent.opacity(0.75) : Color(uiColor: .separator).opacity(0.36), lineWidth: 0.75)
+                .stroke(Color.deltsHairline.opacity(isSelected ? 0.22 : 0.46), lineWidth: 0.5)
         }
         .contentShape(Capsule())
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
     }
 }
 
@@ -450,19 +514,26 @@ private struct ExerciseLibraryRow: View {
             VStack(alignment: .leading, spacing: 9) {
                 Text(item.name)
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
 
-                Text("\(item.muscleGroup.title) - \(item.equipment.title) - \(item.level.title)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.84)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) {
+                        LibraryTag(title: item.muscleGroup.title, systemImage: item.muscleGroup.icon, tint: Color.deltsMutedText)
+                        LibraryTag(title: item.equipment.title, systemImage: item.equipment.icon, tint: Color.deltsMutedText)
+                        LibraryTag(title: item.level.title, systemImage: "chart.bar.fill", tint: Color.deltsMutedText)
+                    }
 
-                Label(rowMetadata, systemImage: item.imagePaths.count > 1 ? "photo.stack" : "target")
+                    VStack(alignment: .leading, spacing: 5) {
+                        LibraryTag(title: item.muscleGroup.title, systemImage: item.muscleGroup.icon, tint: Color.deltsMutedText)
+                        LibraryTag(title: "\(item.equipment.title) - \(item.level.title)", systemImage: item.equipment.icon, tint: Color.deltsMutedText)
+                    }
+                }
+
+                Label(rowMetadata, systemImage: item.imagePaths.count > 1 ? "photo.stack" : "photo")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
+                    .foregroundStyle(Color.deltsSecondaryAccent)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
             }
@@ -471,10 +542,11 @@ private struct ExerciseLibraryRow: View {
 
             Image(systemName: "chevron.right")
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(Color(uiColor: .tertiaryLabel))
+                .foregroundStyle(Color.deltsHairline)
         }
-        .padding(.vertical, 14)
+        .padding(.vertical, 13)
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 
     private var thumbnail: some View {
@@ -488,7 +560,12 @@ private struct ExerciseLibraryRow: View {
             fillsWidth: false
         )
         .frame(width: 104, height: 104)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.deltsPanel.opacity(0.32), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.38), lineWidth: 0.5)
+        }
         .accessibilityHidden(true)
     }
 
@@ -510,12 +587,13 @@ private struct CompletedWorkoutRow: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(workout.title)
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(2)
+                    .minimumScaleFactor(0.84)
 
                 Text(workout.date.formatted(date: .abbreviated, time: .shortened))
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.deltsMutedText)
 
                 historySummaryStrip
             }
@@ -524,10 +602,11 @@ private struct CompletedWorkoutRow: View {
 
             Image(systemName: "chevron.right")
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(Color(uiColor: .tertiaryLabel))
+                .foregroundStyle(Color.deltsHairline)
         }
         .padding(.vertical, 14)
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 
     private var logs: [CompletedExerciseLog] {
@@ -547,13 +626,21 @@ private struct CompletedWorkoutRow: View {
     }
 
     private var historySummaryStrip: some View {
-        HStack(spacing: 10) {
-            HistorySummaryItem(value: "\(logs.count)", label: logs.count == 1 ? "exercise" : "exercises", systemImage: "figure.strengthtraining.traditional")
-            HistorySummaryItem(value: "\(completedSets)/\(totalSets)", label: "sets", systemImage: "checkmark.circle")
-            HistorySummaryItem(value: "\(workout.durationMinutes)m", label: "duration", systemImage: "clock")
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                HistorySummaryItem(value: "\(logs.count)", label: logs.count == 1 ? "exercise" : "exercises", systemImage: "figure.strengthtraining.traditional")
+                HistorySummaryItem(value: "\(completedSets)/\(totalSets)", label: "sets", systemImage: "checkmark.circle")
+                HistorySummaryItem(value: "\(workout.durationMinutes)m", label: "duration", systemImage: "clock")
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                HistorySummaryItem(value: "\(logs.count)", label: logs.count == 1 ? "exercise" : "exercises", systemImage: "figure.strengthtraining.traditional")
+                HistorySummaryItem(value: "\(completedSets)/\(totalSets)", label: "sets", systemImage: "checkmark.circle")
+                HistorySummaryItem(value: "\(workout.durationMinutes)m", label: "duration", systemImage: "clock")
+            }
         }
         .font(.caption.weight(.semibold))
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Color.deltsMutedText)
     }
 }
 
@@ -562,20 +649,24 @@ private struct WorkoutHistoryGlyph: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.deltsAccent.opacity(0.12))
+            Circle()
+                .fill(Color.deltsSecondaryAccent.opacity(0.14))
+                .overlay {
+                    Circle()
+                        .stroke(Color.deltsHairline.opacity(0.38), lineWidth: 0.5)
+                }
 
             if let iconName {
                 Image(systemName: iconName)
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(Color.deltsAccent)
+                    .foregroundStyle(Color.deltsSecondaryAccent)
             } else {
                 Text(initial)
                     .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.deltsAccent)
+                    .foregroundStyle(Color.deltsSecondaryAccent)
             }
         }
-        .frame(width: 58, height: 58)
+        .frame(width: 56, height: 56)
         .accessibilityHidden(true)
     }
 
@@ -622,6 +713,7 @@ private struct LibraryTag: View {
             .labelStyle(.titleAndIcon)
             .foregroundStyle(tint)
             .lineLimit(1)
+            .minimumScaleFactor(0.78)
             .accessibilityElement(children: .combine)
     }
 }
@@ -639,21 +731,25 @@ private struct ExerciseLibraryDetailView: View {
                     DetailMetricGrid(item: item, restText: restText)
 
                     Divider()
+                        .overlay(Color.deltsHairline.opacity(0.34))
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Form tip")
+                        Label("Form tip", systemImage: "lightbulb")
                             .font(.headline.weight(.semibold))
+                            .foregroundStyle(Color.deltsCharcoal)
                         Text(item.formTip)
                             .font(.body)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.deltsMutedText)
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
                     VStack(spacing: 0) {
                         DetailInfoRow(title: "Goal", value: item.goal.title, systemImage: "target")
                         Divider()
+                            .overlay(Color.deltsHairline.opacity(0.32))
                         DetailInfoRow(title: "Equipment", value: "\(item.equipment.title) - \(item.machineLabel)", systemImage: "dumbbell.fill")
                         Divider()
+                            .overlay(Color.deltsHairline.opacity(0.32))
                         DetailInfoRow(title: "Source", value: item.source, systemImage: "checkmark.seal")
                     }
                 }
@@ -684,6 +780,7 @@ private struct ExerciseLibraryDetailView: View {
             height: 326
         )
         .frame(maxWidth: .infinity)
+        .clipped()
         .overlay {
             LinearGradient(
                 colors: [.clear, .black.opacity(0.18), .black.opacity(0.72)],
@@ -697,6 +794,7 @@ private struct ExerciseLibraryDetailView: View {
                     Label("\(item.imagePaths.count) media", systemImage: "photo.stack")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(.white.opacity(0.82))
+                        .lineLimit(1)
                 }
 
                 Text(item.name)
@@ -724,11 +822,17 @@ private struct ExerciseLibraryDetailView: View {
             activePlan = item.singleExercisePlan()
         } label: {
             Label("Start Exercise", systemImage: "play.fill")
+                .font(.headline.weight(.bold))
+                .foregroundStyle(Color.deltsOnAccent)
                 .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .background(Color.deltsAccent, in: Capsule())
+                .overlay {
+                    Capsule()
+                        .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
+                }
         }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
-        .tint(Color.deltsAccent)
+        .buttonStyle(.plain)
         .padding(.horizontal, 20)
         .padding(.top, 10)
         .padding(.bottom, 6)
@@ -748,19 +852,20 @@ private struct DetailMetricGrid: View {
         VStack(spacing: 14) {
             HStack(spacing: 0) {
                 DetailMetric(title: "Sets", value: "\(item.sets)", systemImage: "number")
-                Divider().frame(height: 46)
+                Divider().frame(height: 48).overlay(Color.deltsHairline.opacity(0.34))
                 DetailMetric(title: "Reps", value: item.reps, systemImage: "repeat")
-                Divider().frame(height: 46)
+                Divider().frame(height: 48).overlay(Color.deltsHairline.opacity(0.34))
                 DetailMetric(title: "Rest", value: restText, systemImage: "timer")
             }
 
             Divider()
+                .overlay(Color.deltsHairline.opacity(0.34))
 
             HStack(spacing: 0) {
                 DetailMetric(title: "Level", value: item.level.title, systemImage: "chart.bar.fill")
-                Divider().frame(height: 46)
+                Divider().frame(height: 48).overlay(Color.deltsHairline.opacity(0.34))
                 DetailMetric(title: "Body", value: item.muscleGroup.title, systemImage: item.muscleGroup.icon)
-                Divider().frame(height: 46)
+                Divider().frame(height: 48).overlay(Color.deltsHairline.opacity(0.34))
                 DetailMetric(title: "Equipment", value: item.equipment.title, systemImage: "dumbbell.fill")
             }
         }
@@ -778,16 +883,18 @@ private struct DetailMetric: View {
             Image(systemName: systemImage)
                 .font(.caption.weight(.bold))
                 .foregroundStyle(Color.deltsAccent)
+                .frame(width: 28, height: 28)
+                .background(Color.deltsAccent.opacity(0.12), in: Circle())
 
             Text(value)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.deltsCharcoal)
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
 
             Text(title)
                 .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.deltsMutedText)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -804,20 +911,22 @@ private struct DetailInfoRow: View {
         HStack(spacing: 12) {
             Image(systemName: systemImage)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.deltsAccent)
-                .frame(width: 28, height: 28)
+                .foregroundStyle(Color.deltsSecondaryAccent)
+                .frame(width: 30, height: 30)
+                .background(Color.deltsSecondaryAccent.opacity(0.12), in: Circle())
 
             Text(title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.deltsCharcoal)
 
             Spacer(minLength: 12)
 
             Text(value)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.deltsMutedText)
                 .lineLimit(2)
                 .multilineTextAlignment(.trailing)
+                .minimumScaleFactor(0.82)
         }
         .padding(.vertical, 12)
     }
@@ -839,6 +948,7 @@ struct CompletedWorkoutDetailView: View {
 
                     if exercise.id != workout.exerciseLogs.last?.id {
                         Divider()
+                            .overlay(Color.deltsHairline.opacity(0.32))
                             .padding(.horizontal, 20)
                     }
                 }
@@ -871,27 +981,28 @@ struct CompletedWorkoutDetailView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(workout.title)
                         .font(.title.weight(.bold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.deltsCharcoal)
                         .lineLimit(3)
                         .minimumScaleFactor(0.76)
 
                     Text(workout.date.formatted(date: .complete, time: .shortened))
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.deltsAccent)
+                        .foregroundStyle(Color.deltsSecondaryAccent)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
             Text(workout.planSummary)
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.deltsMutedText)
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 0) {
-                WorkoutSummaryMetric(value: "\(workout.exerciseLogs.count)", title: "Exercises")
-                Divider().frame(height: 38)
-                WorkoutSummaryMetric(value: "\(completedSets)/\(totalSets)", title: "Sets")
-                Divider().frame(height: 38)
-                WorkoutSummaryMetric(value: "\(workout.durationMinutes)m", title: "Duration")
+                WorkoutSummaryMetric(value: "\(workout.exerciseLogs.count)", title: "Exercises", systemImage: "figure.strengthtraining.traditional")
+                Divider().frame(height: 42).overlay(Color.deltsHairline.opacity(0.34))
+                WorkoutSummaryMetric(value: "\(completedSets)/\(totalSets)", title: "Sets", systemImage: "checkmark.circle")
+                Divider().frame(height: 42).overlay(Color.deltsHairline.opacity(0.34))
+                WorkoutSummaryMetric(value: "\(workout.durationMinutes)m", title: "Duration", systemImage: "clock")
             }
         }
     }
@@ -906,23 +1017,25 @@ private struct CompletedExerciseLogSection: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(exercise.name)
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.deltsCharcoal)
                         .lineLimit(2)
+                        .minimumScaleFactor(0.84)
 
                     Text("\(exercise.targetMuscle) - \(exercise.equipment)")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.deltsMutedText)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.82)
                 }
 
                 Spacer(minLength: 12)
 
-                Text("\(completedSets)/\(exercise.sets.count)")
+                Label("\(completedSets)/\(exercise.sets.count)", systemImage: "checkmark.circle.fill")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.deltsAccent)
+                    .foregroundStyle(Color.deltsSecondaryAccent)
                     .padding(.vertical, 5)
                     .padding(.horizontal, 8)
-                    .background(Color.deltsAccent.opacity(0.12), in: Capsule())
+                    .background(Color.deltsSecondaryAccent.opacity(0.12), in: Capsule())
             }
 
             VStack(spacing: 0) {
@@ -931,6 +1044,7 @@ private struct CompletedExerciseLogSection: View {
 
                     if set.id != exercise.sets.last?.id {
                         Divider()
+                            .overlay(Color.deltsHairline.opacity(0.28))
                             .padding(.leading, 34)
                     }
                 }
@@ -951,16 +1065,17 @@ private struct CompletedSetLogRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: set.completed ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(set.completed ? Color.deltsAccent : .secondary)
+                .foregroundStyle(set.completed ? Color.deltsAccent : Color.deltsMutedText)
                 .accessibilityHidden(true)
 
             Text("Set \(set.setNumber)")
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.deltsCharcoal)
 
             Spacer()
 
             Text(weightRepText)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.deltsMutedText)
+                .monospacedDigit()
         }
         .font(.subheadline)
         .padding(.vertical, 10)
@@ -976,18 +1091,25 @@ private struct CompletedSetLogRow: View {
 private struct WorkoutSummaryMetric: View {
     let value: String
     let title: String
+    let systemImage: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.deltsAccent)
+                .frame(width: 24, height: 24)
+                .background(Color.deltsAccent.opacity(0.12), in: Circle())
+
             Text(value)
                 .font(.headline.weight(.bold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.deltsCharcoal)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
             Text(title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.deltsMutedText)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
