@@ -67,7 +67,7 @@ struct IntStepperField: View {
                     .foregroundStyle(.primary)
             }
         }
-        .tint(Color.deltsElectricBlue)
+        .tint(Color.deltsAccent)
         .padding(12)
         .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
@@ -99,7 +99,7 @@ struct MultiSelectChipGrid<Option: Identifiable & Hashable>: View {
                     HStack(spacing: 9) {
                         Image(systemName: icon(option))
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(isSelected ? Color.white : Color.deltsElectricBlue)
+                            .foregroundStyle(isSelected ? Color.white : Color.deltsAccent)
                         Text(title(option))
                             .font(.footnote.weight(.semibold))
                             .lineLimit(2)
@@ -110,12 +110,12 @@ struct MultiSelectChipGrid<Option: Identifiable & Hashable>: View {
                     .padding(.vertical, 11)
                     .padding(.horizontal, 12)
                     .background(
-                        isSelected ? Color.deltsElectricBlue : Color.deltsCard,
-                        in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        isSelected ? Color.deltsAccent : Color.clear,
+                        in: Capsule()
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 15, style: .continuous)
-                            .stroke(isSelected ? Color.deltsElectricBlue.opacity(0.8) : Color(uiColor: .separator).opacity(0.35), lineWidth: 0.5)
+                        Capsule()
+                            .stroke(isSelected ? Color.deltsAccent.opacity(0.8) : Color(uiColor: .separator).opacity(0.28), lineWidth: 0.5)
                     )
                 }
                 .buttonStyle(.plain)

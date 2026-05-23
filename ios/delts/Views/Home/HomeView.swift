@@ -23,6 +23,7 @@ struct HomeView: View {
                 .padding(.bottom, 18)
             }
             .deltsScreen()
+            .contentMargins(.bottom, 110, for: .scrollContent)
             .toolbar(.hidden, for: .navigationBar)
         }
     }
@@ -37,35 +38,46 @@ struct HomeView: View {
     }
 
     private var todayWorkout: some View {
-        GlassCard(padding: 0, cornerRadius: 24) {
-            HStack(spacing: 14) {
-                AnimatedExerciseVisual(muscleGroup: recommendedMuscle, height: 136, fillsWidth: false)
-                    .frame(width: 118, height: 136)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("Today's Focus")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        Text(recommendedTitle)
-                            .font(.title2.weight(.bold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.82)
-                        Text("\(recommendedExerciseCount) exercises - \(profile?.workoutDurationMinutes ?? 60) min")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                    }
-
-                    NavigationLink("Start Workout", destination: PlanBuilderView())
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.regular)
-                        .tint(Color.deltsElectricBlue)
+        VStack(alignment: .leading, spacing: 14) {
+            AnimatedExerciseVisual(muscleGroup: recommendedMuscle, height: 228)
+                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                .overlay(alignment: .bottomLeading) {
+                    LinearGradient(
+                        colors: [.clear, .black.opacity(0.55)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(alignment: .bottom, spacing: 16) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Today's Focus")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(recommendedTitle)
+                        .font(.title.weight(.bold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.78)
+                    Text("\(recommendedExerciseCount) exercises - \(profile?.workoutDurationMinutes ?? 60) min")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 12)
+
+                NavigationLink {
+                    PlanBuilderView()
+                } label: {
+                    Label("Start", systemImage: "play.fill")
+                        .font(.headline.weight(.bold))
+                        .labelStyle(.titleAndIcon)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .tint(Color.deltsAccent)
             }
-            .padding(16)
         }
     }
 
@@ -73,7 +85,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 12) {
             DeltsSectionHeader(title: "At a Glance")
 
-            HStack(spacing: 10) {
+            HStack(spacing: 0) {
                 DeltsMetricTile(
                     title: "Goal",
                     value: profile?.mainGoal.shortTitle ?? "Muscle",
@@ -90,8 +102,17 @@ struct HomeView: View {
                     title: "History",
                     value: "\(completedWorkouts.count)",
                     systemImage: "checkmark.seal.fill",
-                    tint: .deltsElectricBlue
+                    tint: .deltsAccent
                 )
+            }
+            .overlay(alignment: .center) {
+                HStack(spacing: 0) {
+                    Spacer()
+                    Divider().frame(height: 52)
+                    Spacer()
+                    Divider().frame(height: 52)
+                    Spacer()
+                }
             }
         }
     }
@@ -104,7 +125,7 @@ struct HomeView: View {
                 NavigationLink {
                     PlanBuilderView()
                 } label: {
-                    DeltsActionTile(title: "Build Plan", systemImage: "sparkles", tint: .deltsElectricBlue)
+                    DeltsActionTile(title: "Build Plan", systemImage: "sparkles", tint: .deltsAccent)
                 }
                 .buttonStyle(.plain)
 
@@ -138,31 +159,30 @@ struct HomeView: View {
     }
 
     private var focusSummary: some View {
-        GlassCard {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack {
-                    Text("Current focus")
-                        .font(.headline.weight(.bold))
-                    Spacer()
-                    Text(profile?.experienceLevel.title ?? "Intermediate")
-                        .font(.caption.weight(.bold))
-                        .padding(.vertical, 7)
-                        .padding(.horizontal, 10)
-                        .background(Color.deltsPanel, in: Capsule())
-                }
-                .foregroundStyle(.primary)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Current focus")
+                    .font(.headline.weight(.bold))
+                Spacer()
+                Text(profile?.experienceLevel.title ?? "Intermediate")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+            }
+            .foregroundStyle(.primary)
 
-                Text(focusText)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+            Text(focusText)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
-                HStack(spacing: 10) {
-                    MetricPill(title: "Split", value: profile?.workoutSplit.title ?? "PPL", systemImage: "calendar")
-                    MetricPill(title: "Duration", value: "\(profile?.workoutDurationMinutes ?? 60)m", systemImage: "timer", tint: .deltsInferno)
-                }
+            Divider()
+
+            HStack(spacing: 18) {
+                MetricPill(title: "Split", value: profile?.workoutSplit.title ?? "PPL", systemImage: "calendar")
+                MetricPill(title: "Duration", value: "\(profile?.workoutDurationMinutes ?? 60)m", systemImage: "timer", tint: .deltsInferno)
             }
         }
+        .padding(.vertical, 4)
     }
 
     @ViewBuilder
@@ -198,10 +218,13 @@ struct HomeView: View {
                                     .font(.caption.weight(.bold))
                                     .foregroundStyle(Color.deltsMutedText)
                             }
-                            .padding(13)
-                            .background(Color.deltsCard, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .padding(.vertical, 10)
                         }
                         .buttonStyle(.plain)
+
+                        if workout.id != completedWorkouts.prefix(3).last?.id {
+                            Divider()
+                        }
                     }
                 }
             }

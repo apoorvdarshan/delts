@@ -36,6 +36,7 @@ struct ActiveWorkoutView: View {
             .padding(.bottom, 18)
         }
         .deltsScreen()
+        .contentMargins(.bottom, 110, for: .scrollContent)
         .toolbar(.hidden, for: .navigationBar)
     }
 
@@ -56,11 +57,11 @@ struct ActiveWorkoutView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                DeltsProgressRing(progress: progress, label: "Done", tint: .deltsElectricBlue)
+                DeltsProgressRing(progress: progress, label: "Done", tint: .deltsAccent)
             }
 
             ProgressView(value: progress)
-                .tint(Color.deltsElectricBlue)
+                .tint(Color.deltsAccent)
                 .padding(.top, 8)
         }
     }
@@ -106,7 +107,7 @@ struct ActiveWorkoutView: View {
                         } label: {
                             Image(systemName: isSetComplete(setIndex) ? "checkmark.circle.fill" : "circle")
                                 .font(.title3)
-                                .foregroundStyle(isSetComplete(setIndex) ? Color.deltsElectricBlue : Color.secondary)
+                                .foregroundStyle(isSetComplete(setIndex) ? Color.deltsAccent : Color.secondary)
                         }
                         .buttonStyle(.plain)
 

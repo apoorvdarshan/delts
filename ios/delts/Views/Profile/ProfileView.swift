@@ -25,6 +25,7 @@ struct ProfileView: View {
                 }
             }
             .deltsScreen()
+            .contentMargins(.bottom, 110, for: .scrollContent)
             .toolbar(.hidden, for: .navigationBar)
             .onDisappear {
                 try? modelContext.save()
@@ -82,7 +83,7 @@ private struct ProfileEditorView: View {
                         .minimumScaleFactor(0.78)
 
                     HStack(spacing: 8) {
-                        miniPill("\(profile.workoutFrequencyPerWeek)x/week", "calendar", .deltsElectricBlue)
+                        miniPill("\(profile.workoutFrequencyPerWeek)x/week", "calendar", .deltsAccent)
                         miniPill("\(profile.workoutDurationMinutes)m", "timer", .deltsGold)
                     }
                 }
@@ -108,7 +109,7 @@ private struct ProfileEditorView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .tint(Color.deltsElectricBlue)
+                    .tint(Color.deltsAccent)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                     .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -156,7 +157,7 @@ private struct ProfileEditorView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .tint(Color.deltsElectricBlue)
+                    .tint(Color.deltsAccent)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                     .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -201,7 +202,7 @@ private struct ProfileEditorView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .tint(Color.deltsElectricBlue)
+                    .tint(Color.deltsAccent)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                     .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -270,7 +271,7 @@ private struct ProfileEditorView: View {
     private func sectionTitle(_ title: String, systemImage: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: systemImage)
-                .foregroundStyle(Color.deltsElectricBlue)
+                .foregroundStyle(Color.deltsAccent)
             Text(title)
                 .font(.headline.weight(.bold))
                 .foregroundStyle(.primary)

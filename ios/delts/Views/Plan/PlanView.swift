@@ -30,6 +30,7 @@ struct PlanBuilderView: View {
                 .padding(.bottom, 18)
             }
             .deltsScreen()
+            .contentMargins(.bottom, 110, for: .scrollContent)
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(item: $generatedPlan) { plan in
                 WorkoutPlanView(plan: plan)
@@ -75,7 +76,7 @@ struct PlanBuilderView: View {
                         .foregroundStyle(.secondary)
 
                     HStack(spacing: 10) {
-                        smallStat("Level", viewModel.selectedExperience.title, .deltsElectricBlue)
+                        smallStat("Level", viewModel.selectedExperience.title, .deltsAccent)
                         smallStat("Gear", "\(viewModel.selectedEquipment.count)", .deltsInferno)
                     }
                 }
@@ -215,7 +216,7 @@ struct WorkoutPlanView: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(plan.generatedByAI ? "AI generated" : "Offline generated")
                                     .font(.caption.weight(.bold))
-                                    .foregroundStyle(plan.generatedByAI ? Color.deltsElectricBlue : Color.deltsInferno)
+                                    .foregroundStyle(plan.generatedByAI ? Color.deltsAccent : Color.deltsInferno)
                                     .textCase(.uppercase)
                                 Text(plan.title)
                                     .font(.largeTitle.weight(.bold))
@@ -226,7 +227,7 @@ struct WorkoutPlanView: View {
                             Spacer()
                             Image(systemName: plan.generatedByAI ? "sparkles" : "bolt.fill")
                                 .font(.title2)
-                                .foregroundStyle(plan.generatedByAI ? Color.deltsElectricBlue : Color.deltsInferno)
+                                .foregroundStyle(plan.generatedByAI ? Color.deltsAccent : Color.deltsInferno)
                         }
                         .padding(.horizontal, 18)
 
@@ -267,6 +268,7 @@ struct WorkoutPlanView: View {
             .padding(.bottom, 18)
         }
         .deltsScreen()
+        .contentMargins(.bottom, 110, for: .scrollContent)
         .toolbar(.hidden, for: .navigationBar)
         .navigationDestination(item: $startRoute) { route in
             ActiveWorkoutView(plan: plan, startIndex: route.index)

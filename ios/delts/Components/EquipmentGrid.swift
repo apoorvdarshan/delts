@@ -5,7 +5,7 @@ struct EquipmentGrid: View {
     @Binding var selection: Set<Equipment>
 
     private let columns = [
-        GridItem(.adaptive(minimum: 148), spacing: 12)
+        GridItem(.adaptive(minimum: 150), spacing: 10)
     ]
 
     var body: some View {
@@ -24,9 +24,9 @@ struct EquipmentGrid: View {
                     HStack(spacing: 10) {
                         Image(systemName: item.icon)
                             .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(isSelected ? Color.white : Color.deltsElectricBlue)
+                            .foregroundStyle(isSelected ? Color.white : Color.deltsAccent)
                             .frame(width: 30, height: 30)
-                            .background(isSelected ? Color.deltsElectricBlue : Color.deltsElectricBlue.opacity(0.12), in: Circle())
+                            .background(isSelected ? Color.deltsAccent : Color.deltsAccent.opacity(0.12), in: Circle())
 
                         Text(item.title)
                             .font(.subheadline.weight(.semibold))
@@ -35,15 +35,16 @@ struct EquipmentGrid: View {
                             .minimumScaleFactor(0.82)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(12)
-                    .frame(minHeight: 58)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 4)
+                    .frame(minHeight: 54)
                     .background(
-                        isSelected ? Color.deltsElectricBlue.opacity(0.12) : Color.deltsCard,
-                        in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        isSelected ? Color.deltsAccent.opacity(0.14) : Color.clear,
+                        in: Capsule()
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .stroke(isSelected ? Color.deltsElectricBlue.opacity(0.8) : Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+                        Capsule()
+                            .stroke(isSelected ? Color.deltsAccent.opacity(0.6) : Color(uiColor: .separator).opacity(0.22), lineWidth: 0.5)
                     )
                 }
                 .buttonStyle(.plain)

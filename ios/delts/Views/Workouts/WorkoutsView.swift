@@ -167,7 +167,7 @@ private struct ExerciseLibraryBrowserView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .tint(Color.deltsElectricBlue)
+            .tint(Color.deltsAccent)
             .disabled(items.isEmpty)
         }
         .padding(.vertical, 8)
@@ -387,7 +387,7 @@ private struct ExerciseEquipmentFamilyChip: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.small)
-            .tint(Color.deltsElectricBlue)
+            .tint(Color.deltsAccent)
         } else {
             Button(action: action) {
                 Text(family.title)
@@ -432,7 +432,7 @@ private struct ExerciseLibraryRow: View {
                     .minimumScaleFactor(0.84)
 
                 HStack(spacing: 6) {
-                    LibraryTag(title: item.level.title, systemImage: "chart.bar.fill", tint: .deltsElectricBlue)
+                    LibraryTag(title: item.level.title, systemImage: "chart.bar.fill", tint: .deltsAccent)
                     LibraryTag(title: item.machineLabel, systemImage: "dumbbell.fill", tint: .deltsInferno)
                 }
             }
@@ -448,7 +448,7 @@ private struct CompletedWorkoutRow: View {
         HStack(spacing: 14) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.title2.weight(.semibold))
-                .foregroundStyle(Color.deltsElectricBlue)
+                .foregroundStyle(Color.deltsAccent)
                 .frame(width: 36, height: 36)
                 .accessibilityHidden(true)
 
@@ -512,7 +512,7 @@ private struct ExerciseLibraryDetailView: View {
 
                     Text("\(item.muscleGroup.title) - \(item.equipment.title) - \(item.machineLabel)")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.deltsElectricBlue)
+                        .foregroundStyle(Color.deltsAccent)
 
                     Text(item.source)
                         .font(.caption.weight(.semibold))
@@ -540,7 +540,7 @@ private struct ExerciseLibraryDetailView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
-                .tint(Color.deltsElectricBlue)
+                .tint(Color.deltsAccent)
             }
             .padding(.horizontal, 20)
             .padding(.top, 18)
@@ -603,7 +603,7 @@ private struct DetailMetric: View {
             }
         } icon: {
             Image(systemName: systemImage)
-                .foregroundStyle(Color.deltsElectricBlue)
+                .foregroundStyle(Color.deltsAccent)
         }
     }
 }
@@ -623,7 +623,7 @@ struct CompletedWorkoutDetailView: View {
 
                     Text(workout.date.formatted(date: .complete, time: .shortened))
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.deltsElectricBlue)
+                        .foregroundStyle(Color.deltsAccent)
 
                     Text(workout.planSummary)
                         .font(.body)
@@ -638,7 +638,7 @@ struct CompletedWorkoutDetailView: View {
                     ForEach(exercise.sets) { set in
                         HStack(spacing: 12) {
                             Image(systemName: set.completed ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(set.completed ? Color.deltsElectricBlue : .secondary)
+                                .foregroundStyle(set.completed ? Color.deltsAccent : .secondary)
                                 .accessibilityHidden(true)
 
                             Text("Set \(set.setNumber)")

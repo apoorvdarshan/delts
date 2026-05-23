@@ -1,5 +1,4 @@
 import Combine
-import ImageIO
 import SwiftUI
 import UIKit
 
@@ -17,12 +16,6 @@ struct AnimatedExerciseVisual: View {
         ZStack {
             if !resolvedImageURLs.isEmpty {
                 ExerciseImageSequenceView(urls: resolvedImageURLs)
-            } else if let resourceName = GIFAssetResolver.resourceName(
-                assetName: assetName,
-                exerciseName: exerciseName,
-                muscleGroup: muscleGroup
-            ) {
-                AnimatedGIFView(resourceName: resourceName)
             } else {
                 fallbackVisual
             }
@@ -42,16 +35,28 @@ struct AnimatedExerciseVisual: View {
             return directURLs
         }
 
-        return FreeExerciseDBAssetResolver.imageURLs(forExerciseName: exerciseName)
+        let namedURLs = FreeExerciseDBAssetResolver.imageURLs(
+            forExerciseName: exerciseName,
+            muscleGroup: muscleGroup,
+            equipment: equipment
+        )
+        if !namedURLs.isEmpty {
+            return namedURLs
+        }
+
+        return FreeExerciseDBAssetResolver.imageURLs(
+            forMuscleGroup: muscleGroup,
+            equipment: equipment
+        )
     }
 
     private var fallbackVisual: some View {
         ZStack {
             LinearGradient(
                 colors: [
-                    Color.deltsElectricBlue.opacity(animate ? 0.45 : 0.18),
+                    Color.deltsPanel,
                     Color.deltsCard,
-                    Color.deltsInferno.opacity(animate ? 0.2 : 0.34)
+                    Color.deltsAccent.opacity(animate ? 0.20 : 0.10)
                 ],
                 startPoint: animate ? .topLeading : .bottomLeading,
                 endPoint: animate ? .bottomTrailing : .topTrailing
@@ -60,11 +65,11 @@ struct AnimatedExerciseVisual: View {
 
             VStack(spacing: 12) {
                 Image(systemName: muscleGroup.icon)
-                    .font(.system(size: 40, weight: .bold))
+                    .font(.system(size: 36, weight: .semibold))
                     .symbolEffect(.pulse, options: .repeating, value: animate)
                 Text(muscleGroup.title.uppercased())
-                    .font(.headline.weight(.black))
-                    .tracking(2)
+                    .font(.caption.weight(.bold))
+                    .tracking(1.2)
                 if let equipment {
                     Text(equipment.title)
                         .font(.caption.weight(.semibold))
@@ -85,7 +90,11 @@ private struct ExerciseImageSequenceView: View {
 
     var body: some View {
         ZStack {
-            Color.white
+            Color(uiColor: UIColor { traits in
+                traits.userInterfaceStyle == .dark
+                    ? UIColor(red: 0.925, green: 0.910, blue: 0.880, alpha: 1)
+                    : UIColor(red: 0.985, green: 0.975, blue: 0.945, alpha: 1)
+            })
 
             if let image = currentImage {
                 Image(uiImage: image)
@@ -114,69 +123,5 @@ private struct ExerciseImageSequenceView: View {
 
         let safeIndex = min(selectedIndex, urls.count - 1)
         return UIImage(contentsOfFile: urls[safeIndex].path)
-    }
-}
-
-struct AnimatedGIFView: UIViewRepresentable {
-    let resourceName: String
-
-    func makeUIView(context: Context) -> UIImageView {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFill
-        imageView.clipsToBounds = true
-        imageView.image = animatedImage()
-        return imageView
-    }
-
-    func updateUIView(_ uiView: UIImageView, context: Context) {
-        uiView.image = animatedImage()
-    }
-
-    private func animatedImage() -> UIImage? {
-        guard
-            let url = Bundle.main.url(forResource: resourceName, withExtension: "gif"),
-            let data = try? Data(contentsOf: url)
-        else {
-            return nil
-        }
-
-        return UIImage.animatedImage(withGIFData: data)
-    }
-}
-
-private extension UIImage {
-    static func animatedImage(withGIFData data: Data) -> UIImage? {
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
-            return nil
-        }
-
-        let frameCount = CGImageSourceGetCount(source)
-        var images: [UIImage] = []
-        var duration: TimeInterval = 0
-
-        for index in 0..<frameCount {
-            guard let cgImage = CGImageSourceCreateImageAtIndex(source, index, nil) else {
-                continue
-            }
-            duration += frameDuration(at: index, source: source)
-            images.append(UIImage(cgImage: cgImage))
-        }
-
-        return UIImage.animatedImage(with: images, duration: duration)
-    }
-
-    private static func frameDuration(at index: Int, source: CGImageSource) -> TimeInterval {
-        let defaultDuration = 0.1
-        guard
-            let properties = CGImageSourceCopyPropertiesAtIndex(source, index, nil) as? [CFString: Any],
-            let gifProperties = properties[kCGImagePropertyGIFDictionary] as? [CFString: Any]
-        else {
-            return defaultDuration
-        }
-
-        let unclampedDelay = gifProperties[kCGImagePropertyGIFUnclampedDelayTime] as? TimeInterval
-        let delay = gifProperties[kCGImagePropertyGIFDelayTime] as? TimeInterval
-        let duration = unclampedDelay ?? delay ?? defaultDuration
-        return duration < 0.02 ? defaultDuration : duration
     }
 }

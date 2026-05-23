@@ -22,12 +22,12 @@ struct MuscleGroupPicker: View {
                         .padding(.vertical, 11)
                         .padding(.horizontal, 14)
                         .background(
-                            selection == group ? Color.deltsElectricBlue : Color.deltsCard,
+                            selection == group ? Color.deltsAccent : Color.clear,
                             in: Capsule()
                         )
                         .overlay(
                             Capsule()
-                                .stroke(selection == group ? Color.deltsElectricBlue : Color(uiColor: .separator).opacity(0.35), lineWidth: 0.5)
+                                .stroke(selection == group ? Color.deltsAccent : Color(uiColor: .separator).opacity(0.28), lineWidth: 0.5)
                         )
                     }
                     .buttonStyle(.plain)

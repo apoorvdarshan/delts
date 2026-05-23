@@ -36,7 +36,7 @@ struct ExerciseCard: View {
                     }
 
                     HStack(spacing: 8) {
-                        MetricPill(title: "Sets", value: "\(exercise.sets)", systemImage: "number", tint: .deltsElectricBlue)
+                        MetricPill(title: "Sets", value: "\(exercise.sets)", systemImage: "number", tint: .deltsAccent)
                         MetricPill(title: "Reps", value: exercise.reps, systemImage: "repeat", tint: .deltsInferno)
                         MetricPill(title: "Rest", value: exercise.restDisplay, systemImage: "timer", tint: .white.opacity(0.78))
                     }
@@ -58,7 +58,7 @@ struct ExerciseCard: View {
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
-                        .background(Color.deltsElectricBlue, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .background(Color.deltsAccent, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                     .buttonStyle(.plain)
                 }

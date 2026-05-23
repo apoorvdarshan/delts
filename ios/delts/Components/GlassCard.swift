@@ -14,11 +14,14 @@ struct GlassCard<Content: View>: View {
     var body: some View {
         content
             .padding(padding)
-            .background(Color.deltsCard, in: RoundedRectangle(cornerRadius: min(cornerRadius, 18), style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: min(cornerRadius, 18), style: .continuous)
-                    .stroke(Color(uiColor: .separator).opacity(0.35), lineWidth: 0.5)
-            )
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: .bottom) {
+                if padding > 0 {
+                    Rectangle()
+                        .fill(Color(uiColor: .separator).opacity(0.28))
+                        .frame(height: 0.5)
+                }
+            }
     }
 }
 
@@ -26,7 +29,7 @@ struct MetricPill: View {
     let title: String
     let value: String
     var systemImage: String
-    var tint: Color = .deltsElectricBlue
+    var tint: Color = .deltsAccent
 
     var body: some View {
         HStack(spacing: 10) {
@@ -47,8 +50,6 @@ struct MetricPill: View {
                     .minimumScaleFactor(0.8)
             }
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 12)
-        .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(.vertical, 6)
     }
 }

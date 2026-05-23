@@ -13,7 +13,7 @@ struct PrimaryButton: View {
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.large)
-        .tint(Color.deltsElectricBlue)
+        .tint(Color.deltsAccent)
         .disabled(isLoading)
         .opacity(isLoading ? 0.72 : 1)
     }
@@ -39,7 +39,7 @@ struct PrimaryButton: View {
 struct GlassIconButton: View {
     let title: String
     let systemImage: String
-    var tint: Color = .deltsElectricBlue
+    var tint: Color = .deltsAccent
     var action: () -> Void
 
     var body: some View {

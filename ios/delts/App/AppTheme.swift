@@ -1,21 +1,46 @@
 import SwiftUI
 
 extension Color {
-    static let deltsBackground = Color(uiColor: .systemGroupedBackground)
+    static let deltsBackground = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.105, green: 0.100, blue: 0.090, alpha: 1)
+            : UIColor(red: 0.965, green: 0.955, blue: 0.935, alpha: 1)
+    })
     static let deltsCharcoal = Color(uiColor: .label)
-    static let deltsCard = Color(uiColor: .secondarySystemGroupedBackground)
-    static let deltsPanel = Color(uiColor: .tertiarySystemGroupedBackground)
-    static let deltsElectricBlue = Color(red: 0.00, green: 0.37, blue: 0.86)
-    static let deltsInferno = Color(red: 0.86, green: 0.22, blue: 0.12)
-    static let deltsAcidGreen = Color(red: 0.10, green: 0.58, blue: 0.28)
-    static let deltsGold = Color(red: 0.84, green: 0.55, blue: 0.08)
+    static let deltsCard = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.160, green: 0.152, blue: 0.135, alpha: 1)
+            : UIColor(red: 1.000, green: 0.992, blue: 0.970, alpha: 1)
+    })
+    static let deltsPanel = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.220, green: 0.205, blue: 0.180, alpha: 1)
+            : UIColor(red: 0.925, green: 0.908, blue: 0.875, alpha: 1)
+    })
+    static let deltsAccent = Color(red: 0.84, green: 0.34, blue: 0.16)
+    static let deltsSecondaryAccent = Color(red: 0.48, green: 0.57, blue: 0.36)
+    static let deltsWarning = Color(red: 0.78, green: 0.55, blue: 0.20)
+    static let deltsInferno = Color(red: 0.86, green: 0.25, blue: 0.16)
+    static let deltsAcidGreen = Color.deltsSecondaryAccent
+    static let deltsGold = Color.deltsWarning
     static let deltsMutedText = Color(uiColor: .secondaryLabel)
 }
 
 struct DeltsBackground: View {
     var body: some View {
-        Color.deltsBackground
-            .ignoresSafeArea()
+        ZStack {
+            Color.deltsBackground
+            LinearGradient(
+                colors: [
+                    Color.deltsBackground,
+                    Color.deltsPanel.opacity(0.34),
+                    Color.deltsBackground
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+        .ignoresSafeArea()
     }
 }
 
@@ -100,9 +125,9 @@ struct DeltsHeader: View {
             if let trailingSystemImage {
                 Image(systemName: trailingSystemImage)
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(Color.deltsElectricBlue)
+                    .foregroundStyle(Color.deltsAccent)
                     .frame(width: 38, height: 38)
-                    .background(Color.deltsElectricBlue.opacity(0.12), in: Circle())
+                    .background(Color.deltsAccent.opacity(0.12), in: Circle())
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -132,13 +157,15 @@ struct DeltsMetricTile: View {
     let title: String
     let value: String
     var systemImage: String
-    var tint: Color = .deltsElectricBlue
+    var tint: Color = .deltsAccent
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 9) {
             Image(systemName: systemImage)
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(tint)
+                .frame(width: 30, height: 30)
+                .background(tint.opacity(0.13), in: Circle())
 
             Text(value)
                 .font(.title3.weight(.bold))
@@ -151,42 +178,41 @@ struct DeltsMetricTile: View {
                 .foregroundStyle(Color.deltsMutedText)
                 .lineLimit(1)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 88, alignment: .leading)
-        .background(Color.deltsCard, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, minHeight: 76, alignment: .leading)
     }
 }
 
 struct DeltsActionTile: View {
     let title: String
     let systemImage: String
-    var tint: Color = .deltsElectricBlue
+    var tint: Color = .deltsAccent
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .center, spacing: 9) {
             Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: 19, weight: .semibold))
                 .foregroundStyle(tint)
-                .frame(width: 38, height: 38)
-                .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .frame(width: 48, height: 48)
+                .background(tint.opacity(0.14), in: Circle())
 
             Text(title)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.primary)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
         }
-        .padding(13)
-        .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
-        .background(Color.deltsCard, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, minHeight: 82)
     }
 }
 
 struct DeltsProgressRing: View {
     let progress: Double
     var label: String
-    var tint: Color = .deltsElectricBlue
+    var tint: Color = .deltsAccent
 
     var body: some View {
         ZStack {

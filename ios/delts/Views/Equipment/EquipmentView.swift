@@ -43,6 +43,7 @@ struct EquipmentManualSelectionView: View {
             .padding(.bottom, 18)
         }
         .deltsScreen()
+        .contentMargins(.bottom, 110, for: .scrollContent)
         .toolbar(.hidden, for: .navigationBar)
     }
 
@@ -72,16 +73,16 @@ struct EquipmentManualSelectionView: View {
                     NavigationLink("Open Scanner", destination: EquipmentScanComingSoonView())
                         .buttonStyle(.borderedProminent)
                         .controlSize(.regular)
-                        .tint(Color.deltsElectricBlue)
+                        .tint(Color.deltsAccent)
                 }
 
                 Spacer()
 
                 Image(systemName: "camera.metering.matrix")
                     .font(.system(size: 42, weight: .semibold))
-                    .foregroundStyle(Color.deltsElectricBlue)
+                    .foregroundStyle(Color.deltsAccent)
                     .frame(width: 72, height: 72)
-                    .background(Color.deltsElectricBlue.opacity(0.10), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(Color.deltsAccent.opacity(0.10), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
             .padding(18)
             .frame(minHeight: 170)
@@ -117,7 +118,7 @@ struct EquipmentScanComingSoonView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         Image(systemName: "camera.metering.matrix")
                             .font(.system(size: 42, weight: .bold))
-                            .foregroundStyle(Color.deltsElectricBlue)
+                            .foregroundStyle(Color.deltsAccent)
 
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Equipment scanning coming soon")
@@ -156,6 +157,7 @@ struct EquipmentScanComingSoonView: View {
             .padding(.bottom, 18)
         }
         .deltsScreen()
+        .contentMargins(.bottom, 110, for: .scrollContent)
         .toolbar(.hidden, for: .navigationBar)
         .onChange(of: selectedPhoto) { _, newValue in
             Task {
