@@ -12,9 +12,11 @@ struct AnimatedExerciseVisual: View {
     @State private var animate = false
 
     var body: some View {
+        let imageURLs = resolvedImageURLs
+
         ZStack {
-            if let imageURL = resolvedImageURLs.first {
-                ExerciseImageView(url: imageURL)
+            if !imageURLs.isEmpty {
+                ExerciseImageView(urls: imageURLs)
             } else {
                 fallbackVisual
             }
@@ -82,7 +84,14 @@ struct AnimatedExerciseVisual: View {
 }
 
 private struct ExerciseImageView: View {
-    let url: URL
+    let urls: [URL]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var frameIndex = 0
+
+    private var currentURL: URL? {
+        guard !urls.isEmpty else { return nil }
+        return urls[min(frameIndex, urls.count - 1)]
+    }
 
     var body: some View {
         ZStack {
@@ -98,11 +107,25 @@ private struct ExerciseImageView: View {
                     .scaledToFill()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
+                    .id(currentURL)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.18), value: frameIndex)
+        .task(id: urls) {
+            frameIndex = 0
+            guard urls.count > 1, !reduceMotion else { return }
+
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 700_000_000)
+                guard !Task.isCancelled else { return }
+                frameIndex = (frameIndex + 1) % urls.count
             }
         }
     }
 
     private var currentImage: UIImage? {
-        UIImage(contentsOfFile: url.path)
+        guard let currentURL else { return nil }
+        return UIImage(contentsOfFile: currentURL.path)
     }
 }

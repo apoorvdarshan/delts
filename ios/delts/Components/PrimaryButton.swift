@@ -112,7 +112,6 @@ struct GlassIconButton: View {
                     .font(.system(size: 19, weight: .semibold))
                     .frame(width: 34, height: 34)
                     .foregroundStyle(tint)
-                    .background(tint.opacity(0.15), in: Circle())
                 Text(title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.deltsCharcoal)

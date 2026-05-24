@@ -131,7 +131,6 @@ struct ActiveWorkoutView: View {
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Color.deltsSecondaryAccent)
                 .frame(width: 32, height: 32)
-                .background(Color.deltsSecondaryAccent.opacity(0.14), in: Circle())
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Rest")
@@ -278,7 +277,6 @@ struct ActiveWorkoutView: View {
                     .font(.footnote.weight(.bold))
                     .foregroundStyle(Color.deltsWarning)
                     .frame(width: 24, height: 24)
-                    .background(Color.deltsWarning.opacity(0.13), in: Circle())
 
                 Text(exercise.formTip)
                     .font(.footnote)
@@ -408,7 +406,7 @@ struct ActiveWorkoutView: View {
                 isSetComplete(setIndex)
                     ? Color.deltsSecondaryAccent.opacity(0.14)
                     : Color.deltsPanel.opacity(0.42),
-                in: Circle()
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
             )
             .accessibilityHidden(true)
     }

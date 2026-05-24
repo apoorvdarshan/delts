@@ -19,14 +19,6 @@ struct ContentView: View {
                 .tabItem { Label(DeltsTab.home.title, systemImage: DeltsTab.home.systemImage) }
                 .tag(DeltsTab.home)
 
-            PlanView()
-                .tabItem { Label(DeltsTab.plan.title, systemImage: DeltsTab.plan.systemImage) }
-                .tag(DeltsTab.plan)
-
-            EquipmentView()
-                .tabItem { Label(DeltsTab.equipment.title, systemImage: DeltsTab.equipment.systemImage) }
-                .tag(DeltsTab.equipment)
-
             WorkoutsView()
                 .tabItem { Label(DeltsTab.workouts.title, systemImage: DeltsTab.workouts.systemImage) }
                 .tag(DeltsTab.workouts)
@@ -50,8 +42,6 @@ struct ContentView: View {
 
 private enum DeltsTab: String, CaseIterable, Identifiable {
     case home
-    case plan
-    case equipment
     case workouts
     case profile
 
@@ -59,9 +49,7 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .home: return "Home"
-        case .plan: return "Plan"
-        case .equipment: return "Equipment"
+        case .home: return "Start"
         case .workouts: return "Workouts"
         case .profile: return "Profile"
         }
@@ -69,11 +57,9 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
-        case .home: return "house.fill"
-        case .plan: return "figure.strengthtraining.traditional"
-        case .equipment: return "dumbbell.fill"
+        case .home: return "play.fill"
         case .workouts: return "list.clipboard.fill"
-        case .profile: return "person.crop.circle.fill"
+        case .profile: return "person.fill"
         }
     }
 }

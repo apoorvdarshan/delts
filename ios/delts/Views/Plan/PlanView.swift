@@ -160,7 +160,7 @@ struct PlanBuilderView: View {
             PlanControlDivider()
 
             planControl("Equipment", systemImage: "dumbbell.fill", detail: equipmentDetail) {
-                PlanEquipmentSelector(selection: $viewModel.selectedEquipment)
+                PlanProfileEquipmentSummary(equipment: viewModel.selectedEquipment)
             }
         }
     }
@@ -219,7 +219,7 @@ struct PlanBuilderView: View {
             return "exclamationmark.triangle.fill"
         }
 
-        return "checkmark.circle.fill"
+        return "checkmark"
     }
 
     private var generationStatusTint: Color {
@@ -328,7 +328,6 @@ private struct PlanControlHeader: View {
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(Color.deltsSecondaryAccent)
                 .frame(width: 28, height: 28)
-                .background(Color.deltsSecondaryAccent.opacity(0.12), in: Circle())
                 .accessibilityHidden(true)
 
             Text(title)
@@ -420,7 +419,6 @@ private struct PlanMetricColumn: View {
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(metric.tint)
                 .frame(width: 26, height: 26)
-                .background(metric.tint.opacity(0.13), in: Circle())
                 .accessibilityHidden(true)
 
             Text(metric.value)
@@ -439,63 +437,43 @@ private struct PlanMetricColumn: View {
     }
 }
 
-private struct PlanEquipmentSelector: View {
-    @Binding var selection: Set<Equipment>
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var feedbackTrigger = false
+private struct PlanProfileEquipmentSummary: View {
+    let equipment: Set<Equipment>
 
-    private let columns = [
-        GridItem(.adaptive(minimum: 148), spacing: 10, alignment: .top)
-    ]
+    private var selectedItems: [Equipment] {
+        Equipment.allCases.filter { equipment.contains($0) }
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if selection.isEmpty {
-                Label("Profile equipment will be used", systemImage: "person.crop.circle")
-                    .font(.caption.weight(.semibold))
+        VStack(alignment: .leading, spacing: 14) {
+            Label("Edit equipment from Profile only", systemImage: "person.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.deltsMutedText)
+
+            if selectedItems.isEmpty {
+                Text("No profile equipment selected. Plans will fall back to bodyweight choices.")
+                    .font(.subheadline)
                     .foregroundStyle(Color.deltsMutedText)
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 10)
-                    .background(Color.deltsPanel.opacity(0.22), in: Capsule())
-            }
-
-            ForEach(PlanEquipmentSection.all) { section in
-                VStack(alignment: .leading, spacing: 9) {
-                    Label(section.title, systemImage: section.systemImage)
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(Color.deltsMutedText)
-                        .textCase(.uppercase)
-                        .labelStyle(.titleAndIcon)
-                        .padding(.horizontal, 2)
-
-                    LazyVGrid(columns: columns, alignment: .leading, spacing: 10) {
-                        ForEach(section.items) { item in
-                            PlanEquipmentToggle(
-                                item: item,
-                                isSelected: selection.contains(item)
-                            ) {
-                                toggle(item)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 136), spacing: 10)], alignment: .leading, spacing: 10) {
+                    ForEach(selectedItems) { item in
+                        Label(item.title, systemImage: item.icon)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.deltsCharcoal)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.78)
+                            .padding(.horizontal, 12)
+                            .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
+                            .background(Color.deltsPanel.opacity(0.22), in: Capsule())
+                            .overlay {
+                                Capsule()
+                                    .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
                             }
-                        }
                     }
                 }
             }
         }
-        .sensoryFeedback(.selection, trigger: feedbackTrigger)
-    }
-
-    private func toggle(_ item: Equipment) {
-        let animation: Animation? = reduceMotion ? nil : .snappy(duration: 0.18)
-
-        withAnimation(animation) {
-            if selection.contains(item) {
-                selection.remove(item)
-            } else {
-                selection.insert(item)
-            }
-        }
-
-        feedbackTrigger.toggle()
     }
 }
 
@@ -547,10 +525,6 @@ private struct PlanEquipmentToggle: View {
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsSecondaryAccent)
                     .frame(width: 31, height: 31)
-                    .background(
-                        isSelected ? Color.deltsAccent : Color.deltsSecondaryAccent.opacity(0.12),
-                        in: Circle()
-                    )
                     .accessibilityHidden(true)
 
                 Text(item.title)
@@ -716,7 +690,7 @@ struct WorkoutPlanView: View {
     }
 }
 
-private func planGoalIcon(_ goal: FitnessGoal) -> String {
+func planGoalIcon(_ goal: FitnessGoal) -> String {
     switch goal {
     case .muscleGain:
         return "figure.strengthtraining.traditional"
@@ -735,7 +709,7 @@ private func planGoalIcon(_ goal: FitnessGoal) -> String {
     }
 }
 
-private func planExperienceIcon(_ experience: ExperienceLevel) -> String {
+func planExperienceIcon(_ experience: ExperienceLevel) -> String {
     switch experience {
     case .beginner:
         return "1.circle.fill"
@@ -746,7 +720,7 @@ private func planExperienceIcon(_ experience: ExperienceLevel) -> String {
     }
 }
 
-private func planDurationIcon(_ minutes: Int) -> String {
+func planDurationIcon(_ minutes: Int) -> String {
     switch minutes {
     case ..<45:
         return "timer"

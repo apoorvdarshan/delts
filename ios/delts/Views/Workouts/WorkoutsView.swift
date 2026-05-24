@@ -96,6 +96,15 @@ private struct ExerciseLibraryBrowserView: View {
             selectedSort != .bodyPart
     }
 
+    private var hasLibrarySelection: Bool {
+        !searchText.isEmpty ||
+            selectedMuscleGroup != nil ||
+            selectedLevel != nil ||
+            selectedGoal != nil ||
+            selectedEquipment != nil ||
+            selectedEquipmentFamily != .all
+    }
+
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
@@ -107,7 +116,14 @@ private struct ExerciseLibraryBrowserView: View {
                 filters
                     .padding(.bottom, 18)
 
-                if items.isEmpty {
+                if !hasLibrarySelection {
+                    WorkoutLibraryFocusChooser { group in
+                        withAnimation(.snappy) {
+                            selectedMuscleGroup = group
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                } else if items.isEmpty {
                     ContentUnavailableView(
                         "No exercises match",
                         systemImage: "line.3.horizontal.decrease.circle",
@@ -157,18 +173,18 @@ private struct ExerciseLibraryBrowserView: View {
     private var librarySummary: some View {
         HStack(alignment: .center, spacing: 16) {
             VStack(alignment: .leading, spacing: 5) {
-                Text("Exercise library")
+                Text(hasLibrarySelection ? "Exercise library" : "Choose a focus")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Color.deltsMutedText)
                     .textCase(.uppercase)
 
-                Text("\(service.exercises.count) offline exercises")
+                Text(hasLibrarySelection ? "\(items.count) matching exercises" : "\(service.exercises.count) offline exercises")
                     .font(.title3.weight(.bold))
                     .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
 
-                Text("\(items.count) shown")
+                Text(hasLibrarySelection ? "Build from filtered results" : "Select a body part to browse moving demos")
                     .font(.subheadline)
                     .foregroundStyle(Color.deltsMutedText)
             }
@@ -178,7 +194,7 @@ private struct ExerciseLibraryBrowserView: View {
             Button {
                 generatedPlan = service.makePlan(from: items)
             } label: {
-                Label("Build Top \(min(items.count, 8))", systemImage: "wand.and.stars")
+                Label(hasLibrarySelection ? "Build Top \(min(items.count, 8))" : "Select", systemImage: hasLibrarySelection ? "wand.and.stars" : "hand.tap")
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(Color.deltsOnAccent)
                     .lineLimit(1)
@@ -192,8 +208,8 @@ private struct ExerciseLibraryBrowserView: View {
                     }
             }
             .buttonStyle(.plain)
-            .opacity(items.isEmpty ? 0.48 : 1)
-            .disabled(items.isEmpty)
+            .opacity(items.isEmpty || !hasLibrarySelection ? 0.48 : 1)
+            .disabled(items.isEmpty || !hasLibrarySelection)
         }
         .padding(.vertical, 4)
     }
@@ -202,16 +218,6 @@ private struct ExerciseLibraryBrowserView: View {
         VStack(alignment: .leading, spacing: 12) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    BodyPartFilterChip(
-                        title: "All",
-                        systemImage: "square.grid.2x2.fill",
-                        isSelected: selectedMuscleGroup == nil
-                    ) {
-                        withAnimation(.snappy) {
-                            selectedMuscleGroup = nil
-                        }
-                    }
-
                     ForEach(MuscleGroup.allCases) { group in
                         BodyPartFilterChip(
                             title: group.title,
@@ -380,6 +386,62 @@ private struct ExerciseLibraryBrowserView: View {
                 Text(title)
             }
         }
+    }
+}
+
+private struct WorkoutLibraryFocusChooser: View {
+    let select: (MuscleGroup) -> Void
+
+    private let columns = [
+        GridItem(.adaptive(minimum: 156), spacing: 14, alignment: .top)
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Select Training Area")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+
+            LazyVGrid(columns: columns, alignment: .leading, spacing: 14) {
+                ForEach(MuscleGroup.allCases) { group in
+                    Button {
+                        select(group)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 10) {
+                            AnimatedExerciseVisual(
+                                muscleGroup: group,
+                                height: 118
+                            )
+
+                            HStack(spacing: 8) {
+                                Image(systemName: group.icon)
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(Color.deltsAccent)
+
+                                Text(group.title)
+                                    .font(.headline.weight(.semibold))
+                                    .foregroundStyle(Color.deltsCharcoal)
+                                    .lineLimit(1)
+
+                                Spacer(minLength: 0)
+
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(Color.deltsMutedText)
+                            }
+                        }
+                        .padding(10)
+                        .background(Color.deltsPanel.opacity(0.20), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(.bottom, 18)
     }
 }
 
@@ -884,7 +946,6 @@ private struct DetailMetric: View {
                 .font(.caption.weight(.bold))
                 .foregroundStyle(Color.deltsAccent)
                 .frame(width: 28, height: 28)
-                .background(Color.deltsAccent.opacity(0.12), in: Circle())
 
             Text(value)
                 .font(.subheadline.weight(.semibold))
@@ -913,7 +974,6 @@ private struct DetailInfoRow: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.deltsSecondaryAccent)
                 .frame(width: 30, height: 30)
-                .background(Color.deltsSecondaryAccent.opacity(0.12), in: Circle())
 
             Text(title)
                 .font(.subheadline.weight(.semibold))
@@ -1099,7 +1159,6 @@ private struct WorkoutSummaryMetric: View {
                 .font(.caption.weight(.bold))
                 .foregroundStyle(Color.deltsAccent)
                 .frame(width: 24, height: 24)
-                .background(Color.deltsAccent.opacity(0.12), in: Circle())
 
             Text(value)
                 .font(.headline.weight(.bold))

@@ -59,7 +59,6 @@ struct MetricPill: View {
                 .foregroundStyle(tint)
                 .font(.system(size: 15, weight: .semibold))
                 .frame(width: 26, height: 26)
-                .background(tint.opacity(0.14), in: Circle())
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)

@@ -106,7 +106,6 @@ private struct EquipmentChecklistRow: View {
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(isSelected ? Color.deltsAccent : Color.secondary)
                     .frame(width: 34, height: 34)
-                    .background(Color(uiColor: .tertiarySystemFill), in: Circle())
                     .accessibilityHidden(true)
 
                 Text(item.title)

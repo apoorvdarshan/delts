@@ -59,7 +59,7 @@ private struct ProfileEditorView: View {
             systemImage: "person.text.rectangle"
         ) {
             ProfileRowStack {
-                ProfileTextInputRow(title: "Name", systemImage: "person.crop.circle", text: nameBinding)
+                ProfileTextInputRow(title: "Name", systemImage: "person.fill", text: nameBinding)
                 ProfileDivider()
                 ProfileMenuPicker(
                     title: "Gender",
@@ -436,12 +436,11 @@ private struct ProfileHero: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .top, spacing: 14) {
-                Image(systemName: "person.crop.circle.fill")
+                Image(systemName: "person.fill")
                     .font(.system(size: 42, weight: .semibold))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(Color.deltsAccent)
                     .frame(width: 58, height: 58)
-                    .background(Color.deltsAccent.opacity(0.12), in: Circle())
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(displayName)
@@ -490,7 +489,6 @@ private struct ProfileHeroMetric: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Color.deltsAccent)
                 .frame(width: 28, height: 28)
-                .background(Color.deltsAccent.opacity(0.10), in: Circle())
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(value)
@@ -542,7 +540,6 @@ private struct ProfileSection<Content: View>: View {
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(Color.deltsAccent)
                     .frame(width: 34, height: 34)
-                    .background(Color.deltsAccent.opacity(0.11), in: Circle())
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
@@ -611,7 +608,6 @@ private struct ProfileFieldLabel: View {
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(tint)
                 .frame(width: 34, height: 34)
-                .background(tint.opacity(0.11), in: Circle())
 
             Text(title)
                 .font(.body.weight(.semibold))
@@ -939,10 +935,6 @@ private struct ProfileChecklistChip: View {
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsSecondaryAccent)
                 .frame(width: 28, height: 28)
-                .background(
-                    (isSelected ? Color.deltsAccent : Color.deltsSecondaryAccent).opacity(0.11),
-                    in: Circle()
-                )
 
             Text(title)
                 .font(.subheadline.weight(.semibold))
@@ -951,7 +943,7 @@ private struct ProfileChecklistChip: View {
                 .minimumScaleFactor(0.86)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+            Image(systemName: isSelected ? "checkmark" : "plus")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsHairline)
         }

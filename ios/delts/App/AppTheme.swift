@@ -3,40 +3,40 @@ import SwiftUI
 extension Color {
     static let deltsBackground = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.118, green: 0.112, blue: 0.098, alpha: 1)
-            : UIColor(red: 0.946, green: 0.932, blue: 0.900, alpha: 1)
+            ? UIColor(red: 0.047, green: 0.055, blue: 0.052, alpha: 1)
+            : UIColor(red: 0.946, green: 0.965, blue: 0.928, alpha: 1)
     })
     static let deltsCharcoal = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.876, green: 0.842, blue: 0.778, alpha: 1)
-            : UIColor(red: 0.150, green: 0.138, blue: 0.116, alpha: 1)
+            ? UIColor(red: 0.890, green: 0.935, blue: 0.865, alpha: 1)
+            : UIColor(red: 0.056, green: 0.080, blue: 0.066, alpha: 1)
     })
     static let deltsCard = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.178, green: 0.166, blue: 0.144, alpha: 1)
-            : UIColor(red: 0.902, green: 0.880, blue: 0.836, alpha: 1)
+            ? UIColor(red: 0.090, green: 0.108, blue: 0.098, alpha: 1)
+            : UIColor(red: 0.894, green: 0.930, blue: 0.866, alpha: 1)
     })
     static let deltsPanel = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.238, green: 0.220, blue: 0.188, alpha: 1)
-            : UIColor(red: 0.850, green: 0.818, blue: 0.758, alpha: 1)
+            ? UIColor(red: 0.124, green: 0.150, blue: 0.132, alpha: 1)
+            : UIColor(red: 0.828, green: 0.884, blue: 0.790, alpha: 1)
     })
     static let deltsHairline = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.402, green: 0.368, blue: 0.300, alpha: 1)
-            : UIColor(red: 0.626, green: 0.574, blue: 0.486, alpha: 1)
+            ? UIColor(red: 0.286, green: 0.366, blue: 0.304, alpha: 1)
+            : UIColor(red: 0.545, green: 0.646, blue: 0.490, alpha: 1)
     })
-    static let deltsAccent = Color(red: 0.66, green: 0.27, blue: 0.15)
-    static let deltsSecondaryAccent = Color(red: 0.43, green: 0.51, blue: 0.37)
-    static let deltsWarning = Color(red: 0.68, green: 0.52, blue: 0.28)
-    static let deltsInferno = Color(red: 0.72, green: 0.31, blue: 0.20)
+    static let deltsAccent = Color(red: 0.70, green: 0.94, blue: 0.26)
+    static let deltsSecondaryAccent = Color(red: 0.35, green: 0.78, blue: 0.52)
+    static let deltsWarning = Color(red: 0.92, green: 0.78, blue: 0.22)
+    static let deltsInferno = Color.deltsSecondaryAccent
     static let deltsAcidGreen = Color.deltsSecondaryAccent
     static let deltsGold = Color.deltsWarning
-    static let deltsOnAccent = Color(red: 0.965, green: 0.925, blue: 0.850)
+    static let deltsOnAccent = Color(red: 0.032, green: 0.048, blue: 0.038)
     static let deltsMutedText = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.682, green: 0.640, blue: 0.566, alpha: 1)
-            : UIColor(red: 0.392, green: 0.354, blue: 0.292, alpha: 1)
+            ? UIColor(red: 0.620, green: 0.710, blue: 0.622, alpha: 1)
+            : UIColor(red: 0.314, green: 0.386, blue: 0.312, alpha: 1)
     })
 }
 
@@ -47,9 +47,9 @@ struct DeltsBackground: View {
             LinearGradient(
                 colors: [
                     Color.deltsBackground,
-                    Color.deltsSecondaryAccent.opacity(0.08),
-                    Color.deltsPanel.opacity(0.24),
-                    Color.deltsAccent.opacity(0.05),
+                    Color.deltsAccent.opacity(0.09),
+                    Color.deltsPanel.opacity(0.22),
+                    Color.deltsSecondaryAccent.opacity(0.06),
                     Color.deltsBackground
                 ],
                 startPoint: .topLeading,
@@ -68,7 +68,7 @@ extension View {
 
     @ViewBuilder
     func deltsGlassSurface(
-        cornerRadius: CGFloat = 22,
+        cornerRadius: CGFloat = 28,
         tint: Color? = nil,
         interactive: Bool = false,
         fallbackOpacity: Double = 0
@@ -85,7 +85,7 @@ extension View {
     }
 
     @ViewBuilder
-    func deltsLiquidBarSurface(cornerRadius: CGFloat = 28) -> some View {
+    func deltsLiquidBarSurface(cornerRadius: CGFloat = 32) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 
         if #available(iOS 26.0, *) {
@@ -154,7 +154,6 @@ struct DeltsHeader: View {
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(Color.deltsAccent)
                     .frame(width: 38, height: 38)
-                    .background(Color.deltsAccent.opacity(0.12), in: Circle())
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -192,7 +191,6 @@ struct DeltsMetricTile: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(tint)
                 .frame(width: 30, height: 30)
-                .background(tint.opacity(0.13), in: Circle())
 
             Text(value)
                 .font(.title3.weight(.bold))
@@ -221,7 +219,6 @@ struct DeltsActionTile: View {
                 .font(.system(size: 19, weight: .semibold))
                 .foregroundStyle(tint)
                 .frame(width: 48, height: 48)
-                .background(tint.opacity(0.14), in: Circle())
 
             Text(title)
                 .font(.caption.weight(.semibold))

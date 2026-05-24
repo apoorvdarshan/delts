@@ -2,584 +2,578 @@ import SwiftData
 import SwiftUI
 
 struct HomeView: View {
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
-    @Query(sort: \CompletedWorkout.date, order: .reverse) private var completedWorkouts: [CompletedWorkout]
+    @StateObject private var viewModel = PlanViewModel()
+    @State private var generatedPlan: WorkoutPlan?
+    @State private var reviewPlan: WorkoutPlan?
+    @State private var equipmentMode: StartEquipmentMode = .profile
+    @State private var selectedProfileEquipment: Set<Equipment> = []
+    @State private var didSyncProfile = false
 
-    private var profile: UserProfile? { profiles.first }
+    private let durationOptions = [30, 45, 60, 90]
+
+    private var profile: UserProfile? {
+        profiles.first
+    }
+
+    private var displayedEquipment: Set<Equipment> {
+        switch equipmentMode {
+        case .profile:
+            return selectedProfileEquipment
+        case .bodyweight:
+            return [.bodyweight]
+        }
+    }
 
     var body: some View {
         NavigationStack {
-            GeometryReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: expandedLayout ? 26 : 22) {
-                        todayWorkout
-                        glanceStats
-                        quickActions
-                        focusSummary
-                        recentWorkouts
-                    }
-                    .frame(width: max(proxy.size.width - horizontalPadding * 2, 0), alignment: .leading)
-                    .padding(.horizontal, horizontalPadding)
-                    .padding(.top, 14)
-                    .padding(.bottom, 18)
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 28) {
+                    startHero
+                    equipmentStep
+                    muscleStep
+                    levelStep
+                    planPreview
                 }
-                .deltsScreen()
-                .contentMargins(.bottom, 110, for: .scrollContent)
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 122)
             }
-            .navigationTitle("Today")
+            .deltsScreen()
+            .navigationTitle("Start")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Text("delts")
-                        .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                    } label: {
-                        Image(systemName: "bell")
-                            .font(.body.weight(.semibold))
-                    }
-                    .tint(Color.deltsAccent)
-                    .accessibilityLabel("Notifications")
-                }
+            .safeAreaInset(edge: .bottom) {
+                startBar
             }
+            .navigationDestination(item: $reviewPlan) { plan in
+                WorkoutPlanView(plan: plan)
+            }
+            .onAppear(perform: syncProfileOnce)
         }
     }
 
-    private var todayWorkout: some View {
+    private var startHero: some View {
         ZStack(alignment: .bottomLeading) {
-            AnimatedExerciseVisual(muscleGroup: recommendedMuscle, height: heroHeight)
-                .saturation(0.92)
-                .brightness(-0.04)
-                .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-                .overlay {
-                    LinearGradient(
-                        stops: [
-                            .init(color: .black.opacity(0.06), location: 0.0),
-                            .init(color: .black.opacity(0.18), location: 0.44),
-                            .init(color: .black.opacity(0.82), location: 1.0)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 30, style: .continuous)
-                        .stroke(.white.opacity(0.16), lineWidth: 0.5)
-                }
-                .accessibilityHidden(true)
+            AnimatedExerciseVisual(
+                muscleGroup: viewModel.selectedMuscleGroup,
+                equipment: displayedEquipment.first,
+                height: 280
+            )
+            .saturation(0.96)
+            .brightness(-0.05)
+            .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
 
-            VStack(alignment: .leading, spacing: expandedLayout ? 18 : 16) {
-                HStack(alignment: .top, spacing: 14) {
-                    VStack(alignment: .leading, spacing: 7) {
-                        Text("Ready, \(displayName)")
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(.white.opacity(0.72))
-                            .lineLimit(2)
+            LinearGradient(
+                colors: [.black.opacity(0.00), .black.opacity(0.22), .black.opacity(0.86)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
 
-                        Text(recommendedTitle)
-                            .font(.system(expandedLayout ? .title : .largeTitle, design: .rounded, weight: .bold))
-                            .foregroundStyle(.white)
-                            .lineLimit(expandedLayout ? 3 : 2)
-                            .minimumScaleFactor(0.78)
-
-                        Text("\(recommendedExerciseCount) exercises - \(profile?.workoutDurationMinutes ?? 60) min")
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(.white.opacity(0.78))
-                            .lineLimit(2)
-                    }
-
-                    Spacer(minLength: 8)
-
-                    Image(systemName: recommendedMuscle.icon)
-                        .font(.system(size: expandedLayout ? 22 : 24, weight: .semibold))
-                        .foregroundStyle(Color.deltsOnAccent)
-                        .frame(width: expandedLayout ? 44 : 48, height: expandedLayout ? 44 : 48)
-                        .background(Color.deltsAccent.opacity(0.88), in: Circle())
-                        .overlay {
-                            Circle()
-                                .stroke(.white.opacity(0.16), lineWidth: 0.5)
-                        }
-                }
-
-                heroMetrics
-
-                NavigationLink {
-                    PlanBuilderView()
-                } label: {
-                    Label {
-                        Text("Start Workout")
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.86)
-                    } icon: {
-                        Image(systemName: "play.fill")
-                    }
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.deltsOnAccent)
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: expandedLayout ? 58 : 54)
-                    .padding(.horizontal, 18)
-                    .background(Color.deltsAccent, in: Capsule())
-                    .overlay {
-                        Capsule()
-                            .stroke(.white.opacity(0.18), lineWidth: 0.5)
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(expandedLayout ? 20 : 18)
-        }
-        .frame(minHeight: heroHeight)
-        .accessibilityElement(children: .contain)
-    }
-
-    private var heroMetrics: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) {
-                HomeHeroMetric(value: "\(recommendedExerciseCount)", label: "Exercises", systemImage: "list.bullet")
-                HomeHeroMetric(value: "\(profile?.workoutDurationMinutes ?? 60)", label: "Minutes", systemImage: "timer")
-                HomeHeroMetric(value: profile?.workoutSplit.shortTitle ?? "PPL", label: "Split", systemImage: "square.grid.2x2")
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                HomeHeroMetric(value: "\(recommendedExerciseCount)", label: "Exercises", systemImage: "list.bullet")
-                HomeHeroMetric(value: "\(profile?.workoutDurationMinutes ?? 60)", label: "Minutes", systemImage: "timer")
-                HomeHeroMetric(value: profile?.workoutSplit.shortTitle ?? "PPL", label: "Split", systemImage: "square.grid.2x2")
-            }
-        }
-    }
-
-    private var glanceStats: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            DeltsSectionHeader(title: "At a Glance")
-
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .center, spacing: 0) {
-                    HomeInlineStat(title: "Goal", value: profile?.mainGoal.shortTitle ?? "Muscle", systemImage: "target", tint: .deltsAccent)
-                    HomeStatSeparator(axis: .vertical)
-                    HomeInlineStat(title: "Weekly", value: "\(profile?.workoutFrequencyPerWeek ?? 4)x", systemImage: "calendar", tint: .deltsSecondaryAccent)
-                    HomeStatSeparator(axis: .vertical)
-                    HomeInlineStat(title: "History", value: "\(completedWorkouts.count)", systemImage: "checkmark.seal.fill", tint: .deltsAccent)
-                }
-
-                VStack(alignment: .leading, spacing: 0) {
-                    HomeInlineStat(title: "Goal", value: profile?.mainGoal.shortTitle ?? "Muscle", systemImage: "target", tint: .deltsAccent)
-                    HomeStatSeparator(axis: .horizontal)
-                    HomeInlineStat(title: "Weekly", value: "\(profile?.workoutFrequencyPerWeek ?? 4)x", systemImage: "calendar", tint: .deltsSecondaryAccent)
-                    HomeStatSeparator(axis: .horizontal)
-                    HomeInlineStat(title: "History", value: "\(completedWorkouts.count)", systemImage: "checkmark.seal.fill", tint: .deltsAccent)
-                }
-            }
-            .padding(.horizontal, expandedLayout ? 12 : 14)
-            .padding(.vertical, expandedLayout ? 12 : 14)
-            .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(Color.deltsHairline.opacity(0.32), lineWidth: 0.5)
-            }
-        }
-    }
-
-    private var quickActions: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            DeltsSectionHeader(title: "Quick Actions")
-
-            LazyVGrid(columns: actionColumns, alignment: .leading, spacing: 10) {
-                NavigationLink {
-                    PlanBuilderView()
-                } label: {
-                    HomeActionButton(title: "Build", systemImage: "calendar.badge.plus", tint: .deltsAccent)
-                }
-                .buttonStyle(.plain)
-
-                NavigationLink {
-                    EquipmentScanComingSoonView()
-                } label: {
-                    HomeActionButton(title: "Scan", systemImage: "camera.viewfinder", tint: .deltsInferno)
-                }
-                .buttonStyle(.plain)
-
-                NavigationLink {
-                    EquipmentManualSelectionView()
-                } label: {
-                    HomeActionButton(title: "Gear", systemImage: "dumbbell.fill", tint: .deltsSecondaryAccent)
-                }
-                .buttonStyle(.plain)
-
-                if let latest = completedWorkouts.first {
-                    NavigationLink {
-                        CompletedWorkoutDetailView(workout: latest)
-                    } label: {
-                        HomeActionButton(title: "History", systemImage: "clock.arrow.circlepath", tint: .deltsSecondaryAccent)
-                    }
-                    .buttonStyle(.plain)
-                } else {
-                    HomeActionButton(title: "History", systemImage: "clock.arrow.circlepath", tint: .deltsMutedText, isEnabled: false)
-                        .accessibilityLabel("History unavailable")
-                }
-            }
-        }
-    }
-
-    private var focusSummary: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Label("Current focus", systemImage: "target")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.deltsCharcoal)
-
-                Spacer(minLength: 8)
-
-                Text(profile?.experienceLevel.title ?? "Intermediate")
+            VStack(alignment: .leading, spacing: 16) {
+                Label("Guided workout", systemImage: "sparkles")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.deltsAccent)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.deltsAccent.opacity(0.11), in: Capsule())
-            }
+                    .foregroundStyle(.white.opacity(0.86))
 
-            Text(focusText)
-                .font(.subheadline)
-                .foregroundStyle(Color.deltsMutedText)
-                .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 64)
 
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 10) {
-                    HomeFocusPill(title: "Split", value: profile?.workoutSplit.title ?? "PPL", systemImage: "square.grid.2x2")
-                    HomeFocusPill(title: "Duration", value: "\(profile?.workoutDurationMinutes ?? 60)m", systemImage: "timer")
+                VStack(alignment: .leading, spacing: 9) {
+                    Text("\(viewModel.selectedMuscleGroup.title) workout")
+                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.72)
+
+                    Text(heroSubtitle)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.76))
+                        .lineLimit(2)
                 }
 
-                VStack(alignment: .leading, spacing: 10) {
-                    HomeFocusPill(title: "Split", value: profile?.workoutSplit.title ?? "PPL", systemImage: "square.grid.2x2")
-                    HomeFocusPill(title: "Duration", value: "\(profile?.workoutDurationMinutes ?? 60)m", systemImage: "timer")
+                StartProgressStrip(
+                    muscle: viewModel.selectedMuscleGroup,
+                    level: viewModel.selectedExperience,
+                    equipmentCount: displayedEquipment.count,
+                    duration: viewModel.selectedDuration
+                )
+            }
+            .padding(20)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 34, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
+        }
+    }
+
+    private var heroSubtitle: String {
+        let name = profile?.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let displayName = (name?.isEmpty == false ? name : "Athlete") ?? "Athlete"
+        return "\(displayName) - \(viewModel.selectedExperience.title) - \(viewModel.selectedDuration) min"
+    }
+
+    private var equipmentStep: some View {
+        StartSection(
+            index: "01",
+            title: "Equipment",
+            subtitle: "Use Profile gear, pick from your saved gear, or skip to bodyweight."
+        ) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 10) {
+                    StartOptionButton(
+                        title: "Profile gear",
+                        systemImage: "dumbbell.fill",
+                        isSelected: equipmentMode == .profile
+                    ) {
+                        equipmentMode = .profile
+                        viewModel.selectedEquipment = selectedProfileEquipment
+                    }
+
+                    StartOptionButton(
+                        title: "Skip",
+                        systemImage: "figure.cooldown",
+                        isSelected: equipmentMode == .bodyweight
+                    ) {
+                        equipmentMode = .bodyweight
+                        viewModel.selectedEquipment = [.bodyweight]
+                    }
+                }
+
+                if profileEquipment.isEmpty {
+                    Text("No saved equipment yet. Add it from Profile when you want machine-specific plans.")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.deltsMutedText)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: 10)], spacing: 10) {
+                        ForEach(profileEquipment) { equipment in
+                            StartEquipmentChip(
+                                equipment: equipment,
+                                isSelected: selectedProfileEquipment.contains(equipment) && equipmentMode == .profile
+                            ) {
+                                equipmentMode = .profile
+                                if selectedProfileEquipment.contains(equipment) {
+                                    selectedProfileEquipment.remove(equipment)
+                                } else {
+                                    selectedProfileEquipment.insert(equipment)
+                                }
+                                viewModel.selectedEquipment = selectedProfileEquipment
+                            }
+                        }
+                    }
                 }
             }
         }
-        .padding(.vertical, 2)
+    }
+
+    private var profileEquipment: [Equipment] {
+        guard let profile else { return [] }
+        return Equipment.allCases.filter { profile.availableEquipment.contains($0) }
+    }
+
+    private var muscleStep: some View {
+        StartSection(
+            index: "02",
+            title: "Body Part",
+            subtitle: "Pick what you are training now. The library previews move between exercise frames."
+        ) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: 14)], spacing: 14) {
+                ForEach(MuscleGroup.allCases) { group in
+                    StartMuscleCard(
+                        group: group,
+                        isSelected: viewModel.selectedMuscleGroup == group
+                    ) {
+                        viewModel.selectedMuscleGroup = group
+                        generatedPlan = nil
+                    }
+                }
+            }
+        }
+    }
+
+    private var levelStep: some View {
+        StartSection(
+            index: "03",
+            title: "Level",
+            subtitle: "Choose intensity, duration, and training bias."
+        ) {
+            VStack(alignment: .leading, spacing: 16) {
+                StartHorizontalRail {
+                    ForEach(ExperienceLevel.allCases) { level in
+                        StartOptionButton(
+                            title: level.title,
+                            systemImage: planExperienceIcon(level),
+                            isSelected: viewModel.selectedExperience == level
+                        ) {
+                            viewModel.selectedExperience = level
+                            generatedPlan = nil
+                        }
+                    }
+                }
+
+                StartHorizontalRail {
+                    ForEach(FitnessGoal.planCases) { goal in
+                        StartOptionButton(
+                            title: goal.title,
+                            systemImage: planGoalIcon(goal),
+                            isSelected: viewModel.selectedGoal == goal
+                        ) {
+                            viewModel.selectedGoal = goal
+                            generatedPlan = nil
+                        }
+                    }
+                }
+
+                StartHorizontalRail {
+                    ForEach(durationOptions, id: \.self) { duration in
+                        StartOptionButton(
+                            title: "\(duration) min",
+                            systemImage: planDurationIcon(duration),
+                            isSelected: viewModel.selectedDuration == duration
+                        ) {
+                            viewModel.selectedDuration = duration
+                            generatedPlan = nil
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @ViewBuilder
-    private var recentWorkouts: some View {
-        if !completedWorkouts.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
-                DeltsSectionHeader(title: "Recent Workouts", detail: "Last 3")
+    private var planPreview: some View {
+        if let generatedPlan {
+            StartSection(
+                index: "04",
+                title: "Workout",
+                subtitle: "Review the session, then log sets, reps, weight, skips, and rest inside Active Workout."
+            ) {
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(generatedPlan.exercises.sorted { $0.orderIndex < $1.orderIndex }.prefix(5)) { exercise in
+                        StartExercisePreviewRow(exercise: exercise)
+                    }
 
-                VStack(spacing: 0) {
-                    ForEach(recentWorkoutPreview) { workout in
-                        NavigationLink {
-                            CompletedWorkoutDetailView(workout: workout)
+                    HStack(spacing: 10) {
+                        Button {
+                            reviewPlan = generatedPlan
                         } label: {
-                            HomeRecentWorkoutRow(workout: workout)
+                            Label("Review All", systemImage: "list.clipboard.fill")
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(Color.deltsCharcoal)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(Color.deltsPanel.opacity(0.28), in: Capsule())
                         }
                         .buttonStyle(.plain)
 
-                        if workout.id != recentWorkoutPreview.last?.id {
-                            HomeStatSeparator(axis: .horizontal)
-                                .padding(.leading, 50)
+                        NavigationLink {
+                            ActiveWorkoutView(plan: generatedPlan)
+                        } label: {
+                            Label("Start", systemImage: "play.fill")
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(Color.deltsOnAccent)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(Color.deltsAccent, in: Capsule())
                         }
+                        .buttonStyle(.plain)
                     }
                 }
             }
         }
     }
 
-    private var recommendedMuscle: MuscleGroup {
-        guard let focus = profile?.selectedBodyFocus.first else { return .chest }
-        switch focus {
-        case .bigArms: return .arms
-        case .boulderShoulders: return .shoulders
-        case .massiveChest: return .chest
-        case .sixPackAbs: return .core
-        case .wideBack: return .back
-        case .strongLegs, .biggerGlutes: return .legs
-        case .fullBodyAesthetic: return .fullBody
-        }
-    }
+    private var startBar: some View {
+        VStack(spacing: 8) {
+            PrimaryButton(
+                title: viewModel.isGenerating ? "Building Workout" : "Show Workouts",
+                systemImage: "play.fill",
+                isLoading: viewModel.isGenerating
+            ) {
+                Task {
+                    if equipmentMode == .bodyweight {
+                        viewModel.selectedEquipment = [.bodyweight]
+                    } else {
+                        viewModel.selectedEquipment = selectedProfileEquipment
+                    }
+                    generatedPlan = await viewModel.generateWorkout(profile: profile)
+                }
+            }
 
-    private var recommendedTitle: String {
-        "\(recommendedMuscle.title) \(profile?.mainGoal.title ?? "Muscle Gain")"
-    }
-
-    private var recommendedExerciseCount: Int {
-        switch profile?.workoutDurationMinutes ?? 60 {
-        case ...30: return 4
-        case ...45: return 5
-        case ...60: return 6
-        default: return 8
-        }
-    }
-
-    private var displayName: String {
-        guard let name = profile?.name.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty else {
-            return "Athlete"
-        }
-        return name
-    }
-
-    private var focusText: String {
-        let focus = profile?.selectedBodyFocus.map(\.title).sorted().joined(separator: ", ")
-        guard let focus, !focus.isEmpty else {
-            return "Set body focus and equipment in Profile to sharpen workout recommendations."
-        }
-        return "\(profile?.mainGoal.title ?? "Muscle Gain") with emphasis on \(focus)."
-    }
-
-    private var expandedLayout: Bool {
-        switch dynamicTypeSize {
-        case .accessibility1, .accessibility2, .accessibility3, .accessibility4, .accessibility5:
-            return true
-        default:
-            return false
-        }
-    }
-
-    private var heroHeight: CGFloat {
-        expandedLayout ? 420 : 304
-    }
-
-    private var horizontalPadding: CGFloat {
-        expandedLayout ? 18 : 20
-    }
-
-    private var actionColumns: [GridItem] {
-        [
-            GridItem(
-                .adaptive(minimum: expandedLayout ? 148 : 132),
-                spacing: 10,
-                alignment: .top
-            )
-        ]
-    }
-
-    private var recentWorkoutPreview: [CompletedWorkout] {
-        Array(completedWorkouts.prefix(3))
-    }
-}
-
-private struct HomeHeroMetric: View {
-    let value: String
-    let label: String
-    let systemImage: String
-
-    var body: some View {
-        HStack(spacing: 7) {
-            Image(systemName: systemImage)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(Color.deltsOnAccent.opacity(0.82))
-
-            Text(value)
-                .font(.subheadline.weight(.bold))
-                .monospacedDigit()
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
-
-            Text(label)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.68))
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
-        }
-        .padding(.horizontal, 11)
-        .padding(.vertical, 8)
-        .background(Color.black.opacity(0.28), in: Capsule())
-        .overlay {
-            Capsule()
-                .stroke(.white.opacity(0.12), lineWidth: 0.5)
-        }
-    }
-}
-
-private struct HomeInlineStat: View {
-    let title: String
-    let value: String
-    let systemImage: String
-    let tint: Color
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 10) {
-            Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(tint)
-                .frame(width: 32, height: 32)
-                .background(tint.opacity(0.12), in: Circle())
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(value)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-
-                Text(title)
+            if let statusText {
+                Text(statusText)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.deltsMutedText)
-                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 5)
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+        .background(.bar)
+    }
+
+    private var statusText: String? {
+        if viewModel.isGenerating {
+            return "Using \(displayedEquipment.count) equipment option\(displayedEquipment.count == 1 ? "" : "s") from this flow."
+        }
+        return viewModel.statusMessage
+    }
+
+    private func syncProfileOnce() {
+        guard !didSyncProfile else { return }
+        didSyncProfile = true
+        viewModel.syncDefaults(from: profile)
+        selectedProfileEquipment = profile?.availableEquipment ?? []
+        equipmentMode = selectedProfileEquipment.isEmpty ? .bodyweight : .profile
+        viewModel.selectedEquipment = displayedEquipment
     }
 }
 
-private struct HomeActionButton: View {
+private enum StartEquipmentMode {
+    case profile
+    case bodyweight
+}
+
+private struct StartSection<Content: View>: View {
+    let index: String
     let title: String
-    let systemImage: String
-    let tint: Color
-    var isEnabled = true
+    let subtitle: String
+    let content: Content
+
+    init(index: String, title: String, subtitle: String, @ViewBuilder content: () -> Content) {
+        self.index = index
+        self.title = title
+        self.subtitle = subtitle
+        self.content = content()
+    }
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: systemImage)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(isEnabled ? tint : Color.deltsMutedText)
-                .frame(width: 34, height: 34)
-                .background((isEnabled ? tint : Color.deltsMutedText).opacity(0.12), in: Circle())
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(index)
+                    .font(.caption.monospacedDigit().weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
 
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(isEnabled ? Color.deltsCharcoal : Color.deltsMutedText)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.deltsMutedText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
 
-            Spacer(minLength: 4)
-
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(Color.deltsMutedText.opacity(isEnabled ? 0.72 : 0))
+            content
         }
-        .padding(.leading, 10)
-        .padding(.trailing, 12)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
-        .background((isEnabled ? tint : Color.deltsPanel).opacity(isEnabled ? 0.08 : 0.12), in: Capsule())
-        .overlay {
-            Capsule()
-                .stroke((isEnabled ? tint : Color.deltsHairline).opacity(isEnabled ? 0.28 : 0.22), lineWidth: 0.5)
-        }
-        .contentShape(Capsule())
-        .opacity(isEnabled ? 1 : 0.62)
     }
 }
 
-private struct HomeFocusPill: View {
+private struct StartProgressStrip: View {
+    let muscle: MuscleGroup
+    let level: ExperienceLevel
+    let equipmentCount: Int
+    let duration: Int
+
+    var body: some View {
+        HStack(spacing: 0) {
+            StartHeroMetric(title: "Focus", value: muscle.title, systemImage: muscle.icon)
+            StartHeroDivider()
+            StartHeroMetric(title: "Level", value: level.title, systemImage: planExperienceIcon(level))
+            StartHeroDivider()
+            StartHeroMetric(title: "Gear", value: "\(equipmentCount)", systemImage: "dumbbell.fill")
+            StartHeroDivider()
+            StartHeroMetric(title: "Time", value: "\(duration)", systemImage: "timer")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .background(.black.opacity(0.36), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+    }
+}
+
+private struct StartHeroMetric: View {
     let title: String
     let value: String
     let systemImage: String
 
     var body: some View {
-        Label {
-            HStack(spacing: 5) {
-                Text(title)
-                    .foregroundStyle(Color.deltsMutedText)
-                Text(value)
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-            }
-        } icon: {
+        VStack(alignment: .leading, spacing: 5) {
             Image(systemName: systemImage)
-                .foregroundStyle(Color.deltsSecondaryAccent)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.deltsAccent)
+            Text(value)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.58))
         }
-        .font(.subheadline.weight(.semibold))
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(Color.deltsPanel.opacity(0.14), in: Capsule())
-        .overlay {
-            Capsule()
-                .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct StartHeroDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(.white.opacity(0.16))
+            .frame(width: 0.5, height: 42)
+            .padding(.horizontal, 8)
+    }
+}
+
+private struct StartOptionButton: View {
+    let title: String
+    let systemImage: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.bold))
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+            .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsCharcoal)
+            .padding(.horizontal, 14)
+            .frame(height: 42)
+            .background(isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.22), in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(Color.deltsHairline.opacity(isSelected ? 0.18 : 0.30), lineWidth: 0.5)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct StartHorizontalRail<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 9) {
+                content
+            }
+            .padding(.horizontal, 1)
         }
     }
 }
 
-private struct HomeRecentWorkoutRow: View {
-    let workout: CompletedWorkout
+private struct StartEquipmentChip: View {
+    let equipment: Equipment
+    let isSelected: Bool
+    let action: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.deltsSecondaryAccent)
-                .frame(width: 38, height: 38)
-                .background(Color.deltsSecondaryAccent.opacity(0.12), in: Circle())
+        Button(action: action) {
+            HStack(spacing: 9) {
+                Image(systemName: equipment.icon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsSecondaryAccent)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(workout.title)
-                    .font(.subheadline.weight(.bold))
+                Text(equipment.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
+
+                Spacer(minLength: 0)
+
+                Image(systemName: isSelected ? "checkmark" : "plus")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsHairline)
+            }
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+            .background(isSelected ? Color.deltsAccent.opacity(0.11) : Color.deltsPanel.opacity(0.16), in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(isSelected ? Color.deltsAccent.opacity(0.36) : Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct StartMuscleCard: View {
+    let group: MuscleGroup
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 10) {
+                AnimatedExerciseVisual(muscleGroup: group, height: 126)
+
+                HStack(spacing: 8) {
+                    Image(systemName: group.icon)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Color.deltsAccent)
+
+                    Text(group.title)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: isSelected ? "checkmark" : "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsMutedText)
+                }
+            }
+            .padding(10)
+            .background(isSelected ? Color.deltsAccent.opacity(0.10) : Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 30, style: .continuous)
+                    .stroke(isSelected ? Color.deltsAccent.opacity(0.42) : Color.deltsHairline.opacity(0.24), lineWidth: 0.75)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct StartExercisePreviewRow: View {
+    let exercise: WorkoutExercise
+
+    var body: some View {
+        HStack(spacing: 14) {
+            AnimatedExerciseVisual(
+                muscleGroup: exercise.targetMuscle,
+                exerciseName: exercise.name,
+                equipment: exercise.equipment,
+                height: 82,
+                fillsWidth: false
+            )
+            .frame(width: 82, height: 82)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(exercise.name)
+                    .font(.headline.weight(.semibold))
                     .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(2)
 
-                Text("\(workout.exerciseLogs.count) exercises")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
-            }
-
-            Spacer(minLength: 10)
-
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(workout.date.formatted(date: .abbreviated, time: .omitted))
-                    .font(.caption.weight(.bold))
+                Text("\(exercise.sets) sets - \(exercise.reps) reps - \(exercise.restDisplay)")
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(Color.deltsMutedText)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
-
-                Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(Color.deltsMutedText.opacity(0.72))
             }
+
+            Spacer(minLength: 0)
         }
-        .padding(.vertical, 12)
-        .contentShape(Rectangle())
-    }
-}
-
-private struct HomeStatSeparator: View {
-    enum Axis {
-        case horizontal
-        case vertical
-    }
-
-    let axis: Axis
-
-    var body: some View {
-        Rectangle()
-            .fill(Color.deltsHairline.opacity(0.30))
-            .frame(
-                width: axis == .vertical ? 0.5 : nil,
-                height: axis == .horizontal ? 0.5 : 46
-            )
-    }
-}
-
-private extension FitnessGoal {
-    var shortTitle: String {
-        switch self {
-        case .muscleGain: return "Muscle"
-        case .endurance: return "Endure"
-        case .maxStrength: return "Power"
-        case .fatLoss: return "Lean"
-        case .generalFitness: return "Fit"
-        case .athleticPerformance: return "Sport"
-        case .beginnerForm: return "Form"
-        }
-    }
-}
-
-private extension WorkoutSplit {
-    var shortTitle: String {
-        switch self {
-        case .fullBody: return "Full"
-        case .pushPullLegs: return "PPL"
-        case .upperLower: return "Upper"
-        case .broSplit: return "Split"
-        case .custom: return "Custom"
-        }
+        .padding(.vertical, 4)
     }
 }
