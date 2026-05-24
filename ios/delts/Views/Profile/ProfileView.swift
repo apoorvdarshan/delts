@@ -162,8 +162,8 @@ private struct ProfileEditorView: View {
 
     private var equipmentSection: some View {
         ProfileSection(
-            title: "Equipment",
-            subtitle: "Keep available gear current for better exercise picks.",
+            title: "Equipment Library",
+            subtitle: "Select gear here only. Start uses this saved library.",
             systemImage: "dumbbell.fill",
             badge: "\(profile.availableEquipment.count)"
         ) {

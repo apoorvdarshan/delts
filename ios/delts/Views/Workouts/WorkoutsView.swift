@@ -398,7 +398,7 @@ private struct WorkoutLibraryFocusChooser: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Select Training Area")
+            Text("Select Body Part")
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(Color.deltsCharcoal)
 

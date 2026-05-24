@@ -29,6 +29,7 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 28) {
+                    startHeader
                     startHero
                     equipmentStep
                     muscleStep
@@ -41,7 +42,8 @@ struct HomeView: View {
             }
             .deltsScreen()
             .navigationTitle("Start")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .bottom) {
                 startBar
             }
@@ -52,12 +54,32 @@ struct HomeView: View {
         }
     }
 
+    private var startHeader: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("delts")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(Color.deltsAccent)
+                .textCase(.uppercase)
+
+            Text("Start")
+                .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                .foregroundStyle(Color.deltsCharcoal)
+
+            Text("\(viewModel.selectedMuscleGroup.title) - \(viewModel.selectedExperience.title) - \(displayedEquipment.count) gear")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     private var startHero: some View {
         ZStack(alignment: .bottomLeading) {
             AnimatedExerciseVisual(
                 muscleGroup: viewModel.selectedMuscleGroup,
                 equipment: displayedEquipment.first,
-                height: 280
+                height: 248
             )
             .saturation(0.96)
             .brightness(-0.05)
@@ -75,7 +97,7 @@ struct HomeView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.white.opacity(0.86))
 
-                Spacer(minLength: 64)
+                Spacer(minLength: 44)
 
                 VStack(alignment: .leading, spacing: 9) {
                     Text("\(viewModel.selectedMuscleGroup.title) workout")
@@ -115,7 +137,7 @@ struct HomeView: View {
         StartSection(
             index: "01",
             title: "Equipment",
-            subtitle: "Use Profile gear, pick from your saved gear, or skip to bodyweight."
+            subtitle: "Use profile gear, pick from saved gear, or skip to bodyweight."
         ) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 10) {

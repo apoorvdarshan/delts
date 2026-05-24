@@ -87,45 +87,40 @@ private struct ExerciseImageView: View {
     let urls: [URL]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var frameIndex = 0
-
-    private var currentURL: URL? {
-        guard !urls.isEmpty else { return nil }
-        return urls[min(frameIndex, urls.count - 1)]
-    }
+    @State private var frames: [UIImage] = []
 
     var body: some View {
         ZStack {
-            Color(uiColor: UIColor { traits in
-                traits.userInterfaceStyle == .dark
-                    ? UIColor(red: 0.925, green: 0.910, blue: 0.880, alpha: 1)
-                    : UIColor(red: 0.985, green: 0.975, blue: 0.945, alpha: 1)
-            })
-
             if let image = currentImage {
+                Color.deltsPanel.opacity(0.18)
+
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
-                    .id(currentURL)
-                    .transition(.opacity)
+                    .transaction { transaction in
+                        transaction.animation = nil
+                    }
+            } else {
+                Color.deltsPanel.opacity(0.18)
             }
         }
-        .animation(.easeInOut(duration: 0.18), value: frameIndex)
         .task(id: urls) {
             frameIndex = 0
-            guard urls.count > 1, !reduceMotion else { return }
+            frames = urls.compactMap { UIImage(contentsOfFile: $0.path) }
+            guard frames.count > 1, !reduceMotion else { return }
 
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 700_000_000)
+                try? await Task.sleep(nanoseconds: 850_000_000)
                 guard !Task.isCancelled else { return }
-                frameIndex = (frameIndex + 1) % urls.count
+                frameIndex = (frameIndex + 1) % frames.count
             }
         }
     }
 
     private var currentImage: UIImage? {
-        guard let currentURL else { return nil }
-        return UIImage(contentsOfFile: currentURL.path)
+        guard !frames.isEmpty else { return nil }
+        return frames[min(frameIndex, frames.count - 1)]
     }
 }

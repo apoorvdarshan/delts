@@ -13,6 +13,8 @@ struct ActiveWorkoutView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @StateObject private var viewModel: ActiveWorkoutViewModel
     @FocusState private var focusedField: ActiveWorkoutLogField?
+    @State private var restSecondsRemaining = 0
+    @State private var restTimerRunning = false
 
     init(plan: WorkoutPlan, startIndex: Int = 0) {
         _viewModel = StateObject(wrappedValue: ActiveWorkoutViewModel(plan: plan, startIndex: startIndex))
@@ -67,6 +69,22 @@ struct ActiveWorkoutView: View {
             }
         }
         .animation(.easeInOut(duration: 0.22), value: viewModel.currentExerciseIndex)
+        .onChange(of: viewModel.currentExerciseIndex) {
+            resetRestTimer()
+        }
+        .task(id: restTimerRunning) {
+            guard restTimerRunning else { return }
+
+            while restSecondsRemaining > 0 && !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard !Task.isCancelled else { return }
+                restSecondsRemaining -= 1
+            }
+
+            if restSecondsRemaining <= 0 {
+                restTimerRunning = false
+            }
+        }
     }
 
     private func exerciseSection(_ exercise: WorkoutExercise) -> some View {
@@ -143,10 +161,41 @@ struct ActiveWorkoutView: View {
 
             Spacer()
 
-            Text(exercise.restDisplay)
-                .font(.title3.weight(.bold))
-                .foregroundStyle(Color.deltsCharcoal)
-                .monospacedDigit()
+            VStack(alignment: .trailing, spacing: 8) {
+                Text(restTimerText(defaultSeconds: exercise.restSeconds))
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .monospacedDigit()
+
+                HStack(spacing: 8) {
+                    Button {
+                        toggleRestTimer(defaultSeconds: exercise.restSeconds)
+                    } label: {
+                        Label(restTimerRunning ? "Pause" : restSecondsRemaining > 0 ? "Resume" : "Start", systemImage: restTimerRunning ? "pause.fill" : "play.fill")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(Color.deltsOnAccent)
+                            .lineLimit(1)
+                            .padding(.vertical, 7)
+                            .padding(.horizontal, 10)
+                            .background(Color.deltsAccent, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+
+                    if restSecondsRemaining > 0 {
+                        Button {
+                            resetRestTimer()
+                        } label: {
+                            Image(systemName: "arrow.counterclockwise")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(Color.deltsSecondaryAccent)
+                                .frame(width: 30, height: 30)
+                                .background(Color.deltsPanel.opacity(0.34), in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Reset rest timer")
+                    }
+                }
+            }
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 2)
@@ -160,15 +209,32 @@ struct ActiveWorkoutView: View {
 
     @ViewBuilder
     private var bottomPrimaryAction: some View {
-        if viewModel.isLastExercise {
-            PrimaryButton(title: "Finish Workout", systemImage: "checkmark.seal.fill") {
-                finishWorkout()
-            }
-        } else {
-            PrimaryButton(title: "Next Exercise", systemImage: "arrow.right.circle.fill") {
-                focusedField = nil
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
-                    viewModel.nextExercise()
+        VStack(spacing: 10) {
+            if viewModel.isLastExercise {
+                PrimaryButton(title: "Finish Workout", systemImage: "checkmark.seal.fill") {
+                    finishWorkout()
+                }
+            } else {
+                HStack(spacing: 10) {
+                    Button {
+                        goToNextExercise()
+                    } label: {
+                        Label("Skip", systemImage: "forward.fill")
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(Color.deltsCharcoal)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(Color.deltsPanel.opacity(0.28), in: Capsule())
+                            .overlay {
+                                Capsule()
+                                    .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
+                            }
+                    }
+                    .buttonStyle(.plain)
+
+                    PrimaryButton(title: "Next", systemImage: "arrow.right") {
+                        goToNextExercise()
+                    }
                 }
             }
         }
@@ -524,6 +590,34 @@ struct ActiveWorkoutView: View {
     private var currentPositionText: String {
         guard !viewModel.exercises.isEmpty else { return "Exercise 0 of 0" }
         return "Exercise \(viewModel.currentExerciseIndex + 1) of \(viewModel.exercises.count)"
+    }
+
+    private func goToNextExercise() {
+        focusedField = nil
+        resetRestTimer()
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+            viewModel.nextExercise()
+        }
+    }
+
+    private func toggleRestTimer(defaultSeconds: Int) {
+        guard defaultSeconds > 0 else { return }
+        if restSecondsRemaining <= 0 {
+            restSecondsRemaining = defaultSeconds
+        }
+        restTimerRunning.toggle()
+    }
+
+    private func resetRestTimer() {
+        restTimerRunning = false
+        restSecondsRemaining = 0
+    }
+
+    private func restTimerText(defaultSeconds: Int) -> String {
+        let seconds = restSecondsRemaining > 0 ? restSecondsRemaining : defaultSeconds
+        let minutes = seconds / 60
+        let remainder = seconds % 60
+        return String(format: "%d:%02d", minutes, remainder)
     }
 
     private func completedSetCount(for exercise: WorkoutExercise) -> Int {
