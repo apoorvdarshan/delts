@@ -58,7 +58,7 @@ struct WorkoutsView: View {
                             isSelected: selectedMode == mode
                         )
                     }
-                    .buttonStyle(.plain)
+                    .deltsPressable()
                 }
             }
         }
@@ -271,7 +271,7 @@ private struct ExerciseLibraryBrowserView: View {
                                 .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
                         }
                 }
-                .buttonStyle(.plain)
+                .deltsPressable()
                 .disabled(items.isEmpty)
             } else {
                 Label("Motion demos", systemImage: "photo.stack")
@@ -384,7 +384,7 @@ private struct ExerciseLibraryBrowserView: View {
                                         .stroke(Color.deltsInferno.opacity(0.34), lineWidth: 0.5)
                                 }
                         }
-                        .buttonStyle(.plain)
+                        .deltsPressable()
                     }
                 }
                 .padding(.horizontal, 20)
@@ -421,33 +421,9 @@ private struct ExerciseLibraryBrowserView: View {
         Menu {
             content()
         } label: {
-            HStack(spacing: 7) {
-                Image(systemName: systemImage)
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(value == "All" ? Color.deltsSecondaryAccent : Color.deltsAccent)
-
-                Text(value == "All" ? title : "\(title): \(value)")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-
-                Image(systemName: "chevron.down")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(Color.deltsMutedText)
-            }
-            .padding(.horizontal, 12)
-            .frame(height: 36)
-            .background(Color.deltsPanel.opacity(value == "All" ? 0.42 : 0.56), in: Capsule())
-            .overlay {
-                Capsule()
-                    .stroke(
-                        (value == "All" ? Color.deltsHairline : Color.deltsAccent).opacity(value == "All" ? 0.44 : 0.36),
-                        lineWidth: 0.5
-                    )
-            }
+            FilterMenuPill(title: title, value: value, systemImage: systemImage)
         }
-        .buttonStyle(.plain)
+        .deltsPressable()
     }
 
     private func menuChoice(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
@@ -458,6 +434,58 @@ private struct ExerciseLibraryBrowserView: View {
                 Text(title)
             }
         }
+    }
+}
+
+private struct FilterMenuPill: View {
+    let title: String
+    let value: String
+    let systemImage: String
+
+    private var isDefaultValue: Bool {
+        value == "All"
+    }
+
+    var body: some View {
+        HStack(spacing: 9) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(isDefaultValue ? Color.deltsSecondaryAccent : Color.deltsAccent)
+                .frame(width: 18)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .textCase(.uppercase)
+                    .lineLimit(1)
+
+                Text(value)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+
+            Image(systemName: "chevron.down")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(Color.deltsMutedText)
+                .padding(.leading, 1)
+        }
+        .padding(.horizontal, 12)
+        .frame(minWidth: 112, minHeight: 46, alignment: .leading)
+        .background(
+            Color.deltsPanel.opacity(isDefaultValue ? 0.30 : 0.46),
+            in: RoundedRectangle(cornerRadius: 17, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                .stroke(
+                    (isDefaultValue ? Color.deltsHairline : Color.deltsAccent).opacity(isDefaultValue ? 0.30 : 0.42),
+                    lineWidth: 0.5
+                )
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
     }
 }
 
@@ -509,7 +537,7 @@ private struct WorkoutLibraryFocusChooser: View {
                                 .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
                         }
                     }
-                    .buttonStyle(.plain)
+                    .deltsPressable()
                 }
             }
         }
@@ -623,7 +651,7 @@ private struct BodyPartFilterChip: View {
                     .font(.caption.weight(.bold))
             }
         }
-        .buttonStyle(.plain)
+        .deltsPressable()
         .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsCharcoal)
         .padding(.horizontal, 13)
         .frame(height: 38)
@@ -966,7 +994,7 @@ private struct ExerciseLibraryDetailView: View {
                         .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
                 }
         }
-        .buttonStyle(.plain)
+        .deltsPressable()
         .padding(.horizontal, 20)
         .padding(.top, 10)
         .padding(.bottom, 6)

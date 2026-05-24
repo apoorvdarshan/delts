@@ -129,6 +129,6 @@ struct GlassIconButton: View {
                     .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
             )
         }
-        .buttonStyle(.plain)
+        .deltsPressable()
     }
 }

@@ -294,7 +294,7 @@ struct HomeView: View {
                                 .frame(height: 50)
                                 .background(Color.deltsPanel.opacity(0.28), in: Capsule())
                         }
-                        .buttonStyle(.plain)
+                        .deltsPressable()
 
                         NavigationLink {
                             ActiveWorkoutView(plan: generatedPlan)
@@ -306,7 +306,7 @@ struct HomeView: View {
                                 .frame(height: 50)
                                 .background(Color.deltsAccent, in: Capsule())
                         }
-                        .buttonStyle(.plain)
+                        .deltsPressable()
                     }
                 }
             }
@@ -481,7 +481,7 @@ private struct StartOptionButton: View {
                     .stroke(Color.deltsHairline.opacity(isSelected ? 0.18 : 0.30), lineWidth: 0.5)
             }
         }
-        .buttonStyle(.plain)
+        .deltsPressable()
     }
 }
 
@@ -534,7 +534,7 @@ private struct StartEquipmentChip: View {
                     .stroke(isSelected ? Color.deltsAccent.opacity(0.36) : Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
             }
         }
-        .buttonStyle(.plain)
+        .deltsPressable()
     }
 }
 
@@ -572,7 +572,7 @@ private struct StartMuscleCard: View {
                     .stroke(isSelected ? Color.deltsAccent.opacity(0.42) : Color.deltsHairline.opacity(0.24), lineWidth: 0.75)
             }
         }
-        .buttonStyle(.plain)
+        .deltsPressable()
     }
 }
 

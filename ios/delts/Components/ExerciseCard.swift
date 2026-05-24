@@ -53,7 +53,7 @@ struct ExerciseCard: View {
             }
             .padding(.vertical, 10)
         }
-        .buttonStyle(.plain)
+        .deltsPressable()
         .disabled(startAction == nil)
     }
 }

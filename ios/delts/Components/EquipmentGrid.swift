@@ -126,7 +126,7 @@ private struct EquipmentChecklistRow: View {
             .background(isSelected ? Color.deltsAccent.opacity(0.08) : Color.clear)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .deltsPressable()
         .accessibilityLabel(item.title)
         .accessibilityValue(isSelected ? "Selected" : "Not selected")
         .accessibilityHint(isSelected ? "Double tap to remove from available equipment." : "Double tap to add to available equipment.")

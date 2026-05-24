@@ -45,7 +45,7 @@ struct MuscleGroupPicker: View {
                         }
                         .contentShape(Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .deltsPressable()
                     .accessibilityLabel(Text(group.title))
                     .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }

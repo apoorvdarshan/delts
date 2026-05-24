@@ -291,7 +291,7 @@ private struct PlanChoiceRail<Option: Hashable>: View {
                         }
                         .contentShape(Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .deltsPressable()
                     .accessibilityLabel(Text(title(option)))
                     .accessibilityValue(isSelected ? "Selected" : "Not selected")
                 }
@@ -555,7 +555,7 @@ private struct PlanEquipmentToggle: View {
             }
             .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .deltsPressable()
         .accessibilityLabel(Text(item.title))
         .accessibilityValue(isSelected ? "Selected" : "Not selected")
         .equipmentSelectedTrait(isSelected)

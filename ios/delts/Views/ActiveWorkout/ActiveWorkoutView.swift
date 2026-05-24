@@ -101,7 +101,7 @@ struct ActiveWorkoutView: View {
                     .padding(.horizontal, 2)
                     .frame(minHeight: 40)
             }
-            .buttonStyle(.plain)
+            .deltsPressable()
             .accessibilityLabel("Save and exit workout")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -199,7 +199,7 @@ struct ActiveWorkoutView: View {
                             .padding(.horizontal, 10)
                             .background(Color.deltsAccent, in: Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .deltsPressable()
 
                     if restSecondsRemaining > 0 {
                         Button {
@@ -208,10 +208,14 @@ struct ActiveWorkoutView: View {
                             Image(systemName: "arrow.counterclockwise")
                                 .font(.caption.weight(.bold))
                                 .foregroundStyle(Color.deltsSecondaryAccent)
-                                .frame(width: 30, height: 30)
-                                .background(Color.deltsPanel.opacity(0.34), in: Capsule())
+                                .frame(width: 34, height: 30)
+                                .background(Color.deltsPanel.opacity(0.34), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                        .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
+                                }
                         }
-                        .buttonStyle(.plain)
+                        .deltsPressable()
                         .accessibilityLabel("Reset rest timer")
                     }
                 }
@@ -250,7 +254,7 @@ struct ActiveWorkoutView: View {
                                     .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
                             }
                     }
-                    .buttonStyle(.plain)
+                    .deltsPressable()
 
                     PrimaryButton(title: "Next", systemImage: "arrow.right") {
                         goToNextExercise()
@@ -544,10 +548,21 @@ struct ActiveWorkoutView: View {
                 .font(.title3.weight(.semibold))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(complete ? Color.deltsSecondaryAccent : Color.deltsMutedText)
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
+                .frame(width: 46, height: 48)
+                .background(
+                    complete ? Color.deltsSecondaryAccent.opacity(0.12) : Color.deltsPanel.opacity(0.26),
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(
+                            complete ? Color.deltsSecondaryAccent.opacity(0.38) : Color.deltsHairline.opacity(0.24),
+                            lineWidth: 0.5
+                        )
+                }
+                .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .deltsPressable()
         .accessibilityLabel(complete ? "Mark set \(setIndex + 1) incomplete" : "Mark set \(setIndex + 1) complete")
     }
 

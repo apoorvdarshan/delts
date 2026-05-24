@@ -801,18 +801,66 @@ private struct ProfileStepperRow: View {
         ProfileFieldRow(title: title, systemImage: systemImage) {
             HStack(spacing: 12) {
                 Text(displayValue)
-                    .font(.body.monospacedDigit().weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
+                    .font(.body.monospacedDigit().weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
 
-                Stepper(title, value: $value, in: range)
-                    .labelsHidden()
+                ProfileStepperControl(value: $value, range: range, title: title)
             }
-            .accessibilityElement(children: .combine)
+            .accessibilityElement(children: .contain)
             .accessibilityLabel(title)
             .accessibilityValue(displayValue)
         }
+    }
+}
+
+private struct ProfileStepperControl: View {
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+    let title: String
+
+    private var canDecrement: Bool {
+        value > range.lowerBound
+    }
+
+    private var canIncrement: Bool {
+        value < range.upperBound
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Button {
+                value = max(range.lowerBound, value - 1)
+            } label: {
+                Image(systemName: "minus")
+                    .font(.headline.weight(.bold))
+                    .frame(width: 42, height: 38)
+            }
+            .disabled(!canDecrement)
+            .accessibilityLabel("Decrease \(title)")
+
+            Rectangle()
+                .fill(Color.deltsHairline.opacity(0.36))
+                .frame(width: 0.5, height: 22)
+
+            Button {
+                value = min(range.upperBound, value + 1)
+            } label: {
+                Image(systemName: "plus")
+                    .font(.headline.weight(.bold))
+                    .frame(width: 42, height: 38)
+            }
+            .disabled(!canIncrement)
+            .accessibilityLabel("Increase \(title)")
+        }
+        .foregroundStyle(Color.deltsCharcoal)
+        .background(Color.deltsPanel.opacity(0.34), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 15, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
+        }
+        .deltsPressable()
     }
 }
 
@@ -825,24 +873,48 @@ private struct ProfileMenuPicker<Option: Hashable>: View {
 
     var body: some View {
         ProfileFieldRow(title: title, systemImage: systemImage) {
-            Picker(selection: $selection) {
+            Menu {
                 ForEach(options, id: \.self) { option in
-                    Text(label(option)).tag(option)
+                    Button {
+                        selection = option
+                    } label: {
+                        if option == selection {
+                            Label(label(option), systemImage: "checkmark")
+                        } else {
+                            Text(label(option))
+                        }
+                    }
                 }
             } label: {
-                HStack(spacing: 6) {
-                    Text(label(selection))
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Color.deltsCharcoal)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.trailing)
-
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(Color.deltsMutedText)
-                }
+                ProfileMenuValueLabel(text: label(selection))
             }
-            .pickerStyle(.menu)
+            .deltsPressable()
+        }
+    }
+}
+
+private struct ProfileMenuValueLabel: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Text(text)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
+                .multilineTextAlignment(.trailing)
+
+            Image(systemName: "chevron.up.chevron.down")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(Color.deltsMutedText)
+        }
+        .padding(.horizontal, 12)
+        .frame(minWidth: 104, minHeight: 40, alignment: .trailing)
+        .background(Color.deltsPanel.opacity(0.36), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.36), lineWidth: 0.5)
         }
     }
 }
@@ -858,30 +930,70 @@ private struct ProfileSegmentedPicker<Option: Hashable>: View {
     var body: some View {
         ProfileControlBlock(title: title, systemImage: systemImage) {
             if dynamicTypeSize.isAccessibilitySize {
-                Picker(selection: $selection) {
+                Menu {
                     ForEach(options, id: \.self) { option in
-                        Text(label(option)).tag(option)
+                        Button {
+                            selection = option
+                        } label: {
+                            if option == selection {
+                                Label(label(option), systemImage: "checkmark")
+                            } else {
+                                Text(label(option))
+                            }
+                        }
                     }
                 } label: {
-                    HStack(spacing: 6) {
-                        Text(label(selection))
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(Color.deltsCharcoal)
-
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(Color.deltsMutedText)
-                    }
+                    ProfileMenuValueLabel(text: label(selection))
                 }
-                .pickerStyle(.menu)
+                .deltsPressable()
             } else {
-                Picker(title, selection: $selection) {
-                    ForEach(options, id: \.self) { option in
-                        Text(label(option)).tag(option)
-                    }
-                }
-                .pickerStyle(.segmented)
+                ProfileChoiceRail(selection: $selection, options: options, label: label)
             }
+        }
+    }
+}
+
+private struct ProfileChoiceRail<Option: Hashable>: View {
+    @Binding var selection: Option
+    let options: [Option]
+    let label: (Option) -> String
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(options, id: \.self) { option in
+                    let isSelected = option == selection
+
+                    Button {
+                        let animation: Animation? = reduceMotion ? nil : .snappy(duration: 0.18)
+                        withAnimation(animation) {
+                            selection = option
+                        }
+                    } label: {
+                        Text(label(option))
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsCharcoal)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.78)
+                            .padding(.horizontal, 13)
+                            .frame(minWidth: 92, minHeight: 40)
+                            .background(
+                                isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.24),
+                                in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+                            )
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                                    .stroke(Color.deltsHairline.opacity(isSelected ? 0.18 : 0.30), lineWidth: 0.5)
+                            }
+                            .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                    }
+                    .deltsPressable()
+                    .accessibilityLabel(label(option))
+                    .accessibilityValue(isSelected ? "Selected" : "Not selected")
+                }
+            }
+            .padding(.horizontal, 1)
         }
     }
 }
@@ -944,7 +1056,7 @@ private struct ProfileChecklistGrid<Option: Identifiable & Hashable>: View {
                         isSelected: isSelected
                     )
                 }
-                .buttonStyle(.plain)
+                .deltsPressable()
                 .accessibilityValue(isSelected ? "Selected" : "Not selected")
                 .accessibilityHint(isSelected ? "Double tap to remove." : "Double tap to select.")
             }

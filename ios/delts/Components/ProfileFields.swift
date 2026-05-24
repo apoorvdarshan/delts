@@ -113,7 +113,7 @@ struct MultiSelectChecklist<Option: Identifiable & Hashable>: View {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .deltsPressable()
             .accessibilityValue(isSelected ? "Selected" : "Not selected")
             .accessibilityHint(isSelected ? "Double tap to remove." : "Double tap to select.")
         }

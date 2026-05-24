@@ -103,6 +103,10 @@ extension View {
             .tint(prominent ? Color.deltsAccent : Color.deltsSecondaryAccent)
     }
 
+    func deltsPressable() -> some View {
+        buttonStyle(DeltsPressableButtonStyle())
+    }
+
     func deltsBottomActionBackground() -> some View {
         background(alignment: .top) {
             LinearGradient(
@@ -118,6 +122,19 @@ extension View {
         }
         .background(Color.deltsBackground.opacity(0.96))
         .background(.bar)
+    }
+}
+
+struct DeltsPressableButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        let isPressed = configuration.isPressed && isEnabled
+
+        configuration.label
+            .scaleEffect(isPressed ? 0.975 : 1)
+            .opacity(isEnabled ? (isPressed ? 0.90 : 1) : 0.55)
+            .animation(.easeOut(duration: 0.14), value: isPressed)
     }
 }
 
