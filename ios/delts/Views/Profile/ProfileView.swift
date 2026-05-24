@@ -216,7 +216,7 @@ private struct ProfileEditorView: View {
                 ProfileDivider()
                 ProfileNumberInputRow(
                     title: "Overhead Press",
-                    systemImage: "arrow.up.circle",
+                    systemImage: "arrow.up",
                     suffix: "kg",
                     value: overheadPressBinding
                 )

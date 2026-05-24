@@ -24,13 +24,13 @@ struct ExerciseCard: View {
                 VStack(alignment: .leading, spacing: 7) {
                     Text(exercise.name)
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.deltsCharcoal)
                         .lineLimit(2)
                         .minimumScaleFactor(0.86)
 
                     Text("\(exercise.targetMuscle.title) - \(exercise.equipment.title)")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.deltsMutedText)
                         .lineLimit(1)
                         .minimumScaleFactor(0.82)
 
@@ -44,9 +44,10 @@ struct ExerciseCard: View {
                 Spacer(minLength: 4)
 
                 if showsStartButton {
-                    Image(systemName: "play.circle.fill")
-                        .font(.title2.weight(.semibold))
+                    Image(systemName: "play.fill")
+                        .font(.headline.weight(.bold))
                         .foregroundStyle(Color.deltsAccent)
+                        .frame(width: 30, height: 30)
                         .accessibilityLabel("Start exercise")
                 }
             }

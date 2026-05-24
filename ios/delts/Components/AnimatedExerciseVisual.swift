@@ -74,10 +74,10 @@ struct AnimatedExerciseVisual: View {
                 if let equipment {
                     Text(equipment.title)
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.deltsMutedText)
                 }
             }
-            .foregroundStyle(.primary)
+            .foregroundStyle(Color.deltsCharcoal)
         }
         .onAppear { animate = true }
     }
@@ -91,21 +91,24 @@ private struct ExerciseImageView: View {
 
     var body: some View {
         ZStack {
-            if let image = currentImage {
+            if !frames.isEmpty {
                 Color.deltsPanel.opacity(0.18)
 
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .saturation(0.50)
-                    .grayscale(0.18)
-                    .contrast(1.07)
-                    .brightness(-0.04)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipped()
-                    .transaction { transaction in
-                        transaction.animation = nil
+                ZStack {
+                    ForEach(frames.indices, id: \.self) { index in
+                        Image(uiImage: frames[index])
+                            .resizable()
+                            .scaledToFill()
+                            .saturation(0.30)
+                            .grayscale(0.36)
+                            .contrast(1.10)
+                            .brightness(-0.05)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .clipped()
+                            .opacity(index == frameIndex ? 1 : 0)
                     }
+                }
+                .animation(.easeInOut(duration: 0.18), value: frameIndex)
             } else {
                 Color.deltsPanel.opacity(0.18)
             }
@@ -126,10 +129,6 @@ private struct ExerciseImageView: View {
         }
     }
 
-    private var currentImage: UIImage? {
-        guard !frames.isEmpty else { return nil }
-        return frames[min(frameIndex, frames.count - 1)]
-    }
 }
 
 private final class ExerciseImageCache {

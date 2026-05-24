@@ -97,7 +97,7 @@ private enum WorkoutsMode: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .library: return "figure.strengthtraining.traditional"
-        case .history: return "clock.arrow.circlepath"
+        case .history: return "clock"
         }
     }
 }
@@ -188,7 +188,7 @@ private struct ExerciseLibraryBrowserView: View {
                 } else if items.isEmpty {
                     ContentUnavailableView(
                         "No exercises match",
-                        systemImage: "line.3.horizontal.decrease.circle",
+                        systemImage: "line.3.horizontal.decrease",
                         description: Text("Reset filters or search a different body part, machine, or exercise.")
                     )
                     .frame(maxWidth: .infinity, minHeight: 300)
@@ -537,7 +537,7 @@ private struct WorkoutHistoryListView: View {
                         noun: "workout",
                         subtitle: "Completed",
                         trailingTitle: "Local logs",
-                        trailingSystemImage: "clock.arrow.circlepath"
+                        trailingSystemImage: "clock"
                     )
                     .padding(.horizontal, 20)
                     .padding(.top, 14)
@@ -763,13 +763,13 @@ private struct CompletedWorkoutRow: View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 10) {
                 HistorySummaryItem(value: "\(logs.count)", label: logs.count == 1 ? "exercise" : "exercises", systemImage: "figure.strengthtraining.traditional")
-                HistorySummaryItem(value: "\(completedSets)/\(totalSets)", label: "sets", systemImage: "checkmark.circle")
+                HistorySummaryItem(value: "\(completedSets)/\(totalSets)", label: "sets", systemImage: "checkmark")
                 HistorySummaryItem(value: "\(workout.durationMinutes)m", label: "duration", systemImage: "clock")
             }
 
             VStack(alignment: .leading, spacing: 4) {
                 HistorySummaryItem(value: "\(logs.count)", label: logs.count == 1 ? "exercise" : "exercises", systemImage: "figure.strengthtraining.traditional")
-                HistorySummaryItem(value: "\(completedSets)/\(totalSets)", label: "sets", systemImage: "checkmark.circle")
+                HistorySummaryItem(value: "\(completedSets)/\(totalSets)", label: "sets", systemImage: "checkmark")
                 HistorySummaryItem(value: "\(workout.durationMinutes)m", label: "duration", systemImage: "clock")
             }
         }
@@ -783,11 +783,11 @@ private struct WorkoutHistoryGlyph: View {
 
     var body: some View {
         ZStack {
-            Circle()
-                .fill(Color.deltsSecondaryAccent.opacity(0.14))
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.deltsSecondaryAccent.opacity(0.12))
                 .overlay {
-                    Circle()
-                        .stroke(Color.deltsHairline.opacity(0.38), lineWidth: 0.5)
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.deltsHairline.opacity(0.32), lineWidth: 0.5)
                 }
 
             if let iconName {
@@ -911,7 +911,7 @@ private struct ExerciseLibraryDetailView: View {
             exerciseName: item.name,
             imagePaths: item.imagePaths,
             equipment: item.equipment,
-            height: 326
+            height: 294
         )
         .frame(maxWidth: .infinity)
         .clipped()
@@ -932,7 +932,7 @@ private struct ExerciseLibraryDetailView: View {
                 }
 
                 Text(item.name)
-                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                    .font(.system(.title, design: .rounded, weight: .bold))
                     .foregroundStyle(.white)
                     .lineLimit(3)
                     .minimumScaleFactor(0.7)
@@ -970,7 +970,7 @@ private struct ExerciseLibraryDetailView: View {
         .padding(.horizontal, 20)
         .padding(.top, 10)
         .padding(.bottom, 6)
-        .background(.bar)
+        .deltsBottomActionBackground()
     }
 
     private var restText: String {
@@ -1132,7 +1132,7 @@ struct CompletedWorkoutDetailView: View {
             HStack(spacing: 0) {
                 WorkoutSummaryMetric(value: "\(workout.exerciseLogs.count)", title: "Exercises", systemImage: "figure.strengthtraining.traditional")
                 Divider().frame(height: 42).overlay(Color.deltsHairline.opacity(0.34))
-                WorkoutSummaryMetric(value: "\(completedSets)/\(totalSets)", title: "Sets", systemImage: "checkmark.circle")
+                WorkoutSummaryMetric(value: "\(completedSets)/\(totalSets)", title: "Sets", systemImage: "checkmark")
                 Divider().frame(height: 42).overlay(Color.deltsHairline.opacity(0.34))
                 WorkoutSummaryMetric(value: "\(workout.durationMinutes)m", title: "Duration", systemImage: "clock")
             }
@@ -1162,7 +1162,7 @@ private struct CompletedExerciseLogSection: View {
 
                 Spacer(minLength: 12)
 
-                Label("\(completedSets)/\(exercise.sets.count)", systemImage: "checkmark.circle.fill")
+                Label("\(completedSets)/\(exercise.sets.count)", systemImage: "checkmark")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Color.deltsSecondaryAccent)
                     .padding(.vertical, 5)
@@ -1196,7 +1196,7 @@ private struct CompletedSetLogRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: set.completed ? "checkmark.circle.fill" : "circle")
+            Image(systemName: set.completed ? "checkmark" : "minus")
                 .foregroundStyle(set.completed ? Color.deltsAccent : Color.deltsMutedText)
                 .accessibilityHidden(true)
 

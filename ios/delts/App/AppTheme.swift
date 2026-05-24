@@ -28,7 +28,7 @@ extension Color {
     })
     static let deltsAccent = Color(red: 0.70, green: 0.94, blue: 0.26)
     static let deltsSecondaryAccent = Color(red: 0.35, green: 0.78, blue: 0.52)
-    static let deltsWarning = Color(red: 0.92, green: 0.78, blue: 0.22)
+    static let deltsWarning = Color(red: 0.76, green: 0.88, blue: 0.24)
     static let deltsInferno = Color.deltsSecondaryAccent
     static let deltsAcidGreen = Color.deltsSecondaryAccent
     static let deltsGold = Color.deltsWarning
@@ -101,6 +101,23 @@ extension View {
     func deltsGlassButton(prominent: Bool = false) -> some View {
         buttonStyle(.plain)
             .tint(prominent ? Color.deltsAccent : Color.deltsSecondaryAccent)
+    }
+
+    func deltsBottomActionBackground() -> some View {
+        background(alignment: .top) {
+            LinearGradient(
+                colors: [
+                    Color.deltsBackground.opacity(0),
+                    Color.deltsBackground.opacity(0.96)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 34)
+            .offset(y: -34)
+        }
+        .background(Color.deltsBackground.opacity(0.96))
+        .background(.bar)
     }
 }
 

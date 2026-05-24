@@ -118,7 +118,7 @@ enum FitnessIssue: String, CaseIterable, Identifiable, Codable, Hashable {
     var icon: String {
         switch self {
         case .noConsistency: return "calendar.badge.exclamationmark"
-        case .unknownTraining: return "questionmark.circle"
+        case .unknownTraining: return "questionmark"
         case .plateau: return "chart.line.flattrend.xyaxis"
         case .weakForm: return "exclamationmark.triangle"
         case .lowMotivation: return "bolt.slash"
@@ -169,4 +169,3 @@ enum Equipment: String, CaseIterable, Identifiable, Codable, Hashable {
         }
     }
 }
-

@@ -19,7 +19,7 @@ struct EquipmentGrid: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(section.title)
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.deltsMutedText)
                         .textCase(.uppercase)
                         .padding(.horizontal, 2)
 
@@ -39,10 +39,10 @@ struct EquipmentGrid: View {
                             }
                         }
                     }
-                    .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color(uiColor: .separator).opacity(0.18), lineWidth: 0.5)
+                            .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
                     }
                 }
             }
@@ -104,22 +104,21 @@ private struct EquipmentChecklistRow: View {
             HStack(spacing: 12) {
                 Image(systemName: item.icon)
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(isSelected ? Color.deltsAccent : Color.secondary)
+                    .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsSecondaryAccent)
                     .frame(width: 34, height: 34)
                     .accessibilityHidden(true)
 
                 Text(item.title)
                     .font(.body)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(2)
                     .minimumScaleFactor(0.88)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                Image(systemName: "checkmark")
+                Image(systemName: isSelected ? "checkmark" : "plus")
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Color.deltsAccent)
+                    .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsHairline)
                     .frame(width: 24, height: 24)
-                    .opacity(isSelected ? 1 : 0)
                     .accessibilityHidden(true)
             }
             .padding(.horizontal, 14)

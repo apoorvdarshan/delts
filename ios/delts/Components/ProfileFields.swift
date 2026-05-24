@@ -44,7 +44,7 @@ struct ProfileNumberField: View {
                     .textFieldStyle(.plain)
 
                 Text(suffix)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.deltsMutedText)
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
         } label: {
@@ -63,7 +63,7 @@ struct IntStepperField: View {
         Stepper(value: $value, in: range) {
             LabeledContent {
                 Text(displayValue)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.deltsMutedText)
             } label: {
                 Text(title)
             }
@@ -97,10 +97,10 @@ struct MultiSelectChecklist<Option: Identifiable & Hashable>: View {
                 HStack(spacing: 12) {
                     Label {
                         Text(title(option))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color.deltsCharcoal)
                     } icon: {
                         Image(systemName: icon(option))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.deltsSecondaryAccent)
                     }
 
                     Spacer(minLength: 12)

@@ -10,9 +10,10 @@ DERIVED_DATA="${DERIVED_DATA:-/tmp/delts-iphone-build}"
 BUNDLE_ID="${BUNDLE_ID:-com.apoorvdarshan.delts}"
 SCREENSHOT_PATH=""
 INITIAL_TAB=""
+INITIAL_SCENE=""
 
 usage() {
-  printf 'Usage: %s [--device UDID] [--tab home|workouts|profile] [--screenshot PATH]\n' "$0"
+  printf 'Usage: %s [--device UDID] [--tab home|workouts|profile] [--scene plan|workout|active|summary] [--screenshot PATH]\n' "$0"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -27,6 +28,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --tab)
       INITIAL_TAB="$2"
+      shift 2
+      ;;
+    --scene)
+      INITIAL_SCENE="$2"
       shift 2
       ;;
     -h|--help)
@@ -51,14 +56,18 @@ xcodebuild \
   build
 
 xcrun devicectl device install app --device "$DEVICE_ID" "$APP_PATH"
+LAUNCH_ARGS=()
 if [[ -n "$INITIAL_TAB" ]]; then
-  xcrun devicectl device process launch --terminate-existing --device "$DEVICE_ID" "$BUNDLE_ID" --delts-tab "$INITIAL_TAB"
-else
-  xcrun devicectl device process launch --terminate-existing --device "$DEVICE_ID" "$BUNDLE_ID"
+  LAUNCH_ARGS+=(--delts-tab "$INITIAL_TAB")
 fi
+if [[ -n "$INITIAL_SCENE" ]]; then
+  LAUNCH_ARGS+=(--delts-scene "$INITIAL_SCENE")
+fi
+xcrun devicectl device process launch --terminate-existing --device "$DEVICE_ID" "$BUNDLE_ID" "${LAUNCH_ARGS[@]}"
 
 if [[ -n "$SCREENSHOT_PATH" ]]; then
   mkdir -p "$(dirname "$SCREENSHOT_PATH")"
+  sleep 2
   if ! pymobiledevice3 developer dvt screenshot --udid "$DEVICE_ID" "$SCREENSHOT_PATH"; then
     printf 'Screenshot failed. Start the tunnel first: sudo python3 -m pymobiledevice3 remote tunneld\n' >&2
     exit 1

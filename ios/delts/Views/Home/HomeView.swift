@@ -340,7 +340,7 @@ struct HomeView: View {
         .padding(.horizontal, 20)
         .padding(.top, 10)
         .padding(.bottom, 6)
-        .background(.bar)
+        .deltsBottomActionBackground()
     }
 
     private var statusText: String? {

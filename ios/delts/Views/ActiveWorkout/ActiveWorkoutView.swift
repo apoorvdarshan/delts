@@ -24,6 +24,7 @@ struct ActiveWorkoutView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 if let exercise = viewModel.currentExercise {
+                    activeHeader
                     exerciseSection(exercise)
                     setLogger(for: exercise)
                     restStrip(exercise)
@@ -38,29 +39,17 @@ struct ActiveWorkoutView: View {
         .deltsScreen()
         .contentMargins(.bottom, dynamicTypeSize.isAccessibilitySize ? 148 : 106, for: .scrollContent)
         .scrollDismissesKeyboard(.interactively)
-        .navigationTitle("Active Workout")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .safeAreaInset(edge: .bottom) {
             if viewModel.currentExercise != nil {
                 bottomPrimaryAction
                     .padding(.horizontal, 20)
                     .padding(.top, 10)
                     .padding(.bottom, 6)
-                    .background(.bar)
+                    .deltsBottomActionBackground()
             }
         }
         .toolbar {
-            if viewModel.currentExercise != nil {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        finishWorkout()
-                    } label: {
-                        Label("Save & Exit", systemImage: "tray.and.arrow.down.fill")
-                    }
-                    .tint(Color.deltsAccent)
-                }
-            }
-
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") {
@@ -85,6 +74,37 @@ struct ActiveWorkoutView: View {
                 restTimerRunning = false
             }
         }
+    }
+
+    private var activeHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Active")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .textCase(.uppercase)
+
+                Text("Workout")
+                    .font(.system(.title2, design: .rounded, weight: .bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+            }
+
+            Spacer(minLength: 12)
+
+            Button {
+                finishWorkout()
+            } label: {
+                Label("Save", systemImage: "tray.and.arrow.down.fill")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .lineLimit(1)
+                    .padding(.horizontal, 2)
+                    .frame(minHeight: 40)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Save and exit workout")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func exerciseSection(_ exercise: WorkoutExercise) -> some View {
@@ -246,7 +266,7 @@ struct ActiveWorkoutView: View {
                 muscleGroup: exercise.targetMuscle,
                 exerciseName: exercise.name,
                 equipment: exercise.equipment,
-                height: dynamicTypeSize.isAccessibilitySize ? 308 : 254
+                height: dynamicTypeSize.isAccessibilitySize ? 288 : 224
             )
 
             LinearGradient(
@@ -265,7 +285,7 @@ struct ActiveWorkoutView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(exercise.name)
-                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                        .font(.system(.title, design: .rounded, weight: .bold))
                         .foregroundStyle(.white)
                         .lineLimit(3)
                         .minimumScaleFactor(0.62)
@@ -302,8 +322,8 @@ struct ActiveWorkoutView: View {
             .foregroundStyle(.white.opacity(0.92))
             .lineLimit(1)
             .minimumScaleFactor(0.78)
-            .padding(.vertical, 7)
-            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 9)
             .background(Color.black.opacity(0.48), in: Capsule())
     }
 
@@ -520,7 +540,7 @@ struct ActiveWorkoutView: View {
         return Button {
             viewModel.toggleSet(setIndex)
         } label: {
-            Image(systemName: complete ? "checkmark.circle.fill" : "circle")
+            Image(systemName: complete ? "checkmark" : "plus")
                 .font(.title3.weight(.semibold))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(complete ? Color.deltsSecondaryAccent : Color.deltsMutedText)

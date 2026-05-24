@@ -19,7 +19,7 @@ struct PlanBuilderView: View {
     private let durationOptions = [30, 45, 60, 90]
 
     private var heroHeight: CGFloat {
-        horizontalSizeClass == .compact ? 236 : 270
+        horizontalSizeClass == .compact ? 214 : 252
     }
 
     private var equipmentDetail: String {
@@ -28,7 +28,7 @@ struct PlanBuilderView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 24) {
+            LazyVStack(alignment: .leading, spacing: 21) {
                 coachHero
                 generatorControls
             }
@@ -38,7 +38,7 @@ struct PlanBuilderView: View {
         }
         .deltsScreen()
         .navigationTitle("Plan")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             generateBar
         }
@@ -60,14 +60,14 @@ struct PlanBuilderView: View {
                     equipment: viewModel.selectedEquipment.first,
                     height: heroHeight
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
 
                 LinearGradient(
                     colors: [.black.opacity(0.02), .black.opacity(0.18), .black.opacity(0.78)],
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 0) {
                     PlanHeroBadge(
@@ -75,11 +75,11 @@ struct PlanBuilderView: View {
                         systemImage: GeminiConfig.hasAPIKey ? "sparkles" : "bolt.fill"
                     )
 
-                    Spacer(minLength: 46)
+                    Spacer(minLength: 34)
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("\(viewModel.selectedMuscleGroup.title) Day")
-                            .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                            .font(.system(.title, design: .rounded, weight: .bold))
                             .foregroundStyle(.white)
                             .lineLimit(2)
                             .minimumScaleFactor(0.72)
@@ -98,7 +98,7 @@ struct PlanBuilderView: View {
                 .padding(18)
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .stroke(Color.deltsHairline.opacity(0.32), lineWidth: 0.5)
             }
 
@@ -199,7 +199,7 @@ struct PlanBuilderView: View {
         .padding(.horizontal, 20)
         .padding(.top, 10)
         .padding(.bottom, 6)
-        .background(.bar)
+        .deltsBottomActionBackground()
     }
 
     private var generationStatusText: String? {
@@ -245,7 +245,7 @@ struct PlanBuilderView: View {
 
             content()
         }
-        .padding(.vertical, 20)
+        .padding(.vertical, 16)
     }
 }
 
@@ -534,7 +534,7 @@ private struct PlanEquipmentToggle: View {
                     .minimumScaleFactor(0.78)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                Image(systemName: isSelected ? "checkmark" : "plus")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsHairline.opacity(0.72))
                     .accessibilityHidden(true)
@@ -588,12 +588,12 @@ struct WorkoutPlanView: View {
     }
 
     private var heroHeight: CGFloat {
-        horizontalSizeClass == .compact ? 236 : 270
+        horizontalSizeClass == .compact ? 214 : 252
     }
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 24) {
+            LazyVStack(alignment: .leading, spacing: 21) {
                 planHero
 
                 VStack(alignment: .leading, spacing: 0) {
@@ -629,7 +629,7 @@ struct WorkoutPlanView: View {
             .padding(.horizontal, 20)
             .padding(.top, 10)
             .padding(.bottom, 6)
-            .background(.bar)
+            .deltsBottomActionBackground()
         }
         .navigationDestination(item: $startRoute) { route in
             ActiveWorkoutView(plan: plan, startIndex: route.index)
@@ -643,14 +643,14 @@ struct WorkoutPlanView: View {
                     muscleGroup: plan.muscleGroup,
                     height: heroHeight
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
 
                 LinearGradient(
                     colors: [.black.opacity(0.02), .black.opacity(0.18), .black.opacity(0.78)],
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 0) {
                     PlanHeroBadge(
@@ -658,11 +658,11 @@ struct WorkoutPlanView: View {
                         systemImage: plan.generatedByAI ? "sparkles" : "bolt.fill"
                     )
 
-                    Spacer(minLength: 44)
+                    Spacer(minLength: 34)
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text(plan.title)
-                            .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                            .font(.system(.title, design: .rounded, weight: .bold))
                             .foregroundStyle(.white)
                             .lineLimit(3)
                             .minimumScaleFactor(0.62)
@@ -677,7 +677,7 @@ struct WorkoutPlanView: View {
                 .padding(18)
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .stroke(Color.deltsHairline.opacity(0.32), lineWidth: 0.5)
             }
 
@@ -712,11 +712,11 @@ func planGoalIcon(_ goal: FitnessGoal) -> String {
 func planExperienceIcon(_ experience: ExperienceLevel) -> String {
     switch experience {
     case .beginner:
-        return "1.circle.fill"
+        return "figure.cooldown"
     case .intermediate:
-        return "2.circle.fill"
+        return "chart.bar.fill"
     case .advanced:
-        return "3.circle.fill"
+        return "bolt.fill"
     }
 }
 

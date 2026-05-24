@@ -46,7 +46,7 @@ private struct DeltsPrimaryButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) private var colorScheme
 
     func makeBody(configuration: Configuration) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 15, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: 17, style: .continuous)
         let pressed = configuration.isPressed && isEnabled && !isLoading
 
         configuration.label
@@ -64,9 +64,9 @@ private struct DeltsPrimaryButtonStyle: ButtonStyle {
             )
             .shadow(
                 color: Color.deltsAccent.opacity(isEnabled && !isLoading ? shadowOpacity : 0),
-                radius: 10,
+                radius: 8,
                 x: 0,
-                y: 5
+                y: 4
             )
             .scaleEffect(pressed ? 0.985 : 1)
             .opacity(isEnabled ? 1 : 0.68)
@@ -120,7 +120,7 @@ struct GlassIconButton: View {
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.deltsMutedText)
             }
             .padding(14)
             .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
