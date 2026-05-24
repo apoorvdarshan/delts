@@ -97,6 +97,10 @@ private struct ExerciseImageView: View {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
+                    .saturation(0.50)
+                    .grayscale(0.18)
+                    .contrast(1.07)
+                    .brightness(-0.04)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
                     .transaction { transaction in
@@ -107,12 +111,15 @@ private struct ExerciseImageView: View {
             }
         }
         .task(id: urls) {
-            frameIndex = 0
-            frames = urls.compactMap { UIImage(contentsOfFile: $0.path) }
+            let loadedFrames = ExerciseImageCache.shared.images(for: urls)
+            if !loadedFrames.isEmpty {
+                frameIndex = 0
+                frames = loadedFrames
+            }
             guard frames.count > 1, !reduceMotion else { return }
 
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 850_000_000)
+                try? await Task.sleep(nanoseconds: 1_050_000_000)
                 guard !Task.isCancelled else { return }
                 frameIndex = (frameIndex + 1) % frames.count
             }
@@ -122,5 +129,36 @@ private struct ExerciseImageView: View {
     private var currentImage: UIImage? {
         guard !frames.isEmpty else { return nil }
         return frames[min(frameIndex, frames.count - 1)]
+    }
+}
+
+private final class ExerciseImageCache {
+    static let shared = ExerciseImageCache()
+
+    private var imagesByURL: [URL: UIImage] = [:]
+    private let lock = NSLock()
+
+    private init() {}
+
+    func images(for urls: [URL]) -> [UIImage] {
+        urls.compactMap { image(for: $0) }
+    }
+
+    private func image(for url: URL) -> UIImage? {
+        lock.lock()
+        if let image = imagesByURL[url] {
+            lock.unlock()
+            return image
+        }
+        lock.unlock()
+
+        guard let image = UIImage(contentsOfFile: url.path) else {
+            return nil
+        }
+
+        lock.lock()
+        imagesByURL[url] = image
+        lock.unlock()
+        return image
     }
 }

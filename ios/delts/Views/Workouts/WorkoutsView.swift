@@ -21,29 +21,55 @@ struct WorkoutsView: View {
             }
             .background(WorkoutsScreenBackground())
             .navigationTitle("Workouts")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 
     private var modePicker: some View {
-        Picker("Workouts", selection: $selectedMode) {
-            ForEach(WorkoutsMode.allCases) { mode in
-                Text(mode.title).tag(mode)
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Library")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .textCase(.uppercase)
+
+                Text("Workouts")
+                    .font(.system(.title, design: .rounded, weight: .bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+
+                Text(selectedMode.subtitle)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+            }
+
+            HStack(spacing: 10) {
+                ForEach(WorkoutsMode.allCases) { mode in
+                    Button {
+                        withAnimation(.snappy(duration: 0.18)) {
+                            selectedMode = mode
+                        }
+                    } label: {
+                        WorkoutsModePill(
+                            title: mode.title,
+                            systemImage: mode.systemImage,
+                            isSelected: selectedMode == mode
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
-        .pickerStyle(.segmented)
-        .tint(Color.deltsAccent)
         .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
-        .background {
+        .padding(.top, 12)
+        .padding(.bottom, 12)
+        .background(.bar)
+        .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(Color.deltsBackground.opacity(0.94))
-                .overlay(alignment: .bottom) {
-                    Rectangle()
-                        .fill(Color.deltsHairline.opacity(0.34))
-                        .frame(height: 0.5)
-                }
+                .fill(Color.deltsHairline.opacity(0.34))
+                .frame(height: 0.5)
         }
     }
 }
@@ -59,6 +85,42 @@ private enum WorkoutsMode: String, CaseIterable, Identifiable {
         case .library: return "Library"
         case .history: return "History"
         }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .library: return "Pick a focus, preview motion, build a session."
+        case .history: return "Review completed sessions and logged sets."
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .library: return "figure.strengthtraining.traditional"
+        case .history: return "clock.arrow.circlepath"
+        }
+    }
+}
+
+private struct WorkoutsModePill: View {
+    let title: String
+    let systemImage: String
+    let isSelected: Bool
+
+    var body: some View {
+        Label(title, systemImage: systemImage)
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsCharcoal)
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
+            .frame(maxWidth: .infinity)
+            .frame(height: 42)
+            .background(isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.24), in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(Color.deltsHairline.opacity(isSelected ? 0.20 : 0.34), lineWidth: 0.5)
+            }
+            .contentShape(Capsule())
     }
 }
 
@@ -110,8 +172,8 @@ private struct ExerciseLibraryBrowserView: View {
             LazyVStack(alignment: .leading, spacing: 0) {
                 librarySummary
                     .padding(.horizontal, 20)
-                    .padding(.top, 14)
-                    .padding(.bottom, 18)
+                    .padding(.top, 12)
+                    .padding(.bottom, 14)
 
                 filters
                     .padding(.bottom, 18)
@@ -179,39 +241,49 @@ private struct ExerciseLibraryBrowserView: View {
                     .textCase(.uppercase)
 
                 Text(hasLibrarySelection ? "\(items.count) matching exercises" : "\(service.exercises.count) offline exercises")
-                    .font(.title3.weight(.bold))
+                    .font(.headline.weight(.bold))
                     .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
 
                 Text(hasLibrarySelection ? "Build from filtered results" : "Select a body part to browse moving demos")
-                    .font(.subheadline)
+                    .font(.footnote)
                     .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(2)
             }
 
             Spacer(minLength: 12)
 
-            Button {
-                generatedPlan = service.makePlan(from: items)
-            } label: {
-                Label(hasLibrarySelection ? "Build Top \(min(items.count, 8))" : "Select", systemImage: hasLibrarySelection ? "wand.and.stars" : "hand.tap")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(Color.deltsOnAccent)
+            if hasLibrarySelection {
+                Button {
+                    generatedPlan = service.makePlan(from: items)
+                } label: {
+                    Label("Build \(min(items.count, 8))", systemImage: "wand.and.stars")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Color.deltsOnAccent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.76)
+                        .padding(.horizontal, 14)
+                        .frame(height: 40)
+                        .background(Color.deltsAccent, in: Capsule())
+                        .overlay {
+                            Capsule()
+                                .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
+                        }
+                }
+                .buttonStyle(.plain)
+                .disabled(items.isEmpty)
+            } else {
+                Label("Motion demos", systemImage: "photo.stack")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.deltsSecondaryAccent)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.76)
-                    .padding(.horizontal, 14)
-                    .frame(height: 42)
-                    .background(Color.deltsAccent, in: Capsule())
-                    .overlay {
-                        Capsule()
-                            .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
-                    }
+                    .padding(.horizontal, 10)
+                    .frame(height: 32)
+                    .background(Color.deltsSecondaryAccent.opacity(0.11), in: Capsule())
             }
-            .buttonStyle(.plain)
-            .opacity(items.isEmpty || !hasLibrarySelection ? 0.48 : 1)
-            .disabled(items.isEmpty || !hasLibrarySelection)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
     }
 
     private var filters: some View {
@@ -393,24 +465,24 @@ private struct WorkoutLibraryFocusChooser: View {
     let select: (MuscleGroup) -> Void
 
     private let columns = [
-        GridItem(.adaptive(minimum: 156), spacing: 14, alignment: .top)
+        GridItem(.adaptive(minimum: 156), spacing: 12, alignment: .top)
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Select Body Part")
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(Color.deltsCharcoal)
 
-            LazyVGrid(columns: columns, alignment: .leading, spacing: 14) {
+            LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
                 ForEach(MuscleGroup.allCases) { group in
                     Button {
                         select(group)
                     } label: {
-                        VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 9) {
                             AnimatedExerciseVisual(
                                 muscleGroup: group,
-                                height: 118
+                                height: 102
                             )
 
                             HStack(spacing: 8) {
@@ -430,10 +502,10 @@ private struct WorkoutLibraryFocusChooser: View {
                                     .foregroundStyle(Color.deltsMutedText)
                             }
                         }
-                        .padding(10)
-                        .background(Color.deltsPanel.opacity(0.20), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+                        .padding(9)
+                        .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                         .overlay {
-                            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
                                 .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
                         }
                     }

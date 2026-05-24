@@ -11,7 +11,7 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
-    @State private var selectedTab: DeltsTab = .home
+    @State private var selectedTab: DeltsTab = .initialTab
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -46,6 +46,22 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
     case profile
 
     var id: String { rawValue }
+
+    static var initialTab: DeltsTab {
+        let arguments = ProcessInfo.processInfo.arguments
+        if let tabFlagIndex = arguments.firstIndex(of: "--delts-tab"),
+           arguments.indices.contains(arguments.index(after: tabFlagIndex)),
+           let tab = DeltsTab(rawValue: arguments[arguments.index(after: tabFlagIndex)]) {
+            return tab
+        }
+
+        if let tabValue = ProcessInfo.processInfo.environment["DELTS_INITIAL_TAB"],
+           let tab = DeltsTab(rawValue: tabValue) {
+            return tab
+        }
+
+        return .home
+    }
 
     var title: String {
         switch self {

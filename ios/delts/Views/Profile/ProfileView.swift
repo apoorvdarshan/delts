@@ -16,7 +16,7 @@ struct ProfileView: View {
                 }
             }
             .navigationTitle("Profile")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .onDisappear {
                 try? modelContext.save()
             }
@@ -32,7 +32,8 @@ private struct ProfileEditorView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 26) {
+            VStack(alignment: .leading, spacing: 18) {
+                ProfileScreenHeader()
                 ProfileHero(profile: profile)
                 identitySection
                 goalSection
@@ -43,19 +44,20 @@ private struct ProfileEditorView: View {
                 issuesSection
             }
             .padding(.horizontal, 20)
-            .padding(.top, 14)
+            .padding(.top, 10)
             .padding(.bottom, 18)
         }
         .deltsScreen()
         .contentMargins(.bottom, 110, for: .scrollContent)
         .scrollDismissesKeyboard(.interactively)
         .tint(Color.deltsAccent)
+        .toolbar(.hidden, for: .navigationBar)
     }
 
     private var identitySection: some View {
         ProfileSection(
             title: "Body Profile",
-            subtitle: "Saved locally and used to shape plans and equipment recommendations.",
+            subtitle: "Used to shape plans and recommendations.",
             systemImage: "person.text.rectangle"
         ) {
             ProfileRowStack {
@@ -388,6 +390,27 @@ private struct ProfileEditorView: View {
     }
 }
 
+private struct ProfileScreenHeader: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Setup")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(Color.deltsAccent)
+                .textCase(.uppercase)
+
+            Text("Profile")
+                .font(.system(.title2, design: .rounded, weight: .bold))
+                .foregroundStyle(Color.deltsCharcoal)
+
+            Text("Training defaults and saved equipment.")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
 private struct ProfileLoadingView: View {
     var body: some View {
         ScrollView {
@@ -424,27 +447,24 @@ private struct ProfileHero: View {
     }
 
     private var metricColumns: [GridItem] {
-        [
-            GridItem(
-                .adaptive(minimum: dynamicTypeSize.isAccessibilitySize ? 240 : 118),
-                spacing: 12,
-                alignment: .top
-            )
-        ]
+        if dynamicTypeSize.isAccessibilitySize {
+            return [GridItem(.adaptive(minimum: 220), spacing: 12, alignment: .top)]
+        }
+        return Array(repeating: GridItem(.flexible(minimum: 66), spacing: 10, alignment: .top), count: 4)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 14) {
                 Image(systemName: "person.fill")
-                    .font(.system(size: 42, weight: .semibold))
+                    .font(.system(size: 34, weight: .semibold))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(Color.deltsAccent)
-                    .frame(width: 58, height: 58)
+                    .frame(width: 46, height: 46)
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(displayName)
-                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                        .font(.system(.title2, design: .rounded, weight: .bold))
                         .foregroundStyle(Color.deltsCharcoal)
                         .lineLimit(2)
                         .minimumScaleFactor(0.78)
@@ -461,20 +481,29 @@ private struct ProfileHero: View {
                     Label("Local", systemImage: "lock.fill")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(Color.deltsSecondaryAccent)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 5)
                         .background(Color.deltsSecondaryAccent.opacity(0.12), in: Capsule())
                 }
             }
 
-            LazyVGrid(columns: metricColumns, alignment: .leading, spacing: 12) {
-                ProfileHeroMetric(title: "Weekly", value: "\(profile.workoutFrequencyPerWeek)x", systemImage: "calendar")
-                ProfileHeroMetric(title: "Duration", value: "\(profile.workoutDurationMinutes) min", systemImage: "timer")
-                ProfileHeroMetric(title: "Gear", value: "\(profile.availableEquipment.count)", systemImage: "dumbbell.fill")
-                ProfileHeroMetric(title: "Focus", value: "\(profile.selectedBodyFocus.count)", systemImage: "scope")
+            if dynamicTypeSize.isAccessibilitySize {
+                LazyVGrid(columns: metricColumns, alignment: .leading, spacing: 12) {
+                    ProfileHeroMetric(title: "Weekly", value: "\(profile.workoutFrequencyPerWeek)x", systemImage: "calendar")
+                    ProfileHeroMetric(title: "Duration", value: "\(profile.workoutDurationMinutes) min", systemImage: "timer")
+                    ProfileHeroMetric(title: "Gear", value: "\(profile.availableEquipment.count)", systemImage: "dumbbell.fill")
+                    ProfileHeroMetric(title: "Focus", value: "\(profile.selectedBodyFocus.count)", systemImage: "scope")
+                }
+            } else {
+                HStack(spacing: 0) {
+                    ProfileHeroMetric(title: "Weekly", value: "\(profile.workoutFrequencyPerWeek)x", systemImage: "calendar")
+                    ProfileHeroMetric(title: "Duration", value: "\(profile.workoutDurationMinutes) min", systemImage: "timer")
+                    ProfileHeroMetric(title: "Gear", value: "\(profile.availableEquipment.count)", systemImage: "dumbbell.fill")
+                    ProfileHeroMetric(title: "Focus", value: "\(profile.selectedBodyFocus.count)", systemImage: "scope")
+                }
             }
         }
-        .padding(.bottom, 2)
+        .padding(.bottom, 1)
     }
 }
 
@@ -484,23 +513,24 @@ private struct ProfileHeroMetric: View {
     let systemImage: String
 
     var body: some View {
-        HStack(alignment: .center, spacing: 10) {
+        HStack(alignment: .center, spacing: 6) {
             Image(systemName: systemImage)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Color.deltsAccent)
-                .frame(width: 28, height: 28)
+                .frame(width: 16, height: 18, alignment: .leading)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(value)
-                    .font(.headline.weight(.bold))
+                    .font(.subheadline.weight(.bold))
                     .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.78)
+                    .minimumScaleFactor(0.70)
 
                 Text(title)
-                    .font(.caption.weight(.semibold))
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(Color.deltsMutedText)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.70)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -536,20 +566,20 @@ private struct ProfileSection<Content: View>: View {
 
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(Color.deltsAccent)
-                    .frame(width: 34, height: 34)
+                    .frame(width: 28, height: 28)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.headline.weight(.bold))
+                        .font(.subheadline.weight(.bold))
                         .foregroundStyle(Color.deltsCharcoal)
                         .fixedSize(horizontal: false, vertical: true)
 
                     if let subtitle {
                         Text(subtitle)
-                            .font(.subheadline)
+                            .font(.footnote)
                             .foregroundStyle(Color.deltsMutedText)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -607,10 +637,10 @@ private struct ProfileFieldLabel: View {
                 .font(.system(size: 15, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(tint)
-                .frame(width: 34, height: 34)
+                .frame(width: 28, height: 28)
 
             Text(title)
-                .font(.body.weight(.semibold))
+                .font(.callout.weight(.semibold))
                 .foregroundStyle(Color.deltsCharcoal)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -655,7 +685,7 @@ private struct ProfileFieldRow<Content: View>: View {
                 content
                     .layoutPriority(2)
             }
-            .padding(.vertical, 11)
+            .padding(.vertical, 10)
             .contentShape(Rectangle())
         }
     }

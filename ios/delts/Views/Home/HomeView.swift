@@ -65,7 +65,7 @@ struct HomeView: View {
                 .font(.system(.largeTitle, design: .rounded, weight: .bold))
                 .foregroundStyle(Color.deltsCharcoal)
 
-            Text("\(viewModel.selectedMuscleGroup.title) - \(viewModel.selectedExperience.title) - \(displayedEquipment.count) gear")
+            Text("\(viewModel.selectedMuscleGroup.title) - \(viewModel.selectedExperience.title) - \(equipmentSummary)")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.deltsMutedText)
                 .lineLimit(1)
@@ -81,12 +81,17 @@ struct HomeView: View {
                 equipment: displayedEquipment.first,
                 height: 248
             )
-            .saturation(0.96)
-            .brightness(-0.05)
+            .saturation(0.74)
+            .contrast(1.06)
+            .brightness(-0.07)
             .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
 
             LinearGradient(
-                colors: [.black.opacity(0.00), .black.opacity(0.22), .black.opacity(0.86)],
+                colors: [
+                    Color.deltsBackground.opacity(0.10),
+                    .black.opacity(0.26),
+                    .black.opacity(0.88)
+                ],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -131,6 +136,10 @@ struct HomeView: View {
         let name = profile?.name.trimmingCharacters(in: .whitespacesAndNewlines)
         let displayName = (name?.isEmpty == false ? name : "Athlete") ?? "Athlete"
         return "\(displayName) - \(viewModel.selectedExperience.title) - \(viewModel.selectedDuration) min"
+    }
+
+    private var equipmentSummary: String {
+        displayedEquipment.count == 1 ? "1 item" : "\(displayedEquipment.count) items"
     }
 
     private var equipmentStep: some View {
