@@ -1005,7 +1005,7 @@ private struct ProfileHeightPickerRow: View {
             return "\(profileFormatDecimal(centimeters)) cm"
         case .imperial:
             let parts = profileImperialHeightParts(fromCentimeters: centimeters)
-            return "\(parts.feet) ft \(parts.inches).\(parts.decimal) in"
+            return "\(parts.feet) ft \(parts.inches) in"
         }
     }
 
@@ -1205,24 +1205,22 @@ private struct ProfileImperialHeightWheelSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var feet: Int
     @State private var inches: Int
-    @State private var decimal: Int
 
     init(initialCentimeters: Double, onSave: @escaping (Double) -> Void) {
         let parts = profileImperialHeightParts(fromCentimeters: initialCentimeters)
         self.onSave = onSave
         _feet = State(initialValue: parts.feet)
         _inches = State(initialValue: parts.inches)
-        _decimal = State(initialValue: parts.decimal)
     }
 
     private var selectedInches: Double {
-        Double((feet * 12) + inches) + (Double(decimal) / 10)
+        Double((feet * 12) + inches)
     }
 
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 18) {
-                Text("\(feet) ft \(inches).\(decimal) in")
+                Text("\(feet) ft \(inches) in")
                     .font(.title2.monospacedDigit().weight(.bold))
                     .foregroundStyle(Color.deltsCharcoal)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -1230,7 +1228,6 @@ private struct ProfileImperialHeightWheelSheet: View {
                 HStack(spacing: 8) {
                     ProfileWheelColumn(title: "Feet", selection: $feet, values: Array(3...8)) { "\($0)" }
                     ProfileWheelColumn(title: "Inches", selection: $inches, values: Array(0...11)) { "\($0)" }
-                    ProfileWheelColumn(title: "Decimal", selection: $decimal, values: Array(0...9)) { ".\($0)" }
                 }
                 .frame(height: 190)
             }
@@ -1304,13 +1301,11 @@ private func profileDecimalParts(for value: Double, range: ClosedRange<Int>) -> 
     return (whole, decimal)
 }
 
-private func profileImperialHeightParts(fromCentimeters centimeters: Double) -> (feet: Int, inches: Int, decimal: Int) {
-    let tenths = Int(((centimeters / 2.54) * 10).rounded()).clamped(to: 360...959)
-    let feet = (tenths / 120).clamped(to: 3...8)
-    let remainingTenths = max(0, tenths - (feet * 120))
-    let inches = (remainingTenths / 10).clamped(to: 0...11)
-    let decimal = remainingTenths % 10
-    return (feet, inches, decimal)
+private func profileImperialHeightParts(fromCentimeters centimeters: Double) -> (feet: Int, inches: Int) {
+    let totalInches = Int((centimeters / 2.54).rounded()).clamped(to: 36...107)
+    let feet = (totalInches / 12).clamped(to: 3...8)
+    let inches = (totalInches - (feet * 12)).clamped(to: 0...11)
+    return (feet, inches)
 }
 
 private extension Comparable {

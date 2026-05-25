@@ -1593,7 +1593,7 @@ private fun HeightMeasurementPicker(
         val parts = splitImperialHeight(centimeters)
         MeasurementPickerCard(
             title = "Height",
-            valueText = "${parts.feet} ft ${parts.inches}.${parts.decimal} in",
+            valueText = "${parts.feet} ft ${parts.inches} in",
             modifier = modifier
         ) {
             ScrollingNumberSelector(
@@ -1601,20 +1601,13 @@ private fun HeightMeasurementPicker(
                 value = parts.feet,
                 values = 3..8,
                 modifier = Modifier.weight(1f)
-            ) { onChange(imperialHeightToCentimeters(it, parts.inches, parts.decimal)) }
+            ) { onChange(imperialHeightToCentimeters(it, parts.inches)) }
             ScrollingNumberSelector(
                 label = "inches",
                 value = parts.inches,
                 values = 0..11,
                 modifier = Modifier.weight(1f)
-            ) { onChange(imperialHeightToCentimeters(parts.feet, it, parts.decimal)) }
-            ScrollingNumberSelector(
-                label = "decimal",
-                value = parts.decimal,
-                values = 0..9,
-                modifier = Modifier.weight(1f),
-                display = { ".$it" }
-            ) { onChange(imperialHeightToCentimeters(parts.feet, parts.inches, it)) }
+            ) { onChange(imperialHeightToCentimeters(parts.feet, it)) }
         }
     }
 }
@@ -1794,7 +1787,7 @@ private fun ScrollingNumberSelector(
 
 private data class DecimalParts(val whole: Int, val decimal: Int)
 
-private data class ImperialHeightParts(val feet: Int, val inches: Int, val decimal: Int)
+private data class ImperialHeightParts(val feet: Int, val inches: Int)
 
 private fun splitDecimal(value: Double, range: IntRange): DecimalParts {
     val minimumTenths = range.first * 10
@@ -1810,18 +1803,16 @@ private fun combineDecimal(whole: Int, decimal: Int): Double =
     whole.toDouble() + (decimal.coerceIn(0, 9).toDouble() / 10.0)
 
 private fun splitImperialHeight(centimeters: Double): ImperialHeightParts {
-    val tenths = ((centimeters / 2.54) * 10).roundToInt().coerceIn(360, 959)
-    val feet = (tenths / 120).coerceIn(3, 8)
-    val remainingTenths = (tenths - (feet * 120)).coerceAtLeast(0)
+    val totalInches = (centimeters / 2.54).roundToInt().coerceIn(36, 107)
+    val feet = (totalInches / 12).coerceIn(3, 8)
     return ImperialHeightParts(
         feet = feet,
-        inches = (remainingTenths / 10).coerceIn(0, 11),
-        decimal = remainingTenths % 10
+        inches = (totalInches - (feet * 12)).coerceIn(0, 11)
     )
 }
 
-private fun imperialHeightToCentimeters(feet: Int, inches: Int, decimal: Int): Double {
-    val totalInches = ((feet * 12) + inches).toDouble() + (decimal.coerceIn(0, 9).toDouble() / 10.0)
+private fun imperialHeightToCentimeters(feet: Int, inches: Int): Double {
+    val totalInches = ((feet * 12) + inches).toDouble()
     return totalInches * 2.54
 }
 
