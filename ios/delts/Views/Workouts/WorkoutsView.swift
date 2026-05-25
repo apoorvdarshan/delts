@@ -1,111 +1,18 @@
-import SwiftData
 import SwiftUI
 
 struct WorkoutsView: View {
-    @Query(sort: \CompletedWorkout.date, order: .reverse) private var workouts: [CompletedWorkout]
-    @State private var selectedMode: WorkoutsMode = .library
-
     var body: some View {
         NavigationStack {
-            Group {
-                switch selectedMode {
-                case .library:
-                    ExerciseLibraryBrowserView(selectedMode: $selectedMode)
-                case .history:
-                    WorkoutHistoryListView(workouts: workouts, selectedMode: $selectedMode)
-                }
-            }
-            .background(WorkoutsScreenBackground())
-            .navigationTitle("Workouts")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar(.hidden, for: .navigationBar)
-        }
-    }
-}
-
-private enum WorkoutsMode: String, CaseIterable, Identifiable {
-    case library
-    case history
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .library: return "Library"
-        case .history: return "History"
-        }
-    }
-
-    var subtitle: String {
-        switch self {
-        case .library: return "Pick a focus, preview motion, build a session."
-        case .history: return "Review completed sessions and logged sets."
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .library: return "figure.strengthtraining.traditional"
-        case .history: return "clock"
-        }
-    }
-}
-
-private struct WorkoutsModePill: View {
-    let title: String
-    let systemImage: String
-    let isSelected: Bool
-
-    var body: some View {
-        Label(title, systemImage: systemImage)
-            .font(.subheadline.weight(.bold))
-            .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsCharcoal)
-            .lineLimit(1)
-            .minimumScaleFactor(0.82)
-            .frame(maxWidth: .infinity)
-            .frame(height: 42)
-            .background(isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.24), in: Capsule())
-            .overlay {
-                Capsule()
-                    .stroke(Color.deltsHairline.opacity(isSelected ? 0.20 : 0.34), lineWidth: 0.5)
-            }
-            .contentShape(Capsule())
-    }
-}
-
-private struct WorkoutsModeTabs: View {
-    @Binding var selectedMode: WorkoutsMode
-
-    var body: some View {
-        HStack(spacing: 10) {
-            ForEach(WorkoutsMode.allCases) { mode in
-                Button {
-                    withAnimation(.snappy) {
-                        selectedMode = mode
-                    }
-                } label: {
-                    WorkoutsModePill(
-                        title: mode.title,
-                        systemImage: mode.systemImage,
-                        isSelected: selectedMode == mode
-                    )
-                }
-                .buttonStyle(.plain)
-                .deltsPressable()
-                .frame(maxWidth: .infinity)
-            }
-        }
-        .padding(4)
-        .background(Color.deltsPanel.opacity(0.16), in: Capsule())
-        .overlay {
-            Capsule()
-                .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
+            ExerciseLibraryBrowserView()
+                .background(WorkoutsScreenBackground())
+                .navigationTitle("Workouts")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar(.hidden, for: .navigationBar)
         }
     }
 }
 
 private struct ExerciseLibraryBrowserView: View {
-    @Binding var selectedMode: WorkoutsMode
     @State private var searchText = ""
     @State private var selectedMuscleGroup: MuscleGroup?
     @State private var selectedLevel: ExperienceLevel?
@@ -179,17 +86,9 @@ private struct ExerciseLibraryBrowserView: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                librarySummary
-                    .padding(.horizontal, 20)
-                    .padding(.top, 18)
-                    .padding(.bottom, 12)
-
-                WorkoutsModeTabs(selectedMode: $selectedMode)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 14)
-
                 filters
                     .padding(.horizontal, 20)
+                    .padding(.top, 18)
                     .padding(.bottom, 18)
 
                 if !hasLibrarySelection {
@@ -240,64 +139,9 @@ private struct ExerciseLibraryBrowserView: View {
         }
         .deltsScreen()
         .contentMargins(.bottom, 104, for: .scrollContent)
-        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search exercises")
         .navigationDestination(item: $generatedPlan) { plan in
             WorkoutPlanView(plan: plan)
         }
-    }
-
-    private var librarySummary: some View {
-        HStack(alignment: .center, spacing: 16) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(hasLibrarySelection ? "Exercise library" : "Choose a focus")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .textCase(.uppercase)
-
-                Text(hasLibrarySelection ? "\(items.count) matching exercises" : "\(service.exercises.count) offline exercises")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-
-                Text(hasLibrarySelection ? "Build from filtered results" : "Select a body part to browse moving demos")
-                    .font(.footnote)
-                    .foregroundStyle(Color.deltsMutedText)
-                    .lineLimit(2)
-            }
-
-            Spacer(minLength: 12)
-
-            if hasLibrarySelection {
-                Button {
-                    generatedPlan = service.makePlan(from: items)
-                } label: {
-                    Label("Build \(min(items.count, 8))", systemImage: "wand.and.stars")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(Color.deltsOnAccent)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.76)
-                        .padding(.horizontal, 14)
-                        .frame(height: 40)
-                        .background(Color.deltsAccent, in: Capsule())
-                        .overlay {
-                            Capsule()
-                                .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
-                        }
-                }
-                .deltsPressable()
-                .disabled(items.isEmpty)
-            } else {
-                Label("Motion demos", systemImage: "photo.stack")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.deltsSecondaryAccent)
-                    .lineLimit(1)
-                    .padding(.horizontal, 10)
-                    .frame(height: 32)
-                    .background(Color.deltsSecondaryAccent.opacity(0.11), in: Capsule())
-            }
-        }
-        .padding(.vertical, 2)
     }
 
     private var filters: some View {
@@ -859,99 +703,6 @@ private struct WorkoutLibraryFocusChooser: View {
             }
         }
         .padding(.bottom, 18)
-    }
-}
-
-private struct WorkoutHistoryListView: View {
-    let workouts: [CompletedWorkout]
-    @Binding var selectedMode: WorkoutsMode
-
-    var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                historySummary
-                    .padding(.horizontal, 20)
-                    .padding(.top, 18)
-                    .padding(.bottom, 12)
-
-                WorkoutsModeTabs(selectedMode: $selectedMode)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 14)
-
-                if workouts.isEmpty {
-                    ContentUnavailableView(
-                        "No completed workouts yet",
-                        systemImage: "list.bullet.clipboard",
-                        description: Text("Generate a plan, start it, then finish to create your first log.")
-                    )
-                    .frame(maxWidth: .infinity, minHeight: 360)
-                    .padding(.horizontal, 20)
-                } else {
-                    ResultsHeader(
-                        count: workouts.count,
-                        noun: "workout",
-                        subtitle: "Completed",
-                        trailingTitle: "Local logs",
-                        trailingSystemImage: "clock"
-                    )
-                    .padding(.horizontal, 20)
-                    .padding(.top, 14)
-                    .padding(.bottom, 4)
-
-                    ForEach(workouts) { workout in
-                        NavigationLink {
-                            CompletedWorkoutDetailView(workout: workout)
-                        } label: {
-                            CompletedWorkoutRow(workout: workout)
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 20)
-
-                        if workout.id != workouts.last?.id {
-                            Divider()
-                                .overlay(Color.deltsHairline.opacity(0.28))
-                                .padding(.leading, 88)
-                                .padding(.horizontal, 20)
-                        }
-                    }
-                }
-            }
-            .padding(.bottom, 112)
-        }
-        .deltsScreen()
-        .contentMargins(.bottom, 104, for: .scrollContent)
-    }
-
-    private var historySummary: some View {
-        HStack(alignment: .center, spacing: 16) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text("Workout history")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .textCase(.uppercase)
-
-                Text("\(workouts.count) completed \(workouts.count == 1 ? "workout" : "workouts")")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(1)
-
-                Text("Review finished sessions and logged sets.")
-                    .font(.footnote)
-                    .foregroundStyle(Color.deltsMutedText)
-                    .lineLimit(2)
-            }
-
-            Spacer(minLength: 12)
-
-            Label("Local logs", systemImage: "clock")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.deltsSecondaryAccent)
-                .lineLimit(1)
-                .padding(.horizontal, 10)
-                .frame(height: 32)
-                .background(Color.deltsSecondaryAccent.opacity(0.11), in: Capsule())
-        }
-        .padding(.vertical, 2)
     }
 }
 

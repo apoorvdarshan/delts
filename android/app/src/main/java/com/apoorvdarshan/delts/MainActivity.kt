@@ -396,7 +396,6 @@ private fun WorkoutsScreen(
     exerciseLibrary: List<ExerciseItem>,
     padding: PaddingValues
 ) {
-    var selectedMode by rememberSaveable { mutableStateOf(WorkoutsMode.Library) }
     var selectedMuscle by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedLevel by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedEquipment by rememberSaveable { mutableStateOf<String?>(null) }
@@ -486,207 +485,182 @@ private fun WorkoutsScreen(
             .fillMaxSize()
             .padding(padding)
     ) {
-        if (selectedMode == WorkoutsMode.Library) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 16.dp, bottom = 112.dp),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
-            ) {
-                LibrarySummary(
-                    count = filteredExercises.size,
-                    totalCount = exerciseLibrary.size,
-                    hasSelection = hasActiveFilters
-                )
-
-                WorkoutsModeTabs(selectedMode = selectedMode) { selectedMode = it }
-
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    HorizontalChipRail {
-                        LibrarySearchPill(search = search, onSearchChange = { search = it })
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(top = 16.dp, bottom = 112.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                HorizontalChipRail {
+                    LibrarySearchPill(search = search, onSearchChange = { search = it })
+                    DeltsPillButton(
+                        title = "All",
+                        icon = Icons.Filled.FitnessCenter,
+                        selected = selectedMuscle == null
+                    ) {
+                        selectedMuscle = null
+                    }
+                    muscles.forEach { option ->
                         DeltsPillButton(
-                            title = "All",
-                            icon = Icons.Filled.FitnessCenter,
-                            selected = selectedMuscle == null
-                        ) {
-                            selectedMuscle = null
-                        }
-                        muscles.forEach { option ->
-                            DeltsPillButton(
-                                title = option.title,
-                                icon = option.icon,
-                                selected = selectedMuscle == option.title
-                            ) {
-                                selectedMuscle = option.title
-                            }
-                        }
-                    }
-
-                    HorizontalChipRail {
-                        LibraryFilterMenu(
-                            title = "Level",
-                            value = selectedLevel ?: "All",
-                            icon = Icons.Filled.FlashOn,
-                            active = selectedLevel != null,
-                            options = levelOptions,
-                            selectedOption = selectedLevel,
-                            allTitle = "All Levels"
-                        ) { selectedLevel = it }
-                        LibraryFilterMenu(
-                            title = "Equipment",
-                            value = selectedEquipment ?: "All",
-                            icon = Icons.Filled.FitnessCenter,
-                            active = selectedEquipment != null,
-                            options = equipmentOptions,
-                            selectedOption = selectedEquipment,
-                            allTitle = "All Equipment"
-                        ) {
-                            selectedEquipment = it
-                            if (selectedEquipment != null) selectedRawEquipment = null
-                        }
-                        LibraryFilterMenu(
-                            title = "Raw Gear",
-                            value = selectedRawEquipment ?: "All",
-                            icon = Icons.Filled.Build,
-                            active = selectedRawEquipment != null,
-                            options = rawEquipmentOptions,
-                            selectedOption = selectedRawEquipment,
-                            allTitle = "All Raw Gear"
-                        ) {
-                            selectedRawEquipment = it
-                            if (selectedRawEquipment != null) selectedEquipment = null
-                        }
-                        LibraryFilterMenu(
-                            title = "Sort",
-                            value = selectedSort.title,
-                            icon = Icons.Filled.List,
-                            active = selectedSort != LibrarySort.BodyPart,
-                            options = LibrarySort.entries.filter { it != LibrarySort.BodyPart }.map { it.title },
-                            selectedOption = selectedSort.takeUnless { it == LibrarySort.BodyPart }?.title,
-                            allTitle = LibrarySort.BodyPart.title
-                        ) { selected ->
-                            selectedSort = LibrarySort.entries.firstOrNull { it.title == selected } ?: LibrarySort.BodyPart
-                        }
-                    }
-
-                    HorizontalChipRail {
-                        LibraryFilterMenu(
-                            title = "Category",
-                            value = selectedCategory ?: "All",
-                            icon = Icons.Filled.List,
-                            active = selectedCategory != null,
-                            options = categoryOptions,
-                            selectedOption = selectedCategory,
-                            allTitle = "All Categories"
-                        ) { selectedCategory = it }
-                        LibraryFilterMenu(
-                            title = "Force",
-                            value = selectedForce ?: "All",
-                            icon = Icons.Filled.Flag,
-                            active = selectedForce != null,
-                            options = forceOptions,
-                            selectedOption = selectedForce,
-                            allTitle = "All Forces"
-                        ) { selectedForce = it }
-                        LibraryFilterMenu(
-                            title = "Mechanic",
-                            value = selectedMechanic ?: "All",
-                            icon = Icons.Filled.Build,
-                            active = selectedMechanic != null,
-                            options = mechanicOptions,
-                            selectedOption = selectedMechanic,
-                            allTitle = "All Mechanics"
-                        ) { selectedMechanic = it }
-                        LibraryFilterMenu(
-                            title = "Media",
-                            value = selectedMedia.title,
-                            icon = Icons.Filled.Lock,
-                            active = selectedMedia != LibraryMediaFilter.All,
-                            options = LibraryMediaFilter.entries.filter { it != LibraryMediaFilter.All }.map { it.title },
-                            selectedOption = selectedMedia.takeUnless { it == LibraryMediaFilter.All }?.title,
-                            allTitle = LibraryMediaFilter.All.title
-                        ) { selected ->
-                            selectedMedia = LibraryMediaFilter.entries.firstOrNull { it.title == selected } ?: LibraryMediaFilter.All
-                        }
-                        LibraryFilterMenu(
-                            title = "Primary",
-                            value = selectedPrimaryMuscle ?: "All",
-                            icon = Icons.Filled.FitnessCenter,
-                            active = selectedPrimaryMuscle != null,
-                            options = primaryMuscleOptions,
-                            selectedOption = selectedPrimaryMuscle,
-                            allTitle = "All Primary"
-                        ) {
-                            selectedPrimaryMuscle = it
-                            if (selectedPrimaryMuscle != null) selectedSecondaryMuscle = null
-                        }
-                        LibraryFilterMenu(
-                            title = "Secondary",
-                            value = selectedSecondaryMuscle ?: "All",
-                            icon = Icons.Filled.FitnessCenter,
-                            active = selectedSecondaryMuscle != null,
-                            options = secondaryMuscleOptions,
-                            selectedOption = selectedSecondaryMuscle,
-                            allTitle = "All Secondary"
-                        ) {
-                            selectedSecondaryMuscle = it
-                            if (selectedSecondaryMuscle != null) selectedPrimaryMuscle = null
-                        }
-                        if (hasActiveFilters) {
-                            DeltsPillButton(
-                                title = "Reset",
-                                icon = Icons.Filled.Close,
-                                selected = false
-                            ) {
-                                resetLibraryFilters()
-                            }
-                        }
-                    }
-                }
-
-                if (!hasActiveFilters) {
-                    Text(
-                        text = "Select Body Part",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    TwoColumnGrid(muscles) { option ->
-                        val preview = exerciseLibrary.firstOrNull { it.muscle == option.title && it.imagePaths.isNotEmpty() }
-                        MuscleCard(
-                            option = option,
-                            previewImagePaths = preview?.imagePaths.orEmpty(),
-                            selected = false
+                            title = option.title,
+                            icon = option.icon,
+                            selected = selectedMuscle == option.title
                         ) {
                             selectedMuscle = option.title
                         }
                     }
-                } else {
-                    ResultsHeader(
-                        title = "${filteredExercises.size} ${if (filteredExercises.size == 1) "exercise" else "exercises"}",
-                        subtitle = selectedSort.title,
-                        icon = Icons.Filled.Lock
-                    )
-                    filteredExercises.forEach { item ->
-                        ExerciseLibraryRow(item = item)
+                }
+
+                HorizontalChipRail {
+                    LibraryFilterMenu(
+                        title = "Level",
+                        value = selectedLevel ?: "All",
+                        icon = Icons.Filled.FlashOn,
+                        active = selectedLevel != null,
+                        options = levelOptions,
+                        selectedOption = selectedLevel,
+                        allTitle = "All Levels"
+                    ) { selectedLevel = it }
+                    LibraryFilterMenu(
+                        title = "Equipment",
+                        value = selectedEquipment ?: "All",
+                        icon = Icons.Filled.FitnessCenter,
+                        active = selectedEquipment != null,
+                        options = equipmentOptions,
+                        selectedOption = selectedEquipment,
+                        allTitle = "All Equipment"
+                    ) {
+                        selectedEquipment = it
+                        if (selectedEquipment != null) selectedRawEquipment = null
+                    }
+                    LibraryFilterMenu(
+                        title = "Raw Gear",
+                        value = selectedRawEquipment ?: "All",
+                        icon = Icons.Filled.Build,
+                        active = selectedRawEquipment != null,
+                        options = rawEquipmentOptions,
+                        selectedOption = selectedRawEquipment,
+                        allTitle = "All Raw Gear"
+                    ) {
+                        selectedRawEquipment = it
+                        if (selectedRawEquipment != null) selectedEquipment = null
+                    }
+                    LibraryFilterMenu(
+                        title = "Sort",
+                        value = selectedSort.title,
+                        icon = Icons.Filled.List,
+                        active = selectedSort != LibrarySort.BodyPart,
+                        options = LibrarySort.entries.filter { it != LibrarySort.BodyPart }.map { it.title },
+                        selectedOption = selectedSort.takeUnless { it == LibrarySort.BodyPart }?.title,
+                        allTitle = LibrarySort.BodyPart.title
+                    ) { selected ->
+                        selectedSort = LibrarySort.entries.firstOrNull { it.title == selected } ?: LibrarySort.BodyPart
+                    }
+                }
+
+                HorizontalChipRail {
+                    LibraryFilterMenu(
+                        title = "Category",
+                        value = selectedCategory ?: "All",
+                        icon = Icons.Filled.List,
+                        active = selectedCategory != null,
+                        options = categoryOptions,
+                        selectedOption = selectedCategory,
+                        allTitle = "All Categories"
+                    ) { selectedCategory = it }
+                    LibraryFilterMenu(
+                        title = "Force",
+                        value = selectedForce ?: "All",
+                        icon = Icons.Filled.Flag,
+                        active = selectedForce != null,
+                        options = forceOptions,
+                        selectedOption = selectedForce,
+                        allTitle = "All Forces"
+                    ) { selectedForce = it }
+                    LibraryFilterMenu(
+                        title = "Mechanic",
+                        value = selectedMechanic ?: "All",
+                        icon = Icons.Filled.Build,
+                        active = selectedMechanic != null,
+                        options = mechanicOptions,
+                        selectedOption = selectedMechanic,
+                        allTitle = "All Mechanics"
+                    ) { selectedMechanic = it }
+                    LibraryFilterMenu(
+                        title = "Media",
+                        value = selectedMedia.title,
+                        icon = Icons.Filled.Lock,
+                        active = selectedMedia != LibraryMediaFilter.All,
+                        options = LibraryMediaFilter.entries.filter { it != LibraryMediaFilter.All }.map { it.title },
+                        selectedOption = selectedMedia.takeUnless { it == LibraryMediaFilter.All }?.title,
+                        allTitle = LibraryMediaFilter.All.title
+                    ) { selected ->
+                        selectedMedia = LibraryMediaFilter.entries.firstOrNull { it.title == selected } ?: LibraryMediaFilter.All
+                    }
+                    LibraryFilterMenu(
+                        title = "Primary",
+                        value = selectedPrimaryMuscle ?: "All",
+                        icon = Icons.Filled.FitnessCenter,
+                        active = selectedPrimaryMuscle != null,
+                        options = primaryMuscleOptions,
+                        selectedOption = selectedPrimaryMuscle,
+                        allTitle = "All Primary"
+                    ) {
+                        selectedPrimaryMuscle = it
+                        if (selectedPrimaryMuscle != null) selectedSecondaryMuscle = null
+                    }
+                    LibraryFilterMenu(
+                        title = "Secondary",
+                        value = selectedSecondaryMuscle ?: "All",
+                        icon = Icons.Filled.FitnessCenter,
+                        active = selectedSecondaryMuscle != null,
+                        options = secondaryMuscleOptions,
+                        selectedOption = selectedSecondaryMuscle,
+                        allTitle = "All Secondary"
+                    ) {
+                        selectedSecondaryMuscle = it
+                        if (selectedSecondaryMuscle != null) selectedPrimaryMuscle = null
+                    }
+                    if (hasActiveFilters) {
+                        DeltsPillButton(
+                            title = "Reset",
+                            icon = Icons.Filled.Close,
+                            selected = false
+                        ) {
+                            resetLibraryFilters()
+                        }
                     }
                 }
             }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 16.dp, bottom = 112.dp),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
-            ) {
-                HistorySummary()
 
-                WorkoutsModeTabs(selectedMode = selectedMode) { selectedMode = it }
-
-                EmptyHistory()
+            if (!hasActiveFilters) {
+                Text(
+                    text = "Select Body Part",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                TwoColumnGrid(muscles) { option ->
+                    val preview = exerciseLibrary.firstOrNull { it.muscle == option.title && it.imagePaths.isNotEmpty() }
+                    MuscleCard(
+                        option = option,
+                        previewImagePaths = preview?.imagePaths.orEmpty(),
+                        selected = false
+                    ) {
+                        selectedMuscle = option.title
+                    }
+                }
+            } else {
+                ResultsHeader(
+                    title = "${filteredExercises.size} ${if (filteredExercises.size == 1) "exercise" else "exercises"}",
+                    subtitle = selectedSort.title,
+                    icon = Icons.Filled.Lock
+                )
+                filteredExercises.forEach { item ->
+                    ExerciseLibraryRow(item = item)
+                }
             }
         }
     }
@@ -1336,28 +1310,6 @@ private fun DeltsPillButton(
 }
 
 @Composable
-private fun WorkoutsModeTabs(
-    selectedMode: WorkoutsMode,
-    onSelect: (WorkoutsMode) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        WorkoutsMode.entries.forEach { mode ->
-            DeltsPillButton(
-                title = mode.title,
-                icon = mode.icon,
-                selected = selectedMode == mode,
-                modifier = Modifier.weight(1f)
-            ) {
-                onSelect(mode)
-            }
-        }
-    }
-}
-
-@Composable
 private fun HorizontalChipRail(content: @Composable RowScope.() -> Unit) {
     Row(
         modifier = Modifier
@@ -1624,54 +1576,6 @@ private fun ExercisePlanRow(exercise: ExercisePlan) {
 }
 
 @Composable
-private fun LibrarySummary(count: Int, totalCount: Int, hasSelection: Boolean) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                text = if (hasSelection) "Exercise library" else "Choose a focus",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = if (hasSelection) "$count matching exercises" else "$totalCount offline exercises",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                text = if (hasSelection) "Build from filtered results" else "Select a body part to browse moving demos",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        DeltsGlassLabel("Motion demos", Icons.Filled.List, dark = false)
-    }
-}
-
-@Composable
-private fun HistorySummary() {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                text = "Workout history",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "Completed sessions",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                text = "Review finished workouts when logs are available.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        DeltsGlassLabel("Local logs", Icons.Filled.History, dark = false)
-    }
-}
-
-@Composable
 private fun ResultsHeader(title: String, subtitle: String, icon: ImageVector) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -1795,26 +1699,6 @@ private fun MetadataLine(label: String, value: String) {
         Text(
             text = value,
             modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun EmptyHistory() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(Icons.Filled.List, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(42.dp))
-        Spacer(modifier = Modifier.height(10.dp))
-        Text("No completed workouts yet", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
-        Text(
-            text = "Generate a plan, start it, then finish to create your first log.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -2852,11 +2736,6 @@ private enum class MeasurementSystem(val title: String) {
 private enum class EquipmentMode {
     Profile,
     Bodyweight
-}
-
-private enum class WorkoutsMode(val title: String, val icon: ImageVector) {
-    Library("Library", Icons.Filled.FitnessCenter),
-    History("History", Icons.Filled.History)
 }
 
 private enum class LibrarySort(val title: String) {
