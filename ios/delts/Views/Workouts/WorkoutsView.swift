@@ -17,7 +17,6 @@ private struct ExerciseLibraryBrowserView: View {
     @State private var selectedMuscleGroups: Set<MuscleGroup> = []
     @State private var selectedLevel: ExperienceLevel?
     @State private var selectedGoal: FitnessGoal?
-    @State private var selectedEquipment: Equipment?
     @State private var selectedEquipmentFamily: ExerciseEquipmentFamily = .all
     @State private var selectedRawEquipment: String?
     @State private var selectedPrimaryMuscle: String?
@@ -36,7 +35,7 @@ private struct ExerciseLibraryBrowserView: View {
             muscleGroups: selectedMuscleGroups,
             level: selectedLevel,
             goal: selectedGoal,
-            equipment: selectedEquipment,
+            equipment: nil,
             equipmentFamily: selectedEquipmentFamily,
             rawEquipment: selectedRawEquipment,
             primaryMuscle: selectedPrimaryMuscle,
@@ -55,7 +54,6 @@ private struct ExerciseLibraryBrowserView: View {
             !selectedMuscleGroups.isEmpty ||
             selectedLevel != nil ||
             selectedGoal != nil ||
-            selectedEquipment != nil ||
             selectedEquipmentFamily != .all ||
             selectedRawEquipment != nil ||
             selectedPrimaryMuscle != nil ||
@@ -168,25 +166,14 @@ private struct ExerciseLibraryBrowserView: View {
                         value: equipmentFilterTitle,
                         systemImage: "dumbbell.fill"
                     ) {
-                        menuChoice("All Equipment", isSelected: selectedEquipment == nil && selectedEquipmentFamily == .all && selectedRawEquipment == nil) {
-                            selectedEquipment = nil
+                        menuChoice("All Equipment", isSelected: selectedEquipmentFamily == .all && selectedRawEquipment == nil) {
                             selectedEquipmentFamily = .all
                             selectedRawEquipment = nil
                         }
                         Section("Family") {
                             ForEach(ExerciseEquipmentFamily.allCases.filter { $0 != .all }) { family in
-                                menuChoice(family.title, isSelected: selectedEquipment == nil && selectedEquipmentFamily == family) {
-                                    selectedEquipment = nil
+                                menuChoice(family.title, isSelected: selectedEquipmentFamily == family) {
                                     selectedEquipmentFamily = family
-                                    selectedRawEquipment = nil
-                                }
-                            }
-                        }
-                        Section("Specific") {
-                            ForEach(Equipment.allCases) { equipment in
-                                menuChoice(equipment.title, isSelected: selectedEquipment == equipment) {
-                                    selectedEquipment = equipment
-                                    selectedEquipmentFamily = .all
                                     selectedRawEquipment = nil
                                 }
                             }
@@ -194,7 +181,6 @@ private struct ExerciseLibraryBrowserView: View {
                         Section("Database Raw") {
                             ForEach(service.availableRawEquipment, id: \.self) { equipment in
                                 menuChoice(equipment, isSelected: selectedRawEquipment == equipment) {
-                                    selectedEquipment = nil
                                     selectedEquipmentFamily = .all
                                     selectedRawEquipment = equipment
                                 }
@@ -279,9 +265,6 @@ private struct ExerciseLibraryBrowserView: View {
     }
 
     private var equipmentFilterTitle: String {
-        if let selectedEquipment {
-            return selectedEquipment.title
-        }
         if selectedEquipmentFamily != .all {
             return selectedEquipmentFamily.title
         }
@@ -332,7 +315,6 @@ private struct ExerciseLibraryBrowserView: View {
         selectedMuscleGroups.removeAll()
         selectedLevel = nil
         selectedGoal = nil
-        selectedEquipment = nil
         selectedEquipmentFamily = .all
         selectedRawEquipment = nil
         selectedPrimaryMuscle = nil

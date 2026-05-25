@@ -398,7 +398,6 @@ private fun WorkoutsScreen(
 ) {
     var selectedMuscles by rememberSaveable { mutableStateOf(emptyList<String>()) }
     var selectedLevel by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedEquipment by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedRawEquipment by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedPrimaryMuscle by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedSecondaryMuscle by rememberSaveable { mutableStateOf<String?>(null) }
@@ -410,7 +409,6 @@ private fun WorkoutsScreen(
     var search by rememberSaveable { mutableStateOf("") }
 
     val levelOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.level }.distinctSorted() }
-    val equipmentOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.equipment }.distinctSorted() }
     val rawEquipmentOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.rawEquipment }.distinctSorted() }
     val primaryMuscleOptions = remember(exerciseLibrary) { exerciseLibrary.flatMap { it.primaryMuscles }.distinctSorted() }
     val secondaryMuscleOptions = remember(exerciseLibrary) { exerciseLibrary.flatMap { it.secondaryMuscles }.distinctSorted() }
@@ -421,7 +419,6 @@ private fun WorkoutsScreen(
     val hasActiveFilters =
         selectedMuscles.isNotEmpty() ||
             selectedLevel != null ||
-            selectedEquipment != null ||
             selectedRawEquipment != null ||
             selectedPrimaryMuscle != null ||
             selectedSecondaryMuscle != null ||
@@ -435,7 +432,6 @@ private fun WorkoutsScreen(
     fun resetLibraryFilters() {
         selectedMuscles = emptyList()
         selectedLevel = null
-        selectedEquipment = null
         selectedRawEquipment = null
         selectedPrimaryMuscle = null
         selectedSecondaryMuscle = null
@@ -465,7 +461,6 @@ private fun WorkoutsScreen(
     val filteredExercises = remember(
         selectedMuscles,
         selectedLevel,
-        selectedEquipment,
         selectedRawEquipment,
         selectedPrimaryMuscle,
         selectedSecondaryMuscle,
@@ -482,7 +477,6 @@ private fun WorkoutsScreen(
             .filter { item ->
                 (selectedMuscles.isEmpty() || selectedMuscles.contains(item.muscle)) &&
                     (selectedLevel == null || item.level == selectedLevel) &&
-                    (selectedEquipment == null || item.equipment == selectedEquipment) &&
                     (selectedRawEquipment == null || item.rawEquipment == selectedRawEquipment) &&
                     (selectedPrimaryMuscle?.let { item.primaryMuscles.contains(it) } ?: true) &&
                     (selectedSecondaryMuscle?.let { item.secondaryMuscles.contains(it) } ?: true) &&
@@ -537,18 +531,6 @@ private fun WorkoutsScreen(
                         allTitle = "All Levels"
                     ) { selectedLevel = it }
                     LibraryFilterMenu(
-                        title = "Equipment",
-                        value = selectedEquipment ?: "All",
-                        icon = Icons.Filled.FitnessCenter,
-                        active = selectedEquipment != null,
-                        options = equipmentOptions,
-                        selectedOption = selectedEquipment,
-                        allTitle = "All Equipment"
-                    ) {
-                        selectedEquipment = it
-                        if (selectedEquipment != null) selectedRawEquipment = null
-                    }
-                    LibraryFilterMenu(
                         title = "Raw Gear",
                         value = selectedRawEquipment ?: "All",
                         icon = Icons.Filled.Build,
@@ -556,10 +538,7 @@ private fun WorkoutsScreen(
                         options = rawEquipmentOptions,
                         selectedOption = selectedRawEquipment,
                         allTitle = "All Raw Gear"
-                    ) {
-                        selectedRawEquipment = it
-                        if (selectedRawEquipment != null) selectedEquipment = null
-                    }
+                    ) { selectedRawEquipment = it }
                     LibraryFilterMenu(
                         title = "Sort",
                         value = selectedSort.title,
