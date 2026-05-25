@@ -38,16 +38,151 @@ private enum MeasurementSystem: String, CaseIterable, Hashable {
     }
 }
 
+private enum AIProviderCatalog {
+    static let customProvider = "Custom"
+    static let customModel = "Custom model"
+
+    static let providerNames = [
+        "Gemini",
+        "OpenAI",
+        "Anthropic Claude",
+        "xAI Grok",
+        "OpenRouter",
+        "Together AI",
+        "Groq",
+        "Hugging Face",
+        "Fireworks AI",
+        "DeepInfra",
+        "Mistral",
+        "Ollama",
+        customProvider
+    ]
+
+    private static let modelsByProvider: [String: [String]] = [
+        "Gemini": [
+            "gemini-3.5-flash",
+            "gemini-3.1-pro",
+            "gemini-3-flash",
+            "gemini-2.5-pro",
+            "gemini-2.5-flash"
+        ],
+        "OpenAI": [
+            "gpt-5.5",
+            "gpt-5.4",
+            "gpt-5.4-mini",
+            "gpt-5.4-nano",
+            "gpt-5",
+            "gpt-5-mini",
+            "gpt-4.1"
+        ],
+        "Anthropic Claude": [
+            "claude-opus-4-7",
+            "claude-sonnet-4-6",
+            "claude-haiku-4-5-20251001",
+            "claude-opus-4-6",
+            "claude-sonnet-4-5"
+        ],
+        "xAI Grok": [
+            "grok-4.3",
+            "grok-4.3-latest",
+            "grok-build-0.1",
+            "grok-4"
+        ],
+        "OpenRouter": [
+            "openrouter/auto",
+            "google/gemini-2.5-pro",
+            "anthropic/claude-sonnet-4.5",
+            "openai/gpt-5",
+            "x-ai/grok-4"
+        ],
+        "Together AI": [
+            "moonshotai/Kimi-K2.5",
+            "zai-org/GLM-5.1",
+            "openai/gpt-oss-120b",
+            "deepseek-ai/DeepSeek-R1",
+            "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8"
+        ],
+        "Groq": [
+            "openai/gpt-oss-120b",
+            "openai/gpt-oss-20b",
+            "meta-llama/llama-4-maverick-17b-128e-instruct",
+            "meta-llama/llama-4-scout-17b-16e-instruct",
+            "llama-3.3-70b-versatile"
+        ],
+        "Hugging Face": [
+            "openai/gpt-oss-120b:fastest",
+            "Qwen/Qwen3-235B-A22B:fastest",
+            "deepseek-ai/DeepSeek-V3.1:fastest",
+            "meta-llama/Llama-4-Maverick-17B-128E-Instruct:fastest"
+        ],
+        "Fireworks AI": [
+            "accounts/fireworks/models/kimi-k2-instruct-0905",
+            "accounts/fireworks/models/deepseek-v3p1",
+            "accounts/fireworks/models/deepseek-r1",
+            "accounts/fireworks/models/qwen3-235b-a22b",
+            "accounts/fireworks/models/llama-v3p1-405b-instruct"
+        ],
+        "DeepInfra": [
+            "deepseek-ai/DeepSeek-V3.2",
+            "deepseek-ai/DeepSeek-R1",
+            "Qwen/Qwen3-235B-A22B-Instruct-2507",
+            "moonshotai/Kimi-K2-Instruct",
+            "openai/gpt-oss-120b"
+        ],
+        "Mistral": [
+            "mistral-large-latest",
+            "mistral-medium-latest",
+            "mistral-small-latest",
+            "codestral-latest",
+            "devstral-small-latest"
+        ],
+        "Ollama": [
+            "llama4",
+            "gemma3",
+            "qwen3",
+            "deepseek-r1",
+            "llama3.3",
+            "phi4"
+        ]
+    ]
+
+    static func models(for provider: String) -> [String] {
+        let baseModels = modelsByProvider[provider] ?? []
+        return baseModels + [customModel]
+    }
+
+    static func defaultModel(for provider: String) -> String {
+        modelsByProvider[provider]?.first ?? customModel
+    }
+
+    static func normalizedProvider(_ provider: String) -> String {
+        providerNames.contains(provider) ? provider : customProvider
+    }
+}
+
 private struct ProfileEditorView: View {
     @Bindable var profile: UserProfile
     @AppStorage("profile_measurement_system") private var measurementSystemRaw = MeasurementSystem.metric.rawValue
     @AppStorage("profile_custom_workout_split") private var customWorkoutSplit = ""
-    @State private var geminiAPIKey = LocalGeminiKeyStore.apiKey ?? ""
-    @State private var hasSavedGeminiKey = GeminiConfig.hasAPIKey
+    @AppStorage("profile_ai_provider") private var aiProvider = "Gemini"
+    @AppStorage("profile_ai_custom_provider") private var aiCustomProvider = ""
+    @AppStorage("profile_ai_model") private var aiModel = AIProviderCatalog.defaultModel(for: "Gemini")
+    @AppStorage("profile_ai_custom_model") private var aiCustomModel = ""
+    @AppStorage("profile_ai_fallback_enabled") private var aiFallbackEnabled = false
+    @AppStorage("profile_ai_fallback_provider") private var aiFallbackProvider = "OpenRouter"
+    @AppStorage("profile_ai_fallback_custom_provider") private var aiFallbackCustomProvider = ""
+    @AppStorage("profile_ai_fallback_model") private var aiFallbackModel = AIProviderCatalog.defaultModel(for: "OpenRouter")
+    @AppStorage("profile_ai_fallback_custom_model") private var aiFallbackCustomModel = ""
+    @State private var primaryAPIKey = LocalGeminiKeyStore.apiKey ?? ""
+    @State private var fallbackAPIKey = LocalGeminiKeyStore.fallbackAPIKey ?? ""
+    @State private var hasSavedPrimaryAPIKey = LocalGeminiKeyStore.apiKey != nil
+    @State private var hasSavedFallbackAPIKey = LocalGeminiKeyStore.fallbackAPIKey != nil
 
     private let genderOptions = ["Male", "Female", "Non-binary", "Prefer not to say"]
-    private let ageRange = 11...120
-    private let durationOptions = [30, 45, 60, 90]
+    private let ageRange = 0...120
+    private let frequencyOptions = Array(1...7)
+    private let durationRange = 1...300
+    private let aiProviderOptions = AIProviderCatalog.providerNames
 
     var body: some View {
         ScrollView {
@@ -86,11 +221,12 @@ private struct ProfileEditorView: View {
                     label: { $0 }
                 )
                 ProfileDivider()
-                ProfileAgePickerRow(
+                ProfileIntegerPickerRow(
                     title: "Age",
                     systemImage: "calendar",
                     value: ageBinding,
-                    range: ageRange
+                    range: ageRange,
+                    unit: "yr"
                 )
                 ProfileDivider()
                 ProfileSegmentedPicker(
@@ -179,34 +315,119 @@ private struct ProfileEditorView: View {
     private var aiSettingsSection: some View {
         ProfileSection(
             title: "AI Settings",
-            subtitle: "Gemini BYOK stays on this device.",
+            subtitle: "Provider, model, local key, and fallback.",
             systemImage: "key.fill",
-            badge: hasSavedGeminiKey ? "Ready" : nil
+            badge: hasSavedPrimaryAPIKey ? "Ready" : nil
         ) {
             ProfileRowStack {
-                ProfileGeminiKeyRow(
-                    apiKey: $geminiAPIKey,
-                    hasSavedKey: hasSavedGeminiKey,
-                    save: saveGeminiKey,
-                    clear: clearGeminiKey
+                ProfileMenuPicker(
+                    title: "Provider",
+                    systemImage: "server.rack",
+                    selection: aiProviderBinding,
+                    options: aiProviderOptions,
+                    label: { $0 }
                 )
+                if aiProvider == AIProviderCatalog.customProvider {
+                    ProfileDivider()
+                    ProfileTextInputRow(
+                        title: "Provider name",
+                        systemImage: "square.and.pencil",
+                        text: aiCustomProviderBinding,
+                        isTechnical: true
+                    )
+                }
+                ProfileDivider()
+                ProfileMenuPicker(
+                    title: "Model",
+                    systemImage: "cpu",
+                    selection: aiModelBinding,
+                    options: AIProviderCatalog.models(for: aiProvider),
+                    label: { $0 }
+                )
+                if aiModel == AIProviderCatalog.customModel {
+                    ProfileDivider()
+                    ProfileTextInputRow(
+                        title: "Model name",
+                        systemImage: "text.cursor",
+                        text: aiCustomModelBinding,
+                        isTechnical: true
+                    )
+                }
+                ProfileDivider()
+                ProfileAPIKeyRow(
+                    title: "API key",
+                    apiKey: $primaryAPIKey,
+                    hasSavedKey: hasSavedPrimaryAPIKey,
+                    save: savePrimaryAPIKey,
+                    clear: clearPrimaryAPIKey
+                )
+                ProfileDivider()
+                ProfileToggleRow(
+                    title: "Fallback",
+                    systemImage: "arrow.triangle.2.circlepath",
+                    isOn: $aiFallbackEnabled
+                )
+                if aiFallbackEnabled {
+                    ProfileDivider()
+                    ProfileMenuPicker(
+                        title: "Fallback provider",
+                        systemImage: "server.rack",
+                        selection: aiFallbackProviderBinding,
+                        options: aiProviderOptions,
+                        label: { $0 }
+                    )
+                    if aiFallbackProvider == AIProviderCatalog.customProvider {
+                        ProfileDivider()
+                        ProfileTextInputRow(
+                            title: "Fallback name",
+                            systemImage: "square.and.pencil",
+                            text: aiFallbackCustomProviderBinding,
+                            isTechnical: true
+                        )
+                    }
+                    ProfileDivider()
+                    ProfileMenuPicker(
+                        title: "Fallback model",
+                        systemImage: "cpu",
+                        selection: aiFallbackModelBinding,
+                        options: AIProviderCatalog.models(for: aiFallbackProvider),
+                        label: { $0 }
+                    )
+                    if aiFallbackModel == AIProviderCatalog.customModel {
+                        ProfileDivider()
+                        ProfileTextInputRow(
+                            title: "Fallback model name",
+                            systemImage: "text.cursor",
+                            text: aiFallbackCustomModelBinding,
+                            isTechnical: true
+                        )
+                    }
+                    ProfileDivider()
+                    ProfileAPIKeyRow(
+                        title: "Fallback key",
+                        apiKey: $fallbackAPIKey,
+                        hasSavedKey: hasSavedFallbackAPIKey,
+                        save: saveFallbackAPIKey,
+                        clear: clearFallbackAPIKey
+                    )
+                }
             }
         }
     }
 
     private var scheduleSection: some View {
         ProfileSection(
-            title: "Schedule",
+            title: "Workout Setup",
             subtitle: "Tune how training fits into the week.",
             systemImage: "calendar.badge.clock"
         ) {
             ProfileRowStack {
-                ProfileStepperRow(
+                ProfileMenuPicker(
                     title: "Frequency",
                     systemImage: "calendar",
-                    value: frequencyBinding,
-                    range: 1...7,
-                    suffix: "days/week"
+                    selection: frequencyBinding,
+                    options: frequencyOptions,
+                    label: { "\($0) days/week" }
                 )
                 ProfileDivider()
                 ProfileMenuPicker(
@@ -225,16 +446,16 @@ private struct ProfileEditorView: View {
                     )
                 }
                 ProfileDivider()
-                ProfileSegmentedPicker(
+                ProfileIntegerPickerRow(
                     title: "Workout duration",
                     systemImage: "timer",
-                    selection: durationBinding,
-                    options: durationOptions,
-                    label: { "\($0) min" }
+                    value: durationBinding,
+                    range: durationRange,
+                    unit: "min"
                 )
                 ProfileDivider()
                 ProfileMultiSelectMenuRow(
-                    title: "Saved gear",
+                    title: "Equipment",
                     systemImage: "dumbbell.fill",
                     options: Equipment.allCases,
                     selection: equipmentBinding,
@@ -279,6 +500,74 @@ private struct ProfileEditorView: View {
                     value: overheadPressBinding
                 )
             }
+        }
+    }
+
+    private var aiProviderBinding: Binding<String> {
+        Binding {
+            AIProviderCatalog.normalizedProvider(aiProvider)
+        } set: { newValue in
+            aiProvider = newValue
+            aiModel = AIProviderCatalog.defaultModel(for: newValue)
+        }
+    }
+
+    private var aiCustomProviderBinding: Binding<String> {
+        Binding {
+            aiCustomProvider
+        } set: { newValue in
+            aiCustomProvider = newValue
+        }
+    }
+
+    private var aiModelBinding: Binding<String> {
+        Binding {
+            let models = AIProviderCatalog.models(for: aiProvider)
+            return models.contains(aiModel) ? aiModel : AIProviderCatalog.defaultModel(for: aiProvider)
+        } set: { newValue in
+            aiModel = newValue
+        }
+    }
+
+    private var aiCustomModelBinding: Binding<String> {
+        Binding {
+            aiCustomModel
+        } set: { newValue in
+            aiCustomModel = newValue
+        }
+    }
+
+    private var aiFallbackProviderBinding: Binding<String> {
+        Binding {
+            AIProviderCatalog.normalizedProvider(aiFallbackProvider)
+        } set: { newValue in
+            aiFallbackProvider = newValue
+            aiFallbackModel = AIProviderCatalog.defaultModel(for: newValue)
+        }
+    }
+
+    private var aiFallbackCustomProviderBinding: Binding<String> {
+        Binding {
+            aiFallbackCustomProvider
+        } set: { newValue in
+            aiFallbackCustomProvider = newValue
+        }
+    }
+
+    private var aiFallbackModelBinding: Binding<String> {
+        Binding {
+            let models = AIProviderCatalog.models(for: aiFallbackProvider)
+            return models.contains(aiFallbackModel) ? aiFallbackModel : AIProviderCatalog.defaultModel(for: aiFallbackProvider)
+        } set: { newValue in
+            aiFallbackModel = newValue
+        }
+    }
+
+    private var aiFallbackCustomModelBinding: Binding<String> {
+        Binding {
+            aiFallbackCustomModel
+        } set: { newValue in
+            aiFallbackCustomModel = newValue
         }
     }
 
@@ -451,77 +740,28 @@ private struct ProfileEditorView: View {
         }
     }
 
-    private func saveGeminiKey() {
-        LocalGeminiKeyStore.save(geminiAPIKey)
-        geminiAPIKey = LocalGeminiKeyStore.apiKey ?? ""
-        hasSavedGeminiKey = GeminiConfig.hasAPIKey
+    private func savePrimaryAPIKey() {
+        LocalGeminiKeyStore.save(primaryAPIKey)
+        primaryAPIKey = LocalGeminiKeyStore.apiKey ?? ""
+        hasSavedPrimaryAPIKey = LocalGeminiKeyStore.apiKey != nil
     }
 
-    private func clearGeminiKey() {
+    private func clearPrimaryAPIKey() {
         LocalGeminiKeyStore.clear()
-        geminiAPIKey = ""
-        hasSavedGeminiKey = false
+        primaryAPIKey = ""
+        hasSavedPrimaryAPIKey = false
     }
-}
 
-private struct GeminiKeySettingsCard: View {
-    @Binding var apiKey: String
-    let hasSavedKey: Bool
-    let save: () -> Void
-    let clear: () -> Void
-    @FocusState private var isFocused: Bool
+    private func saveFallbackAPIKey() {
+        LocalGeminiKeyStore.saveFallback(fallbackAPIKey)
+        fallbackAPIKey = LocalGeminiKeyStore.fallbackAPIKey ?? ""
+        hasSavedFallbackAPIKey = LocalGeminiKeyStore.fallbackAPIKey != nil
+    }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 10) {
-                Image(systemName: hasSavedKey ? "checkmark.seal.fill" : "bolt.slash.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(hasSavedKey ? Color.deltsAccent : Color.deltsWarning)
-                    .frame(width: 30, height: 30)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Gemini Key")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(Color.deltsCharcoal)
-                    Text(hasSavedKey ? "Saved on device" : "Offline planner")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.deltsMutedText)
-                }
-
-                Spacer(minLength: 8)
-            }
-
-            SecureField("Paste API key", text: $apiKey)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .textContentType(.password)
-                .focused($isFocused)
-                .submitLabel(.done)
-                .onSubmit(save)
-                .padding(.horizontal, 12)
-                .frame(minHeight: 44)
-                .background(Color.deltsPanel.opacity(0.20), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.deltsHairline.opacity(isFocused ? 0.58 : 0.30), lineWidth: 0.75)
-                }
-
-            HStack(spacing: 10) {
-                Button("Clear", action: clear)
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .frame(maxWidth: .infinity, minHeight: 42)
-                    .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-                Button("Save Key", action: save)
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(Color.deltsOnAccent)
-                    .frame(maxWidth: .infinity, minHeight: 42)
-                    .background(Color.deltsAccent, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
-            .deltsPressable()
-        }
-        .padding(.vertical, 4)
+    private func clearFallbackAPIKey() {
+        LocalGeminiKeyStore.clearFallback()
+        fallbackAPIKey = ""
+        hasSavedFallbackAPIKey = false
     }
 }
 
@@ -750,6 +990,7 @@ private struct ProfileTextInputRow: View {
     let title: String
     let systemImage: String
     @Binding var text: String
+    var isTechnical = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
@@ -759,7 +1000,8 @@ private struct ProfileTextInputRow: View {
                 .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
                 .foregroundStyle(Color.deltsCharcoal)
                 .frame(minWidth: dynamicTypeSize.isAccessibilitySize ? 0 : 120)
-                .textInputAutocapitalization(.words)
+                .textInputAutocapitalization(isTechnical ? .never : .words)
+                .autocorrectionDisabled(isTechnical)
         }
     }
 }
@@ -807,11 +1049,12 @@ private struct ProfileNumberInputRow: View {
     }
 }
 
-private struct ProfileAgePickerRow: View {
+private struct ProfileIntegerPickerRow: View {
     let title: String
     let systemImage: String
     @Binding var value: Int
     let range: ClosedRange<Int>
+    let unit: String
     @State private var isPickerPresented = false
 
     var body: some View {
@@ -819,7 +1062,7 @@ private struct ProfileAgePickerRow: View {
             Button {
                 isPickerPresented = true
             } label: {
-                ProfileMenuValueLabel(text: "\(value.clamped(to: range)) yr")
+                ProfileMenuValueLabel(text: "\(value.clamped(to: range)) \(unit)")
             }
             .deltsPressable()
             .sheet(isPresented: $isPickerPresented) {
@@ -827,7 +1070,7 @@ private struct ProfileAgePickerRow: View {
                     title: title,
                     initialValue: value,
                     range: range,
-                    unit: "yr"
+                    unit: unit
                 ) { newValue in
                     value = newValue
                 }
@@ -1218,84 +1461,6 @@ private extension Comparable {
     }
 }
 
-private struct ProfileStepperRow: View {
-    let title: String
-    let systemImage: String
-    @Binding var value: Int
-    let range: ClosedRange<Int>
-    var suffix: String = ""
-
-    private var displayValue: String {
-        suffix.isEmpty ? "\(value)" : "\(value) \(suffix)"
-    }
-
-    var body: some View {
-        ProfileFieldRow(title: title, systemImage: systemImage) {
-            HStack(spacing: 12) {
-                Text(displayValue)
-                    .font(.body.monospacedDigit().weight(.bold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-
-                ProfileStepperControl(value: $value, range: range, title: title)
-            }
-            .accessibilityElement(children: .contain)
-            .accessibilityLabel(title)
-            .accessibilityValue(displayValue)
-        }
-    }
-}
-
-private struct ProfileStepperControl: View {
-    @Binding var value: Int
-    let range: ClosedRange<Int>
-    let title: String
-
-    private var canDecrement: Bool {
-        value > range.lowerBound
-    }
-
-    private var canIncrement: Bool {
-        value < range.upperBound
-    }
-
-    var body: some View {
-        HStack(spacing: 0) {
-            Button {
-                value = max(range.lowerBound, value - 1)
-            } label: {
-                Image(systemName: "minus")
-                    .font(.headline.weight(.bold))
-                    .frame(width: 42, height: 38)
-            }
-            .disabled(!canDecrement)
-            .accessibilityLabel("Decrease \(title)")
-
-            Rectangle()
-                .fill(Color.deltsHairline.opacity(0.36))
-                .frame(width: 0.5, height: 22)
-
-            Button {
-                value = min(range.upperBound, value + 1)
-            } label: {
-                Image(systemName: "plus")
-                    .font(.headline.weight(.bold))
-                    .frame(width: 42, height: 38)
-            }
-            .disabled(!canIncrement)
-            .accessibilityLabel("Increase \(title)")
-        }
-        .foregroundStyle(Color.deltsCharcoal)
-        .background(Color.deltsPanel.opacity(0.34), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 15, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
-        }
-        .deltsPressable()
-    }
-}
-
 private struct ProfileMenuPicker<Option: Hashable>: View {
     let title: String
     let systemImage: String
@@ -1396,7 +1561,8 @@ private struct ProfileSegmentedPicker<Option: Hashable>: View {
     }
 }
 
-private struct ProfileGeminiKeyRow: View {
+private struct ProfileAPIKeyRow: View {
+    let title: String
     @Binding var apiKey: String
     let hasSavedKey: Bool
     let save: () -> Void
@@ -1405,7 +1571,7 @@ private struct ProfileGeminiKeyRow: View {
 
     var body: some View {
         ProfileFieldRow(
-            title: "Gemini Key",
+            title: title,
             systemImage: hasSavedKey ? "checkmark.seal.fill" : "key.fill",
             tint: hasSavedKey ? .deltsAccent : .deltsSecondaryAccent
         ) {
@@ -1428,16 +1594,29 @@ private struct ProfileGeminiKeyRow: View {
                         .font(.system(size: 15, weight: .bold))
                         .frame(width: 32, height: 32)
                 }
-                .accessibilityLabel("Save Gemini key")
+                .accessibilityLabel("Save API key")
 
                 Button(action: clear) {
                     Image(systemName: "trash")
                         .font(.system(size: 15, weight: .bold))
                         .frame(width: 32, height: 32)
                 }
-                .accessibilityLabel("Clear Gemini key")
+                .accessibilityLabel("Clear API key")
             }
             .foregroundStyle(Color.deltsMutedText)
+        }
+    }
+}
+
+private struct ProfileToggleRow: View {
+    let title: String
+    let systemImage: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
         }
     }
 }

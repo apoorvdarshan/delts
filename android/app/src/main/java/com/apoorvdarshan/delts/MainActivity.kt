@@ -68,10 +68,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -100,7 +100,6 @@ import com.apoorvdarshan.delts.ui.theme.DeltsAccent
 import com.apoorvdarshan.delts.ui.theme.DeltsOnAccent
 import com.apoorvdarshan.delts.ui.theme.DeltsSecondaryAccent
 import com.apoorvdarshan.delts.ui.theme.DeltsTheme
-import com.apoorvdarshan.delts.ui.theme.DeltsWarning
 import java.util.Locale
 import kotlinx.coroutines.delay
 import org.json.JSONArray
@@ -128,7 +127,9 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
     var selectedTab by rememberSaveable { mutableStateOf(DeltsTab.Start) }
     var profile by remember { mutableStateOf(settings.loadProfile()) }
     var measurementSystem by rememberSaveable { mutableStateOf(settings.loadMeasurementSystem()) }
+    var aiSettings by remember { mutableStateOf(settings.loadAISettings()) }
     val keyStore = remember(settings) { GeminiKeyStore(settings) }
+    val fallbackKeyStore = remember(settings) { GeminiKeyStore(settings, "ai_fallback_api_key") }
     val exerciseLibrary = remember(context) { loadFreeExerciseDB(context.assets) }
 
     fun updateProfile(updatedProfile: AndroidProfile) {
@@ -139,6 +140,12 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
     fun updateMeasurementSystem(updatedSystem: MeasurementSystem) {
         measurementSystem = updatedSystem
         settings.saveMeasurementSystem(updatedSystem)
+    }
+
+    fun updateAISettings(updatedSettings: AISettings) {
+        val normalizedSettings = updatedSettings.normalized()
+        aiSettings = normalizedSettings
+        settings.saveAISettings(normalizedSettings)
     }
 
     Scaffold(
@@ -175,7 +182,10 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
                     updateProfile = ::updateProfile,
                     measurementSystem = measurementSystem,
                     updateMeasurementSystem = ::updateMeasurementSystem,
+                    aiSettings = aiSettings,
+                    updateAISettings = ::updateAISettings,
                     keyStore = keyStore,
+                    fallbackKeyStore = fallbackKeyStore,
                     padding = padding
                 )
             }
@@ -700,11 +710,16 @@ private fun ProfileScreen(
     updateProfile: (AndroidProfile) -> Unit,
     measurementSystem: MeasurementSystem,
     updateMeasurementSystem: (MeasurementSystem) -> Unit,
+    aiSettings: AISettings,
+    updateAISettings: (AISettings) -> Unit,
     keyStore: GeminiKeyStore,
+    fallbackKeyStore: GeminiKeyStore,
     padding: PaddingValues
 ) {
     var apiKey by remember { mutableStateOf(keyStore.load()) }
     var hasSavedKey by remember { mutableStateOf(keyStore.hasKey()) }
+    var fallbackApiKey by remember { mutableStateOf(fallbackKeyStore.load()) }
+    var hasSavedFallbackKey by remember { mutableStateOf(fallbackKeyStore.hasKey()) }
 
     Column(
         modifier = Modifier
@@ -816,11 +831,52 @@ private fun ProfileScreen(
 
         ProfileSection(
             title = "AI Settings",
-            subtitle = "Gemini BYOK stays on this device.",
+            subtitle = "Provider, model, local key, and fallback.",
             icon = Icons.Filled.VpnKey,
             badge = if (hasSavedKey) "Ready" else null
         ) {
-            CompactGeminiKeyRow(
+            CompactDropdownRow(
+                title = "Provider",
+                icon = Icons.Filled.Build,
+                value = aiSettings.provider,
+                options = aiProviderOptions,
+                selectedOption = aiSettings.provider
+            ) { selected ->
+                updateAISettings(aiSettings.withProvider(selected))
+            }
+            if (aiSettings.provider == customAIProvider) {
+                ProfileRowDivider()
+                CompactTextFieldRow(
+                    title = "Provider name",
+                    icon = Icons.Filled.List,
+                    value = aiSettings.customProvider,
+                    placeholder = "Custom provider",
+                    onValueChange = { updateAISettings(aiSettings.copy(customProvider = it)) }
+                )
+            }
+            ProfileRowDivider()
+            CompactDropdownRow(
+                title = "Model",
+                icon = Icons.Filled.List,
+                value = aiSettings.model,
+                options = modelOptionsForProvider(aiSettings.provider),
+                selectedOption = aiSettings.model
+            ) { selected ->
+                updateAISettings(aiSettings.copy(model = selected))
+            }
+            if (aiSettings.model == customAIModel) {
+                ProfileRowDivider()
+                CompactTextFieldRow(
+                    title = "Model name",
+                    icon = Icons.Filled.List,
+                    value = aiSettings.customModel,
+                    placeholder = "Custom model",
+                    onValueChange = { updateAISettings(aiSettings.copy(customModel = it)) }
+                )
+            }
+            ProfileRowDivider()
+            CompactAPIKeyRow(
+                title = "API key",
                 apiKey = apiKey,
                 hasSavedKey = hasSavedKey,
                 onApiKeyChange = { apiKey = it },
@@ -835,20 +891,90 @@ private fun ProfileScreen(
                     hasSavedKey = false
                 }
             )
+            ProfileRowDivider()
+            CompactToggleRow(
+                title = "Fallback",
+                icon = Icons.Filled.History,
+                checked = aiSettings.fallbackEnabled,
+                onCheckedChange = { updateAISettings(aiSettings.copy(fallbackEnabled = it)) }
+            )
+            if (aiSettings.fallbackEnabled) {
+                ProfileRowDivider()
+                CompactDropdownRow(
+                    title = "Fallback provider",
+                    icon = Icons.Filled.Build,
+                    value = aiSettings.fallbackProvider,
+                    options = aiProviderOptions,
+                    selectedOption = aiSettings.fallbackProvider
+                ) { selected ->
+                    updateAISettings(aiSettings.withFallbackProvider(selected))
+                }
+                if (aiSettings.fallbackProvider == customAIProvider) {
+                    ProfileRowDivider()
+                    CompactTextFieldRow(
+                        title = "Fallback name",
+                        icon = Icons.Filled.List,
+                        value = aiSettings.fallbackCustomProvider,
+                        placeholder = "Custom provider",
+                        onValueChange = { updateAISettings(aiSettings.copy(fallbackCustomProvider = it)) }
+                    )
+                }
+                ProfileRowDivider()
+                CompactDropdownRow(
+                    title = "Fallback model",
+                    icon = Icons.Filled.List,
+                    value = aiSettings.fallbackModel,
+                    options = modelOptionsForProvider(aiSettings.fallbackProvider),
+                    selectedOption = aiSettings.fallbackModel
+                ) { selected ->
+                    updateAISettings(aiSettings.copy(fallbackModel = selected))
+                }
+                if (aiSettings.fallbackModel == customAIModel) {
+                    ProfileRowDivider()
+                    CompactTextFieldRow(
+                        title = "Fallback model name",
+                        icon = Icons.Filled.List,
+                        value = aiSettings.fallbackCustomModel,
+                        placeholder = "Custom model",
+                        onValueChange = { updateAISettings(aiSettings.copy(fallbackCustomModel = it)) }
+                    )
+                }
+                ProfileRowDivider()
+                CompactAPIKeyRow(
+                    title = "Fallback key",
+                    apiKey = fallbackApiKey,
+                    hasSavedKey = hasSavedFallbackKey,
+                    onApiKeyChange = { fallbackApiKey = it },
+                    save = {
+                        fallbackKeyStore.save(fallbackApiKey)
+                        fallbackApiKey = fallbackKeyStore.load()
+                        hasSavedFallbackKey = fallbackKeyStore.hasKey()
+                    },
+                    clear = {
+                        fallbackKeyStore.clear()
+                        fallbackApiKey = ""
+                        hasSavedFallbackKey = false
+                    }
+                )
+            }
         }
 
         ProfileSection(
-            title = "Schedule",
+            title = "Workout Setup",
             subtitle = "Tune how training fits into the week.",
             icon = Icons.Filled.CalendarToday
         ) {
-            CompactNumberStepperRow(
+            CompactDropdownRow(
                 title = "Frequency",
                 icon = Icons.Filled.CalendarToday,
-                value = profile.frequency,
-                range = 1..7,
-                suffix = "days/week"
-            ) { updateProfile(profile.copy(frequency = it.coerceIn(1, 7))) }
+                value = "${profile.frequency.coerceIn(1, 7)} days/week",
+                options = frequencyOptions,
+                selectedOption = "${profile.frequency.coerceIn(1, 7)} days/week"
+            ) { selected ->
+                selected.substringBefore(" ").toIntOrNull()?.let {
+                    updateProfile(profile.copy(frequency = it.coerceIn(1, 7)))
+                }
+            }
             ProfileRowDivider()
             CompactDropdownRow(
                 title = "Workout split",
@@ -870,20 +996,12 @@ private fun ProfileScreen(
                 )
             }
             ProfileRowDivider()
-            CompactDropdownRow(
-                title = "Workout duration",
-                icon = Icons.Filled.Timer,
-                value = "${profile.duration} min",
-                options = durations.map { "$it min" },
-                selectedOption = "${profile.duration} min"
-            ) { selected ->
-                selected.substringBefore(" ").toIntOrNull()?.let {
-                    updateProfile(profile.copy(duration = nearestDuration(it)))
-                }
+            CompactDurationRow(duration = profile.duration) {
+                updateProfile(profile.copy(duration = it))
             }
             ProfileRowDivider()
             CompactMultiSelectRow(
-                title = "Saved gear",
+                title = "Equipment",
                 icon = Icons.Filled.FitnessCenter,
                 items = equipmentOptions.map { it.title },
                 selected = profile.availableEquipment,
@@ -1808,7 +1926,7 @@ private fun CompactValueLabel(value: String) {
             textAlign = TextAlign.End,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.widthIn(max = 150.dp)
+            modifier = Modifier.widthIn(max = 178.dp)
         )
         Icon(
             Icons.Filled.KeyboardArrowRight,
@@ -1820,7 +1938,8 @@ private fun CompactValueLabel(value: String) {
 }
 
 @Composable
-private fun CompactGeminiKeyRow(
+private fun CompactAPIKeyRow(
+    title: String,
     apiKey: String,
     hasSavedKey: Boolean,
     onApiKeyChange: (String) -> Unit,
@@ -1828,13 +1947,13 @@ private fun CompactGeminiKeyRow(
     clear: () -> Unit
 ) {
     ProfileSettingRow(
-        title = "Gemini Key",
+        title = title,
         icon = if (hasSavedKey) Icons.Filled.Check else Icons.Filled.VpnKey
     ) {
         BasicTextField(
             value = apiKey,
             onValueChange = onApiKeyChange,
-            modifier = Modifier.width(118.dp),
+            modifier = Modifier.width(92.dp),
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -1860,6 +1979,18 @@ private fun CompactGeminiKeyRow(
         )
         CompactIconButton(icon = Icons.Filled.Check, onClick = save)
         CompactIconButton(icon = Icons.Filled.Close, onClick = clear)
+    }
+}
+
+@Composable
+private fun CompactToggleRow(
+    title: String,
+    icon: ImageVector,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    ProfileSettingRow(title = title, icon = icon) {
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
@@ -1906,7 +2037,7 @@ private fun CompactAgeRow(
     age: Int,
     onChange: (Int) -> Unit
 ) {
-    val ageRange = 11..120
+    val ageRange = 0..120
     val selectedAge = age.coerceIn(ageRange)
 
     CompactMeasurementRow(
@@ -1915,6 +2046,25 @@ private fun CompactAgeRow(
         valueText = "$selectedAge yr"
     ) {
         ScrollingNumberSelector("yr", selectedAge, ageRange, Modifier.fillMaxWidth()) {
+            onChange(it)
+        }
+    }
+}
+
+@Composable
+private fun CompactDurationRow(
+    duration: Int,
+    onChange: (Int) -> Unit
+) {
+    val durationRange = 1..300
+    val selectedDuration = duration.coerceIn(durationRange)
+
+    CompactMeasurementRow(
+        title = "Workout duration",
+        icon = Icons.Filled.Timer,
+        valueText = "$selectedDuration min"
+    ) {
+        ScrollingNumberSelector("min", selectedDuration, durationRange, Modifier.fillMaxWidth()) {
             onChange(it)
         }
     }
@@ -2039,67 +2189,6 @@ private fun PercentMeasurementCompactRow(
             }
             ScrollingNumberSelector("decimal", parts.decimal, 0..9, Modifier.weight(1f), display = { ".$it" }) {
                 onChange(combineDecimal(parts.whole, it))
-            }
-        }
-    }
-}
-
-@Composable
-private fun GeminiKeyCard(
-    apiKey: String,
-    hasSavedKey: Boolean,
-    onApiKeyChange: (String) -> Unit,
-    save: () -> Unit,
-    clear: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Icon(
-                imageVector = if (hasSavedKey) Icons.Filled.Check else Icons.Filled.FlashOn,
-                contentDescription = null,
-                tint = if (hasSavedKey) DeltsAccent else DeltsWarning,
-                modifier = Modifier.size(30.dp)
-            )
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("Gemini Key", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
-                Text(
-                    text = if (hasSavedKey) "Saved on device" else "Offline planner",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        OutlinedTextField(
-            value = apiKey,
-            onValueChange = onApiKeyChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Paste API key") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            shape = RoundedCornerShape(14.dp)
-        )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(
-                onClick = clear,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(42.dp),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Text("Clear", fontWeight = FontWeight.Bold)
-            }
-            Button(
-                onClick = save,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(42.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = DeltsAccent, contentColor = DeltsOnAccent)
-            ) {
-                Text("Save Key", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -2591,6 +2680,33 @@ private fun SharedPreferences.saveMeasurementSystem(system: MeasurementSystem) {
     edit().putString("profile_measurement_system", system.name).apply()
 }
 
+private fun SharedPreferences.loadAISettings(): AISettings =
+    AISettings(
+        provider = getString("profile_ai_provider", "Gemini").orEmpty(),
+        customProvider = getString("profile_ai_custom_provider", "").orEmpty(),
+        model = getString("profile_ai_model", defaultModelForProvider("Gemini")).orEmpty(),
+        customModel = getString("profile_ai_custom_model", "").orEmpty(),
+        fallbackEnabled = getBoolean("profile_ai_fallback_enabled", false),
+        fallbackProvider = getString("profile_ai_fallback_provider", "OpenRouter").orEmpty(),
+        fallbackCustomProvider = getString("profile_ai_fallback_custom_provider", "").orEmpty(),
+        fallbackModel = getString("profile_ai_fallback_model", defaultModelForProvider("OpenRouter")).orEmpty(),
+        fallbackCustomModel = getString("profile_ai_fallback_custom_model", "").orEmpty()
+    ).normalized()
+
+private fun SharedPreferences.saveAISettings(settings: AISettings) {
+    edit()
+        .putString("profile_ai_provider", settings.provider)
+        .putString("profile_ai_custom_provider", settings.customProvider)
+        .putString("profile_ai_model", settings.model)
+        .putString("profile_ai_custom_model", settings.customModel)
+        .putBoolean("profile_ai_fallback_enabled", settings.fallbackEnabled)
+        .putString("profile_ai_fallback_provider", settings.fallbackProvider)
+        .putString("profile_ai_fallback_custom_provider", settings.fallbackCustomProvider)
+        .putString("profile_ai_fallback_model", settings.fallbackModel)
+        .putString("profile_ai_fallback_custom_model", settings.fallbackCustomModel)
+        .apply()
+}
+
 private enum class DeltsTab(val title: String, val icon: ImageVector) {
     Start("Start", Icons.Filled.PlayArrow),
     Workouts("Workouts", Icons.Filled.List),
@@ -2648,6 +2764,40 @@ private data class AndroidProfile(
     val bodyFocus: Set<String>,
     val issues: Set<String>
 )
+
+private data class AISettings(
+    val provider: String,
+    val customProvider: String,
+    val model: String,
+    val customModel: String,
+    val fallbackEnabled: Boolean,
+    val fallbackProvider: String,
+    val fallbackCustomProvider: String,
+    val fallbackModel: String,
+    val fallbackCustomModel: String
+) {
+    fun normalized(): AISettings {
+        val safeProvider = provider.takeIf { aiProviderOptions.contains(it) } ?: customAIProvider
+        val safeFallbackProvider = fallbackProvider.takeIf { aiProviderOptions.contains(it) } ?: customAIProvider
+        val safeModel = model.takeIf { modelOptionsForProvider(safeProvider).contains(it) }
+            ?: defaultModelForProvider(safeProvider)
+        val safeFallbackModel = fallbackModel.takeIf { modelOptionsForProvider(safeFallbackProvider).contains(it) }
+            ?: defaultModelForProvider(safeFallbackProvider)
+
+        return copy(
+            provider = safeProvider,
+            model = safeModel,
+            fallbackProvider = safeFallbackProvider,
+            fallbackModel = safeFallbackModel
+        )
+    }
+
+    fun withProvider(nextProvider: String): AISettings =
+        copy(provider = nextProvider, model = defaultModelForProvider(nextProvider)).normalized()
+
+    fun withFallbackProvider(nextProvider: String): AISettings =
+        copy(fallbackProvider = nextProvider, fallbackModel = defaultModelForProvider(nextProvider)).normalized()
+}
 
 private data class DeltsOption(
     val title: String,
@@ -2905,8 +3055,121 @@ private val muscles = listOf(
 
 private val levels = listOf("Beginner", "Intermediate", "Advanced")
 private val goals = listOf("Muscle Gain", "Fat Loss", "Strength", "Beginner Form")
+private val frequencyOptions = (1..7).map { "$it days/week" }
 private val workoutSplitOptions = listOf("Full Body", "Push Pull Legs", "Upper Lower", "Bro Split", "Custom")
 private val durations = listOf(30, 45, 60, 90)
+private const val customAIProvider = "Custom"
+private const val customAIModel = "Custom model"
+
+private val aiProviderOptions = listOf(
+    "Gemini",
+    "OpenAI",
+    "Anthropic Claude",
+    "xAI Grok",
+    "OpenRouter",
+    "Together AI",
+    "Groq",
+    "Hugging Face",
+    "Fireworks AI",
+    "DeepInfra",
+    "Mistral",
+    "Ollama",
+    customAIProvider
+)
+
+private val aiModelsByProvider = mapOf(
+    "Gemini" to listOf(
+        "gemini-3.5-flash",
+        "gemini-3.1-pro",
+        "gemini-3-flash",
+        "gemini-2.5-pro",
+        "gemini-2.5-flash"
+    ),
+    "OpenAI" to listOf(
+        "gpt-5.5",
+        "gpt-5.4",
+        "gpt-5.4-mini",
+        "gpt-5.4-nano",
+        "gpt-5",
+        "gpt-5-mini",
+        "gpt-4.1"
+    ),
+    "Anthropic Claude" to listOf(
+        "claude-opus-4-7",
+        "claude-sonnet-4-6",
+        "claude-haiku-4-5-20251001",
+        "claude-opus-4-6",
+        "claude-sonnet-4-5"
+    ),
+    "xAI Grok" to listOf(
+        "grok-4.3",
+        "grok-4.3-latest",
+        "grok-build-0.1",
+        "grok-4"
+    ),
+    "OpenRouter" to listOf(
+        "openrouter/auto",
+        "google/gemini-2.5-pro",
+        "anthropic/claude-sonnet-4.5",
+        "openai/gpt-5",
+        "x-ai/grok-4"
+    ),
+    "Together AI" to listOf(
+        "moonshotai/Kimi-K2.5",
+        "zai-org/GLM-5.1",
+        "openai/gpt-oss-120b",
+        "deepseek-ai/DeepSeek-R1",
+        "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8"
+    ),
+    "Groq" to listOf(
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "meta-llama/llama-4-maverick-17b-128e-instruct",
+        "meta-llama/llama-4-scout-17b-16e-instruct",
+        "llama-3.3-70b-versatile"
+    ),
+    "Hugging Face" to listOf(
+        "openai/gpt-oss-120b:fastest",
+        "Qwen/Qwen3-235B-A22B:fastest",
+        "deepseek-ai/DeepSeek-V3.1:fastest",
+        "meta-llama/Llama-4-Maverick-17B-128E-Instruct:fastest"
+    ),
+    "Fireworks AI" to listOf(
+        "accounts/fireworks/models/kimi-k2-instruct-0905",
+        "accounts/fireworks/models/deepseek-v3p1",
+        "accounts/fireworks/models/deepseek-r1",
+        "accounts/fireworks/models/qwen3-235b-a22b",
+        "accounts/fireworks/models/llama-v3p1-405b-instruct"
+    ),
+    "DeepInfra" to listOf(
+        "deepseek-ai/DeepSeek-V3.2",
+        "deepseek-ai/DeepSeek-R1",
+        "Qwen/Qwen3-235B-A22B-Instruct-2507",
+        "moonshotai/Kimi-K2-Instruct",
+        "openai/gpt-oss-120b"
+    ),
+    "Mistral" to listOf(
+        "mistral-large-latest",
+        "mistral-medium-latest",
+        "mistral-small-latest",
+        "codestral-latest",
+        "devstral-small-latest"
+    ),
+    "Ollama" to listOf(
+        "llama4",
+        "gemma3",
+        "qwen3",
+        "deepseek-r1",
+        "llama3.3",
+        "phi4"
+    )
+)
+
+private fun modelOptionsForProvider(provider: String): List<String> =
+    (aiModelsByProvider[provider] ?: emptyList()) + customAIModel
+
+private fun defaultModelForProvider(provider: String): String =
+    aiModelsByProvider[provider]?.firstOrNull() ?: customAIModel
 
 private val equipmentOptions = listOf(
     DeltsOption("Bodyweight", "No gear.", Icons.Filled.DirectionsRun),

@@ -4,9 +4,38 @@ import Security
 enum LocalGeminiKeyStore {
     private static let service = "com.apoorvdarshan.delts.gemini"
     private static let account = "gemini-api-key"
+    private static let fallbackAccount = "ai-fallback-api-key"
 
     static var apiKey: String? {
-        var query = baseQuery()
+        apiKey(for: account)
+    }
+
+    static var fallbackAPIKey: String? {
+        apiKey(for: fallbackAccount)
+    }
+
+    @discardableResult
+    static func save(_ apiKey: String) -> Bool {
+        save(apiKey, for: account)
+    }
+
+    @discardableResult
+    static func saveFallback(_ apiKey: String) -> Bool {
+        save(apiKey, for: fallbackAccount)
+    }
+
+    @discardableResult
+    static func clear() -> Bool {
+        clear(for: account)
+    }
+
+    @discardableResult
+    static func clearFallback() -> Bool {
+        clear(for: fallbackAccount)
+    }
+
+    private static func apiKey(for account: String) -> String? {
+        var query = baseQuery(account: account)
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
 
@@ -23,13 +52,13 @@ enum LocalGeminiKeyStore {
     }
 
     @discardableResult
-    static func save(_ apiKey: String) -> Bool {
+    private static func save(_ apiKey: String, for account: String) -> Bool {
         let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, let data = trimmed.data(using: .utf8) else {
-            return clear()
+            return clear(for: account)
         }
 
-        var query = baseQuery()
+        var query = baseQuery(account: account)
         let attributes = [
             kSecValueData as String: data,
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
@@ -45,12 +74,12 @@ enum LocalGeminiKeyStore {
     }
 
     @discardableResult
-    static func clear() -> Bool {
-        let status = SecItemDelete(baseQuery() as CFDictionary)
+    private static func clear(for account: String) -> Bool {
+        let status = SecItemDelete(baseQuery(account: account) as CFDictionary)
         return status == errSecSuccess || status == errSecItemNotFound
     }
 
-    private static func baseQuery() -> [String: Any] {
+    private static func baseQuery(account: String) -> [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,

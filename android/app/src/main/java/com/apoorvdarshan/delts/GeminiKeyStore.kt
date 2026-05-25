@@ -13,19 +13,23 @@ import javax.crypto.spec.GCMParameterSpec
 private const val ANDROID_KEYSTORE = "AndroidKeyStore"
 private const val GEMINI_KEY_ALIAS = "delts_gemini_api_key"
 private const val GEMINI_API_KEY_LEGACY = "gemini_api_key"
-private const val GEMINI_API_KEY_CIPHER = "gemini_api_key_cipher"
-private const val GEMINI_API_KEY_IV = "gemini_api_key_iv"
 
-class GeminiKeyStore(private val settings: SharedPreferences) {
+class GeminiKeyStore(
+    private val settings: SharedPreferences,
+    private val keyPrefix: String = GEMINI_API_KEY_LEGACY
+) {
+    private val cipherKey = "${keyPrefix}_cipher"
+    private val ivKey = "${keyPrefix}_iv"
+
     fun load(): String {
-        val encryptedKey = settings.getString(GEMINI_API_KEY_CIPHER, null)
-        val iv = settings.getString(GEMINI_API_KEY_IV, null)
+        val encryptedKey = settings.getString(cipherKey, null)
+        val iv = settings.getString(ivKey, null)
 
         if (!encryptedKey.isNullOrBlank() && !iv.isNullOrBlank()) {
             return decrypt(encryptedKey, iv).orEmpty()
         }
 
-        val legacyKey = settings.getString(GEMINI_API_KEY_LEGACY, null)?.trim().orEmpty()
+        val legacyKey = settings.getString(keyPrefix, null)?.trim().orEmpty()
         if (legacyKey.isNotEmpty()) {
             save(legacyKey)
         }
@@ -43,18 +47,18 @@ class GeminiKeyStore(private val settings: SharedPreferences) {
 
         encrypt(trimmed)?.let { encrypted ->
             settings.edit()
-                .putString(GEMINI_API_KEY_CIPHER, encrypted.cipherText)
-                .putString(GEMINI_API_KEY_IV, encrypted.iv)
-                .remove(GEMINI_API_KEY_LEGACY)
+                .putString(cipherKey, encrypted.cipherText)
+                .putString(ivKey, encrypted.iv)
+                .remove(keyPrefix)
                 .apply()
         }
     }
 
     fun clear() {
         settings.edit()
-            .remove(GEMINI_API_KEY_CIPHER)
-            .remove(GEMINI_API_KEY_IV)
-            .remove(GEMINI_API_KEY_LEGACY)
+            .remove(cipherKey)
+            .remove(ivKey)
+            .remove(keyPrefix)
             .apply()
     }
 

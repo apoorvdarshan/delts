@@ -19,7 +19,15 @@ enum GeminiWorkoutError: LocalizedError {
 }
 
 final class GeminiWorkoutService {
-    private let modelName = "gemini-1.5-flash"
+    private var modelName: String {
+        let selectedModel = UserDefaults.standard.string(forKey: "profile_ai_model") ?? "gemini-1.5-flash"
+        if selectedModel == "Custom model" {
+            let customModel = UserDefaults.standard.string(forKey: "profile_ai_custom_model")?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return customModel.isEmpty ? "gemini-1.5-flash" : customModel
+        }
+        return selectedModel
+    }
 
     func generateWorkout(
         profile: UserProfile,
