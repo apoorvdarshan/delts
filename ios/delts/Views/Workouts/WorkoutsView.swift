@@ -73,6 +73,37 @@ private struct WorkoutsModePill: View {
     }
 }
 
+private struct WorkoutsModeTabs: View {
+    @Binding var selectedMode: WorkoutsMode
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ForEach(WorkoutsMode.allCases) { mode in
+                Button {
+                    withAnimation(.snappy) {
+                        selectedMode = mode
+                    }
+                } label: {
+                    WorkoutsModePill(
+                        title: mode.title,
+                        systemImage: mode.systemImage,
+                        isSelected: selectedMode == mode
+                    )
+                }
+                .buttonStyle(.plain)
+                .deltsPressable()
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(4)
+        .background(Color.deltsPanel.opacity(0.16), in: Capsule())
+        .overlay {
+            Capsule()
+                .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
+        }
+    }
+}
+
 private struct ExerciseLibraryBrowserView: View {
     @Binding var selectedMode: WorkoutsMode
     @State private var searchText = ""
@@ -151,6 +182,10 @@ private struct ExerciseLibraryBrowserView: View {
                 librarySummary
                     .padding(.horizontal, 20)
                     .padding(.top, 18)
+                    .padding(.bottom, 12)
+
+                WorkoutsModeTabs(selectedMode: $selectedMode)
+                    .padding(.horizontal, 20)
                     .padding(.bottom, 14)
 
                 filters
@@ -266,171 +301,181 @@ private struct ExerciseLibraryBrowserView: View {
     }
 
     private var filters: some View {
-        WorkoutFilterPanel {
-            filterMenuRow(
-                title: "View",
-                value: selectedMode.title,
-                systemImage: selectedMode.systemImage
-            ) {
-                ForEach(WorkoutsMode.allCases) { mode in
-                    menuChoice(mode.title, isSelected: selectedMode == mode) { selectedMode = mode }
-                }
-            }
-            WorkoutFilterDivider()
-            WorkoutsSearchRow(searchText: $searchText)
-            WorkoutFilterDivider()
-            filterMenuRow(
-                title: "Focus",
-                value: selectedMuscleGroup?.title ?? "All body parts",
-                systemImage: selectedMuscleGroup?.icon ?? "scope"
-            ) {
-                menuChoice("All body parts", isSelected: selectedMuscleGroup == nil) { selectedMuscleGroup = nil }
-                ForEach(MuscleGroup.allCases) { group in
-                    menuChoice(group.title, isSelected: selectedMuscleGroup == group) { selectedMuscleGroup = group }
-                }
-            }
-            WorkoutFilterDivider()
-            filterMenuRow(
-                title: "Level",
-                value: selectedLevel?.title ?? "All",
-                systemImage: "chart.bar.fill"
-            ) {
-                menuChoice("All Levels", isSelected: selectedLevel == nil) { selectedLevel = nil }
-                ForEach(ExperienceLevel.allCases) { level in
-                    menuChoice(level.title, isSelected: selectedLevel == level) { selectedLevel = level }
-                }
-            }
-            WorkoutFilterDivider()
-            filterMenuRow(
-                title: "Goal",
-                value: selectedGoal?.title ?? "All",
-                systemImage: "target"
-            ) {
-                menuChoice("All Goals", isSelected: selectedGoal == nil) { selectedGoal = nil }
-                ForEach(FitnessGoal.profileCases + [.beginnerForm]) { goal in
-                    menuChoice(goal.title, isSelected: selectedGoal == goal) { selectedGoal = goal }
-                }
-            }
-            WorkoutFilterDivider()
-            filterMenuRow(
-                title: "Equipment",
-                value: equipmentFilterTitle,
-                systemImage: "dumbbell.fill"
-            ) {
-                menuChoice("All Equipment", isSelected: selectedEquipment == nil && selectedEquipmentFamily == .all && selectedRawEquipment == nil) {
-                    selectedEquipment = nil
-                    selectedEquipmentFamily = .all
-                    selectedRawEquipment = nil
-                }
-                Section("Family") {
-                    ForEach(ExerciseEquipmentFamily.allCases.filter { $0 != .all }) { family in
-                        menuChoice(family.title, isSelected: selectedEquipment == nil && selectedEquipmentFamily == family) {
-                            selectedEquipment = nil
-                            selectedEquipmentFamily = family
-                            selectedRawEquipment = nil
+        VStack(alignment: .leading, spacing: 12) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 9) {
+                    WorkoutsSearchPill(searchText: $searchText)
+
+                    BodyPartFilterChip(
+                        title: "All",
+                        systemImage: "scope",
+                        isSelected: selectedMuscleGroup == nil
+                    ) {
+                        withAnimation(.snappy) {
+                            selectedMuscleGroup = nil
+                        }
+                    }
+
+                    ForEach(MuscleGroup.allCases) { group in
+                        BodyPartFilterChip(
+                            title: group.title,
+                            systemImage: group.icon,
+                            isSelected: selectedMuscleGroup == group
+                        ) {
+                            withAnimation(.snappy) {
+                                selectedMuscleGroup = group
+                            }
                         }
                     }
                 }
-                Section("Specific") {
-                    ForEach(Equipment.allCases) { equipment in
-                        menuChoice(equipment.title, isSelected: selectedEquipment == equipment) {
-                            selectedEquipment = equipment
-                            selectedEquipmentFamily = .all
-                            selectedRawEquipment = nil
-                        }
-                    }
-                }
-                Section("Database Raw") {
-                    ForEach(service.availableRawEquipment, id: \.self) { equipment in
-                        menuChoice(equipment, isSelected: selectedRawEquipment == equipment) {
-                            selectedEquipment = nil
-                            selectedEquipmentFamily = .all
-                            selectedRawEquipment = equipment
-                        }
-                    }
-                }
-            }
-            WorkoutFilterDivider()
-            filterMenuRow(
-                title: "Database",
-                value: databaseFilterTitle,
-                systemImage: "server.rack"
-            ) {
-                menuChoice("All DB Metadata", isSelected: selectedCategory == nil && selectedForce == nil && selectedMechanic == nil && selectedMedia == .all) {
-                    selectedCategory = nil
-                    selectedForce = nil
-                    selectedMechanic = nil
-                    selectedMedia = .all
-                }
-                Section("Category") {
-                    ForEach(service.availableCategories, id: \.self) { category in
-                        menuChoice(category, isSelected: selectedCategory == category) { selectedCategory = category }
-                    }
-                }
-                Section("Force") {
-                    ForEach(service.availableForces, id: \.self) { force in
-                        menuChoice(force, isSelected: selectedForce == force) { selectedForce = force }
-                    }
-                }
-                Section("Mechanic") {
-                    ForEach(service.availableMechanics, id: \.self) { mechanic in
-                        menuChoice(mechanic, isSelected: selectedMechanic == mechanic) { selectedMechanic = mechanic }
-                    }
-                }
-                Section("Media") {
-                    ForEach(ExerciseMediaFilter.allCases) { media in
-                        menuChoice(media.title, isSelected: selectedMedia == media) { selectedMedia = media }
-                    }
-                }
-            }
-            WorkoutFilterDivider()
-            filterMenuRow(
-                title: "Muscles",
-                value: rawMuscleFilterTitle,
-                systemImage: "figure.strengthtraining.traditional"
-            ) {
-                menuChoice("All Raw Muscles", isSelected: selectedPrimaryMuscle == nil && selectedSecondaryMuscle == nil) {
-                    selectedPrimaryMuscle = nil
-                    selectedSecondaryMuscle = nil
-                }
-                Section("Primary") {
-                    ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
-                        menuChoice(muscle, isSelected: selectedPrimaryMuscle == muscle) {
-                            selectedPrimaryMuscle = muscle
-                            selectedSecondaryMuscle = nil
-                        }
-                    }
-                }
-                Section("Secondary") {
-                    ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
-                        menuChoice(muscle, isSelected: selectedSecondaryMuscle == muscle) {
-                            selectedPrimaryMuscle = nil
-                            selectedSecondaryMuscle = muscle
-                        }
-                    }
-                }
-            }
-            WorkoutFilterDivider()
-            filterMenuRow(
-                title: "Sort",
-                value: selectedSort.title,
-                systemImage: "arrow.up.arrow.down"
-            ) {
-                ForEach(ExerciseLibrarySort.allCases) { sort in
-                    menuChoice(sort.title, isSelected: selectedSort == sort) { selectedSort = sort }
-                }
+                .padding(.vertical, 1)
             }
 
-            if hasActiveFilters {
-                WorkoutFilterDivider()
-                Button {
-                    withAnimation(.snappy) {
-                        resetFilters()
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 9) {
+                    filterMenuPill(
+                        title: "Level",
+                        value: selectedLevel?.title ?? "All",
+                        systemImage: "chart.bar.fill"
+                    ) {
+                        menuChoice("All Levels", isSelected: selectedLevel == nil) { selectedLevel = nil }
+                        ForEach(ExperienceLevel.allCases) { level in
+                            menuChoice(level.title, isSelected: selectedLevel == level) { selectedLevel = level }
+                        }
                     }
-                } label: {
-                    WorkoutFilterResetLabel()
+
+                    filterMenuPill(
+                        title: "Goal",
+                        value: selectedGoal?.title ?? "All",
+                        systemImage: "target"
+                    ) {
+                        menuChoice("All Goals", isSelected: selectedGoal == nil) { selectedGoal = nil }
+                        ForEach(FitnessGoal.profileCases + [.beginnerForm]) { goal in
+                            menuChoice(goal.title, isSelected: selectedGoal == goal) { selectedGoal = goal }
+                        }
+                    }
+
+                    filterMenuPill(
+                        title: "Equipment",
+                        value: equipmentFilterTitle,
+                        systemImage: "dumbbell.fill"
+                    ) {
+                        menuChoice("All Equipment", isSelected: selectedEquipment == nil && selectedEquipmentFamily == .all && selectedRawEquipment == nil) {
+                            selectedEquipment = nil
+                            selectedEquipmentFamily = .all
+                            selectedRawEquipment = nil
+                        }
+                        Section("Family") {
+                            ForEach(ExerciseEquipmentFamily.allCases.filter { $0 != .all }) { family in
+                                menuChoice(family.title, isSelected: selectedEquipment == nil && selectedEquipmentFamily == family) {
+                                    selectedEquipment = nil
+                                    selectedEquipmentFamily = family
+                                    selectedRawEquipment = nil
+                                }
+                            }
+                        }
+                        Section("Specific") {
+                            ForEach(Equipment.allCases) { equipment in
+                                menuChoice(equipment.title, isSelected: selectedEquipment == equipment) {
+                                    selectedEquipment = equipment
+                                    selectedEquipmentFamily = .all
+                                    selectedRawEquipment = nil
+                                }
+                            }
+                        }
+                        Section("Database Raw") {
+                            ForEach(service.availableRawEquipment, id: \.self) { equipment in
+                                menuChoice(equipment, isSelected: selectedRawEquipment == equipment) {
+                                    selectedEquipment = nil
+                                    selectedEquipmentFamily = .all
+                                    selectedRawEquipment = equipment
+                                }
+                            }
+                        }
+                    }
+
+                    filterMenuPill(
+                        title: "Database",
+                        value: databaseFilterTitle,
+                        systemImage: "server.rack"
+                    ) {
+                        menuChoice("All DB Metadata", isSelected: selectedCategory == nil && selectedForce == nil && selectedMechanic == nil && selectedMedia == .all) {
+                            selectedCategory = nil
+                            selectedForce = nil
+                            selectedMechanic = nil
+                            selectedMedia = .all
+                        }
+                        Section("Category") {
+                            ForEach(service.availableCategories, id: \.self) { category in
+                                menuChoice(category, isSelected: selectedCategory == category) { selectedCategory = category }
+                            }
+                        }
+                        Section("Force") {
+                            ForEach(service.availableForces, id: \.self) { force in
+                                menuChoice(force, isSelected: selectedForce == force) { selectedForce = force }
+                            }
+                        }
+                        Section("Mechanic") {
+                            ForEach(service.availableMechanics, id: \.self) { mechanic in
+                                menuChoice(mechanic, isSelected: selectedMechanic == mechanic) { selectedMechanic = mechanic }
+                            }
+                        }
+                        Section("Media") {
+                            ForEach(ExerciseMediaFilter.allCases) { media in
+                                menuChoice(media.title, isSelected: selectedMedia == media) { selectedMedia = media }
+                            }
+                        }
+                    }
+
+                    filterMenuPill(
+                        title: "Muscles",
+                        value: rawMuscleFilterTitle,
+                        systemImage: "figure.strengthtraining.traditional"
+                    ) {
+                        menuChoice("All Raw Muscles", isSelected: selectedPrimaryMuscle == nil && selectedSecondaryMuscle == nil) {
+                            selectedPrimaryMuscle = nil
+                            selectedSecondaryMuscle = nil
+                        }
+                        Section("Primary") {
+                            ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
+                                menuChoice(muscle, isSelected: selectedPrimaryMuscle == muscle) {
+                                    selectedPrimaryMuscle = muscle
+                                    selectedSecondaryMuscle = nil
+                                }
+                            }
+                        }
+                        Section("Secondary") {
+                            ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
+                                menuChoice(muscle, isSelected: selectedSecondaryMuscle == muscle) {
+                                    selectedPrimaryMuscle = nil
+                                    selectedSecondaryMuscle = muscle
+                                }
+                            }
+                        }
+                    }
+
+                    filterMenuPill(
+                        title: "Sort",
+                        value: selectedSort.title,
+                        systemImage: "arrow.up.arrow.down"
+                    ) {
+                        ForEach(ExerciseLibrarySort.allCases) { sort in
+                            menuChoice(sort.title, isSelected: selectedSort == sort) { selectedSort = sort }
+                        }
+                    }
+
+                    if hasActiveFilters {
+                        Button {
+                            withAnimation(.snappy) {
+                                resetFilters()
+                            }
+                        } label: {
+                            FilterResetPill()
+                        }
+                        .deltsPressable()
+                    }
                 }
-                .deltsPressable()
+                .padding(.vertical, 1)
             }
         }
     }
@@ -491,7 +536,7 @@ private struct ExerciseLibraryBrowserView: View {
         selectedSort = .bodyPart
     }
 
-    private func filterMenuRow<Content: View>(
+    private func filterMenuPill<Content: View>(
         title: String,
         value: String,
         systemImage: String,
@@ -500,7 +545,7 @@ private struct ExerciseLibraryBrowserView: View {
         Menu {
             content()
         } label: {
-            WorkoutFilterRowLabel(title: title, value: value, systemImage: systemImage)
+            FilterMenuPill(title: title, value: value, systemImage: systemImage)
         }
         .deltsPressable()
     }
@@ -632,6 +677,51 @@ private struct WorkoutsSearchRow: View {
     }
 }
 
+private struct WorkoutsSearchPill: View {
+    @Binding var searchText: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(searchText.isEmpty ? Color.deltsSecondaryAccent : Color.deltsAccent)
+
+            TextField("Search", text: $searchText)
+                .textFieldStyle(.plain)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+                .frame(width: 128)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Color.deltsMutedText)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 46)
+        .background(
+            Color.deltsPanel.opacity(searchText.isEmpty ? 0.30 : 0.46),
+            in: RoundedRectangle(cornerRadius: 17, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                .stroke(
+                    (searchText.isEmpty ? Color.deltsHairline : Color.deltsAccent).opacity(searchText.isEmpty ? 0.30 : 0.42),
+                    lineWidth: 0.5
+                )
+        }
+    }
+}
+
 private struct WorkoutFilterResetLabel: View {
     var body: some View {
         WorkoutFilterRow(title: "Reset", systemImage: "arrow.counterclockwise") {
@@ -643,13 +733,34 @@ private struct WorkoutFilterResetLabel: View {
     }
 }
 
+private struct FilterResetPill: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "arrow.counterclockwise")
+                .font(.system(size: 14, weight: .bold))
+
+            Text("Reset")
+                .font(.subheadline.weight(.bold))
+                .lineLimit(1)
+        }
+        .foregroundStyle(Color.deltsInferno)
+        .padding(.horizontal, 13)
+        .frame(height: 46)
+        .background(Color.deltsInferno.opacity(0.10), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                .stroke(Color.deltsInferno.opacity(0.30), lineWidth: 0.5)
+        }
+    }
+}
+
 private struct FilterMenuPill: View {
     let title: String
     let value: String
     let systemImage: String
 
     private var isDefaultValue: Bool {
-        value == "All"
+        value == "All" || value == "Body Part"
     }
 
     var body: some View {
@@ -758,9 +869,13 @@ private struct WorkoutHistoryListView: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                historyModePanel
+                historySummary
                     .padding(.horizontal, 20)
                     .padding(.top, 18)
+                    .padding(.bottom, 12)
+
+                WorkoutsModeTabs(selectedMode: $selectedMode)
+                    .padding(.horizontal, 20)
                     .padding(.bottom, 14)
 
                 if workouts.isEmpty {
@@ -807,29 +922,36 @@ private struct WorkoutHistoryListView: View {
         .contentMargins(.bottom, 104, for: .scrollContent)
     }
 
-    private var historyModePanel: some View {
-        WorkoutFilterPanel {
-            Menu {
-                ForEach(WorkoutsMode.allCases) { mode in
-                    Button {
-                        selectedMode = mode
-                    } label: {
-                        if selectedMode == mode {
-                            Label(mode.title, systemImage: "checkmark")
-                        } else {
-                            Text(mode.title)
-                        }
-                    }
-                }
-            } label: {
-                WorkoutFilterRowLabel(
-                    title: "View",
-                    value: selectedMode.title,
-                    systemImage: selectedMode.systemImage
-                )
+    private var historySummary: some View {
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Workout history")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .textCase(.uppercase)
+
+                Text("\(workouts.count) completed \(workouts.count == 1 ? "workout" : "workouts")")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .lineLimit(1)
+
+                Text("Review finished sessions and logged sets.")
+                    .font(.footnote)
+                    .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(2)
             }
-            .deltsPressable()
+
+            Spacer(minLength: 12)
+
+            Label("Local logs", systemImage: "clock")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.deltsSecondaryAccent)
+                .lineLimit(1)
+                .padding(.horizontal, 10)
+                .frame(height: 32)
+                .background(Color.deltsSecondaryAccent.opacity(0.11), in: Capsule())
         }
+        .padding(.vertical, 2)
     }
 }
 
