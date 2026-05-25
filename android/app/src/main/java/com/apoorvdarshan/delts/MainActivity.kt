@@ -619,22 +619,17 @@ private fun WorkoutsScreen(
                         selectedSecondaryMuscle = it
                         if (selectedSecondaryMuscle != null) selectedPrimaryMuscle = null
                     }
-                    if (hasActiveFilters) {
-                        DeltsPillButton(
-                            title = "Reset",
-                            icon = Icons.Filled.Close,
-                            selected = false
-                        ) {
-                            resetLibraryFilters()
-                        }
-                    }
                 }
             }
 
             ResultsHeader(
                 title = "${filteredExercises.size} ${if (filteredExercises.size == 1) "exercise" else "exercises"}",
                 subtitle = selectedSort.title,
-                icon = Icons.Filled.Lock
+                onReset = if (hasActiveFilters) {
+                    { resetLibraryFilters() }
+                } else {
+                    null
+                }
             )
             filteredExercises.forEach { item ->
                 ExerciseLibraryRow(item = item)
@@ -1553,13 +1548,20 @@ private fun ExercisePlanRow(exercise: ExercisePlan) {
 }
 
 @Composable
-private fun ResultsHeader(title: String, subtitle: String, icon: ImageVector) {
+private fun ResultsHeader(title: String, subtitle: String, onReset: (() -> Unit)? = null) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(text = title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
             Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+        if (onReset != null) {
+            DeltsPillButton(
+                title = "Reset",
+                icon = Icons.Filled.Close,
+                selected = false,
+                onClick = onReset
+            )
+        }
     }
 }
 
@@ -3193,20 +3195,20 @@ private val issueOptions = listOf(
 )
 
 private val sampleExerciseLibrary = listOf(
-    ExerciseItem("Barbell Bench Press", "Chest", "Barbell", "Intermediate", "Offline media", Icons.Filled.FitnessCenter, emptyList()),
-    ExerciseItem("Incline Dumbbell Press", "Chest", "Dumbbells", "Intermediate", "Offline media", Icons.Filled.FitnessCenter, emptyList()),
-    ExerciseItem("Cable Crossover", "Chest", "Cable Machine", "Beginner", "Offline media", Icons.Filled.Build, emptyList()),
-    ExerciseItem("Lat Pulldown", "Back", "Cable Machine", "Beginner", "Offline media", Icons.Filled.FitnessCenter, emptyList()),
-    ExerciseItem("One-Arm Dumbbell Row", "Back", "Dumbbells", "Intermediate", "Offline media", Icons.Filled.FitnessCenter, emptyList()),
-    ExerciseItem("Seated Cable Row", "Back", "Cable Machine", "Beginner", "Offline media", Icons.Filled.Build, emptyList()),
-    ExerciseItem("Dumbbell Shoulder Press", "Shoulders", "Dumbbells", "Intermediate", "Offline media", Icons.Filled.FitnessCenter, emptyList()),
-    ExerciseItem("Lateral Raise", "Shoulders", "Dumbbells", "Beginner", "Offline media", Icons.Filled.FitnessCenter, emptyList()),
-    ExerciseItem("Back Squat", "Legs", "Barbell", "Advanced", "Offline media", Icons.Filled.DirectionsRun, emptyList()),
-    ExerciseItem("Goblet Squat", "Legs", "Dumbbells", "Beginner", "Offline media", Icons.Filled.DirectionsRun, emptyList()),
-    ExerciseItem("Dumbbell Curl", "Arms", "Dumbbells", "Beginner", "Offline media", Icons.Filled.FitnessCenter, emptyList()),
-    ExerciseItem("Cable Triceps Pressdown", "Arms", "Cable Machine", "Beginner", "Offline media", Icons.Filled.Build, emptyList()),
-    ExerciseItem("Plank", "Core", "Bodyweight", "Beginner", "Offline media", Icons.Filled.Favorite, emptyList()),
-    ExerciseItem("Cable Woodchop", "Core", "Cable Machine", "Intermediate", "Offline media", Icons.Filled.Build, emptyList())
+    ExerciseItem("Barbell Bench Press", "Chest", "Barbell", "Intermediate", "Barbell", Icons.Filled.FitnessCenter, emptyList()),
+    ExerciseItem("Incline Dumbbell Press", "Chest", "Dumbbells", "Intermediate", "Dumbbells", Icons.Filled.FitnessCenter, emptyList()),
+    ExerciseItem("Cable Crossover", "Chest", "Cable Machine", "Beginner", "Cable Machine", Icons.Filled.Build, emptyList()),
+    ExerciseItem("Lat Pulldown", "Back", "Cable Machine", "Beginner", "Cable Machine", Icons.Filled.FitnessCenter, emptyList()),
+    ExerciseItem("One-Arm Dumbbell Row", "Back", "Dumbbells", "Intermediate", "Dumbbells", Icons.Filled.FitnessCenter, emptyList()),
+    ExerciseItem("Seated Cable Row", "Back", "Cable Machine", "Beginner", "Cable Machine", Icons.Filled.Build, emptyList()),
+    ExerciseItem("Dumbbell Shoulder Press", "Shoulders", "Dumbbells", "Intermediate", "Dumbbells", Icons.Filled.FitnessCenter, emptyList()),
+    ExerciseItem("Lateral Raise", "Shoulders", "Dumbbells", "Beginner", "Dumbbells", Icons.Filled.FitnessCenter, emptyList()),
+    ExerciseItem("Back Squat", "Legs", "Barbell", "Advanced", "Barbell", Icons.Filled.DirectionsRun, emptyList()),
+    ExerciseItem("Goblet Squat", "Legs", "Dumbbells", "Beginner", "Dumbbells", Icons.Filled.DirectionsRun, emptyList()),
+    ExerciseItem("Dumbbell Curl", "Arms", "Dumbbells", "Beginner", "Dumbbells", Icons.Filled.FitnessCenter, emptyList()),
+    ExerciseItem("Cable Triceps Pressdown", "Arms", "Cable Machine", "Beginner", "Cable Machine", Icons.Filled.Build, emptyList()),
+    ExerciseItem("Plank", "Core", "Bodyweight", "Beginner", "Bodyweight", Icons.Filled.Favorite, emptyList()),
+    ExerciseItem("Cable Woodchop", "Core", "Cable Machine", "Intermediate", "Cable Machine", Icons.Filled.Build, emptyList())
 )
 
 @Preview(showBackground = true)

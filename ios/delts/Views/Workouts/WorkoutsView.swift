@@ -88,8 +88,11 @@ private struct ExerciseLibraryBrowserView: View {
                         count: items.count,
                         noun: "exercise",
                         subtitle: selectedSort.title,
-                        trailingTitle: "Offline media",
-                        trailingSystemImage: "wifi.slash"
+                        onReset: hasActiveFilters ? {
+                            withAnimation(.snappy) {
+                                resetFilters()
+                            }
+                        } : nil
                     )
                     .padding(.horizontal, 20)
                     .padding(.bottom, 4)
@@ -269,16 +272,6 @@ private struct ExerciseLibraryBrowserView: View {
                         }
                     }
 
-                    if hasActiveFilters {
-                        Button {
-                            withAnimation(.snappy) {
-                                resetFilters()
-                            }
-                        } label: {
-                            FilterResetPill()
-                        }
-                        .deltsPressable()
-                    }
                 }
                 .padding(.vertical, 1)
             }
@@ -517,38 +510,6 @@ private struct WorkoutsSearchPill: View {
     }
 }
 
-private struct WorkoutFilterResetLabel: View {
-    var body: some View {
-        WorkoutFilterRow(title: "Reset", systemImage: "arrow.counterclockwise") {
-            Text("Clear filters")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(Color.deltsInferno)
-                .lineLimit(1)
-        }
-    }
-}
-
-private struct FilterResetPill: View {
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "arrow.counterclockwise")
-                .font(.system(size: 14, weight: .bold))
-
-            Text("Reset")
-                .font(.subheadline.weight(.bold))
-                .lineLimit(1)
-        }
-        .foregroundStyle(Color.deltsInferno)
-        .padding(.horizontal, 13)
-        .frame(height: 46)
-        .background(Color.deltsInferno.opacity(0.10), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 17, style: .continuous)
-                .stroke(Color.deltsInferno.opacity(0.30), lineWidth: 0.5)
-        }
-    }
-}
-
 private struct FilterMenuPill: View {
     let title: String
     let value: String
@@ -605,8 +566,7 @@ private struct ResultsHeader: View {
     let count: Int
     let noun: String
     let subtitle: String
-    let trailingTitle: String
-    var trailingSystemImage: String?
+    var onReset: (() -> Void)?
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
@@ -623,17 +583,25 @@ private struct ResultsHeader: View {
 
             Spacer()
 
-            Label {
-                Text(trailingTitle)
-                    .textCase(nil)
-            } icon: {
-                if let trailingSystemImage {
-                    Image(systemName: trailingSystemImage)
+            if let onReset {
+                Button {
+                    onReset()
+                } label: {
+                    Label("Reset", systemImage: "arrow.counterclockwise")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.deltsInferno)
+                        .lineLimit(1)
+                        .padding(.horizontal, 11)
+                        .frame(height: 34)
+                        .background(Color.deltsInferno.opacity(0.10), in: Capsule())
+                        .overlay {
+                            Capsule()
+                                .stroke(Color.deltsInferno.opacity(0.28), lineWidth: 0.5)
+                        }
                 }
+                .buttonStyle(.plain)
+                .deltsPressable()
             }
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(Color.deltsMutedText)
-            .lineLimit(1)
         }
         .padding(.top, 6)
     }
