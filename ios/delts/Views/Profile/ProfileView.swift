@@ -619,28 +619,6 @@ private struct ProfileHero: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top, spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.deltsAccent, Color.deltsSecondaryAccent],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .shadow(color: Color.deltsAccent.opacity(0.20), radius: 14, x: 0, y: 8)
-
-                    Circle()
-                        .stroke(Color.deltsOnAccent.opacity(0.22), lineWidth: 1)
-                        .padding(0.5)
-
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 31, weight: .bold))
-                        .symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(Color.deltsOnAccent)
-                }
-                .frame(width: 58, height: 58)
-
                 VStack(alignment: .leading, spacing: 6) {
                     Text(displayName)
                         .font(.system(.title2, design: .rounded, weight: .bold))
@@ -653,7 +631,6 @@ private struct ProfileHero: View {
                         .foregroundStyle(Color.deltsMutedText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.top, 3)
 
                 Spacer(minLength: 8)
             }
@@ -701,15 +678,10 @@ private struct ProfileHeroMetric: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
-            ZStack {
-                Circle()
-                    .fill(Color.deltsAccent.opacity(0.14))
-
-                Image(systemName: systemImage)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(Color.deltsAccent)
-            }
-            .frame(width: 30, height: 30)
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(Color.deltsAccent)
+                .frame(width: 30, height: 30)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(value)

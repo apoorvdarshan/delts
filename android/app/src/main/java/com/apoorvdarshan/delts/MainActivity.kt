@@ -1591,17 +1591,7 @@ private fun ProfileHero(profile: AndroidProfile) {
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                Box(
-                    modifier = Modifier
-                        .size(58.dp)
-                        .clip(CircleShape)
-                        .background(DeltsAccent),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Filled.Person, contentDescription = null, tint = DeltsOnAccent, modifier = Modifier.size(34.dp))
-                }
-
+            Row(verticalAlignment = Alignment.Top) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text(
                         text = profile.displayName,
@@ -1642,15 +1632,7 @@ private fun ProfileMetric(title: String, value: String, icon: ImageVector, modif
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(30.dp)
-                    .clip(CircleShape)
-                    .background(DeltsAccent.copy(alpha = 0.14f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(icon, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(16.dp))
-            }
+            Icon(icon, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(22.dp))
             Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 Text(text = value, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onBackground, maxLines = 1)
                 Text(text = title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
