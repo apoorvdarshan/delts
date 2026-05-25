@@ -1649,37 +1649,40 @@ private fun ProfileSection(
     badge: String? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(
+    Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.weight(1f)
+                )
+                if (badge != null) {
+                    Text(
+                        text = badge,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = DeltsAccent,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(DeltsAccent.copy(alpha = 0.11f))
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                    )
+                }
+            }
+            Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Box(
                 modifier = Modifier
-                    .width(4.dp)
-                    .height(36.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(DeltsAccent)
+                    .width(42.dp)
+                    .height(2.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(DeltsAccent.copy(alpha = 0.78f))
             )
-            Icon(icon, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(30.dp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(text = title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
-                Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            if (badge != null) {
-                Text(
-                    text = badge,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = DeltsAccent,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(DeltsAccent.copy(alpha = 0.11f))
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                )
-            }
         }
         Surface(
             modifier = Modifier.fillMaxWidth(),

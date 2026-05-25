@@ -731,43 +731,37 @@ private struct ProfileSection<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 12) {
-                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .fill(Color.deltsAccent)
-                    .frame(width: 4, height: 36)
-
-                Image(systemName: systemImage)
-                    .font(.system(size: 18, weight: .bold))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(Color.deltsAccent)
-                    .frame(width: 30, height: 30)
-
-                VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 11) {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Text(title)
-                        .font(.title3.weight(.bold))
+                        .font(.headline.weight(.bold))
                         .foregroundStyle(Color.deltsCharcoal)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    if let subtitle {
-                        Text(subtitle)
-                            .font(.footnote)
-                            .foregroundStyle(Color.deltsMutedText)
-                            .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 10)
+
+                    if let badge {
+                        Text(badge)
+                            .font(.caption.weight(.bold))
+                            .monospacedDigit()
+                            .foregroundStyle(Color.deltsAccent)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.deltsAccent.opacity(0.11), in: Capsule())
                     }
                 }
 
-                Spacer(minLength: 10)
-
-                if let badge {
-                    Text(badge)
-                        .font(.caption.weight(.bold))
-                        .monospacedDigit()
-                        .foregroundStyle(Color.deltsAccent)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color.deltsAccent.opacity(0.11), in: Capsule())
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.footnote)
+                        .foregroundStyle(Color.deltsMutedText)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .fill(Color.deltsAccent.opacity(0.78))
+                    .frame(width: 42, height: 2)
             }
             .padding(.horizontal, 2)
             .frame(maxWidth: .infinity, alignment: .leading)
