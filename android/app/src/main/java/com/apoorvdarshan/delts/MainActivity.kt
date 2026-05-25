@@ -631,31 +631,13 @@ private fun WorkoutsScreen(
                 }
             }
 
-            if (!hasActiveFilters) {
-                Text(
-                    text = "Select Body Part",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                TwoColumnGrid(muscles) { option ->
-                    val preview = exerciseLibrary.firstOrNull { it.muscle == option.title && it.imagePaths.isNotEmpty() }
-                    MuscleCard(
-                        option = option,
-                        previewImagePaths = preview?.imagePaths.orEmpty(),
-                        selected = false
-                    ) {
-                        selectedMuscle = option.title
-                    }
-                }
-            } else {
-                ResultsHeader(
-                    title = "${filteredExercises.size} ${if (filteredExercises.size == 1) "exercise" else "exercises"}",
-                    subtitle = selectedSort.title,
-                    icon = Icons.Filled.Lock
-                )
-                filteredExercises.forEach { item ->
-                    ExerciseLibraryRow(item = item)
-                }
+            ResultsHeader(
+                title = "${filteredExercises.size} ${if (filteredExercises.size == 1) "exercise" else "exercises"}",
+                subtitle = selectedSort.title,
+                icon = Icons.Filled.Lock
+            )
+            filteredExercises.forEach { item ->
+                ExerciseLibraryRow(item = item)
             }
         }
     }

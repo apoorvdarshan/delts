@@ -67,22 +67,6 @@ private struct ExerciseLibraryBrowserView: View {
             selectedSort != .bodyPart
     }
 
-    private var hasLibrarySelection: Bool {
-        !searchText.isEmpty ||
-            selectedMuscleGroup != nil ||
-            selectedLevel != nil ||
-            selectedGoal != nil ||
-            selectedEquipment != nil ||
-            selectedEquipmentFamily != .all ||
-            selectedRawEquipment != nil ||
-            selectedPrimaryMuscle != nil ||
-            selectedSecondaryMuscle != nil ||
-            selectedForce != nil ||
-            selectedMechanic != nil ||
-            selectedCategory != nil ||
-            selectedMedia != .all
-    }
-
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
@@ -91,14 +75,7 @@ private struct ExerciseLibraryBrowserView: View {
                     .padding(.top, 18)
                     .padding(.bottom, 18)
 
-                if !hasLibrarySelection {
-                    WorkoutLibraryFocusChooser { group in
-                        withAnimation(.snappy) {
-                            selectedMuscleGroup = group
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                } else if items.isEmpty {
+                if items.isEmpty {
                     ContentUnavailableView(
                         "No exercises match",
                         systemImage: "line.3.horizontal.decrease",
@@ -621,62 +598,6 @@ private struct FilterMenuPill: View {
                 )
         }
         .contentShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
-    }
-}
-
-private struct WorkoutLibraryFocusChooser: View {
-    let select: (MuscleGroup) -> Void
-
-    private let columns = [
-        GridItem(.adaptive(minimum: 156), spacing: 12, alignment: .top)
-    ]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Select Body Part")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(Color.deltsCharcoal)
-
-            LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
-                ForEach(MuscleGroup.allCases) { group in
-                    Button {
-                        select(group)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 9) {
-                            AnimatedExerciseVisual(
-                                muscleGroup: group,
-                                height: 102
-                            )
-
-                            HStack(spacing: 8) {
-                                Image(systemName: group.icon)
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(Color.deltsAccent)
-
-                                Text(group.title)
-                                    .font(.headline.weight(.semibold))
-                                    .foregroundStyle(Color.deltsCharcoal)
-                                    .lineLimit(1)
-
-                                Spacer(minLength: 0)
-
-                                Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(Color.deltsMutedText)
-                            }
-                        }
-                        .padding(9)
-                        .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
-                        }
-                    }
-                    .deltsPressable()
-                }
-            }
-        }
-        .padding(.bottom, 18)
     }
 }
 
