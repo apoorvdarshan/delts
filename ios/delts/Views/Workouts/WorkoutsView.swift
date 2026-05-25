@@ -534,19 +534,9 @@ private struct WorkoutsSearchPill: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 12)
-        .frame(maxWidth: .infinity, minHeight: 46, alignment: .leading)
-        .background(
-            Color.deltsPanel.opacity(searchText.isEmpty ? 0.30 : 0.46),
-            in: RoundedRectangle(cornerRadius: 17, style: .continuous)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 17, style: .continuous)
-                .stroke(
-                    (searchText.isEmpty ? Color.deltsHairline : Color.deltsAccent).opacity(searchText.isEmpty ? 0.30 : 0.42),
-                    lineWidth: 0.5
-                )
-        }
+        .padding(.horizontal, 14)
+        .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
+        .deltsLiquidBarSurface(cornerRadius: 22)
     }
 }
 
