@@ -731,21 +731,21 @@ private struct ProfileSection<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Rectangle()
-                .fill(Color.deltsHairline.opacity(0.42))
-                .frame(height: 0.5)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(Color.deltsAccent)
+                    .frame(width: 4, height: 42)
 
-            HStack(alignment: .top, spacing: 12) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 18, weight: .bold))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(Color.deltsAccent)
-                    .frame(width: 28, height: 28)
+                    .frame(width: 30, height: 30)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.subheadline.weight(.bold))
+                        .font(.title3.weight(.bold))
                         .foregroundStyle(Color.deltsCharcoal)
                         .fixedSize(horizontal: false, vertical: true)
 
@@ -768,6 +768,14 @@ private struct ProfileSection<Content: View>: View {
                         .padding(.vertical, 5)
                         .background(Color.deltsAccent.opacity(0.11), in: Capsule())
                 }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 13)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(Color.deltsHairline.opacity(0.38), lineWidth: 0.75)
             }
 
             content
