@@ -26,6 +26,8 @@ struct ProfileView: View {
 
 private struct ProfileEditorView: View {
     @Bindable var profile: UserProfile
+    @State private var geminiAPIKey = LocalGeminiKeyStore.apiKey ?? ""
+    @State private var hasSavedGeminiKey = GeminiConfig.hasAPIKey
 
     private let genderOptions = ["Male", "Female", "Non-binary", "Prefer not to say"]
     private let durationOptions = [30, 45, 60, 90]
@@ -37,6 +39,7 @@ private struct ProfileEditorView: View {
                 ProfileHero(profile: profile)
                 identitySection
                 goalSection
+                aiSettingsSection
                 bodyFocusSection
                 scheduleSection
                 equipmentSection
@@ -109,6 +112,22 @@ private struct ProfileEditorView: View {
                 ProfileDivider()
                 ProfileTextAreaRow(title: "Extra goals", systemImage: "text.alignleft", text: extraGoalsBinding)
             }
+        }
+    }
+
+    private var aiSettingsSection: some View {
+        ProfileSection(
+            title: "AI Settings",
+            subtitle: "Gemini BYOK stays on this device.",
+            systemImage: "key.fill",
+            badge: hasSavedGeminiKey ? "Ready" : "Local"
+        ) {
+            GeminiKeySettingsCard(
+                apiKey: $geminiAPIKey,
+                hasSavedKey: hasSavedGeminiKey,
+                save: saveGeminiKey,
+                clear: clearGeminiKey
+            )
         }
     }
 
@@ -388,6 +407,18 @@ private struct ProfileEditorView: View {
             profile.updatedAt = Date()
         }
     }
+
+    private func saveGeminiKey() {
+        LocalGeminiKeyStore.save(geminiAPIKey)
+        geminiAPIKey = LocalGeminiKeyStore.apiKey ?? ""
+        hasSavedGeminiKey = GeminiConfig.hasAPIKey
+    }
+
+    private func clearGeminiKey() {
+        LocalGeminiKeyStore.clear()
+        geminiAPIKey = ""
+        hasSavedGeminiKey = false
+    }
 }
 
 private struct ProfileScreenHeader: View {
@@ -408,6 +439,67 @@ private struct ProfileScreenHeader: View {
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct GeminiKeySettingsCard: View {
+    @Binding var apiKey: String
+    let hasSavedKey: Bool
+    let save: () -> Void
+    let clear: () -> Void
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: hasSavedKey ? "checkmark.seal.fill" : "bolt.slash.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(hasSavedKey ? Color.deltsAccent : Color.deltsWarning)
+                    .frame(width: 30, height: 30)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Gemini Key")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                    Text(hasSavedKey ? "Saved on device" : "Offline planner")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                }
+
+                Spacer(minLength: 8)
+            }
+
+            SecureField("Paste API key", text: $apiKey)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .textContentType(.password)
+                .focused($isFocused)
+                .submitLabel(.done)
+                .onSubmit(save)
+                .padding(.horizontal, 12)
+                .frame(minHeight: 44)
+                .background(Color.deltsPanel.opacity(0.20), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.deltsHairline.opacity(isFocused ? 0.58 : 0.30), lineWidth: 0.75)
+                }
+
+            HStack(spacing: 10) {
+                Button("Clear", action: clear)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .frame(maxWidth: .infinity, minHeight: 42)
+                    .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                Button("Save Key", action: save)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.deltsOnAccent)
+                    .frame(maxWidth: .infinity, minHeight: 42)
+                    .background(Color.deltsAccent, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .deltsPressable()
+        }
+        .padding(.vertical, 4)
     }
 }
 
