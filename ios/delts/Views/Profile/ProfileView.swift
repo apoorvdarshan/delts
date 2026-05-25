@@ -164,6 +164,8 @@ private struct ProfileEditorView: View {
     @Bindable var profile: UserProfile
     @AppStorage("profile_measurement_system") private var measurementSystemRaw = MeasurementSystem.metric.rawValue
     @AppStorage("profile_custom_workout_split") private var customWorkoutSplit = ""
+    @AppStorage("profile_selected_goals") private var selectedGoalRawValues = ""
+    @AppStorage("profile_extra_issues") private var extraIssues = ""
     @AppStorage("profile_ai_provider") private var aiProvider = "Gemini"
     @AppStorage("profile_ai_custom_provider") private var aiCustomProvider = ""
     @AppStorage("profile_ai_model") private var aiModel = AIProviderCatalog.defaultModel(for: "Gemini")
@@ -183,6 +185,10 @@ private struct ProfileEditorView: View {
     private let frequencyOptions = Array(1...7)
     private let durationRange = 1...300
     private let aiProviderOptions = AIProviderCatalog.providerNames
+    private let otherGoalTitle = "Other"
+    private var profileGoalOptions: [String] {
+        FitnessGoal.profileCases.map(\.title) + [otherGoalTitle]
+    }
 
     var body: some View {
         ScrollView {
@@ -270,8 +276,8 @@ private struct ProfileEditorView: View {
 
     private var goalSection: some View {
         ProfileSection(
-            title: "Goals",
-            subtitle: "Set the training bias before plans are generated.",
+            title: "Goals & Constraints",
+            subtitle: "Training targets, focus, and limits before plans are generated.",
             systemImage: "scope"
         ) {
             ProfileRowStack {
@@ -283,13 +289,17 @@ private struct ProfileEditorView: View {
                     label: { $0.title }
                 )
                 ProfileDivider()
-                ProfileMenuPicker(
-                    title: "Main goal",
+                ProfileMultiSelectMenuRow(
+                    title: "Goals",
                     systemImage: "flag.checkered",
-                    selection: mainGoalBinding,
-                    options: FitnessGoal.profileCases,
-                    label: { $0.title }
+                    options: profileGoalOptions,
+                    selection: selectedGoalsBinding,
+                    label: { $0 }
                 )
+                if selectedGoalTitles.contains(otherGoalTitle) {
+                    ProfileDivider()
+                    ProfileTextAreaRow(title: "Extra goals", systemImage: "text.alignleft", text: extraGoalsBinding)
+                }
                 ProfileDivider()
                 ProfileMultiSelectMenuRow(
                     title: "Body parts",
@@ -299,8 +309,6 @@ private struct ProfileEditorView: View {
                     label: { $0.title }
                 )
                 ProfileDivider()
-                ProfileTextAreaRow(title: "Extra goals", systemImage: "text.alignleft", text: extraGoalsBinding)
-                ProfileDivider()
                 ProfileMultiSelectMenuRow(
                     title: "Issues",
                     systemImage: "exclamationmark.triangle.fill",
@@ -308,6 +316,14 @@ private struct ProfileEditorView: View {
                     selection: issuesBinding,
                     label: { $0.title }
                 )
+                if profile.fitnessIssues.contains(.other) {
+                    ProfileDivider()
+                    ProfileTextAreaRow(
+                        title: "Extra issues",
+                        systemImage: "text.bubble",
+                        text: extraIssuesBinding
+                    )
+                }
             }
         }
     }
@@ -598,6 +614,14 @@ private struct ProfileEditorView: View {
         }
     }
 
+    private var extraIssuesBinding: Binding<String> {
+        Binding {
+            extraIssues
+        } set: { newValue in
+            extraIssues = newValue
+        }
+    }
+
     private var measurementSystem: MeasurementSystem {
         MeasurementSystem(rawValue: measurementSystemRaw) ?? .metric
     }
@@ -644,12 +668,37 @@ private struct ProfileEditorView: View {
         }
     }
 
-    private var mainGoalBinding: Binding<FitnessGoal> {
+    private var selectedGoalTitles: Set<String> {
+        let storedGoals = Set(
+            selectedGoalRawValues
+                .split(separator: "|")
+                .map(String.init)
+                .filter { profileGoalOptions.contains($0) }
+        )
+        if !storedGoals.isEmpty {
+            return storedGoals
+        }
+
+        var defaultGoals: Set<String> = [profile.mainGoal.title]
+        if !profile.extraGoals.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            defaultGoals.insert(otherGoalTitle)
+        }
+        return defaultGoals
+    }
+
+    private var selectedGoalsBinding: Binding<Set<String>> {
         Binding {
-            profile.mainGoal
+            selectedGoalTitles
         } set: { newValue in
-            profile.mainGoal = newValue
-            profile.updatedAt = Date()
+            let normalizedGoals = Set(newValue.filter { profileGoalOptions.contains($0) })
+            let nextGoals = normalizedGoals.isEmpty ? Set([profile.mainGoal.title]) : normalizedGoals
+            selectedGoalRawValues = nextGoals.sorted().joined(separator: "|")
+
+            if let primaryTitle = profileGoalOptions.first(where: { $0 != otherGoalTitle && nextGoals.contains($0) }),
+               let primaryGoal = FitnessGoal(rawValue: primaryTitle) {
+                profile.mainGoal = primaryGoal
+                profile.updatedAt = Date()
+            }
         }
     }
 

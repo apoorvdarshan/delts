@@ -85,7 +85,19 @@ final class GeminiWorkoutService {
     ) -> String {
         let equipmentText = equipment.map(\.title).sorted().joined(separator: ", ")
         let bodyFocusText = profile.selectedBodyFocus.map(\.title).sorted().joined(separator: ", ")
-        let issuesText = profile.fitnessIssues.map(\.title).sorted().joined(separator: ", ")
+        let selectedGoalText = UserDefaults.standard.string(forKey: "profile_selected_goals")?
+            .split(separator: "|")
+            .map(String.init)
+            .joined(separator: ", ")
+        let goalsText = selectedGoalText?.isEmpty == false ? selectedGoalText ?? profile.mainGoal.title : profile.mainGoal.title
+        let extraIssues = UserDefaults.standard.string(forKey: "profile_extra_issues")?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        var issueTitles = profile.fitnessIssues.map(\.title).sorted()
+        if profile.fitnessIssues.contains(.other), !extraIssues.isEmpty {
+            issueTitles.removeAll { $0 == FitnessIssue.other.title }
+            issueTitles.append("\(FitnessIssue.other.title): \(extraIssues)")
+        }
+        let issuesText = issueTitles.joined(separator: ", ")
         let customWorkoutSplit = UserDefaults.standard.string(forKey: "profile_custom_workout_split")?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let workoutSplitText: String
@@ -107,7 +119,7 @@ final class GeminiWorkoutService {
         - Current body fat: \(profile.currentBodyFatPercentage)%
         - Desired body fat: \(profile.desiredBodyFatPercentage)%
         - Experience: \(profile.experienceLevel.title)
-        - Main goal: \(profile.mainGoal.title)
+        - Goals: \(goalsText)
         - Body focus: \(bodyFocusText)
         - Split: \(workoutSplitText)
         - Issues: \(issuesText)

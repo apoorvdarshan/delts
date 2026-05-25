@@ -782,8 +782,8 @@ private fun ProfileScreen(
         }
 
         ProfileSection(
-            title = "Goals",
-            subtitle = "Set the training bias before plans are generated.",
+            title = "Goals & Constraints",
+            subtitle = "Training targets, focus, and limits before plans are generated.",
             icon = Icons.Filled.Flag
         ) {
             CompactDropdownRow(
@@ -794,13 +794,29 @@ private fun ProfileScreen(
                 selectedOption = profile.experience
             ) { updateProfile(profile.copy(experience = it)) }
             ProfileRowDivider()
-            CompactDropdownRow(
-                title = "Main goal",
+            CompactMultiSelectRow(
+                title = "Goals",
                 icon = Icons.Filled.Flag,
-                value = profile.mainGoal,
-                options = goals,
-                selectedOption = profile.mainGoal
-            ) { updateProfile(profile.copy(mainGoal = it)) }
+                items = profileGoalOptions,
+                selected = profile.selectedGoals.ifEmpty { setOf(profile.mainGoal) },
+            ) { item ->
+                val nextGoals = toggleInSet(profile.selectedGoals.ifEmpty { setOf(profile.mainGoal) }, item)
+                    .ifEmpty { setOf(profile.mainGoal) }
+                val primaryGoal = profileGoalOptions.firstOrNull {
+                    it != otherGoalOption && nextGoals.contains(it)
+                } ?: profile.mainGoal
+                updateProfile(profile.copy(mainGoal = primaryGoal, selectedGoals = nextGoals))
+            }
+            if (profile.selectedGoals.contains(otherGoalOption)) {
+                ProfileRowDivider()
+                CompactTextFieldRow(
+                    title = "Extra goals",
+                    icon = Icons.Filled.List,
+                    value = profile.extraGoals,
+                    placeholder = "Optional",
+                    onValueChange = { updateProfile(profile.copy(extraGoals = it)) }
+                )
+            }
             ProfileRowDivider()
             CompactMultiSelectRow(
                 title = "Body parts",
@@ -811,14 +827,6 @@ private fun ProfileScreen(
                 updateProfile(profile.copy(bodyFocus = toggleInSet(profile.bodyFocus, item)))
             }
             ProfileRowDivider()
-            CompactTextFieldRow(
-                title = "Extra goals",
-                icon = Icons.Filled.List,
-                value = profile.extraGoals,
-                placeholder = "Optional",
-                onValueChange = { updateProfile(profile.copy(extraGoals = it)) }
-            )
-            ProfileRowDivider()
             CompactMultiSelectRow(
                 title = "Issues",
                 icon = Icons.Filled.Warning,
@@ -826,6 +834,16 @@ private fun ProfileScreen(
                 selected = profile.issues,
             ) { item ->
                 updateProfile(profile.copy(issues = toggleInSet(profile.issues, item)))
+            }
+            if (profile.issues.contains(otherIssueOption)) {
+                ProfileRowDivider()
+                CompactTextFieldRow(
+                    title = "Extra issues",
+                    icon = Icons.Filled.List,
+                    value = profile.extraIssues,
+                    placeholder = "Optional",
+                    onValueChange = { updateProfile(profile.copy(extraIssues = it)) }
+                )
             }
         }
 
@@ -2619,8 +2637,18 @@ private fun nearestDuration(value: Int): Int =
 private val AndroidProfile.displayName: String
     get() = name.trim().ifEmpty { "Athlete" }
 
-private fun SharedPreferences.loadProfile(): AndroidProfile =
-    AndroidProfile(
+private fun SharedPreferences.loadProfile(): AndroidProfile {
+    val mainGoal = getString("profile_goal", "Muscle Gain").orEmpty()
+    val extraGoals = getString("profile_extra_goals", "").orEmpty()
+    val defaultGoals = buildSet {
+        add(mainGoal)
+        if (extraGoals.isNotBlank()) {
+            add(otherGoalOption)
+        }
+    }
+    val selectedGoals = getStringSet("profile_goals", defaultGoals) ?: defaultGoals
+
+    return AndroidProfile(
         name = getString("profile_name", "Athlete").orEmpty(),
         age = getInt("profile_age", 24),
         heightCm = getDoubleCompat("profile_height_cm", 178.0),
@@ -2628,8 +2656,10 @@ private fun SharedPreferences.loadProfile(): AndroidProfile =
         currentBodyFat = getDoubleCompat("profile_bodyfat_current", 18.0),
         desiredBodyFat = getDoubleCompat("profile_bodyfat_desired", 12.0),
         experience = getString("profile_experience", "Intermediate").orEmpty(),
-        mainGoal = getString("profile_goal", "Muscle Gain").orEmpty(),
-        extraGoals = getString("profile_extra_goals", "").orEmpty(),
+        mainGoal = mainGoal,
+        selectedGoals = selectedGoals,
+        extraGoals = extraGoals,
+        extraIssues = getString("profile_extra_issues", "").orEmpty(),
         frequency = getInt("profile_frequency", 4),
         workoutSplit = getString("profile_workout_split", "Push Pull Legs").orEmpty(),
         customWorkoutSplit = getString("profile_custom_workout_split", "").orEmpty(),
@@ -2638,6 +2668,7 @@ private fun SharedPreferences.loadProfile(): AndroidProfile =
         bodyFocus = getStringSet("profile_focus", setOf("Chest", "Shoulders", "Back")) ?: emptySet(),
         issues = getStringSet("profile_issues", emptySet()) ?: emptySet()
     )
+}
 
 private fun SharedPreferences.saveProfile(profile: AndroidProfile) {
     edit()
@@ -2650,7 +2681,9 @@ private fun SharedPreferences.saveProfile(profile: AndroidProfile) {
         .putString("profile_bodyfat_desired", formatOneDecimal(profile.desiredBodyFat))
         .putString("profile_experience", profile.experience)
         .putString("profile_goal", profile.mainGoal)
+        .putStringSet("profile_goals", profile.selectedGoals)
         .putString("profile_extra_goals", profile.extraGoals)
+        .putString("profile_extra_issues", profile.extraIssues)
         .putInt("profile_frequency", profile.frequency)
         .putString("profile_workout_split", profile.workoutSplit)
         .putString("profile_custom_workout_split", profile.customWorkoutSplit)
@@ -2755,7 +2788,9 @@ private data class AndroidProfile(
     val desiredBodyFat: Double,
     val experience: String,
     val mainGoal: String,
+    val selectedGoals: Set<String>,
     val extraGoals: String,
+    val extraIssues: String,
     val frequency: Int,
     val workoutSplit: String,
     val customWorkoutSplit: String,
@@ -3055,6 +3090,8 @@ private val muscles = listOf(
 
 private val levels = listOf("Beginner", "Intermediate", "Advanced")
 private val goals = listOf("Muscle Gain", "Fat Loss", "Strength", "Beginner Form")
+private const val otherGoalOption = "Other"
+private val profileGoalOptions = goals + otherGoalOption
 private val frequencyOptions = (1..7).map { "$it days/week" }
 private val workoutSplitOptions = listOf("Full Body", "Push Pull Legs", "Upper Lower", "Bro Split", "Custom")
 private val durations = listOf(30, 45, 60, 90)
@@ -3189,13 +3226,16 @@ private val bodyFocusOptions = listOf(
     DeltsOption("Core", "Trunk.", Icons.Filled.Favorite)
 )
 
+private const val otherIssueOption = "Other"
+
 private val issueOptions = listOf(
     DeltsOption("Low motivation", "Consistency risk.", Icons.Filled.Warning),
     DeltsOption("No equipment", "Gear limits.", Icons.Filled.Warning),
     DeltsOption("Knee pain", "Lower-body caution.", Icons.Filled.Warning),
     DeltsOption("Shoulder pain", "Pressing caution.", Icons.Filled.Warning),
     DeltsOption("Busy schedule", "Time pressure.", Icons.Filled.Warning),
-    DeltsOption("Beginner form", "Technique focus.", Icons.Filled.Warning)
+    DeltsOption("Beginner form", "Technique focus.", Icons.Filled.Warning),
+    DeltsOption(otherIssueOption, "Custom issue.", Icons.Filled.Warning)
 )
 
 private val sampleExerciseLibrary = listOf(
@@ -3230,7 +3270,9 @@ private fun DeltsAppPreview() {
                     desiredBodyFat = 12.0,
                     experience = "Intermediate",
                     mainGoal = "Muscle Gain",
+                    selectedGoals = setOf("Muscle Gain"),
                     extraGoals = "",
+                    extraIssues = "",
                     frequency = 4,
                     workoutSplit = "Push Pull Legs",
                     customWorkoutSplit = "",

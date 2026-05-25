@@ -111,6 +111,7 @@ enum FitnessIssue: String, CaseIterable, Identifiable, Codable, Hashable {
     case crowdedGym = "Too crowded gym"
     case injuryPain = "Injury/pain"
     case notEnoughTime = "Not enough time"
+    case other = "Other"
 
     var id: String { rawValue }
     var title: String { rawValue }
@@ -125,6 +126,7 @@ enum FitnessIssue: String, CaseIterable, Identifiable, Codable, Hashable {
         case .crowdedGym: return "person.3"
         case .injuryPain: return "cross.case"
         case .notEnoughTime: return "clock"
+        case .other: return "text.bubble"
         }
     }
 }
