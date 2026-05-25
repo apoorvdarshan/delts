@@ -1379,9 +1379,13 @@ private struct ProfileMenuPicker<Option: Hashable>: View {
                         selection = option
                     } label: {
                         if option == selection {
-                            Label(label(option), systemImage: "checkmark")
+                            Label {
+                                ProfileMenuOptionText(text: label(option))
+                            } icon: {
+                                Image(systemName: "checkmark")
+                            }
                         } else {
-                            Text(label(option))
+                            ProfileMenuOptionText(text: label(option))
                         }
                     }
                 }
@@ -1390,6 +1394,16 @@ private struct ProfileMenuPicker<Option: Hashable>: View {
             }
             .deltsPressable()
         }
+    }
+}
+
+private struct ProfileMenuOptionText: View {
+    let text: String
+
+    var body: some View {
+        Text(text.replacingOccurrences(of: " ", with: "\u{00A0}"))
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
     }
 }
 
