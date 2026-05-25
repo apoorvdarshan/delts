@@ -162,11 +162,6 @@ struct ExerciseLibraryService {
 
         return filteredItems.sorted { lhs, rhs in
             switch sort {
-            case .bodyPart:
-                if lhs.muscleGroup.title == rhs.muscleGroup.title {
-                    return lhs.name < rhs.name
-                }
-                return lhs.muscleGroup.title < rhs.muscleGroup.title
             case .name:
                 return lhs.name < rhs.name
             case .level:
@@ -174,11 +169,10 @@ struct ExerciseLibraryService {
                     return lhs.name < rhs.name
                 }
                 return lhs.level.sortRank < rhs.level.sortRank
-            case .equipment:
-                if lhs.equipment.title == rhs.equipment.title {
-                    return lhs.name < rhs.name
-                }
-                return lhs.equipment.title < rhs.equipment.title
+            case .primaryMuscles:
+                return Self.compare(lhs.primaryMusclesTitle, rhs.primaryMusclesTitle, lhsName: lhs.name, rhsName: rhs.name)
+            case .secondaryMuscles:
+                return Self.compare(lhs.secondaryMusclesTitle, rhs.secondaryMusclesTitle, lhsName: lhs.name, rhsName: rhs.name)
             case .category:
                 return Self.compare(lhs.category, rhs.category, lhsName: lhs.name, rhsName: rhs.name)
             case .force:

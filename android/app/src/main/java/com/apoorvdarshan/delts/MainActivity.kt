@@ -404,7 +404,7 @@ private fun WorkoutsScreen(
     var selectedForce by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedMechanic by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedSort by rememberSaveable { mutableStateOf(LibrarySort.BodyPart) }
+    var selectedSort by rememberSaveable { mutableStateOf(LibrarySort.Name) }
     var search by rememberSaveable { mutableStateOf("") }
 
     val levelOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.level }.distinctSorted() }
@@ -432,7 +432,7 @@ private fun WorkoutsScreen(
             selectedForce != null ||
             selectedMechanic != null ||
             selectedCategory != null ||
-            selectedSort != LibrarySort.BodyPart ||
+            selectedSort != LibrarySort.Name ||
             search.isNotBlank()
 
     fun resetLibraryFilters() {
@@ -444,7 +444,7 @@ private fun WorkoutsScreen(
         selectedForce = null
         selectedMechanic = null
         selectedCategory = null
-        selectedSort = LibrarySort.BodyPart
+        selectedSort = LibrarySort.Name
         search = ""
     }
 
@@ -516,6 +516,28 @@ private fun WorkoutsScreen(
                 )
 
                 HorizontalChipRail {
+                    LibraryFilterMenu(
+                        title = "Primary Muscles",
+                        value = selectedPrimaryMuscle ?: "All",
+                        icon = Icons.Filled.FitnessCenter,
+                        active = selectedPrimaryMuscle != null,
+                        options = primaryMuscleOptions,
+                        selectedOption = selectedPrimaryMuscle,
+                        allTitle = "All Primary Muscles"
+                    ) {
+                        selectedPrimaryMuscle = it
+                    }
+                    LibraryFilterMenu(
+                        title = "Secondary Muscles",
+                        value = selectedSecondaryMuscle ?: "All",
+                        icon = Icons.Filled.FitnessCenter,
+                        active = selectedSecondaryMuscle != null,
+                        options = secondaryMuscleOptions,
+                        selectedOption = selectedSecondaryMuscle,
+                        allTitle = "All Secondary Muscles"
+                    ) {
+                        selectedSecondaryMuscle = it
+                    }
                     MultiSelectLibraryFilterMenu(
                         title = "Body Part",
                         value = selectedMuscleTitle(),
@@ -537,6 +559,20 @@ private fun WorkoutsScreen(
                         allTitle = "All Levels"
                     ) { selectedLevel = it }
                     LibraryFilterMenu(
+                        title = "Sort",
+                        value = selectedSort.title,
+                        icon = Icons.Filled.List,
+                        active = selectedSort != LibrarySort.Name,
+                        options = LibrarySort.entries.filter { it != LibrarySort.Name }.map { it.title },
+                        selectedOption = selectedSort.takeUnless { it == LibrarySort.Name }?.title,
+                        allTitle = LibrarySort.Name.title
+                    ) { selected ->
+                        selectedSort = LibrarySort.entries.firstOrNull { it.title == selected } ?: LibrarySort.Name
+                    }
+                }
+
+                HorizontalChipRail {
+                    LibraryFilterMenu(
                         title = "Category",
                         value = selectedCategoryTitle(),
                         icon = Icons.Filled.List,
@@ -546,28 +582,14 @@ private fun WorkoutsScreen(
                         allTitle = "All Categories"
                     ) { selectedCategory = it }
                     LibraryFilterMenu(
-                        title = "Raw Gear",
+                        title = "Equipment",
                         value = selectedRawEquipment ?: "All",
                         icon = Icons.Filled.Build,
                         active = selectedRawEquipment != null,
                         options = rawEquipmentOptions,
                         selectedOption = selectedRawEquipment,
-                        allTitle = "All Raw Gear"
+                        allTitle = "All Equipment"
                     ) { selectedRawEquipment = it }
-                    LibraryFilterMenu(
-                        title = "Sort",
-                        value = selectedSort.title,
-                        icon = Icons.Filled.List,
-                        active = selectedSort != LibrarySort.BodyPart,
-                        options = LibrarySort.entries.filter { it != LibrarySort.BodyPart }.map { it.title },
-                        selectedOption = selectedSort.takeUnless { it == LibrarySort.BodyPart }?.title,
-                        allTitle = LibrarySort.BodyPart.title
-                    ) { selected ->
-                        selectedSort = LibrarySort.entries.firstOrNull { it.title == selected } ?: LibrarySort.BodyPart
-                    }
-                }
-
-                HorizontalChipRail {
                     LibraryFilterMenu(
                         title = "Force",
                         value = selectedForce ?: "All",
@@ -586,28 +608,6 @@ private fun WorkoutsScreen(
                         selectedOption = selectedMechanic,
                         allTitle = "All Mechanics"
                     ) { selectedMechanic = it }
-                    LibraryFilterMenu(
-                        title = "Primary",
-                        value = selectedPrimaryMuscle ?: "All",
-                        icon = Icons.Filled.FitnessCenter,
-                        active = selectedPrimaryMuscle != null,
-                        options = primaryMuscleOptions,
-                        selectedOption = selectedPrimaryMuscle,
-                        allTitle = "All Primary"
-                    ) {
-                        selectedPrimaryMuscle = it
-                    }
-                    LibraryFilterMenu(
-                        title = "Secondary",
-                        value = selectedSecondaryMuscle ?: "All",
-                        icon = Icons.Filled.FitnessCenter,
-                        active = selectedSecondaryMuscle != null,
-                        options = secondaryMuscleOptions,
-                        selectedOption = selectedSecondaryMuscle,
-                        allTitle = "All Secondary"
-                    ) {
-                        selectedSecondaryMuscle = it
-                    }
                 }
             }
 
@@ -1707,9 +1707,9 @@ private fun ExerciseLibraryMetadata(item: ExerciseItem) {
             MetadataLine("Category", item.category)
             MetadataLine("Force", item.force)
             MetadataLine("Mechanic", item.mechanic)
-            MetadataLine("Raw gear", item.rawEquipment)
-            MetadataLine("Primary", item.primaryMuscles.ifEmpty { listOf("Unspecified") }.joinToString(", "))
-            MetadataLine("Secondary", item.secondaryMuscles.ifEmpty { listOf("None") }.joinToString(", "))
+            MetadataLine("Raw equipment", item.rawEquipment)
+            MetadataLine("Primary Muscles", item.primaryMuscles.ifEmpty { listOf("Unspecified") }.joinToString(", "))
+            MetadataLine("Secondary Muscles", item.secondaryMuscles.ifEmpty { listOf("None") }.joinToString(", "))
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
@@ -2789,14 +2789,14 @@ private enum class EquipmentMode {
 }
 
 private enum class LibrarySort(val title: String) {
-    BodyPart("Body Part"),
     Name("Name"),
     Level("Level"),
-    Equipment("Equipment"),
-    Category("DB Category"),
+    PrimaryMuscles("Primary Muscles"),
+    SecondaryMuscles("Secondary Muscles"),
+    Category("Category"),
     Force("Force"),
     Mechanic("Mechanic"),
-    RawEquipment("Raw Gear")
+    RawEquipment("Equipment")
 }
 
 private data class AndroidProfile(
@@ -2968,12 +2968,12 @@ private fun List<String>.distinctSorted(): List<String> =
 
 private fun LibrarySort.comparator(): Comparator<ExerciseItem> =
     when (this) {
-        LibrarySort.BodyPart -> compareBy<ExerciseItem, String>(String.CASE_INSENSITIVE_ORDER) { it.muscle }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
         LibrarySort.Name -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.name }
         LibrarySort.Level -> compareBy<ExerciseItem> { levelSortRank(it.level) }
             .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
-        LibrarySort.Equipment -> compareBy<ExerciseItem, String>(String.CASE_INSENSITIVE_ORDER) { it.equipment }
+        LibrarySort.PrimaryMuscles -> compareBy<ExerciseItem, String>(String.CASE_INSENSITIVE_ORDER) { it.primaryMusclesTitle() }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+        LibrarySort.SecondaryMuscles -> compareBy<ExerciseItem, String>(String.CASE_INSENSITIVE_ORDER) { it.secondaryMusclesTitle() }
             .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
         LibrarySort.Category -> compareBy<ExerciseItem, String>(String.CASE_INSENSITIVE_ORDER) { it.category }
             .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
@@ -2984,6 +2984,12 @@ private fun LibrarySort.comparator(): Comparator<ExerciseItem> =
         LibrarySort.RawEquipment -> compareBy<ExerciseItem, String>(String.CASE_INSENSITIVE_ORDER) { it.rawEquipment }
             .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
     }
+
+private fun ExerciseItem.primaryMusclesTitle(): String =
+    primaryMuscles.ifEmpty { listOf("Unspecified") }.joinToString(", ")
+
+private fun ExerciseItem.secondaryMusclesTitle(): String =
+    secondaryMuscles.ifEmpty { listOf("None") }.joinToString(", ")
 
 private fun levelSortRank(level: String): Int =
     when (level) {

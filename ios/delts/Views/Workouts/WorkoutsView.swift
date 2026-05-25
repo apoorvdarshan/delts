@@ -23,7 +23,7 @@ private struct ExerciseLibraryBrowserView: View {
     @State private var selectedForce: String?
     @State private var selectedMechanic: String?
     @State private var selectedCategory: String?
-    @State private var selectedSort: ExerciseLibrarySort = .bodyPart
+    @State private var selectedSort: ExerciseLibrarySort = .name
     @State private var generatedPlan: WorkoutPlan?
 
     private let service = ExerciseLibraryService.shared
@@ -56,7 +56,7 @@ private struct ExerciseLibraryBrowserView: View {
             selectedForce != nil ||
             selectedMechanic != nil ||
             selectedCategory != nil ||
-            selectedSort != .bodyPart
+            selectedSort != .name
     }
 
     var body: some View {
@@ -123,6 +123,36 @@ private struct ExerciseLibraryBrowserView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 9) {
                     filterMenuPill(
+                        title: "Primary Muscles",
+                        value: selectedPrimaryMuscle ?? "All",
+                        systemImage: "scope"
+                    ) {
+                        menuChoice("All Primary Muscles", isSelected: selectedPrimaryMuscle == nil) {
+                            selectedPrimaryMuscle = nil
+                        }
+                        ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
+                            menuChoice(muscle, isSelected: selectedPrimaryMuscle == muscle) {
+                                selectedPrimaryMuscle = muscle
+                            }
+                        }
+                    }
+
+                    filterMenuPill(
+                        title: "Secondary Muscles",
+                        value: selectedSecondaryMuscle ?? "All",
+                        systemImage: "scope"
+                    ) {
+                        menuChoice("All Secondary Muscles", isSelected: selectedSecondaryMuscle == nil) {
+                            selectedSecondaryMuscle = nil
+                        }
+                        ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
+                            menuChoice(muscle, isSelected: selectedSecondaryMuscle == muscle) {
+                                selectedSecondaryMuscle = muscle
+                            }
+                        }
+                    }
+
+                    filterMenuPill(
                         title: "Body Part",
                         value: bodyPartFilterTitle,
                         systemImage: selectedMuscleGroups.count == 1 ? selectedMuscleGroups.first?.icon ?? "scope" : "scope"
@@ -141,6 +171,28 @@ private struct ExerciseLibraryBrowserView: View {
                         menuChoice("All Levels", isSelected: selectedLevel == nil) { selectedLevel = nil }
                         ForEach(ExperienceLevel.allCases) { level in
                             menuChoice(workoutLevelTitle(level), isSelected: selectedLevel == level) { selectedLevel = level }
+                        }
+                    }
+
+                    filterMenuPill(
+                        title: "Force",
+                        value: selectedForce ?? "All",
+                        systemImage: "arrow.left.arrow.right"
+                    ) {
+                        menuChoice("All Forces", isSelected: selectedForce == nil) { selectedForce = nil }
+                        ForEach(service.availableForces, id: \.self) { force in
+                            menuChoice(force, isSelected: selectedForce == force) { selectedForce = force }
+                        }
+                    }
+
+                    filterMenuPill(
+                        title: "Mechanic",
+                        value: selectedMechanic ?? "All",
+                        systemImage: "gearshape"
+                    ) {
+                        menuChoice("All Mechanics", isSelected: selectedMechanic == nil) { selectedMechanic = nil }
+                        ForEach(service.availableMechanics, id: \.self) { mechanic in
+                            menuChoice(mechanic, isSelected: selectedMechanic == mechanic) { selectedMechanic = mechanic }
                         }
                     }
 
@@ -174,64 +226,12 @@ private struct ExerciseLibraryBrowserView: View {
                                 }
                             }
                         }
-                        Section("Database Raw") {
+                        Section("Dataset") {
                             ForEach(service.availableRawEquipment, id: \.self) { equipment in
                                 menuChoice(equipment, isSelected: selectedRawEquipment == equipment) {
                                     selectedEquipmentFamily = .all
                                     selectedRawEquipment = equipment
                                 }
-                            }
-                        }
-                    }
-
-                    filterMenuPill(
-                        title: "Force",
-                        value: selectedForce ?? "All",
-                        systemImage: "arrow.left.arrow.right"
-                    ) {
-                        menuChoice("All Forces", isSelected: selectedForce == nil) { selectedForce = nil }
-                        ForEach(service.availableForces, id: \.self) { force in
-                            menuChoice(force, isSelected: selectedForce == force) { selectedForce = force }
-                        }
-                    }
-
-                    filterMenuPill(
-                        title: "Mechanic",
-                        value: selectedMechanic ?? "All",
-                        systemImage: "gearshape"
-                    ) {
-                        menuChoice("All Mechanics", isSelected: selectedMechanic == nil) { selectedMechanic = nil }
-                        ForEach(service.availableMechanics, id: \.self) { mechanic in
-                            menuChoice(mechanic, isSelected: selectedMechanic == mechanic) { selectedMechanic = mechanic }
-                        }
-                    }
-
-                    filterMenuPill(
-                        title: "Primary",
-                        value: selectedPrimaryMuscle ?? "All",
-                        systemImage: "scope"
-                    ) {
-                        menuChoice("All Primary", isSelected: selectedPrimaryMuscle == nil) {
-                            selectedPrimaryMuscle = nil
-                        }
-                        ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
-                            menuChoice(muscle, isSelected: selectedPrimaryMuscle == muscle) {
-                                selectedPrimaryMuscle = muscle
-                            }
-                        }
-                    }
-
-                    filterMenuPill(
-                        title: "Secondary",
-                        value: selectedSecondaryMuscle ?? "All",
-                        systemImage: "scope"
-                    ) {
-                        menuChoice("All Secondary", isSelected: selectedSecondaryMuscle == nil) {
-                            selectedSecondaryMuscle = nil
-                        }
-                        ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
-                            menuChoice(muscle, isSelected: selectedSecondaryMuscle == muscle) {
-                                selectedSecondaryMuscle = muscle
                             }
                         }
                     }
@@ -291,7 +291,7 @@ private struct ExerciseLibraryBrowserView: View {
         selectedForce = nil
         selectedMechanic = nil
         selectedCategory = nil
-        selectedSort = .bodyPart
+        selectedSort = .name
     }
 
     private func multiSelectMenuToggle(_ title: String, group: MuscleGroup) -> some View {
@@ -496,7 +496,7 @@ private struct FilterMenuPill: View {
     let systemImage: String
 
     private var isDefaultValue: Bool {
-        value == "All" || value == "Body Part"
+        value == "All" || value == "Name"
     }
 
     var body: some View {

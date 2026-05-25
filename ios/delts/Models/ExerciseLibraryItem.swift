@@ -192,14 +192,14 @@ enum ExerciseEquipmentFamily: String, CaseIterable, Identifiable, Hashable {
 }
 
 enum ExerciseLibrarySort: String, CaseIterable, Identifiable, Hashable {
-    case bodyPart = "Body Part"
     case name = "Name"
     case level = "Level"
-    case equipment = "Equipment"
-    case category = "DB Category"
+    case primaryMuscles = "Primary Muscles"
+    case secondaryMuscles = "Secondary Muscles"
+    case category = "Category"
     case force = "Force"
     case mechanic = "Mechanic"
-    case rawEquipment = "Raw Gear"
+    case rawEquipment = "Equipment"
 
     var id: String { rawValue }
     var title: String { rawValue }
