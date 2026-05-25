@@ -396,7 +396,7 @@ private fun WorkoutsScreen(
     exerciseLibrary: List<ExerciseItem>,
     padding: PaddingValues
 ) {
-    var selectedMuscle by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedMuscles by rememberSaveable { mutableStateOf(emptyList<String>()) }
     var selectedLevel by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedEquipment by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedRawEquipment by rememberSaveable { mutableStateOf<String?>(null) }
@@ -419,7 +419,7 @@ private fun WorkoutsScreen(
     val categoryOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.category }.distinctSorted() }
 
     val hasActiveFilters =
-        selectedMuscle != null ||
+        selectedMuscles.isNotEmpty() ||
             selectedLevel != null ||
             selectedEquipment != null ||
             selectedRawEquipment != null ||
@@ -433,7 +433,7 @@ private fun WorkoutsScreen(
             search.isNotBlank()
 
     fun resetLibraryFilters() {
-        selectedMuscle = null
+        selectedMuscles = emptyList()
         selectedLevel = null
         selectedEquipment = null
         selectedRawEquipment = null
@@ -447,8 +447,23 @@ private fun WorkoutsScreen(
         search = ""
     }
 
+    fun toggleSelectedMuscle(muscle: String) {
+        selectedMuscles = if (selectedMuscles.contains(muscle)) {
+            selectedMuscles - muscle
+        } else {
+            selectedMuscles + muscle
+        }
+    }
+
+    fun selectedMuscleTitle(): String =
+        when (selectedMuscles.size) {
+            0 -> "All"
+            1 -> selectedMuscles.first()
+            else -> "${selectedMuscles.size} parts"
+        }
+
     val filteredExercises = remember(
-        selectedMuscle,
+        selectedMuscles,
         selectedLevel,
         selectedEquipment,
         selectedRawEquipment,
@@ -465,7 +480,7 @@ private fun WorkoutsScreen(
         val query = search.trim().lowercase(Locale.US)
         exerciseLibrary
             .filter { item ->
-                (selectedMuscle == null || item.muscle == selectedMuscle) &&
+                (selectedMuscles.isEmpty() || selectedMuscles.contains(item.muscle)) &&
                     (selectedLevel == null || item.level == selectedLevel) &&
                     (selectedEquipment == null || item.equipment == selectedEquipment) &&
                     (selectedRawEquipment == null || item.rawEquipment == selectedRawEquipment) &&
@@ -501,15 +516,17 @@ private fun WorkoutsScreen(
                 )
 
                 HorizontalChipRail {
-                    LibraryFilterMenu(
+                    MultiSelectLibraryFilterMenu(
                         title = "Body Part",
-                        value = selectedMuscle ?: "All",
+                        value = selectedMuscleTitle(),
                         icon = Icons.Filled.FitnessCenter,
-                        active = selectedMuscle != null,
+                        active = selectedMuscles.isNotEmpty(),
                         options = muscles.map { it.title },
-                        selectedOption = selectedMuscle,
-                        allTitle = "All Body Parts"
-                    ) { selectedMuscle = it }
+                        selectedOptions = selectedMuscles,
+                        allTitle = "All Body Parts",
+                        onClear = { selectedMuscles = emptyList() },
+                        onToggle = ::toggleSelectedMuscle
+                    )
                     LibraryFilterMenu(
                         title = "Level",
                         value = selectedLevel ?: "All",
@@ -1433,6 +1450,88 @@ private fun LibraryFilterMenu(
                         onSelect(option)
                         expanded = false
                     }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MultiSelectLibraryFilterMenu(
+    title: String,
+    value: String,
+    icon: ImageVector,
+    active: Boolean,
+    options: List<String>,
+    selectedOptions: List<String>,
+    allTitle: String,
+    onClear: () -> Unit,
+    onToggle: (String) -> Unit
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+    Box {
+        Button(
+            onClick = { expanded = true },
+            modifier = Modifier.height(46.dp),
+            shape = RoundedCornerShape(17.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (active) DeltsAccent else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
+                contentColor = if (active) DeltsOnAccent else MaterialTheme.colorScheme.onBackground
+            ),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(15.dp))
+            Spacer(modifier = Modifier.width(7.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.heightIn(max = 360.dp)
+        ) {
+            DropdownMenuItem(
+                text = { Text(allTitle, style = MaterialTheme.typography.bodyLarge) },
+                leadingIcon = if (selectedOptions.isEmpty()) {
+                    {
+                        Icon(Icons.Filled.Check, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(18.dp))
+                    }
+                } else {
+                    null
+                },
+                onClick = {
+                    onClear()
+                    expanded = false
+                }
+            )
+
+            options.forEach { option ->
+                val selected = selectedOptions.contains(option)
+                DropdownMenuItem(
+                    text = { Text(option, style = MaterialTheme.typography.bodyLarge) },
+                    leadingIcon = if (selected) {
+                        {
+                            Icon(Icons.Filled.Check, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(18.dp))
+                        }
+                    } else {
+                        null
+                    },
+                    onClick = { onToggle(option) }
                 )
             }
         }

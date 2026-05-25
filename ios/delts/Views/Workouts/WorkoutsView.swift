@@ -14,7 +14,7 @@ struct WorkoutsView: View {
 
 private struct ExerciseLibraryBrowserView: View {
     @State private var searchText = ""
-    @State private var selectedMuscleGroup: MuscleGroup?
+    @State private var selectedMuscleGroups: Set<MuscleGroup> = []
     @State private var selectedLevel: ExperienceLevel?
     @State private var selectedGoal: FitnessGoal?
     @State private var selectedEquipment: Equipment?
@@ -33,7 +33,7 @@ private struct ExerciseLibraryBrowserView: View {
 
     private var items: [ExerciseLibraryItem] {
         service.filtered(
-            muscleGroup: selectedMuscleGroup,
+            muscleGroups: selectedMuscleGroups,
             level: selectedLevel,
             goal: selectedGoal,
             equipment: selectedEquipment,
@@ -52,7 +52,7 @@ private struct ExerciseLibraryBrowserView: View {
 
     private var hasActiveFilters: Bool {
         !searchText.isEmpty ||
-            selectedMuscleGroup != nil ||
+            !selectedMuscleGroups.isEmpty ||
             selectedLevel != nil ||
             selectedGoal != nil ||
             selectedEquipment != nil ||
@@ -132,12 +132,12 @@ private struct ExerciseLibraryBrowserView: View {
                 HStack(spacing: 9) {
                     filterMenuPill(
                         title: "Body Part",
-                        value: selectedMuscleGroup?.title ?? "All",
-                        systemImage: selectedMuscleGroup?.icon ?? "scope"
+                        value: bodyPartFilterTitle,
+                        systemImage: selectedMuscleGroups.count == 1 ? selectedMuscleGroups.first?.icon ?? "scope" : "scope"
                     ) {
-                        menuChoice("All Body Parts", isSelected: selectedMuscleGroup == nil) { selectedMuscleGroup = nil }
+                        menuChoice("All Body Parts", isSelected: selectedMuscleGroups.isEmpty) { selectedMuscleGroups.removeAll() }
                         ForEach(MuscleGroup.allCases) { group in
-                            menuChoice(group.title, isSelected: selectedMuscleGroup == group) { selectedMuscleGroup = group }
+                            multiSelectMenuToggle(group.title, group: group)
                         }
                     }
 
@@ -291,6 +291,16 @@ private struct ExerciseLibraryBrowserView: View {
         return "All"
     }
 
+    private var bodyPartFilterTitle: String {
+        if selectedMuscleGroups.isEmpty {
+            return "All"
+        }
+        if selectedMuscleGroups.count == 1, let group = selectedMuscleGroups.first {
+            return group.title
+        }
+        return "\(selectedMuscleGroups.count) parts"
+    }
+
     private var databaseFilterTitle: String {
         if let selectedCategory {
             return selectedCategory
@@ -319,7 +329,7 @@ private struct ExerciseLibraryBrowserView: View {
 
     private func resetFilters() {
         searchText = ""
-        selectedMuscleGroup = nil
+        selectedMuscleGroups.removeAll()
         selectedLevel = nil
         selectedGoal = nil
         selectedEquipment = nil
@@ -332,6 +342,22 @@ private struct ExerciseLibraryBrowserView: View {
         selectedCategory = nil
         selectedMedia = .all
         selectedSort = .bodyPart
+    }
+
+    private func multiSelectMenuToggle(_ title: String, group: MuscleGroup) -> some View {
+        Toggle(
+            title,
+            isOn: Binding(
+                get: { selectedMuscleGroups.contains(group) },
+                set: { isSelected in
+                    if isSelected {
+                        selectedMuscleGroups.insert(group)
+                    } else {
+                        selectedMuscleGroups.remove(group)
+                    }
+                }
+            )
+        )
     }
 
     private func filterMenuPill<Content: View>(

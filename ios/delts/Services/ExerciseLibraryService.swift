@@ -105,7 +105,7 @@ struct ExerciseLibraryService {
     ]
 
     func filtered(
-        muscleGroup: MuscleGroup?,
+        muscleGroups: Set<MuscleGroup>,
         level: ExperienceLevel?,
         goal: FitnessGoal?,
         equipment: Equipment?,
@@ -123,7 +123,7 @@ struct ExerciseLibraryService {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
         let filteredItems = exercises.filter { item in
-            let matchesMuscle = muscleGroup == nil || item.muscleGroup == muscleGroup
+            let matchesMuscle = muscleGroups.isEmpty || muscleGroups.contains(item.muscleGroup)
             let matchesLevel = level == nil || item.level == level
             let matchesGoal = goal == nil || item.goal == goal
             let matchesEquipment = equipment == nil || item.equipment == equipment
