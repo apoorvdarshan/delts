@@ -731,11 +731,11 @@ private struct ProfileSection<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 12) {
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
                     .fill(Color.deltsAccent)
-                    .frame(width: 4, height: 42)
+                    .frame(width: 4, height: 36)
 
                 Image(systemName: systemImage)
                     .font(.system(size: 18, weight: .bold))
@@ -769,14 +769,8 @@ private struct ProfileSection<Content: View>: View {
                         .background(Color.deltsAccent.opacity(0.11), in: Capsule())
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 13)
+            .padding(.horizontal, 2)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(Color.deltsHairline.opacity(0.38), lineWidth: 0.75)
-            }
 
             content
         }
@@ -1408,10 +1402,18 @@ private struct ProfileMenuPicker<Option: Hashable>: View {
 private struct ProfileMenuOptionText: View {
     let text: String
 
+    private var nonWrappingText: String {
+        text
+            .replacingOccurrences(of: " ", with: "\u{00A0}")
+            .map(String.init)
+            .joined(separator: "\u{2060}")
+    }
+
     var body: some View {
-        Text(text.replacingOccurrences(of: " ", with: "\u{00A0}"))
+        Text(nonWrappingText)
             .lineLimit(1)
             .fixedSize(horizontal: true, vertical: false)
+            .accessibilityLabel(text)
     }
 }
 
