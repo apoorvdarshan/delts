@@ -27,9 +27,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -90,6 +92,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -725,46 +728,54 @@ private fun ProfileScreen(
             subtitle = "Basic details used to shape plans.",
             icon = Icons.Filled.Person
         ) {
-            OutlinedTextField(
+            CompactTextFieldRow(
+                title = "Name",
+                icon = Icons.Filled.Person,
                 value = profile.name,
-                onValueChange = { updateProfile(profile.copy(name = it)) },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Name") },
-                singleLine = true,
-                shape = RoundedCornerShape(18.dp)
+                onValueChange = { updateProfile(profile.copy(name = it)) }
             )
-            AgeDropdown(
+            ProfileRowDivider()
+            CompactDropdownRow(
                 title = "Age",
-                value = profile.age,
-                modifier = Modifier.fillMaxWidth()
-            ) { updateProfile(profile.copy(age = it)) }
-            MeasurementSystemSelector(
-                selected = measurementSystem,
-                modifier = Modifier.fillMaxWidth(),
-                onSelect = updateMeasurementSystem
-            )
-            HeightMeasurementPicker(
+                icon = Icons.Filled.CalendarToday,
+                value = profile.age.toString(),
+                options = (13..90).map { it.toString() },
+                selectedOption = profile.age.toString()
+            ) { updateProfile(profile.copy(age = it.toInt())) }
+            ProfileRowDivider()
+            CompactDropdownRow(
+                title = "Units",
+                icon = Icons.Filled.Build,
+                value = measurementSystem.title,
+                options = MeasurementSystem.values().map { it.title },
+                selectedOption = measurementSystem.title
+            ) { selected ->
+                MeasurementSystem.values().firstOrNull { it.title == selected }?.let(updateMeasurementSystem)
+            }
+            ProfileRowDivider()
+            HeightMeasurementCompactRow(
                 measurementSystem = measurementSystem,
                 centimeters = profile.heightCm
             ) { updateProfile(profile.copy(heightCm = it)) }
-            WeightMeasurementPicker(
+            ProfileRowDivider()
+            WeightMeasurementCompactRow(
                 measurementSystem = measurementSystem,
                 kilograms = profile.weightKg
             ) { updateProfile(profile.copy(weightKg = it)) }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PercentMeasurementPicker(
-                    title = "Current body fat",
-                    value = profile.currentBodyFat,
-                    range = 3..60,
-                    modifier = Modifier.weight(1f)
-                ) { updateProfile(profile.copy(currentBodyFat = it)) }
-                PercentMeasurementPicker(
-                    title = "Desired body fat",
-                    value = profile.desiredBodyFat,
-                    range = 3..45,
-                    modifier = Modifier.weight(1f)
-                ) { updateProfile(profile.copy(desiredBodyFat = it)) }
-            }
+            ProfileRowDivider()
+            PercentMeasurementCompactRow(
+                title = "Current body fat",
+                icon = Icons.Filled.Favorite,
+                value = profile.currentBodyFat,
+                range = 3..60
+            ) { updateProfile(profile.copy(currentBodyFat = it)) }
+            ProfileRowDivider()
+            PercentMeasurementCompactRow(
+                title = "Desired body fat",
+                icon = Icons.Filled.Flag,
+                value = profile.desiredBodyFat,
+                range = 3..45
+            ) { updateProfile(profile.copy(desiredBodyFat = it)) }
         }
 
         ProfileSection(
@@ -772,28 +783,29 @@ private fun ProfileScreen(
             subtitle = "Set the training bias before plans are generated.",
             icon = Icons.Filled.Flag
         ) {
-            HorizontalChipRail {
-                levels.forEach { level ->
-                    DeltsPillButton(
-                        title = level,
-                        icon = Icons.Filled.FlashOn,
-                        selected = profile.experience == level
-                    ) {
-                        updateProfile(profile.copy(experience = level))
-                    }
-                }
-            }
-            HorizontalChipRail {
-                goals.forEach { goal ->
-                    DeltsPillButton(
-                        title = goal,
-                        icon = Icons.Filled.Flag,
-                        selected = profile.mainGoal == goal
-                    ) {
-                        updateProfile(profile.copy(mainGoal = goal))
-                    }
-                }
-            }
+            CompactDropdownRow(
+                title = "Experience",
+                icon = Icons.Filled.FlashOn,
+                value = profile.experience,
+                options = levels,
+                selectedOption = profile.experience
+            ) { updateProfile(profile.copy(experience = it)) }
+            ProfileRowDivider()
+            CompactDropdownRow(
+                title = "Main goal",
+                icon = Icons.Filled.Flag,
+                value = profile.mainGoal,
+                options = goals,
+                selectedOption = profile.mainGoal
+            ) { updateProfile(profile.copy(mainGoal = it)) }
+            ProfileRowDivider()
+            CompactTextFieldRow(
+                title = "Extra goals",
+                icon = Icons.Filled.List,
+                value = profile.extraGoals,
+                placeholder = "Optional",
+                onValueChange = { updateProfile(profile.copy(extraGoals = it)) }
+            )
         }
 
         ProfileSection(
@@ -802,7 +814,7 @@ private fun ProfileScreen(
             icon = Icons.Filled.VpnKey,
             badge = if (hasSavedKey) "Ready" else null
         ) {
-            GeminiKeyCard(
+            CompactGeminiKeyRow(
                 apiKey = apiKey,
                 hasSavedKey = hasSavedKey,
                 onApiKeyChange = { apiKey = it },
@@ -825,10 +837,11 @@ private fun ProfileScreen(
             icon = Icons.Filled.FitnessCenter,
             badge = profile.bodyFocus.size.toString()
         ) {
-            DeltsChipGrid(
+            CompactMultiSelectRow(
+                title = "Focus areas",
+                icon = Icons.Filled.FitnessCenter,
                 items = bodyFocusOptions.map { it.title },
                 selected = profile.bodyFocus,
-                itemIcon = { bodyFocusOptions.firstOrNull { it.title == this }?.icon ?: Icons.Filled.FitnessCenter }
             ) { item ->
                 updateProfile(profile.copy(bodyFocus = toggleInSet(profile.bodyFocus, item)))
             }
@@ -839,19 +852,24 @@ private fun ProfileScreen(
             subtitle = "Tune how training fits into the week.",
             icon = Icons.Filled.CalendarToday
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                NumberStepper(
-                    title = "Weekly",
-                    value = profile.frequency,
-                    suffix = "x",
-                    modifier = Modifier.weight(1f)
-                ) { updateProfile(profile.copy(frequency = it.coerceIn(1, 7))) }
-                NumberStepper(
-                    title = "Duration",
-                    value = profile.duration,
-                    suffix = "min",
-                    modifier = Modifier.weight(1f)
-                ) { updateProfile(profile.copy(duration = nearestDuration(it))) }
+            CompactNumberStepperRow(
+                title = "Workout frequency",
+                icon = Icons.Filled.CalendarToday,
+                value = profile.frequency,
+                range = 1..7,
+                suffix = "days/week"
+            ) { updateProfile(profile.copy(frequency = it.coerceIn(1, 7))) }
+            ProfileRowDivider()
+            CompactDropdownRow(
+                title = "Workout duration",
+                icon = Icons.Filled.Timer,
+                value = "${profile.duration} min",
+                options = durations.map { "$it min" },
+                selectedOption = "${profile.duration} min"
+            ) { selected ->
+                selected.substringBefore(" ").toIntOrNull()?.let {
+                    updateProfile(profile.copy(duration = nearestDuration(it)))
+                }
             }
         }
 
@@ -861,10 +879,11 @@ private fun ProfileScreen(
             icon = Icons.Filled.FitnessCenter,
             badge = profile.availableEquipment.size.toString()
         ) {
-            DeltsChipGrid(
+            CompactMultiSelectRow(
+                title = "Saved gear",
+                icon = Icons.Filled.FitnessCenter,
                 items = equipmentOptions.map { it.title },
                 selected = profile.availableEquipment,
-                itemIcon = { equipmentOptions.firstOrNull { it.title == this }?.icon ?: Icons.Filled.FitnessCenter }
             ) { item ->
                 updateProfile(profile.copy(availableEquipment = toggleInSet(profile.availableEquipment, item)))
             }
@@ -876,10 +895,11 @@ private fun ProfileScreen(
             icon = Icons.Filled.Warning,
             badge = profile.issues.size.toString()
         ) {
-            DeltsChipGrid(
+            CompactMultiSelectRow(
+                title = "Issues",
+                icon = Icons.Filled.Warning,
                 items = issueOptions.map { it.title },
                 selected = profile.issues,
-                itemIcon = { Icons.Filled.Warning }
             ) { item ->
                 updateProfile(profile.copy(issues = toggleInSet(profile.issues, item)))
             }
@@ -1649,52 +1669,432 @@ private fun ProfileSection(
     badge: String? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
-        Column(
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 2.dp),
-            verticalArrangement = Arrangement.spacedBy(7.dp)
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.weight(1f)
-                )
-                if (badge != null) {
-                    Text(
-                        text = badge,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = DeltsAccent,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(DeltsAccent.copy(alpha = 0.11f))
-                            .padding(horizontal = 10.dp, vertical = 5.dp)
-                    )
-                }
-            }
-            Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Box(
-                modifier = Modifier
-                    .width(42.dp)
-                    .height(2.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(DeltsAccent.copy(alpha = 0.78f))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f)
             )
+            if (badge != null) {
+                Text(
+                    text = badge,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = DeltsAccent,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(DeltsAccent.copy(alpha = 0.10f))
+                        .padding(horizontal = 9.dp, vertical = 4.dp)
+                )
+            }
         }
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(22.dp),
+            shape = RoundedCornerShape(28.dp),
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.24f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.22f))
         ) {
             Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.padding(horizontal = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
                 content = content
             )
+        }
+    }
+}
+
+@Composable
+private fun ProfileSettingRow(
+    title: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 58.dp)
+            .padding(vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Icon(icon, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(24.dp))
+        Text(
+            text = title,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        content()
+    }
+}
+
+@Composable
+private fun ProfileRowDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(start = 52.dp),
+        color = DividerDefaults.color.copy(alpha = 0.30f)
+    )
+}
+
+@Composable
+private fun CompactTextFieldRow(
+    title: String,
+    icon: ImageVector,
+    value: String,
+    placeholder: String = title,
+    onValueChange: (String) -> Unit
+) {
+    ProfileSettingRow(title = title, icon = icon) {
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.width(178.dp),
+            singleLine = true,
+            textStyle = MaterialTheme.typography.titleMedium.copy(
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.End,
+                fontWeight = FontWeight.SemiBold
+            ),
+            decorationBox = { innerTextField ->
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                    if (value.isBlank()) {
+                        Text(
+                            text = placeholder,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun CompactDropdownRow(
+    title: String,
+    icon: ImageVector,
+    value: String,
+    options: List<String>,
+    selectedOption: String,
+    onSelect: (String) -> Unit
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+    Box {
+        ProfileSettingRow(
+            title = title,
+            icon = icon,
+            modifier = Modifier.clickable { expanded = true }
+        ) {
+            CompactValueLabel(value = value)
+        }
+
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option, style = MaterialTheme.typography.bodyLarge) },
+                    leadingIcon = if (option == selectedOption) {
+                        {
+                            Icon(Icons.Filled.Check, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(18.dp))
+                        }
+                    } else {
+                        null
+                    },
+                    onClick = {
+                        onSelect(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompactMultiSelectRow(
+    title: String,
+    icon: ImageVector,
+    items: List<String>,
+    selected: Set<String>,
+    onToggle: (String) -> Unit
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val selectedItems = items.filter { selected.contains(it) }
+    val summary = when {
+        selectedItems.isEmpty() -> "None"
+        selectedItems.size <= 2 -> selectedItems.joinToString(", ")
+        else -> "${selectedItems.size} selected"
+    }
+
+    Box {
+        ProfileSettingRow(
+            title = title,
+            icon = icon,
+            modifier = Modifier.clickable { expanded = true }
+        ) {
+            CompactValueLabel(value = summary)
+        }
+
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            items.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text(item, style = MaterialTheme.typography.bodyLarge) },
+                    leadingIcon = if (selected.contains(item)) {
+                        {
+                            Icon(Icons.Filled.Check, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(18.dp))
+                        }
+                    } else {
+                        null
+                    },
+                    onClick = {
+                        onToggle(item)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompactValueLabel(value: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.End,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = 170.dp)
+        )
+        Icon(
+            Icons.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(22.dp)
+        )
+    }
+}
+
+@Composable
+private fun CompactGeminiKeyRow(
+    apiKey: String,
+    hasSavedKey: Boolean,
+    onApiKeyChange: (String) -> Unit,
+    save: () -> Unit,
+    clear: () -> Unit
+) {
+    ProfileSettingRow(
+        title = "Gemini Key",
+        icon = if (hasSavedKey) Icons.Filled.Check else Icons.Filled.VpnKey
+    ) {
+        BasicTextField(
+            value = apiKey,
+            onValueChange = onApiKeyChange,
+            modifier = Modifier.width(118.dp),
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            textStyle = MaterialTheme.typography.titleMedium.copy(
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.End,
+                fontWeight = FontWeight.SemiBold
+            ),
+            decorationBox = { innerTextField ->
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                    if (apiKey.isBlank()) {
+                        Text(
+                            text = if (hasSavedKey) "Saved" else "Paste key",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        )
+        CompactIconButton(icon = Icons.Filled.Check, onClick = save)
+        CompactIconButton(icon = Icons.Filled.Close, onClick = clear)
+    }
+}
+
+@Composable
+private fun CompactIconButton(icon: ImageVector, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick)
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.58f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(17.dp))
+    }
+}
+
+@Composable
+private fun CompactNumberStepperRow(
+    title: String,
+    icon: ImageVector,
+    value: Int,
+    range: IntRange,
+    suffix: String,
+    onChange: (Int) -> Unit
+) {
+    ProfileSettingRow(title = title, icon = icon) {
+        Text(
+            text = "$value $suffix",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            CompactIconButton(Icons.Filled.Close) { onChange((value - 1).coerceIn(range)) }
+            CompactIconButton(Icons.Filled.Add) { onChange((value + 1).coerceIn(range)) }
+        }
+    }
+}
+
+@Composable
+private fun CompactMeasurementRow(
+    title: String,
+    icon: ImageVector,
+    valueText: String,
+    content: @Composable () -> Unit
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+    Column {
+        ProfileSettingRow(
+            title = title,
+            icon = icon,
+            modifier = Modifier.clickable { expanded = !expanded }
+        ) {
+            CompactValueLabel(value = valueText)
+        }
+        if (expanded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 52.dp, bottom = 12.dp)
+            ) {
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeightMeasurementCompactRow(
+    measurementSystem: MeasurementSystem,
+    centimeters: Double,
+    onChange: (Double) -> Unit
+) {
+    if (measurementSystem == MeasurementSystem.Metric) {
+        val parts = splitDecimal(centimeters, 120..230)
+        CompactMeasurementRow(
+            title = "Height",
+            icon = Icons.Filled.Build,
+            valueText = "${formatOneDecimal(combineDecimal(parts.whole, parts.decimal))} cm"
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ScrollingNumberSelector("cm", parts.whole, 120..230, Modifier.weight(1f)) {
+                    onChange(combineDecimal(it, parts.decimal))
+                }
+                ScrollingNumberSelector("decimal", parts.decimal, 0..9, Modifier.weight(1f), display = { ".$it" }) {
+                    onChange(combineDecimal(parts.whole, it))
+                }
+            }
+        }
+    } else {
+        val parts = splitImperialHeight(centimeters)
+        CompactMeasurementRow(
+            title = "Height",
+            icon = Icons.Filled.Build,
+            valueText = "${parts.feet} ft ${parts.inches} in"
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ScrollingNumberSelector("feet", parts.feet, 3..8, Modifier.weight(1f)) {
+                    onChange(imperialHeightToCentimeters(it, parts.inches))
+                }
+                ScrollingNumberSelector("inches", parts.inches, 0..11, Modifier.weight(1f)) {
+                    onChange(imperialHeightToCentimeters(parts.feet, it))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeightMeasurementCompactRow(
+    measurementSystem: MeasurementSystem,
+    kilograms: Double,
+    onChange: (Double) -> Unit
+) {
+    val displayValue = if (measurementSystem == MeasurementSystem.Metric) kilograms else kilograms * 2.2046226218
+    val range = if (measurementSystem == MeasurementSystem.Metric) 30..250 else 66..551
+    val unit = if (measurementSystem == MeasurementSystem.Metric) "kg" else "lb"
+    val parts = splitDecimal(displayValue, range)
+
+    CompactMeasurementRow(
+        title = "Weight",
+        icon = Icons.Filled.FitnessCenter,
+        valueText = "${formatOneDecimal(combineDecimal(parts.whole, parts.decimal))} $unit"
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ScrollingNumberSelector(unit, parts.whole, range, Modifier.weight(1f)) { selectedWhole ->
+                val nextValue = combineDecimal(selectedWhole, parts.decimal)
+                onChange(if (measurementSystem == MeasurementSystem.Metric) nextValue else nextValue / 2.2046226218)
+            }
+            ScrollingNumberSelector("decimal", parts.decimal, 0..9, Modifier.weight(1f), display = { ".$it" }) { selectedDecimal ->
+                val nextValue = combineDecimal(parts.whole, selectedDecimal)
+                onChange(if (measurementSystem == MeasurementSystem.Metric) nextValue else nextValue / 2.2046226218)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PercentMeasurementCompactRow(
+    title: String,
+    icon: ImageVector,
+    value: Double,
+    range: IntRange,
+    onChange: (Double) -> Unit
+) {
+    val parts = splitDecimal(value, range)
+    CompactMeasurementRow(
+        title = title,
+        icon = icon,
+        valueText = "${formatOneDecimal(combineDecimal(parts.whole, parts.decimal))}%"
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ScrollingNumberSelector("%", parts.whole, range, Modifier.weight(1f)) {
+                onChange(combineDecimal(it, parts.decimal))
+            }
+            ScrollingNumberSelector("decimal", parts.decimal, 0..9, Modifier.weight(1f), display = { ".$it" }) {
+                onChange(combineDecimal(parts.whole, it))
+            }
         }
     }
 }
@@ -2276,6 +2676,7 @@ private fun SharedPreferences.loadProfile(): AndroidProfile =
         desiredBodyFat = getDoubleCompat("profile_bodyfat_desired", 12.0),
         experience = getString("profile_experience", "Intermediate").orEmpty(),
         mainGoal = getString("profile_goal", "Muscle Gain").orEmpty(),
+        extraGoals = getString("profile_extra_goals", "").orEmpty(),
         frequency = getInt("profile_frequency", 4),
         duration = getInt("profile_duration", 60),
         availableEquipment = getStringSet("profile_equipment", setOf("Dumbbells", "Bench", "Cable Machine")) ?: emptySet(),
@@ -2294,6 +2695,7 @@ private fun SharedPreferences.saveProfile(profile: AndroidProfile) {
         .putString("profile_bodyfat_desired", formatOneDecimal(profile.desiredBodyFat))
         .putString("profile_experience", profile.experience)
         .putString("profile_goal", profile.mainGoal)
+        .putString("profile_extra_goals", profile.extraGoals)
         .putInt("profile_frequency", profile.frequency)
         .putInt("profile_duration", profile.duration)
         .putStringSet("profile_equipment", profile.availableEquipment)
@@ -2369,6 +2771,7 @@ private data class AndroidProfile(
     val desiredBodyFat: Double,
     val experience: String,
     val mainGoal: String,
+    val extraGoals: String,
     val frequency: Int,
     val duration: Int,
     val availableEquipment: Set<String>,
@@ -2693,6 +3096,7 @@ private fun DeltsAppPreview() {
                     desiredBodyFat = 12.0,
                     experience = "Intermediate",
                     mainGoal = "Muscle Gain",
+                    extraGoals = "",
                     frequency = 4,
                     duration = 60,
                     availableEquipment = setOf("Dumbbells", "Bench", "Cable Machine"),

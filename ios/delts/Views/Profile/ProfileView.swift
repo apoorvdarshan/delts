@@ -172,8 +172,8 @@ private struct ProfileEditorView: View {
             systemImage: "key.fill",
             badge: hasSavedGeminiKey ? "Ready" : nil
         ) {
-            ProfileSectionPanel {
-                GeminiKeySettingsCard(
+            ProfileRowStack {
+                ProfileGeminiKeyRow(
                     apiKey: $geminiAPIKey,
                     hasSavedKey: hasSavedGeminiKey,
                     save: saveGeminiKey,
@@ -190,12 +190,13 @@ private struct ProfileEditorView: View {
             systemImage: "figure.strengthtraining.functional",
             badge: "\(profile.selectedBodyFocus.count)"
         ) {
-            ProfileSectionPanel {
-                ProfileChecklistGrid(
+            ProfileRowStack {
+                ProfileMultiSelectMenuRow(
+                    title: "Focus areas",
+                    systemImage: "figure.strengthtraining.functional",
                     options: BodyFocus.allCases,
                     selection: bodyFocusBinding,
-                    title: { $0.title },
-                    icon: { $0.icon }
+                    label: { $0.title }
                 )
             }
         }
@@ -242,21 +243,14 @@ private struct ProfileEditorView: View {
             systemImage: "dumbbell.fill",
             badge: "\(profile.availableEquipment.count)"
         ) {
-            ProfileSectionPanel {
-                VStack(alignment: .leading, spacing: 14) {
-                    ProfileCountSummaryRow(
-                        title: "Selected",
-                        systemImage: "checklist",
-                        value: "\(profile.availableEquipment.count)"
-                    )
-
-                    ProfileChecklistGrid(
-                        options: Equipment.allCases,
-                        selection: equipmentBinding,
-                        title: { $0.title },
-                        icon: { $0.icon }
-                    )
-                }
+            ProfileRowStack {
+                ProfileMultiSelectMenuRow(
+                    title: "Saved gear",
+                    systemImage: "dumbbell.fill",
+                    options: Equipment.allCases,
+                    selection: equipmentBinding,
+                    label: { $0.title }
+                )
             }
         }
     }
@@ -306,12 +300,13 @@ private struct ProfileEditorView: View {
             systemImage: "exclamationmark.triangle.fill",
             badge: "\(profile.fitnessIssues.count)"
         ) {
-            ProfileSectionPanel {
-                ProfileChecklistGrid(
+            ProfileRowStack {
+                ProfileMultiSelectMenuRow(
+                    title: "Issues",
+                    systemImage: "exclamationmark.triangle.fill",
                     options: FitnessIssue.allCases,
                     selection: issuesBinding,
-                    title: { $0.title },
-                    icon: { $0.icon }
+                    label: { $0.title }
                 )
             }
         }
@@ -739,39 +734,26 @@ private struct ProfileSection<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            VStack(alignment: .leading, spacing: 7) {
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Text(title)
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(Color.deltsCharcoal)
-                        .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(title)
+                    .font(.callout.weight(.bold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                    Spacer(minLength: 10)
+                Spacer(minLength: 10)
 
-                    if let badge {
-                        Text(badge)
-                            .font(.caption.weight(.bold))
-                            .monospacedDigit()
-                            .foregroundStyle(Color.deltsAccent)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color.deltsAccent.opacity(0.11), in: Capsule())
-                    }
+                if let badge {
+                    Text(badge)
+                        .font(.caption.weight(.bold))
+                        .monospacedDigit()
+                        .foregroundStyle(Color.deltsAccent)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.deltsAccent.opacity(0.10), in: Capsule())
                 }
-
-                if let subtitle {
-                    Text(subtitle)
-                        .font(.footnote)
-                        .foregroundStyle(Color.deltsMutedText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                RoundedRectangle(cornerRadius: 2, style: .continuous)
-                    .fill(Color.deltsAccent.opacity(0.78))
-                    .frame(width: 42, height: 2)
             }
-            .padding(.horizontal, 2)
+            .padding(.horizontal, 14)
             .frame(maxWidth: .infinity, alignment: .leading)
 
             content
@@ -790,11 +772,11 @@ private struct ProfileRowStack<Content: View>: View {
         VStack(alignment: .leading, spacing: 0) {
             content
         }
-        .padding(.horizontal, 12)
-        .background(Color.deltsPanel.opacity(0.13), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(.horizontal, 14)
+        .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.22), lineWidth: 0.5)
         }
     }
 }
@@ -837,14 +819,16 @@ private struct ProfileFieldLabel: View {
     var body: some View {
         HStack(alignment: .center, spacing: 11) {
             Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 19, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(tint)
-                .frame(width: 28, height: 28)
+                .frame(width: 38, height: 34)
 
             Text(title)
-                .font(.callout.weight(.semibold))
+                .font(.body.weight(.semibold))
                 .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -888,7 +872,7 @@ private struct ProfileFieldRow<Content: View>: View {
                 content
                     .layoutPriority(2)
             }
-            .padding(.vertical, 10)
+            .padding(.vertical, 9)
             .contentShape(Rectangle())
         }
     }
@@ -947,18 +931,13 @@ private struct ProfileTextAreaRow: View {
     @Binding var text: String
 
     var body: some View {
-        ProfileControlBlock(title: title, systemImage: systemImage) {
-            TextField(title, text: $text, axis: .vertical)
-                .lineLimit(3...6)
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            TextField(title, text: $text)
                 .textFieldStyle(.plain)
                 .foregroundStyle(Color.deltsCharcoal)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 11)
-                .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
-                }
+                .multilineTextAlignment(.trailing)
+                .lineLimit(1)
+                .frame(minWidth: 130)
         }
     }
 }
@@ -1447,8 +1426,8 @@ private struct ProfileMenuValueLabel: View {
         HStack(spacing: 7) {
             Text(text)
                 .font(.body.weight(.semibold))
-                .foregroundStyle(Color.deltsCharcoal)
-                .lineLimit(2)
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(1)
                 .minimumScaleFactor(0.82)
                 .multilineTextAlignment(.trailing)
 
@@ -1456,13 +1435,7 @@ private struct ProfileMenuValueLabel: View {
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(Color.deltsMutedText)
         }
-        .padding(.horizontal, 12)
-        .frame(minWidth: 104, minHeight: 40, alignment: .trailing)
-        .background(Color.deltsPanel.opacity(0.36), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.36), lineWidth: 0.5)
-        }
+        .frame(minWidth: 104, minHeight: 38, alignment: .trailing)
     }
 }
 
@@ -1472,30 +1445,117 @@ private struct ProfileSegmentedPicker<Option: Hashable>: View {
     @Binding var selection: Option
     let options: [Option]
     let label: (Option) -> String
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        ProfileControlBlock(title: title, systemImage: systemImage) {
-            if dynamicTypeSize.isAccessibilitySize {
-                Menu {
-                    ForEach(options, id: \.self) { option in
-                        Button {
-                            selection = option
-                        } label: {
-                            if option == selection {
-                                Label(label(option), systemImage: "checkmark")
-                            } else {
-                                Text(label(option))
-                            }
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            Menu {
+                ForEach(options, id: \.self) { option in
+                    Button {
+                        selection = option
+                    } label: {
+                        if option == selection {
+                            Label(label(option), systemImage: "checkmark")
+                        } else {
+                            Text(label(option))
                         }
                     }
-                } label: {
-                    ProfileMenuValueLabel(text: label(selection))
                 }
-                .deltsPressable()
-            } else {
-                ProfileChoiceRail(selection: $selection, options: options, label: label)
+            } label: {
+                ProfileMenuValueLabel(text: label(selection))
             }
+            .deltsPressable()
+        }
+    }
+}
+
+private struct ProfileGeminiKeyRow: View {
+    @Binding var apiKey: String
+    let hasSavedKey: Bool
+    let save: () -> Void
+    let clear: () -> Void
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        ProfileFieldRow(
+            title: "Gemini Key",
+            systemImage: hasSavedKey ? "checkmark.seal.fill" : "key.fill",
+            tint: hasSavedKey ? .deltsAccent : .deltsSecondaryAccent
+        ) {
+            HStack(spacing: 8) {
+                SecureField(hasSavedKey ? "Saved" : "Paste key", text: $apiKey)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .textContentType(.password)
+                    .focused($isFocused)
+                    .submitLabel(.done)
+                    .onSubmit(save)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .multilineTextAlignment(.trailing)
+                    .lineLimit(1)
+                    .frame(minWidth: 112)
+
+                Button(action: save) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 15, weight: .bold))
+                        .frame(width: 32, height: 32)
+                }
+                .accessibilityLabel("Save Gemini key")
+
+                Button(action: clear) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 15, weight: .bold))
+                        .frame(width: 32, height: 32)
+                }
+                .accessibilityLabel("Clear Gemini key")
+            }
+            .foregroundStyle(Color.deltsMutedText)
+        }
+    }
+}
+
+private struct ProfileMultiSelectMenuRow<Option: Hashable>: View {
+    let title: String
+    let systemImage: String
+    let options: [Option]
+    @Binding var selection: Set<Option>
+    let label: (Option) -> String
+
+    private var summary: String {
+        let selectedTitles = options.filter { selection.contains($0) }.map(label)
+        if selectedTitles.isEmpty {
+            return "None"
+        }
+        if selectedTitles.count <= 2 {
+            return selectedTitles.joined(separator: ", ")
+        }
+        return "\(selectedTitles.count) selected"
+    }
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            Menu {
+                ForEach(options, id: \.self) { option in
+                    Button {
+                        var updatedSelection = selection
+                        if updatedSelection.contains(option) {
+                            updatedSelection.remove(option)
+                        } else {
+                            updatedSelection.insert(option)
+                        }
+                        selection = updatedSelection
+                    } label: {
+                        if selection.contains(option) {
+                            Label(label(option), systemImage: "checkmark")
+                        } else {
+                            Text(label(option))
+                        }
+                    }
+                }
+            } label: {
+                ProfileMenuValueLabel(text: summary)
+            }
+            .deltsPressable()
         }
     }
 }
