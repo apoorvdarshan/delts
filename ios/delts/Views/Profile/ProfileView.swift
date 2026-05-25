@@ -45,18 +45,16 @@ private struct ProfileEditorView: View {
     @State private var hasSavedGeminiKey = GeminiConfig.hasAPIKey
 
     private let genderOptions = ["Male", "Female", "Non-binary", "Prefer not to say"]
-    private let ageOptions = Array(13...90)
+    private let ageRange = 11...120
     private let durationOptions = [30, 45, 60, 90]
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 ProfileScreenHeader()
-                ProfileHero(profile: profile)
                 identitySection
                 goalSection
                 aiSettingsSection
-                bodyFocusSection
                 scheduleSection
                 equipmentSection
                 strengthSection
@@ -90,12 +88,11 @@ private struct ProfileEditorView: View {
                     label: { $0 }
                 )
                 ProfileDivider()
-                ProfileMenuPicker(
+                ProfileAgePickerRow(
                     title: "Age",
                     systemImage: "calendar",
-                    selection: ageBinding,
-                    options: ageOptions,
-                    label: { "\($0)" }
+                    value: ageBinding,
+                    range: ageRange
                 )
                 ProfileDivider()
                 ProfileSegmentedPicker(
@@ -160,6 +157,14 @@ private struct ProfileEditorView: View {
                     label: { $0.title }
                 )
                 ProfileDivider()
+                ProfileMultiSelectMenuRow(
+                    title: "Body parts",
+                    systemImage: "figure.strengthtraining.functional",
+                    options: BodyFocus.allCases,
+                    selection: bodyFocusBinding,
+                    label: { $0.title }
+                )
+                ProfileDivider()
                 ProfileTextAreaRow(title: "Extra goals", systemImage: "text.alignleft", text: extraGoalsBinding)
             }
         }
@@ -183,25 +188,6 @@ private struct ProfileEditorView: View {
         }
     }
 
-    private var bodyFocusSection: some View {
-        ProfileSection(
-            title: "Body Parts To Build",
-            subtitle: "Choose the areas your workouts should emphasize.",
-            systemImage: "figure.strengthtraining.functional",
-            badge: "\(profile.selectedBodyFocus.count)"
-        ) {
-            ProfileRowStack {
-                ProfileMultiSelectMenuRow(
-                    title: "Focus areas",
-                    systemImage: "figure.strengthtraining.functional",
-                    options: BodyFocus.allCases,
-                    selection: bodyFocusBinding,
-                    label: { $0.title }
-                )
-            }
-        }
-    }
-
     private var scheduleSection: some View {
         ProfileSection(
             title: "Schedule",
@@ -210,7 +196,7 @@ private struct ProfileEditorView: View {
         ) {
             ProfileRowStack {
                 ProfileStepperRow(
-                    title: "Workout frequency",
+                    title: "Frequency",
                     systemImage: "calendar",
                     value: frequencyBinding,
                     range: 1...7,
@@ -594,124 +580,6 @@ private struct ProfileLoadingView: View {
     }
 }
 
-private struct ProfileHero: View {
-    let profile: UserProfile
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    private var displayName: String {
-        let trimmedName = profile.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmedName.isEmpty ? "Athlete" : trimmedName
-    }
-
-    private var metricColumns: [GridItem] {
-        if dynamicTypeSize.isAccessibilitySize {
-            return [GridItem(.adaptive(minimum: 210), spacing: 10, alignment: .top)]
-        }
-        return Array(repeating: GridItem(.flexible(minimum: 132), spacing: 10, alignment: .top), count: 2)
-    }
-
-    private var metrics: [(title: String, value: String, systemImage: String)] {
-        [
-            ("Weekly", "\(profile.workoutFrequencyPerWeek)x", "calendar"),
-            ("Duration", "\(profile.workoutDurationMinutes) min", "timer"),
-            ("Gear", "\(profile.availableEquipment.count)", "dumbbell.fill"),
-            ("Focus", "\(profile.selectedBodyFocus.count)", "scope")
-        ]
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 14) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(displayName)
-                        .font(.system(.title2, design: .rounded, weight: .bold))
-                        .foregroundStyle(Color.deltsCharcoal)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.78)
-
-                    Text("\(profile.experienceLevel.title) - \(profile.mainGoal.title)")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.deltsMutedText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 8)
-            }
-
-            LazyVGrid(columns: metricColumns, alignment: .leading, spacing: 10) {
-                ForEach(metrics, id: \.title) { metric in
-                    ProfileHeroMetric(title: metric.title, value: metric.value, systemImage: metric.systemImage)
-                }
-            }
-        }
-        .padding(16)
-        .background {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.deltsPanel.opacity(0.50),
-                            Color.deltsCard.opacity(0.26),
-                            Color.deltsPanel.opacity(0.18)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-        }
-        .deltsLiquidBarSurface(cornerRadius: 28)
-        .overlay(alignment: .topTrailing) {
-            Capsule()
-                .fill(Color.deltsAccent.opacity(0.42))
-                .frame(width: 72, height: 4)
-                .padding(.top, 12)
-                .padding(.trailing, 18)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.75)
-        }
-    }
-}
-
-private struct ProfileHeroMetric: View {
-    let title: String
-    let value: String
-    let systemImage: String
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 10) {
-            Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(Color.deltsAccent)
-                .frame(width: 30, height: 30)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(value)
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.70)
-
-                Text(title)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.70)
-            }
-        }
-        .padding(.horizontal, 11)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, minHeight: 62, alignment: .leading)
-        .background(Color.deltsBackground.opacity(0.24), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.26), lineWidth: 0.5)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
 private struct ProfileSection<Content: View>: View {
     let title: String
     let subtitle: String?
@@ -865,12 +733,12 @@ private struct ProfileFieldRow<Content: View>: View {
         } else {
             HStack(alignment: .center, spacing: 12) {
                 ProfileFieldLabel(title: title, systemImage: systemImage, tint: tint)
-                    .layoutPriority(1)
+                    .layoutPriority(2)
 
                 Spacer(minLength: 12)
 
                 content
-                    .layoutPriority(2)
+                    .layoutPriority(0)
             }
             .padding(.vertical, 9)
             .contentShape(Rectangle())
@@ -964,6 +832,35 @@ private struct ProfileNumberInputRow: View {
                     .foregroundStyle(Color.deltsMutedText)
             }
             .frame(width: dynamicTypeSize.isAccessibilitySize ? nil : 128, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+        }
+    }
+}
+
+private struct ProfileAgePickerRow: View {
+    let title: String
+    let systemImage: String
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+    @State private var isPickerPresented = false
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            Button {
+                isPickerPresented = true
+            } label: {
+                ProfileMenuValueLabel(text: "\(value.clamped(to: range)) yr")
+            }
+            .deltsPressable()
+            .sheet(isPresented: $isPickerPresented) {
+                ProfileIntegerWheelSheet(
+                    title: title,
+                    initialValue: value,
+                    range: range,
+                    unit: "yr"
+                ) { newValue in
+                    value = newValue
+                }
+            }
         }
     }
 }
@@ -1097,6 +994,66 @@ private struct ProfilePercentPickerRow: View {
                 }
             }
         }
+    }
+}
+
+private struct ProfileIntegerWheelSheet: View {
+    let title: String
+    let unit: String
+    let options: [Int]
+    let onSave: (Int) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedValue: Int
+
+    init(
+        title: String,
+        initialValue: Int,
+        range: ClosedRange<Int>,
+        unit: String,
+        onSave: @escaping (Int) -> Void
+    ) {
+        self.title = title
+        self.unit = unit
+        self.options = Array(range)
+        self.onSave = onSave
+        _selectedValue = State(initialValue: initialValue.clamped(to: range))
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 18) {
+                Text("\(selectedValue) \(unit)")
+                    .font(.title2.monospacedDigit().weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .frame(maxWidth: .infinity, alignment: .center)
+
+                ProfileWheelColumn(title: title, selection: $selectedValue, values: options) { "\($0)" }
+                    .frame(height: 190)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 18)
+            .background(DeltsBackground())
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        onSave(selectedValue)
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                }
+            }
+        }
+        .presentationDetents([.height(320), .medium])
+        .presentationDragIndicator(.visible)
     }
 }
 
@@ -1435,7 +1392,7 @@ private struct ProfileMenuValueLabel: View {
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(Color.deltsMutedText)
         }
-        .frame(minWidth: 104, minHeight: 38, alignment: .trailing)
+        .frame(minWidth: 72, maxWidth: 178, minHeight: 38, alignment: .trailing)
     }
 }
 

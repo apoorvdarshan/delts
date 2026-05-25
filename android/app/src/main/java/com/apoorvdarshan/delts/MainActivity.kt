@@ -721,8 +721,6 @@ private fun ProfileScreen(
             subtitle = "Training defaults and saved equipment."
         )
 
-        ProfileHero(profile = profile)
-
         ProfileSection(
             title = "About",
             subtitle = "Basic details used to shape plans.",
@@ -735,13 +733,9 @@ private fun ProfileScreen(
                 onValueChange = { updateProfile(profile.copy(name = it)) }
             )
             ProfileRowDivider()
-            CompactDropdownRow(
-                title = "Age",
-                icon = Icons.Filled.CalendarToday,
-                value = profile.age.toString(),
-                options = (13..90).map { it.toString() },
-                selectedOption = profile.age.toString()
-            ) { updateProfile(profile.copy(age = it.toInt())) }
+            CompactAgeRow(age = profile.age) {
+                updateProfile(profile.copy(age = it))
+            }
             ProfileRowDivider()
             CompactDropdownRow(
                 title = "Units",
@@ -799,6 +793,15 @@ private fun ProfileScreen(
                 selectedOption = profile.mainGoal
             ) { updateProfile(profile.copy(mainGoal = it)) }
             ProfileRowDivider()
+            CompactMultiSelectRow(
+                title = "Body parts",
+                icon = Icons.Filled.FitnessCenter,
+                items = bodyFocusOptions.map { it.title },
+                selected = profile.bodyFocus,
+            ) { item ->
+                updateProfile(profile.copy(bodyFocus = toggleInSet(profile.bodyFocus, item)))
+            }
+            ProfileRowDivider()
             CompactTextFieldRow(
                 title = "Extra goals",
                 icon = Icons.Filled.List,
@@ -832,28 +835,12 @@ private fun ProfileScreen(
         }
 
         ProfileSection(
-            title = "Body Parts To Build",
-            subtitle = "Choose the areas your workouts should emphasize.",
-            icon = Icons.Filled.FitnessCenter,
-            badge = profile.bodyFocus.size.toString()
-        ) {
-            CompactMultiSelectRow(
-                title = "Focus areas",
-                icon = Icons.Filled.FitnessCenter,
-                items = bodyFocusOptions.map { it.title },
-                selected = profile.bodyFocus,
-            ) { item ->
-                updateProfile(profile.copy(bodyFocus = toggleInSet(profile.bodyFocus, item)))
-            }
-        }
-
-        ProfileSection(
             title = "Schedule",
             subtitle = "Tune how training fits into the week.",
             icon = Icons.Filled.CalendarToday
         ) {
             CompactNumberStepperRow(
-                title = "Workout frequency",
+                title = "Frequency",
                 icon = Icons.Filled.CalendarToday,
                 value = profile.frequency,
                 range = 1..7,
@@ -1600,68 +1587,6 @@ private fun EmptyHistory() {
 }
 
 @Composable
-private fun ProfileHero(profile: AndroidProfile) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.30f))
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Row(verticalAlignment = Alignment.Top) {
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Text(
-                        text = profile.displayName,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = "${profile.experience} - ${profile.mainGoal}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ProfileMetric("Weekly", "${profile.frequency}x", Icons.Filled.CalendarToday, Modifier.weight(1f))
-                ProfileMetric("Duration", "${profile.duration} min", Icons.Filled.Timer, Modifier.weight(1f))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ProfileMetric("Gear", profile.availableEquipment.size.toString(), Icons.Filled.FitnessCenter, Modifier.weight(1f))
-                ProfileMetric("Focus", profile.bodyFocus.size.toString(), Icons.Filled.Flag, Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProfileMetric(title: String, value: String, icon: ImageVector, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.heightIn(min = 62.dp),
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.background.copy(alpha = 0.28f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.24f))
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 11.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(icon, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(22.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text(text = value, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onBackground, maxLines = 1)
-                Text(text = title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-            }
-        }
-    }
-}
-
-@Composable
 private fun ProfileSection(
     title: String,
     subtitle: String,
@@ -1882,7 +1807,7 @@ private fun CompactValueLabel(value: String) {
             textAlign = TextAlign.End,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.widthIn(max = 170.dp)
+            modifier = Modifier.widthIn(max = 150.dp)
         )
         Icon(
             Icons.Filled.KeyboardArrowRight,
@@ -1971,6 +1896,25 @@ private fun CompactNumberStepperRow(
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             CompactIconButton(Icons.Filled.Close) { onChange((value - 1).coerceIn(range)) }
             CompactIconButton(Icons.Filled.Add) { onChange((value + 1).coerceIn(range)) }
+        }
+    }
+}
+
+@Composable
+private fun CompactAgeRow(
+    age: Int,
+    onChange: (Int) -> Unit
+) {
+    val ageRange = 11..120
+    val selectedAge = age.coerceIn(ageRange)
+
+    CompactMeasurementRow(
+        title = "Age",
+        icon = Icons.Filled.CalendarToday,
+        valueText = "$selectedAge yr"
+    ) {
+        ScrollingNumberSelector("yr", selectedAge, ageRange, Modifier.fillMaxWidth()) {
+            onChange(it)
         }
     }
 }
@@ -2184,87 +2128,6 @@ private fun NumberStepper(
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 IconStepper(Icons.Filled.Add) { onChange(value + 1) }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AgeDropdown(
-    title: String,
-    value: Int,
-    modifier: Modifier = Modifier,
-    onChange: (Int) -> Unit
-) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.28f))
-    ) {
-        Box {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = true }
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "$value",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-
-                Icon(
-                    imageVector = Icons.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier.heightIn(max = 360.dp)
-            ) {
-                (13..90).forEach { age ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = "$age",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        },
-                        leadingIcon = if (age == value) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Filled.Check,
-                                    contentDescription = null,
-                                    tint = DeltsAccent,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        } else {
-                            null
-                        },
-                        onClick = {
-                            onChange(age)
-                            expanded = false
-                        }
-                    )
-                }
             }
         }
     }
