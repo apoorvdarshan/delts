@@ -146,37 +146,21 @@ private struct ExerciseLibraryBrowserView: View {
 
     private var filters: some View {
         VStack(alignment: .leading, spacing: 12) {
+            WorkoutsSearchPill(searchText: $searchText)
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 9) {
-                    WorkoutsSearchPill(searchText: $searchText)
-
-                    BodyPartFilterChip(
-                        title: "All",
-                        systemImage: "scope",
-                        isSelected: selectedMuscleGroup == nil
+                    filterMenuPill(
+                        title: "Body Part",
+                        value: selectedMuscleGroup?.title ?? "All",
+                        systemImage: selectedMuscleGroup?.icon ?? "scope"
                     ) {
-                        withAnimation(.snappy) {
-                            selectedMuscleGroup = nil
+                        menuChoice("All Body Parts", isSelected: selectedMuscleGroup == nil) { selectedMuscleGroup = nil }
+                        ForEach(MuscleGroup.allCases) { group in
+                            menuChoice(group.title, isSelected: selectedMuscleGroup == group) { selectedMuscleGroup = group }
                         }
                     }
 
-                    ForEach(MuscleGroup.allCases) { group in
-                        BodyPartFilterChip(
-                            title: group.title,
-                            systemImage: group.icon,
-                            isSelected: selectedMuscleGroup == group
-                        ) {
-                            withAnimation(.snappy) {
-                                selectedMuscleGroup = group
-                            }
-                        }
-                    }
-                }
-                .padding(.vertical, 1)
-            }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 9) {
                     filterMenuPill(
                         title: "Level",
                         value: selectedLevel?.title ?? "All",
@@ -535,7 +519,7 @@ private struct WorkoutsSearchPill: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.deltsCharcoal)
                 .lineLimit(1)
-                .frame(width: 128)
+                .frame(maxWidth: .infinity)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
 
@@ -551,7 +535,7 @@ private struct WorkoutsSearchPill: View {
             }
         }
         .padding(.horizontal, 12)
-        .frame(height: 46)
+        .frame(maxWidth: .infinity, minHeight: 46, alignment: .leading)
         .background(
             Color.deltsPanel.opacity(searchText.isEmpty ? 0.30 : 0.46),
             in: RoundedRectangle(cornerRadius: 17, style: .continuous)
@@ -741,38 +725,6 @@ private struct ResultsHeader: View {
             .lineLimit(1)
         }
         .padding(.top, 6)
-    }
-}
-
-private struct BodyPartFilterChip: View {
-    let title: String
-    let systemImage: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Label {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-            } icon: {
-                Image(systemName: systemImage)
-                    .font(.caption.weight(.bold))
-            }
-        }
-        .deltsPressable()
-        .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsCharcoal)
-        .padding(.horizontal, 13)
-        .frame(height: 38)
-        .fixedSize(horizontal: true, vertical: false)
-        .background(isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.46), in: Capsule())
-        .overlay {
-            Capsule()
-                .stroke(Color.deltsHairline.opacity(isSelected ? 0.22 : 0.46), lineWidth: 0.5)
-        }
-        .contentShape(Capsule())
-        .accessibilityValue(isSelected ? "Selected" : "Not selected")
     }
 }
 

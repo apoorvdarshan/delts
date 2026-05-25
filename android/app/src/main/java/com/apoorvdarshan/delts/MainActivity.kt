@@ -494,27 +494,22 @@ private fun WorkoutsScreen(
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                HorizontalChipRail {
-                    LibrarySearchPill(search = search, onSearchChange = { search = it })
-                    DeltsPillButton(
-                        title = "All",
-                        icon = Icons.Filled.FitnessCenter,
-                        selected = selectedMuscle == null
-                    ) {
-                        selectedMuscle = null
-                    }
-                    muscles.forEach { option ->
-                        DeltsPillButton(
-                            title = option.title,
-                            icon = option.icon,
-                            selected = selectedMuscle == option.title
-                        ) {
-                            selectedMuscle = option.title
-                        }
-                    }
-                }
+                LibrarySearchPill(
+                    search = search,
+                    onSearchChange = { search = it },
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 HorizontalChipRail {
+                    LibraryFilterMenu(
+                        title = "Body Part",
+                        value = selectedMuscle ?: "All",
+                        icon = Icons.Filled.FitnessCenter,
+                        active = selectedMuscle != null,
+                        options = muscles.map { it.title },
+                        selectedOption = selectedMuscle,
+                        allTitle = "All Body Parts"
+                    ) { selectedMuscle = it }
                     LibraryFilterMenu(
                         title = "Level",
                         value = selectedLevel ?: "All",
@@ -1323,11 +1318,11 @@ private fun HorizontalChipRail(content: @Composable RowScope.() -> Unit) {
 @Composable
 private fun LibrarySearchPill(
     search: String,
-    onSearchChange: (String) -> Unit
+    onSearchChange: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = Modifier
-            .width(222.dp)
+        modifier = modifier
             .height(46.dp),
         shape = RoundedCornerShape(17.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (search.isBlank()) 0.52f else 0.66f),
