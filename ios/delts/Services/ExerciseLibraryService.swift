@@ -1,5 +1,12 @@
 import Foundation
 
+struct ExerciseCategoryCount: Identifiable, Hashable {
+    let category: String
+    let count: Int
+
+    var id: String { category }
+}
+
 struct ExerciseLibraryService {
     static let shared = ExerciseLibraryService()
 
@@ -13,8 +20,15 @@ struct ExerciseLibraryService {
         Self.sortedUnique(exercises.map(\.mechanic))
     }
 
-    var availableCategories: [String] {
-        Self.sortedUnique(exercises.map(\.category))
+    var availableCategoryCounts: [ExerciseCategoryCount] {
+        Dictionary(grouping: exercises, by: \.category)
+            .map { ExerciseCategoryCount(category: $0.key, count: $0.value.count) }
+            .sorted { lhs, rhs in
+                if lhs.count == rhs.count {
+                    return lhs.category.localizedCaseInsensitiveCompare(rhs.category) == .orderedAscending
+                }
+                return lhs.count > rhs.count
+            }
     }
 
     var availableRawEquipment: [String] {
@@ -107,7 +121,6 @@ struct ExerciseLibraryService {
     func filtered(
         muscleGroups: Set<MuscleGroup>,
         level: ExperienceLevel?,
-        goal: FitnessGoal?,
         equipment: Equipment?,
         equipmentFamily: ExerciseEquipmentFamily,
         rawEquipment: String?,
@@ -116,7 +129,6 @@ struct ExerciseLibraryService {
         force: String?,
         mechanic: String?,
         category: String?,
-        media: ExerciseMediaFilter,
         sort: ExerciseLibrarySort,
         searchText: String
     ) -> [ExerciseLibraryItem] {
@@ -125,7 +137,6 @@ struct ExerciseLibraryService {
         let filteredItems = exercises.filter { item in
             let matchesMuscle = muscleGroups.isEmpty || muscleGroups.contains(item.muscleGroup)
             let matchesLevel = level == nil || item.level == level
-            let matchesGoal = goal == nil || item.goal == goal
             let matchesEquipment = equipment == nil || item.equipment == equipment
             let matchesFamily = equipmentFamily == .all || item.equipmentFamily == equipmentFamily
             let matchesRawEquipment = rawEquipment == nil || item.rawEquipment == rawEquipment
@@ -134,12 +145,10 @@ struct ExerciseLibraryService {
             let matchesForce = force == nil || item.force == force
             let matchesMechanic = mechanic == nil || item.mechanic == mechanic
             let matchesCategory = category == nil || item.category == category
-            let matchesMedia = media.matches(item)
             let matchesSearch = query.isEmpty || item.searchableText.contains(query)
 
             return matchesMuscle &&
                 matchesLevel &&
-                matchesGoal &&
                 matchesEquipment &&
                 matchesFamily &&
                 matchesRawEquipment &&
@@ -148,7 +157,6 @@ struct ExerciseLibraryService {
                 matchesForce &&
                 matchesMechanic &&
                 matchesCategory &&
-                matchesMedia &&
                 matchesSearch
         }
 
@@ -171,11 +179,6 @@ struct ExerciseLibraryService {
                     return lhs.name < rhs.name
                 }
                 return lhs.equipment.title < rhs.equipment.title
-            case .goal:
-                if lhs.goal.title == rhs.goal.title {
-                    return lhs.name < rhs.name
-                }
-                return lhs.goal.title < rhs.goal.title
             case .category:
                 return Self.compare(lhs.category, rhs.category, lhsName: lhs.name, rhsName: rhs.name)
             case .force:
@@ -184,11 +187,6 @@ struct ExerciseLibraryService {
                 return Self.compare(lhs.mechanic, rhs.mechanic, lhsName: lhs.name, rhsName: rhs.name)
             case .rawEquipment:
                 return Self.compare(lhs.rawEquipment, rhs.rawEquipment, lhsName: lhs.name, rhsName: rhs.name)
-            case .media:
-                if lhs.imagePaths.count == rhs.imagePaths.count {
-                    return lhs.name < rhs.name
-                }
-                return lhs.imagePaths.count > rhs.imagePaths.count
             }
         }
     }

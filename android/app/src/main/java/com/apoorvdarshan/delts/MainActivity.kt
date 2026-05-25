@@ -404,7 +404,6 @@ private fun WorkoutsScreen(
     var selectedForce by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedMechanic by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedMedia by rememberSaveable { mutableStateOf(LibraryMediaFilter.All) }
     var selectedSort by rememberSaveable { mutableStateOf(LibrarySort.BodyPart) }
     var search by rememberSaveable { mutableStateOf("") }
 
@@ -414,7 +413,15 @@ private fun WorkoutsScreen(
     val secondaryMuscleOptions = remember(exerciseLibrary) { exerciseLibrary.flatMap { it.secondaryMuscles }.distinctSorted() }
     val forceOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.force }.distinctSorted() }
     val mechanicOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.mechanic }.distinctSorted() }
-    val categoryOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.category }.distinctSorted() }
+    val categoryCounts = remember(exerciseLibrary) { exerciseLibrary.groupingBy { it.category }.eachCount() }
+    val categoryOptions = remember(categoryCounts) {
+        categoryCounts.entries
+            .sortedWith(
+                compareByDescending<Map.Entry<String, Int>> { it.value }
+                    .thenBy(String.CASE_INSENSITIVE_ORDER) { it.key }
+            )
+            .map { it.key }
+    }
 
     val hasActiveFilters =
         selectedMuscles.isNotEmpty() ||
@@ -425,7 +432,6 @@ private fun WorkoutsScreen(
             selectedForce != null ||
             selectedMechanic != null ||
             selectedCategory != null ||
-            selectedMedia != LibraryMediaFilter.All ||
             selectedSort != LibrarySort.BodyPart ||
             search.isNotBlank()
 
@@ -438,7 +444,6 @@ private fun WorkoutsScreen(
         selectedForce = null
         selectedMechanic = null
         selectedCategory = null
-        selectedMedia = LibraryMediaFilter.All
         selectedSort = LibrarySort.BodyPart
         search = ""
     }
@@ -458,6 +463,9 @@ private fun WorkoutsScreen(
             else -> "${selectedMuscles.size} parts"
         }
 
+    fun selectedCategoryTitle(): String =
+        selectedCategory ?: "All"
+
     val filteredExercises = remember(
         selectedMuscles,
         selectedLevel,
@@ -467,7 +475,6 @@ private fun WorkoutsScreen(
         selectedForce,
         selectedMechanic,
         selectedCategory,
-        selectedMedia,
         selectedSort,
         search,
         exerciseLibrary
@@ -483,7 +490,6 @@ private fun WorkoutsScreen(
                     (selectedForce == null || item.force == selectedForce) &&
                     (selectedMechanic == null || item.mechanic == selectedMechanic) &&
                     (selectedCategory == null || item.category == selectedCategory) &&
-                    selectedMedia.matches(item) &&
                     (query.isBlank() || item.searchableText().contains(query))
             }
             .sortedWith(selectedSort.comparator())
@@ -531,6 +537,15 @@ private fun WorkoutsScreen(
                         allTitle = "All Levels"
                     ) { selectedLevel = it }
                     LibraryFilterMenu(
+                        title = "Category",
+                        value = selectedCategoryTitle(),
+                        icon = Icons.Filled.List,
+                        active = selectedCategory != null,
+                        options = categoryOptions,
+                        selectedOption = selectedCategory,
+                        allTitle = "All Categories"
+                    ) { selectedCategory = it }
+                    LibraryFilterMenu(
                         title = "Raw Gear",
                         value = selectedRawEquipment ?: "All",
                         icon = Icons.Filled.Build,
@@ -554,15 +569,6 @@ private fun WorkoutsScreen(
 
                 HorizontalChipRail {
                     LibraryFilterMenu(
-                        title = "Category",
-                        value = selectedCategory ?: "All",
-                        icon = Icons.Filled.List,
-                        active = selectedCategory != null,
-                        options = categoryOptions,
-                        selectedOption = selectedCategory,
-                        allTitle = "All Categories"
-                    ) { selectedCategory = it }
-                    LibraryFilterMenu(
                         title = "Force",
                         value = selectedForce ?: "All",
                         icon = Icons.Filled.Flag,
@@ -580,17 +586,6 @@ private fun WorkoutsScreen(
                         selectedOption = selectedMechanic,
                         allTitle = "All Mechanics"
                     ) { selectedMechanic = it }
-                    LibraryFilterMenu(
-                        title = "Media",
-                        value = selectedMedia.title,
-                        icon = Icons.Filled.Lock,
-                        active = selectedMedia != LibraryMediaFilter.All,
-                        options = LibraryMediaFilter.entries.filter { it != LibraryMediaFilter.All }.map { it.title },
-                        selectedOption = selectedMedia.takeUnless { it == LibraryMediaFilter.All }?.title,
-                        allTitle = LibraryMediaFilter.All.title
-                    ) { selected ->
-                        selectedMedia = LibraryMediaFilter.entries.firstOrNull { it.title == selected } ?: LibraryMediaFilter.All
-                    }
                     LibraryFilterMenu(
                         title = "Primary",
                         value = selectedPrimaryMuscle ?: "All",
@@ -2803,14 +2798,7 @@ private enum class LibrarySort(val title: String) {
     Category("DB Category"),
     Force("Force"),
     Mechanic("Mechanic"),
-    RawEquipment("Raw Gear"),
-    Media("Media")
-}
-
-private enum class LibraryMediaFilter(val title: String) {
-    All("All"),
-    WithMedia("With Media"),
-    NoMedia("No Media")
+    RawEquipment("Raw Gear")
 }
 
 private data class AndroidProfile(
@@ -2980,13 +2968,6 @@ private fun List<String>.distinctSorted(): List<String> =
         .filter { it.isNotBlank() }
         .sortedWith(String.CASE_INSENSITIVE_ORDER)
 
-private fun LibraryMediaFilter.matches(item: ExerciseItem): Boolean =
-    when (this) {
-        LibraryMediaFilter.All -> true
-        LibraryMediaFilter.WithMedia -> item.imagePaths.isNotEmpty()
-        LibraryMediaFilter.NoMedia -> item.imagePaths.isEmpty()
-    }
-
 private fun LibrarySort.comparator(): Comparator<ExerciseItem> =
     when (this) {
         LibrarySort.BodyPart -> compareBy<ExerciseItem, String>(String.CASE_INSENSITIVE_ORDER) { it.muscle }
@@ -3004,15 +2985,13 @@ private fun LibrarySort.comparator(): Comparator<ExerciseItem> =
             .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
         LibrarySort.RawEquipment -> compareBy<ExerciseItem, String>(String.CASE_INSENSITIVE_ORDER) { it.rawEquipment }
             .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
-        LibrarySort.Media -> compareByDescending<ExerciseItem> { it.imagePaths.size }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
     }
 
 private fun levelSortRank(level: String): Int =
     when (level) {
         "Beginner" -> 0
         "Intermediate" -> 1
-        "Advanced" -> 2
+        "Expert" -> 2
         else -> 3
     }
 
@@ -3022,7 +3001,7 @@ private fun ExerciseItem.databaseSummary(): String {
         .joinToString(" - ")
         .ifBlank { machineLabel }
 
-    return if (imagePaths.size > 1) "$summary - ${imagePaths.size} media" else summary
+    return summary
 }
 
 private fun ExerciseItem.searchableText(): String =
@@ -3089,7 +3068,7 @@ private fun equipmentFor(rawEquipment: String, exerciseName: String): String {
 private fun experienceLevelFor(rawLevel: String): String =
     when (rawLevel.lowercase()) {
         "beginner" -> "Beginner"
-        "expert", "advanced" -> "Advanced"
+        "expert", "advanced" -> "Expert"
         else -> "Intermediate"
     }
 
@@ -3281,7 +3260,7 @@ private val sampleExerciseLibrary = listOf(
     ExerciseItem("Seated Cable Row", "Back", "Cable Machine", "Beginner", "Cable Machine", Icons.Filled.Build, emptyList()),
     ExerciseItem("Dumbbell Shoulder Press", "Shoulders", "Dumbbells", "Intermediate", "Dumbbells", Icons.Filled.FitnessCenter, emptyList()),
     ExerciseItem("Lateral Raise", "Shoulders", "Dumbbells", "Beginner", "Dumbbells", Icons.Filled.FitnessCenter, emptyList()),
-    ExerciseItem("Back Squat", "Legs", "Barbell", "Advanced", "Barbell", Icons.Filled.DirectionsRun, emptyList()),
+    ExerciseItem("Back Squat", "Legs", "Barbell", "Expert", "Barbell", Icons.Filled.DirectionsRun, emptyList()),
     ExerciseItem("Goblet Squat", "Legs", "Dumbbells", "Beginner", "Dumbbells", Icons.Filled.DirectionsRun, emptyList()),
     ExerciseItem("Dumbbell Curl", "Arms", "Dumbbells", "Beginner", "Dumbbells", Icons.Filled.FitnessCenter, emptyList()),
     ExerciseItem("Cable Triceps Pressdown", "Arms", "Cable Machine", "Beginner", "Cable Machine", Icons.Filled.Build, emptyList()),

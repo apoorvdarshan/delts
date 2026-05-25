@@ -80,10 +80,6 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
         id
     }
 
-    var hasMedia: Bool {
-        !imagePaths.isEmpty
-    }
-
     var primaryMusclesTitle: String {
         primaryMuscles.isEmpty ? "Unspecified" : primaryMuscles.joined(separator: ", ")
     }
@@ -200,35 +196,13 @@ enum ExerciseLibrarySort: String, CaseIterable, Identifiable, Hashable {
     case name = "Name"
     case level = "Level"
     case equipment = "Equipment"
-    case goal = "Goal"
     case category = "DB Category"
     case force = "Force"
     case mechanic = "Mechanic"
     case rawEquipment = "Raw Gear"
-    case media = "Media"
 
     var id: String { rawValue }
     var title: String { rawValue }
-}
-
-enum ExerciseMediaFilter: String, CaseIterable, Identifiable, Hashable {
-    case all = "All"
-    case withMedia = "With Media"
-    case noMedia = "No Media"
-
-    var id: String { rawValue }
-    var title: String { rawValue }
-
-    func matches(_ item: ExerciseLibraryItem) -> Bool {
-        switch self {
-        case .all:
-            return true
-        case .withMedia:
-            return item.hasMedia
-        case .noMedia:
-            return !item.hasMedia
-        }
-    }
 }
 
 private extension String {

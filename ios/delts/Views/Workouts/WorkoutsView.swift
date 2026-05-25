@@ -16,7 +16,6 @@ private struct ExerciseLibraryBrowserView: View {
     @State private var searchText = ""
     @State private var selectedMuscleGroups: Set<MuscleGroup> = []
     @State private var selectedLevel: ExperienceLevel?
-    @State private var selectedGoal: FitnessGoal?
     @State private var selectedEquipmentFamily: ExerciseEquipmentFamily = .all
     @State private var selectedRawEquipment: String?
     @State private var selectedPrimaryMuscle: String?
@@ -24,7 +23,6 @@ private struct ExerciseLibraryBrowserView: View {
     @State private var selectedForce: String?
     @State private var selectedMechanic: String?
     @State private var selectedCategory: String?
-    @State private var selectedMedia: ExerciseMediaFilter = .all
     @State private var selectedSort: ExerciseLibrarySort = .bodyPart
     @State private var generatedPlan: WorkoutPlan?
 
@@ -34,7 +32,6 @@ private struct ExerciseLibraryBrowserView: View {
         service.filtered(
             muscleGroups: selectedMuscleGroups,
             level: selectedLevel,
-            goal: selectedGoal,
             equipment: nil,
             equipmentFamily: selectedEquipmentFamily,
             rawEquipment: selectedRawEquipment,
@@ -43,7 +40,6 @@ private struct ExerciseLibraryBrowserView: View {
             force: selectedForce,
             mechanic: selectedMechanic,
             category: selectedCategory,
-            media: selectedMedia,
             sort: selectedSort,
             searchText: searchText
         )
@@ -53,7 +49,6 @@ private struct ExerciseLibraryBrowserView: View {
         !searchText.isEmpty ||
             !selectedMuscleGroups.isEmpty ||
             selectedLevel != nil ||
-            selectedGoal != nil ||
             selectedEquipmentFamily != .all ||
             selectedRawEquipment != nil ||
             selectedPrimaryMuscle != nil ||
@@ -61,7 +56,6 @@ private struct ExerciseLibraryBrowserView: View {
             selectedForce != nil ||
             selectedMechanic != nil ||
             selectedCategory != nil ||
-            selectedMedia != .all ||
             selectedSort != .bodyPart
     }
 
@@ -141,23 +135,25 @@ private struct ExerciseLibraryBrowserView: View {
 
                     filterMenuPill(
                         title: "Level",
-                        value: selectedLevel?.title ?? "All",
+                        value: selectedLevel.map(workoutLevelTitle) ?? "All",
                         systemImage: "chart.bar.fill"
                     ) {
                         menuChoice("All Levels", isSelected: selectedLevel == nil) { selectedLevel = nil }
                         ForEach(ExperienceLevel.allCases) { level in
-                            menuChoice(level.title, isSelected: selectedLevel == level) { selectedLevel = level }
+                            menuChoice(workoutLevelTitle(level), isSelected: selectedLevel == level) { selectedLevel = level }
                         }
                     }
 
                     filterMenuPill(
-                        title: "Goal",
-                        value: selectedGoal?.title ?? "All",
-                        systemImage: "target"
+                        title: "Category",
+                        value: categoryFilterTitle,
+                        systemImage: "tag"
                     ) {
-                        menuChoice("All Goals", isSelected: selectedGoal == nil) { selectedGoal = nil }
-                        ForEach(FitnessGoal.profileCases + [.beginnerForm]) { goal in
-                            menuChoice(goal.title, isSelected: selectedGoal == goal) { selectedGoal = goal }
+                        menuChoice("All Categories", isSelected: selectedCategory == nil) { selectedCategory = nil }
+                        ForEach(service.availableCategoryCounts) { categoryCount in
+                            menuChoice(categoryMenuTitle(categoryCount), isSelected: selectedCategory == categoryCount.category) {
+                                selectedCategory = categoryCount.category
+                            }
                         }
                     }
 
@@ -189,35 +185,24 @@ private struct ExerciseLibraryBrowserView: View {
                     }
 
                     filterMenuPill(
-                        title: "Database",
-                        value: databaseFilterTitle,
-                        systemImage: "server.rack"
+                        title: "Force",
+                        value: selectedForce ?? "All",
+                        systemImage: "arrow.left.arrow.right"
                     ) {
-                        menuChoice("All DB Metadata", isSelected: selectedCategory == nil && selectedForce == nil && selectedMechanic == nil && selectedMedia == .all) {
-                            selectedCategory = nil
-                            selectedForce = nil
-                            selectedMechanic = nil
-                            selectedMedia = .all
+                        menuChoice("All Forces", isSelected: selectedForce == nil) { selectedForce = nil }
+                        ForEach(service.availableForces, id: \.self) { force in
+                            menuChoice(force, isSelected: selectedForce == force) { selectedForce = force }
                         }
-                        Section("Category") {
-                            ForEach(service.availableCategories, id: \.self) { category in
-                                menuChoice(category, isSelected: selectedCategory == category) { selectedCategory = category }
-                            }
-                        }
-                        Section("Force") {
-                            ForEach(service.availableForces, id: \.self) { force in
-                                menuChoice(force, isSelected: selectedForce == force) { selectedForce = force }
-                            }
-                        }
-                        Section("Mechanic") {
-                            ForEach(service.availableMechanics, id: \.self) { mechanic in
-                                menuChoice(mechanic, isSelected: selectedMechanic == mechanic) { selectedMechanic = mechanic }
-                            }
-                        }
-                        Section("Media") {
-                            ForEach(ExerciseMediaFilter.allCases) { media in
-                                menuChoice(media.title, isSelected: selectedMedia == media) { selectedMedia = media }
-                            }
+                    }
+
+                    filterMenuPill(
+                        title: "Mechanic",
+                        value: selectedMechanic ?? "All",
+                        systemImage: "gearshape"
+                    ) {
+                        menuChoice("All Mechanics", isSelected: selectedMechanic == nil) { selectedMechanic = nil }
+                        ForEach(service.availableMechanics, id: \.self) { mechanic in
+                            menuChoice(mechanic, isSelected: selectedMechanic == mechanic) { selectedMechanic = mechanic }
                         }
                     }
 
@@ -274,6 +259,14 @@ private struct ExerciseLibraryBrowserView: View {
         return "All"
     }
 
+    private var categoryFilterTitle: String {
+        selectedCategory ?? "All"
+    }
+
+    private func categoryMenuTitle(_ categoryCount: ExerciseCategoryCount) -> String {
+        categoryCount.category
+    }
+
     private var bodyPartFilterTitle: String {
         if selectedMuscleGroups.isEmpty {
             return "All"
@@ -282,22 +275,6 @@ private struct ExerciseLibraryBrowserView: View {
             return group.title
         }
         return "\(selectedMuscleGroups.count) parts"
-    }
-
-    private var databaseFilterTitle: String {
-        if let selectedCategory {
-            return selectedCategory
-        }
-        if let selectedForce {
-            return selectedForce
-        }
-        if let selectedMechanic {
-            return selectedMechanic
-        }
-        if selectedMedia != .all {
-            return selectedMedia.title
-        }
-        return "All"
     }
 
     private var rawMuscleFilterTitle: String {
@@ -314,7 +291,6 @@ private struct ExerciseLibraryBrowserView: View {
         searchText = ""
         selectedMuscleGroups.removeAll()
         selectedLevel = nil
-        selectedGoal = nil
         selectedEquipmentFamily = .all
         selectedRawEquipment = nil
         selectedPrimaryMuscle = nil
@@ -322,7 +298,6 @@ private struct ExerciseLibraryBrowserView: View {
         selectedForce = nil
         selectedMechanic = nil
         selectedCategory = nil
-        selectedMedia = .all
         selectedSort = .bodyPart
     }
 
@@ -365,6 +340,10 @@ private struct ExerciseLibraryBrowserView: View {
             }
         }
     }
+}
+
+private func workoutLevelTitle(_ level: ExperienceLevel) -> String {
+    level == .advanced ? "Expert" : level.title
 }
 
 private struct WorkoutFilterPanel<Content: View>: View {
@@ -633,16 +612,16 @@ private struct ExerciseLibraryRow: View {
                     HStack(spacing: 8) {
                         LibraryTag(title: item.muscleGroup.title, systemImage: item.muscleGroup.icon, tint: Color.deltsMutedText)
                         LibraryTag(title: item.equipment.title, systemImage: item.equipment.icon, tint: Color.deltsMutedText)
-                        LibraryTag(title: item.level.title, systemImage: "chart.bar.fill", tint: Color.deltsMutedText)
+                        LibraryTag(title: workoutLevelTitle(item.level), systemImage: "chart.bar.fill", tint: Color.deltsMutedText)
                     }
 
                     VStack(alignment: .leading, spacing: 5) {
                         LibraryTag(title: item.muscleGroup.title, systemImage: item.muscleGroup.icon, tint: Color.deltsMutedText)
-                        LibraryTag(title: "\(item.equipment.title) - \(item.level.title)", systemImage: item.equipment.icon, tint: Color.deltsMutedText)
+                        LibraryTag(title: "\(item.equipment.title) - \(workoutLevelTitle(item.level))", systemImage: item.equipment.icon, tint: Color.deltsMutedText)
                     }
                 }
 
-                Label(rowMetadata, systemImage: item.imagePaths.count > 1 ? "photo.stack" : "photo")
+                Label(item.databaseMetadataSummary, systemImage: "server.rack")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.deltsSecondaryAccent)
                     .lineLimit(1)
@@ -680,12 +659,6 @@ private struct ExerciseLibraryRow: View {
         .accessibilityHidden(true)
     }
 
-    private var rowMetadata: String {
-        if item.imagePaths.count > 1 {
-            return "\(item.databaseMetadataSummary) - \(item.imagePaths.count) media"
-        }
-        return item.databaseMetadataSummary
-    }
 }
 
 private struct CompletedWorkoutRow: View {
@@ -853,9 +826,6 @@ private struct ExerciseLibraryDetailView: View {
                     DetailInstructionSection(instructions: item.instructions)
 
                     VStack(spacing: 0) {
-                        DetailInfoRow(title: "Goal", value: item.goal.title, systemImage: "target")
-                        Divider()
-                            .overlay(Color.deltsHairline.opacity(0.32))
                         DetailInfoRow(title: "Equipment", value: "\(item.equipment.title) - \(item.machineLabel)", systemImage: "dumbbell.fill")
                         Divider()
                             .overlay(Color.deltsHairline.opacity(0.32))
@@ -917,20 +887,13 @@ private struct ExerciseLibraryDetailView: View {
         }
         .overlay(alignment: .bottomLeading) {
             VStack(alignment: .leading, spacing: 8) {
-                if item.imagePaths.count > 1 {
-                    Label("\(item.imagePaths.count) media", systemImage: "photo.stack")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.white.opacity(0.82))
-                        .lineLimit(1)
-                }
-
                 Text(item.name)
                     .font(.system(.title, design: .rounded, weight: .bold))
                     .foregroundStyle(.white)
                     .lineLimit(3)
                     .minimumScaleFactor(0.7)
 
-                Text("\(item.muscleGroup.title) - \(item.equipment.title) - \(item.level.title)")
+                Text("\(item.muscleGroup.title) - \(item.equipment.title) - \(workoutLevelTitle(item.level))")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.82))
                     .lineLimit(2)
@@ -1036,7 +999,7 @@ private struct DetailMetricGrid: View {
                 .overlay(Color.deltsHairline.opacity(0.34))
 
             HStack(spacing: 0) {
-                DetailMetric(title: "Level", value: item.level.title, systemImage: "chart.bar.fill")
+                DetailMetric(title: "Level", value: workoutLevelTitle(item.level), systemImage: "chart.bar.fill")
                 Divider().frame(height: 48).overlay(Color.deltsHairline.opacity(0.34))
                 DetailMetric(title: "Body", value: item.muscleGroup.title, systemImage: item.muscleGroup.icon)
                 Divider().frame(height: 48).overlay(Color.deltsHairline.opacity(0.34))
