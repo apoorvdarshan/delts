@@ -51,7 +51,6 @@ private struct ProfileEditorView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                ProfileScreenHeader()
                 identitySection
                 goalSection
                 aiSettingsSection
@@ -469,27 +468,6 @@ private struct ProfileEditorView: View {
         LocalGeminiKeyStore.clear()
         geminiAPIKey = ""
         hasSavedGeminiKey = false
-    }
-}
-
-private struct ProfileScreenHeader: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Setup")
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(Color.deltsAccent)
-                .textCase(.uppercase)
-
-            Text("Profile")
-                .font(.system(.title2, design: .rounded, weight: .bold))
-                .foregroundStyle(Color.deltsCharcoal)
-
-            Text("Training defaults and saved equipment.")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.deltsMutedText)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

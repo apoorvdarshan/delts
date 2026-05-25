@@ -715,12 +715,6 @@ private fun ProfileScreen(
             .padding(top = 12.dp, bottom = 112.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        ScreenHeader(
-            eyebrow = "SETUP",
-            title = "Profile",
-            subtitle = "Training defaults and saved equipment."
-        )
-
         ProfileSection(
             title = "About",
             subtitle = "Basic details used to shape plans.",
