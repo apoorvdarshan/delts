@@ -172,12 +172,14 @@ private struct ProfileEditorView: View {
             systemImage: "key.fill",
             badge: hasSavedGeminiKey ? "Ready" : nil
         ) {
-            GeminiKeySettingsCard(
-                apiKey: $geminiAPIKey,
-                hasSavedKey: hasSavedGeminiKey,
-                save: saveGeminiKey,
-                clear: clearGeminiKey
-            )
+            ProfileSectionPanel {
+                GeminiKeySettingsCard(
+                    apiKey: $geminiAPIKey,
+                    hasSavedKey: hasSavedGeminiKey,
+                    save: saveGeminiKey,
+                    clear: clearGeminiKey
+                )
+            }
         }
     }
 
@@ -188,12 +190,14 @@ private struct ProfileEditorView: View {
             systemImage: "figure.strengthtraining.functional",
             badge: "\(profile.selectedBodyFocus.count)"
         ) {
-            ProfileChecklistGrid(
-                options: BodyFocus.allCases,
-                selection: bodyFocusBinding,
-                title: { $0.title },
-                icon: { $0.icon }
-            )
+            ProfileSectionPanel {
+                ProfileChecklistGrid(
+                    options: BodyFocus.allCases,
+                    selection: bodyFocusBinding,
+                    title: { $0.title },
+                    icon: { $0.icon }
+                )
+            }
         }
     }
 
@@ -238,19 +242,21 @@ private struct ProfileEditorView: View {
             systemImage: "dumbbell.fill",
             badge: "\(profile.availableEquipment.count)"
         ) {
-            VStack(alignment: .leading, spacing: 14) {
-                ProfileCountSummaryRow(
-                    title: "Selected",
-                    systemImage: "checklist",
-                    value: "\(profile.availableEquipment.count)"
-                )
+            ProfileSectionPanel {
+                VStack(alignment: .leading, spacing: 14) {
+                    ProfileCountSummaryRow(
+                        title: "Selected",
+                        systemImage: "checklist",
+                        value: "\(profile.availableEquipment.count)"
+                    )
 
-                ProfileChecklistGrid(
-                    options: Equipment.allCases,
-                    selection: equipmentBinding,
-                    title: { $0.title },
-                    icon: { $0.icon }
-                )
+                    ProfileChecklistGrid(
+                        options: Equipment.allCases,
+                        selection: equipmentBinding,
+                        title: { $0.title },
+                        icon: { $0.icon }
+                    )
+                }
             }
         }
     }
@@ -300,12 +306,14 @@ private struct ProfileEditorView: View {
             systemImage: "exclamationmark.triangle.fill",
             badge: "\(profile.fitnessIssues.count)"
         ) {
-            ProfileChecklistGrid(
-                options: FitnessIssue.allCases,
-                selection: issuesBinding,
-                title: { $0.title },
-                icon: { $0.icon }
-            )
+            ProfileSectionPanel {
+                ProfileChecklistGrid(
+                    options: FitnessIssue.allCases,
+                    selection: issuesBinding,
+                    title: { $0.title },
+                    icon: { $0.icon }
+                )
+            }
         }
     }
 
@@ -783,6 +791,27 @@ private struct ProfileRowStack<Content: View>: View {
             content
         }
         .padding(.horizontal, 12)
+        .background(Color.deltsPanel.opacity(0.13), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
+        }
+    }
+}
+
+private struct ProfileSectionPanel<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            content
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.deltsPanel.opacity(0.13), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
