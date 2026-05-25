@@ -41,7 +41,14 @@ struct FreeExerciseDBLoader {
             restSeconds: restSeconds(for: goal),
             formTip: formTip(for: record),
             imagePaths: record.images,
-            source: sourceName
+            source: sourceName,
+            force: record.force,
+            mechanic: record.mechanic,
+            category: record.category,
+            rawEquipment: record.equipment,
+            primaryMuscles: record.primaryMuscles,
+            secondaryMuscles: record.secondaryMuscles,
+            instructions: record.instructions
         )
     }
 

@@ -13,6 +13,13 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
     let formTip: String
     let imagePaths: [String]
     let source: String
+    let force: String
+    let mechanic: String
+    let category: String
+    let rawEquipment: String
+    let primaryMuscles: [String]
+    let secondaryMuscles: [String]
+    let instructions: [String]
 
     init(
         id: String,
@@ -26,7 +33,14 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
         restSeconds: Int,
         formTip: String,
         imagePaths: [String] = [],
-        source: String = "delts"
+        source: String = "delts",
+        force: String? = nil,
+        mechanic: String? = nil,
+        category: String? = nil,
+        rawEquipment: String? = nil,
+        primaryMuscles: [String] = [],
+        secondaryMuscles: [String] = [],
+        instructions: [String] = []
     ) {
         self.id = id
         self.name = name
@@ -40,6 +54,14 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
         self.formTip = formTip
         self.imagePaths = imagePaths
         self.source = source
+        self.force = Self.metadataTitle(force)
+        self.mechanic = Self.metadataTitle(mechanic)
+        self.category = Self.metadataTitle(category)
+        self.rawEquipment = Self.metadataTitle(rawEquipment)
+        self.primaryMuscles = Self.metadataTitles(primaryMuscles)
+        self.secondaryMuscles = Self.metadataTitles(secondaryMuscles)
+        let cleanedInstructions = instructions.compactMap { $0.trimmed.nilIfEmpty }
+        self.instructions = cleanedInstructions.isEmpty ? [formTip.trimmed].compactMap { $0.nilIfEmpty } : cleanedInstructions
     }
 
     var difficulty: String {
@@ -58,6 +80,25 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
         id
     }
 
+    var hasMedia: Bool {
+        !imagePaths.isEmpty
+    }
+
+    var primaryMusclesTitle: String {
+        primaryMuscles.isEmpty ? "Unspecified" : primaryMuscles.joined(separator: ", ")
+    }
+
+    var secondaryMusclesTitle: String {
+        secondaryMuscles.isEmpty ? "None" : secondaryMuscles.joined(separator: ", ")
+    }
+
+    var databaseMetadataSummary: String {
+        [category, force, mechanic]
+            .filter { $0 != "Unspecified" }
+            .joined(separator: " - ")
+            .nilIfEmpty ?? "Database metadata"
+    }
+
     var searchableText: String {
         [
             name,
@@ -67,7 +108,14 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
             goal.title,
             machineLabel,
             formTip,
-            source
+            source,
+            force,
+            mechanic,
+            category,
+            rawEquipment,
+            primaryMuscles.joined(separator: " "),
+            secondaryMuscles.joined(separator: " "),
+            instructions.joined(separator: " ")
         ]
         .joined(separator: " ")
         .lowercased()
@@ -98,6 +146,32 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
             exercises: [workoutExercise()]
         )
     }
+
+    nonisolated private static func metadataTitles(_ values: [String]) -> [String] {
+        values
+            .map(metadataTitle)
+            .filter { $0 != "Unspecified" }
+    }
+
+    nonisolated private static func metadataTitle(_ value: String?) -> String {
+        guard let value else { return "Unspecified" }
+
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "Unspecified" }
+
+        return trimmed
+            .split(separator: " ")
+            .map { word in
+                word
+                    .split(separator: "-", omittingEmptySubsequences: false)
+                    .map { segment in
+                        guard let first = segment.first else { return "" }
+                        return first.uppercased() + segment.dropFirst().lowercased()
+                    }
+                    .joined(separator: "-")
+            }
+            .joined(separator: " ")
+    }
 }
 
 enum ExerciseEquipmentFamily: String, CaseIterable, Identifiable, Hashable {
@@ -127,7 +201,42 @@ enum ExerciseLibrarySort: String, CaseIterable, Identifiable, Hashable {
     case level = "Level"
     case equipment = "Equipment"
     case goal = "Goal"
+    case category = "DB Category"
+    case force = "Force"
+    case mechanic = "Mechanic"
+    case rawEquipment = "Raw Gear"
+    case media = "Media"
 
     var id: String { rawValue }
     var title: String { rawValue }
+}
+
+enum ExerciseMediaFilter: String, CaseIterable, Identifiable, Hashable {
+    case all = "All"
+    case withMedia = "With Media"
+    case noMedia = "No Media"
+
+    var id: String { rawValue }
+    var title: String { rawValue }
+
+    func matches(_ item: ExerciseLibraryItem) -> Bool {
+        switch self {
+        case .all:
+            return true
+        case .withMedia:
+            return item.hasMedia
+        case .noMedia:
+            return !item.hasMedia
+        }
+    }
+}
+
+private extension String {
+    var trimmed: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
+    }
 }

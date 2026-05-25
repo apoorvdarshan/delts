@@ -131,6 +131,13 @@ private struct ExerciseLibraryBrowserView: View {
     @State private var selectedGoal: FitnessGoal?
     @State private var selectedEquipment: Equipment?
     @State private var selectedEquipmentFamily: ExerciseEquipmentFamily = .all
+    @State private var selectedRawEquipment: String?
+    @State private var selectedPrimaryMuscle: String?
+    @State private var selectedSecondaryMuscle: String?
+    @State private var selectedForce: String?
+    @State private var selectedMechanic: String?
+    @State private var selectedCategory: String?
+    @State private var selectedMedia: ExerciseMediaFilter = .all
     @State private var selectedSort: ExerciseLibrarySort = .bodyPart
     @State private var generatedPlan: WorkoutPlan?
 
@@ -143,6 +150,13 @@ private struct ExerciseLibraryBrowserView: View {
             goal: selectedGoal,
             equipment: selectedEquipment,
             equipmentFamily: selectedEquipmentFamily,
+            rawEquipment: selectedRawEquipment,
+            primaryMuscle: selectedPrimaryMuscle,
+            secondaryMuscle: selectedSecondaryMuscle,
+            force: selectedForce,
+            mechanic: selectedMechanic,
+            category: selectedCategory,
+            media: selectedMedia,
             sort: selectedSort,
             searchText: searchText
         )
@@ -155,6 +169,13 @@ private struct ExerciseLibraryBrowserView: View {
             selectedGoal != nil ||
             selectedEquipment != nil ||
             selectedEquipmentFamily != .all ||
+            selectedRawEquipment != nil ||
+            selectedPrimaryMuscle != nil ||
+            selectedSecondaryMuscle != nil ||
+            selectedForce != nil ||
+            selectedMechanic != nil ||
+            selectedCategory != nil ||
+            selectedMedia != .all ||
             selectedSort != .bodyPart
     }
 
@@ -164,7 +185,14 @@ private struct ExerciseLibraryBrowserView: View {
             selectedLevel != nil ||
             selectedGoal != nil ||
             selectedEquipment != nil ||
-            selectedEquipmentFamily != .all
+            selectedEquipmentFamily != .all ||
+            selectedRawEquipment != nil ||
+            selectedPrimaryMuscle != nil ||
+            selectedSecondaryMuscle != nil ||
+            selectedForce != nil ||
+            selectedMechanic != nil ||
+            selectedCategory != nil ||
+            selectedMedia != .all
     }
 
     var body: some View {
@@ -351,6 +379,76 @@ private struct ExerciseLibraryBrowserView: View {
                                 menuChoice(equipment.title, isSelected: selectedEquipment == equipment) {
                                     selectedEquipment = equipment
                                     selectedEquipmentFamily = .all
+                                    selectedRawEquipment = nil
+                                }
+                            }
+                        }
+                        Section("Database Raw") {
+                            ForEach(service.availableRawEquipment, id: \.self) { equipment in
+                                menuChoice(equipment, isSelected: selectedRawEquipment == equipment) {
+                                    selectedEquipment = nil
+                                    selectedEquipmentFamily = .all
+                                    selectedRawEquipment = equipment
+                                }
+                            }
+                        }
+                    }
+
+                    filterMenu(
+                        title: "DB",
+                        value: databaseFilterTitle,
+                        systemImage: "server.rack"
+                    ) {
+                        menuChoice("All DB Metadata", isSelected: selectedCategory == nil && selectedForce == nil && selectedMechanic == nil && selectedMedia == .all) {
+                            selectedCategory = nil
+                            selectedForce = nil
+                            selectedMechanic = nil
+                            selectedMedia = .all
+                        }
+                        Section("Category") {
+                            ForEach(service.availableCategories, id: \.self) { category in
+                                menuChoice(category, isSelected: selectedCategory == category) { selectedCategory = category }
+                            }
+                        }
+                        Section("Force") {
+                            ForEach(service.availableForces, id: \.self) { force in
+                                menuChoice(force, isSelected: selectedForce == force) { selectedForce = force }
+                            }
+                        }
+                        Section("Mechanic") {
+                            ForEach(service.availableMechanics, id: \.self) { mechanic in
+                                menuChoice(mechanic, isSelected: selectedMechanic == mechanic) { selectedMechanic = mechanic }
+                            }
+                        }
+                        Section("Media") {
+                            ForEach(ExerciseMediaFilter.allCases) { media in
+                                menuChoice(media.title, isSelected: selectedMedia == media) { selectedMedia = media }
+                            }
+                        }
+                    }
+
+                    filterMenu(
+                        title: "Muscles",
+                        value: rawMuscleFilterTitle,
+                        systemImage: "figure.strengthtraining.traditional"
+                    ) {
+                        menuChoice("All Raw Muscles", isSelected: selectedPrimaryMuscle == nil && selectedSecondaryMuscle == nil) {
+                            selectedPrimaryMuscle = nil
+                            selectedSecondaryMuscle = nil
+                        }
+                        Section("Primary") {
+                            ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
+                                menuChoice(muscle, isSelected: selectedPrimaryMuscle == muscle) {
+                                    selectedPrimaryMuscle = muscle
+                                    selectedSecondaryMuscle = nil
+                                }
+                            }
+                        }
+                        Section("Secondary") {
+                            ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
+                                menuChoice(muscle, isSelected: selectedSecondaryMuscle == muscle) {
+                                    selectedPrimaryMuscle = nil
+                                    selectedSecondaryMuscle = muscle
                                 }
                             }
                         }
@@ -399,6 +497,35 @@ private struct ExerciseLibraryBrowserView: View {
         if selectedEquipmentFamily != .all {
             return selectedEquipmentFamily.title
         }
+        if let selectedRawEquipment {
+            return selectedRawEquipment
+        }
+        return "All"
+    }
+
+    private var databaseFilterTitle: String {
+        if let selectedCategory {
+            return selectedCategory
+        }
+        if let selectedForce {
+            return selectedForce
+        }
+        if let selectedMechanic {
+            return selectedMechanic
+        }
+        if selectedMedia != .all {
+            return selectedMedia.title
+        }
+        return "All"
+    }
+
+    private var rawMuscleFilterTitle: String {
+        if let selectedPrimaryMuscle {
+            return "Primary \(selectedPrimaryMuscle)"
+        }
+        if let selectedSecondaryMuscle {
+            return "Secondary \(selectedSecondaryMuscle)"
+        }
         return "All"
     }
 
@@ -409,6 +536,13 @@ private struct ExerciseLibraryBrowserView: View {
         selectedGoal = nil
         selectedEquipment = nil
         selectedEquipmentFamily = .all
+        selectedRawEquipment = nil
+        selectedPrimaryMuscle = nil
+        selectedSecondaryMuscle = nil
+        selectedForce = nil
+        selectedMechanic = nil
+        selectedCategory = nil
+        selectedMedia = .all
         selectedSort = .bodyPart
     }
 
@@ -733,9 +867,9 @@ private struct ExerciseLibraryRow: View {
 
     private var rowMetadata: String {
         if item.imagePaths.count > 1 {
-            return "\(item.machineLabel) - \(item.imagePaths.count) media"
+            return "\(item.databaseMetadataSummary) - \(item.imagePaths.count) media"
         }
-        return item.machineLabel
+        return item.databaseMetadataSummary
     }
 }
 
@@ -895,21 +1029,37 @@ private struct ExerciseLibraryDetailView: View {
                     Divider()
                         .overlay(Color.deltsHairline.opacity(0.34))
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("Form tip", systemImage: "lightbulb")
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(Color.deltsCharcoal)
-                        Text(item.formTip)
-                            .font(.body)
-                            .foregroundStyle(Color.deltsMutedText)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                    DetailTextSection(
+                        title: "Form tip",
+                        systemImage: "lightbulb",
+                        text: item.formTip
+                    )
+
+                    DetailInstructionSection(instructions: item.instructions)
 
                     VStack(spacing: 0) {
                         DetailInfoRow(title: "Goal", value: item.goal.title, systemImage: "target")
                         Divider()
                             .overlay(Color.deltsHairline.opacity(0.32))
                         DetailInfoRow(title: "Equipment", value: "\(item.equipment.title) - \(item.machineLabel)", systemImage: "dumbbell.fill")
+                        Divider()
+                            .overlay(Color.deltsHairline.opacity(0.32))
+                        DetailInfoRow(title: "Raw equipment", value: item.rawEquipment, systemImage: "wrench.and.screwdriver")
+                        Divider()
+                            .overlay(Color.deltsHairline.opacity(0.32))
+                        DetailInfoRow(title: "Category", value: item.category, systemImage: "tag")
+                        Divider()
+                            .overlay(Color.deltsHairline.opacity(0.32))
+                        DetailInfoRow(title: "Force", value: item.force, systemImage: "arrow.left.arrow.right")
+                        Divider()
+                            .overlay(Color.deltsHairline.opacity(0.32))
+                        DetailInfoRow(title: "Mechanic", value: item.mechanic, systemImage: "gearshape")
+                        Divider()
+                            .overlay(Color.deltsHairline.opacity(0.32))
+                        DetailInfoRow(title: "Primary muscles", value: item.primaryMusclesTitle, systemImage: "scope")
+                        Divider()
+                            .overlay(Color.deltsHairline.opacity(0.32))
+                        DetailInfoRow(title: "Secondary muscles", value: item.secondaryMusclesTitle, systemImage: "scope")
                         Divider()
                             .overlay(Color.deltsHairline.opacity(0.32))
                         DetailInfoRow(title: "Source", value: item.source, systemImage: "checkmark.seal")
@@ -1003,6 +1153,53 @@ private struct ExerciseLibraryDetailView: View {
 
     private var restText: String {
         item.restSeconds == 0 ? "--" : "\(item.restSeconds)s"
+    }
+}
+
+private struct DetailTextSection: View {
+    let title: String
+    let systemImage: String
+    let text: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(title, systemImage: systemImage)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+            Text(text)
+                .font(.body)
+                .foregroundStyle(Color.deltsMutedText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+private struct DetailInstructionSection: View {
+    let instructions: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Instructions", systemImage: "list.number")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(Array(instructions.enumerated()), id: \.offset) { index, instruction in
+                    HStack(alignment: .top, spacing: 10) {
+                        Text("\(index + 1)")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(Color.deltsOnAccent)
+                            .frame(width: 24, height: 24)
+                            .background(Color.deltsAccent, in: Circle())
+
+                        Text(instruction)
+                            .font(.body)
+                            .foregroundStyle(Color.deltsMutedText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
     }
 }
 

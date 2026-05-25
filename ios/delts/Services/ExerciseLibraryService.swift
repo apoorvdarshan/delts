@@ -5,6 +5,30 @@ struct ExerciseLibraryService {
 
     let exercises: [ExerciseLibraryItem]
 
+    var availableForces: [String] {
+        Self.sortedUnique(exercises.map(\.force))
+    }
+
+    var availableMechanics: [String] {
+        Self.sortedUnique(exercises.map(\.mechanic))
+    }
+
+    var availableCategories: [String] {
+        Self.sortedUnique(exercises.map(\.category))
+    }
+
+    var availableRawEquipment: [String] {
+        Self.sortedUnique(exercises.map(\.rawEquipment))
+    }
+
+    var availablePrimaryMuscles: [String] {
+        Self.sortedUnique(exercises.flatMap(\.primaryMuscles))
+    }
+
+    var availableSecondaryMuscles: [String] {
+        Self.sortedUnique(exercises.flatMap(\.secondaryMuscles))
+    }
+
     init(exercises: [ExerciseLibraryItem]? = nil) {
         if let exercises {
             self.exercises = exercises
@@ -86,6 +110,13 @@ struct ExerciseLibraryService {
         goal: FitnessGoal?,
         equipment: Equipment?,
         equipmentFamily: ExerciseEquipmentFamily,
+        rawEquipment: String?,
+        primaryMuscle: String?,
+        secondaryMuscle: String?,
+        force: String?,
+        mechanic: String?,
+        category: String?,
+        media: ExerciseMediaFilter,
         sort: ExerciseLibrarySort,
         searchText: String
     ) -> [ExerciseLibraryItem] {
@@ -97,9 +128,28 @@ struct ExerciseLibraryService {
             let matchesGoal = goal == nil || item.goal == goal
             let matchesEquipment = equipment == nil || item.equipment == equipment
             let matchesFamily = equipmentFamily == .all || item.equipmentFamily == equipmentFamily
+            let matchesRawEquipment = rawEquipment == nil || item.rawEquipment == rawEquipment
+            let matchesPrimaryMuscle = primaryMuscle == nil || item.primaryMuscles.contains(primaryMuscle ?? "")
+            let matchesSecondaryMuscle = secondaryMuscle == nil || item.secondaryMuscles.contains(secondaryMuscle ?? "")
+            let matchesForce = force == nil || item.force == force
+            let matchesMechanic = mechanic == nil || item.mechanic == mechanic
+            let matchesCategory = category == nil || item.category == category
+            let matchesMedia = media.matches(item)
             let matchesSearch = query.isEmpty || item.searchableText.contains(query)
 
-            return matchesMuscle && matchesLevel && matchesGoal && matchesEquipment && matchesFamily && matchesSearch
+            return matchesMuscle &&
+                matchesLevel &&
+                matchesGoal &&
+                matchesEquipment &&
+                matchesFamily &&
+                matchesRawEquipment &&
+                matchesPrimaryMuscle &&
+                matchesSecondaryMuscle &&
+                matchesForce &&
+                matchesMechanic &&
+                matchesCategory &&
+                matchesMedia &&
+                matchesSearch
         }
 
         return filteredItems.sorted { lhs, rhs in
@@ -126,6 +176,19 @@ struct ExerciseLibraryService {
                     return lhs.name < rhs.name
                 }
                 return lhs.goal.title < rhs.goal.title
+            case .category:
+                return Self.compare(lhs.category, rhs.category, lhsName: lhs.name, rhsName: rhs.name)
+            case .force:
+                return Self.compare(lhs.force, rhs.force, lhsName: lhs.name, rhsName: rhs.name)
+            case .mechanic:
+                return Self.compare(lhs.mechanic, rhs.mechanic, lhsName: lhs.name, rhsName: rhs.name)
+            case .rawEquipment:
+                return Self.compare(lhs.rawEquipment, rhs.rawEquipment, lhsName: lhs.name, rhsName: rhs.name)
+            case .media:
+                if lhs.imagePaths.count == rhs.imagePaths.count {
+                    return lhs.name < rhs.name
+                }
+                return lhs.imagePaths.count > rhs.imagePaths.count
             }
         }
     }
@@ -162,6 +225,18 @@ struct ExerciseLibraryService {
         }
 
         return "Custom Library Workout"
+    }
+
+    private static func sortedUnique(_ values: [String]) -> [String] {
+        Array(Set(values.filter { !$0.isEmpty }))
+            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+    }
+
+    private static func compare(_ lhs: String, _ rhs: String, lhsName: String, rhsName: String) -> Bool {
+        if lhs == rhs {
+            return lhsName < rhsName
+        }
+        return lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
     }
 }
 

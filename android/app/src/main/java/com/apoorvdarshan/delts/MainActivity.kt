@@ -385,13 +385,72 @@ private fun WorkoutsScreen(
 ) {
     var selectedMode by rememberSaveable { mutableStateOf(WorkoutsMode.Library) }
     var selectedMuscle by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedLevel by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedEquipment by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedRawEquipment by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedPrimaryMuscle by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedSecondaryMuscle by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedForce by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedMechanic by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedMedia by rememberSaveable { mutableStateOf(LibraryMediaFilter.All) }
+    var selectedSort by rememberSaveable { mutableStateOf(LibrarySort.BodyPart) }
     var search by rememberSaveable { mutableStateOf("") }
 
-    val filteredExercises = remember(selectedMuscle, search) {
-        exerciseLibrary.filter { item ->
-            (selectedMuscle == null || item.muscle == selectedMuscle) &&
-                (search.isBlank() || item.name.contains(search, ignoreCase = true) || item.equipment.contains(search, ignoreCase = true))
-        }
+    val levelOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.level }.distinctSorted() }
+    val equipmentOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.equipment }.distinctSorted() }
+    val rawEquipmentOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.rawEquipment }.distinctSorted() }
+    val primaryMuscleOptions = remember(exerciseLibrary) { exerciseLibrary.flatMap { it.primaryMuscles }.distinctSorted() }
+    val secondaryMuscleOptions = remember(exerciseLibrary) { exerciseLibrary.flatMap { it.secondaryMuscles }.distinctSorted() }
+    val forceOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.force }.distinctSorted() }
+    val mechanicOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.mechanic }.distinctSorted() }
+    val categoryOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.category }.distinctSorted() }
+
+    val hasActiveFilters =
+        selectedMuscle != null ||
+            selectedLevel != null ||
+            selectedEquipment != null ||
+            selectedRawEquipment != null ||
+            selectedPrimaryMuscle != null ||
+            selectedSecondaryMuscle != null ||
+            selectedForce != null ||
+            selectedMechanic != null ||
+            selectedCategory != null ||
+            selectedMedia != LibraryMediaFilter.All ||
+            selectedSort != LibrarySort.BodyPart ||
+            search.isNotBlank()
+
+    val filteredExercises = remember(
+        selectedMuscle,
+        selectedLevel,
+        selectedEquipment,
+        selectedRawEquipment,
+        selectedPrimaryMuscle,
+        selectedSecondaryMuscle,
+        selectedForce,
+        selectedMechanic,
+        selectedCategory,
+        selectedMedia,
+        selectedSort,
+        search,
+        exerciseLibrary
+    ) {
+        val query = search.trim().lowercase(Locale.US)
+        exerciseLibrary
+            .filter { item ->
+                (selectedMuscle == null || item.muscle == selectedMuscle) &&
+                    (selectedLevel == null || item.level == selectedLevel) &&
+                    (selectedEquipment == null || item.equipment == selectedEquipment) &&
+                    (selectedRawEquipment == null || item.rawEquipment == selectedRawEquipment) &&
+                    (selectedPrimaryMuscle?.let { item.primaryMuscles.contains(it) } ?: true) &&
+                    (selectedSecondaryMuscle?.let { item.secondaryMuscles.contains(it) } ?: true) &&
+                    (selectedForce == null || item.force == selectedForce) &&
+                    (selectedMechanic == null || item.mechanic == selectedMechanic) &&
+                    (selectedCategory == null || item.category == selectedCategory) &&
+                    selectedMedia.matches(item) &&
+                    (query.isBlank() || item.searchableText().contains(query))
+            }
+            .sortedWith(selectedSort.comparator())
     }
 
     Column(
@@ -439,7 +498,7 @@ private fun WorkoutsScreen(
                 LibrarySummary(
                     count = filteredExercises.size,
                     totalCount = exerciseLibrary.size,
-                    hasSelection = selectedMuscle != null || search.isNotBlank()
+                    hasSelection = hasActiveFilters
                 )
 
                 OutlinedTextField(
@@ -464,7 +523,142 @@ private fun WorkoutsScreen(
                     }
                 }
 
-                if (selectedMuscle == null && search.isBlank()) {
+                HorizontalChipRail {
+                    LibraryFilterMenu(
+                        title = "Level",
+                        value = selectedLevel ?: "All",
+                        icon = Icons.Filled.FlashOn,
+                        active = selectedLevel != null,
+                        options = levelOptions,
+                        selectedOption = selectedLevel,
+                        allTitle = "All Levels"
+                    ) { selectedLevel = it }
+                    LibraryFilterMenu(
+                        title = "Equipment",
+                        value = selectedEquipment ?: "All",
+                        icon = Icons.Filled.FitnessCenter,
+                        active = selectedEquipment != null,
+                        options = equipmentOptions,
+                        selectedOption = selectedEquipment,
+                        allTitle = "All Equipment"
+                    ) {
+                        selectedEquipment = it
+                        if (it != null) selectedRawEquipment = null
+                    }
+                    LibraryFilterMenu(
+                        title = "Raw Gear",
+                        value = selectedRawEquipment ?: "All",
+                        icon = Icons.Filled.Build,
+                        active = selectedRawEquipment != null,
+                        options = rawEquipmentOptions,
+                        selectedOption = selectedRawEquipment,
+                        allTitle = "All Raw Gear"
+                    ) {
+                        selectedRawEquipment = it
+                        if (it != null) selectedEquipment = null
+                    }
+                    LibraryFilterMenu(
+                        title = "Category",
+                        value = selectedCategory ?: "All",
+                        icon = Icons.Filled.List,
+                        active = selectedCategory != null,
+                        options = categoryOptions,
+                        selectedOption = selectedCategory,
+                        allTitle = "All Categories"
+                    ) { selectedCategory = it }
+                }
+
+                HorizontalChipRail {
+                    LibraryFilterMenu(
+                        title = "Force",
+                        value = selectedForce ?: "All",
+                        icon = Icons.Filled.Flag,
+                        active = selectedForce != null,
+                        options = forceOptions,
+                        selectedOption = selectedForce,
+                        allTitle = "All Force"
+                    ) { selectedForce = it }
+                    LibraryFilterMenu(
+                        title = "Mechanic",
+                        value = selectedMechanic ?: "All",
+                        icon = Icons.Filled.Build,
+                        active = selectedMechanic != null,
+                        options = mechanicOptions,
+                        selectedOption = selectedMechanic,
+                        allTitle = "All Mechanics"
+                    ) { selectedMechanic = it }
+                    LibraryFilterMenu(
+                        title = "Primary",
+                        value = selectedPrimaryMuscle ?: "All",
+                        icon = Icons.Filled.FitnessCenter,
+                        active = selectedPrimaryMuscle != null,
+                        options = primaryMuscleOptions,
+                        selectedOption = selectedPrimaryMuscle,
+                        allTitle = "All Primary"
+                    ) {
+                        selectedPrimaryMuscle = it
+                        if (it != null) selectedSecondaryMuscle = null
+                    }
+                    LibraryFilterMenu(
+                        title = "Secondary",
+                        value = selectedSecondaryMuscle ?: "All",
+                        icon = Icons.Filled.FitnessCenter,
+                        active = selectedSecondaryMuscle != null,
+                        options = secondaryMuscleOptions,
+                        selectedOption = selectedSecondaryMuscle,
+                        allTitle = "All Secondary"
+                    ) {
+                        selectedSecondaryMuscle = it
+                        if (it != null) selectedPrimaryMuscle = null
+                    }
+                }
+
+                HorizontalChipRail {
+                    LibraryFilterMenu(
+                        title = "Media",
+                        value = selectedMedia.title,
+                        icon = Icons.Filled.Lock,
+                        active = selectedMedia != LibraryMediaFilter.All,
+                        options = LibraryMediaFilter.entries.filter { it != LibraryMediaFilter.All }.map { it.title },
+                        selectedOption = if (selectedMedia == LibraryMediaFilter.All) null else selectedMedia.title,
+                        allTitle = LibraryMediaFilter.All.title
+                    ) { selected ->
+                        selectedMedia = LibraryMediaFilter.entries.firstOrNull { it.title == selected } ?: LibraryMediaFilter.All
+                    }
+                    LibraryFilterMenu(
+                        title = "Sort",
+                        value = selectedSort.title,
+                        icon = Icons.Filled.List,
+                        active = selectedSort != LibrarySort.BodyPart,
+                        options = LibrarySort.entries.filter { it != LibrarySort.BodyPart }.map { it.title },
+                        selectedOption = if (selectedSort == LibrarySort.BodyPart) null else selectedSort.title,
+                        allTitle = LibrarySort.BodyPart.title
+                    ) { selected ->
+                        selectedSort = LibrarySort.entries.firstOrNull { it.title == selected } ?: LibrarySort.BodyPart
+                    }
+                    if (hasActiveFilters) {
+                        DeltsPillButton(
+                            title = "Reset",
+                            icon = Icons.Filled.Close,
+                            selected = false
+                        ) {
+                            selectedMuscle = null
+                            selectedLevel = null
+                            selectedEquipment = null
+                            selectedRawEquipment = null
+                            selectedPrimaryMuscle = null
+                            selectedSecondaryMuscle = null
+                            selectedForce = null
+                            selectedMechanic = null
+                            selectedCategory = null
+                            selectedMedia = LibraryMediaFilter.All
+                            selectedSort = LibrarySort.BodyPart
+                            search = ""
+                        }
+                    }
+                }
+
+                if (!hasActiveFilters) {
                     Text(
                         text = "Select Body Part",
                         style = MaterialTheme.typography.titleMedium,
@@ -483,7 +677,7 @@ private fun WorkoutsScreen(
                 } else {
                     ResultsHeader(
                         title = "${filteredExercises.size} ${if (filteredExercises.size == 1) "exercise" else "exercises"}",
-                        subtitle = "Offline media",
+                        subtitle = selectedSort.title,
                         icon = Icons.Filled.Lock
                     )
                     filteredExercises.forEach { item ->
@@ -1021,6 +1215,89 @@ private fun HorizontalChipRail(content: @Composable RowScope.() -> Unit) {
 }
 
 @Composable
+private fun LibraryFilterMenu(
+    title: String,
+    value: String,
+    icon: ImageVector,
+    active: Boolean,
+    options: List<String>,
+    selectedOption: String?,
+    allTitle: String,
+    onSelect: (String?) -> Unit
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+    Box {
+        Button(
+            onClick = { expanded = true },
+            modifier = Modifier.height(46.dp),
+            shape = RoundedCornerShape(17.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (active) DeltsAccent else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
+                contentColor = if (active) DeltsOnAccent else MaterialTheme.colorScheme.onBackground
+            ),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(15.dp))
+            Spacer(modifier = Modifier.width(7.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.heightIn(max = 360.dp)
+        ) {
+            DropdownMenuItem(
+                text = { Text(allTitle, style = MaterialTheme.typography.bodyLarge) },
+                leadingIcon = if (selectedOption == null) {
+                    {
+                        Icon(Icons.Filled.Check, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(18.dp))
+                    }
+                } else {
+                    null
+                },
+                onClick = {
+                    onSelect(null)
+                    expanded = false
+                }
+            )
+
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option, style = MaterialTheme.typography.bodyLarge) },
+                    leadingIcon = if (selectedOption == option) {
+                        {
+                            Icon(Icons.Filled.Check, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(18.dp))
+                        }
+                    } else {
+                        null
+                    },
+                    onClick = {
+                        onSelect(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun <T> TwoColumnGrid(items: List<T>, content: @Composable (T) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         items.chunked(2).forEach { rowItems ->
@@ -1165,46 +1442,121 @@ private fun ResultsHeader(title: String, subtitle: String, icon: ImageVector) {
 
 @Composable
 private fun ExerciseLibraryRow(item: ExerciseItem) {
-    Row(
+    var expanded by rememberSaveable(item.name) { mutableStateOf(false) }
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { expanded = !expanded }
             .padding(vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        ExerciseVisual(
-            imagePaths = item.imagePaths,
-            fallbackIcon = item.icon,
-            modifier = Modifier.size(104.dp),
-            cornerRadius = 18,
-            iconSize = 42
-        )
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            Text(
-                text = item.name,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ExerciseVisual(
+                imagePaths = item.imagePaths,
+                fallbackIcon = item.icon,
+                modifier = Modifier.size(104.dp),
+                cornerRadius = 18,
+                iconSize = 42
             )
-            Text(
-                text = "${item.muscle} - ${item.equipment} - ${item.level}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = item.machineLabel,
-                style = MaterialTheme.typography.labelLarge,
-                color = DeltsSecondaryAccent,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text(
+                    text = item.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "${item.muscle} - ${item.equipment} - ${item.level}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = item.databaseSummary(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = DeltsSecondaryAccent,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Icon(
+                if (expanded) Icons.Filled.Close else Icons.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline
             )
         }
-        Icon(Icons.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+
+        if (expanded) {
+            ExerciseLibraryMetadata(item = item)
+        }
     }
     HorizontalDivider(color = DividerDefaults.color.copy(alpha = 0.32f))
+}
+
+@Composable
+private fun ExerciseLibraryMetadata(item: ExerciseItem) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.22f))
+    ) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            MetadataLine("Category", item.category)
+            MetadataLine("Force", item.force)
+            MetadataLine("Mechanic", item.mechanic)
+            MetadataLine("Raw gear", item.rawEquipment)
+            MetadataLine("Primary", item.primaryMuscles.ifEmpty { listOf("Unspecified") }.joinToString(", "))
+            MetadataLine("Secondary", item.secondaryMuscles.ifEmpty { listOf("None") }.joinToString(", "))
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Instructions",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                item.instructions.forEachIndexed { index, instruction ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.Top) {
+                        Text(
+                            text = "${index + 1}",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = DeltsAccent
+                        )
+                        Text(
+                            text = instruction,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetadataLine(label: String, value: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+        Text(
+            text = label,
+            modifier = Modifier.width(86.dp),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Text(
+            text = value,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
 
 @Composable
@@ -1993,6 +2345,24 @@ private enum class WorkoutsMode(val title: String, val icon: ImageVector) {
     History("History", Icons.Filled.History)
 }
 
+private enum class LibrarySort(val title: String) {
+    BodyPart("Body Part"),
+    Name("Name"),
+    Level("Level"),
+    Equipment("Equipment"),
+    Category("DB Category"),
+    Force("Force"),
+    Mechanic("Mechanic"),
+    RawEquipment("Raw Gear"),
+    Media("Media")
+}
+
+private enum class LibraryMediaFilter(val title: String) {
+    All("All"),
+    WithMedia("With Media"),
+    NoMedia("No Media")
+}
+
 private data class AndroidProfile(
     val name: String,
     val age: Int,
@@ -2022,7 +2392,14 @@ private data class ExerciseItem(
     val level: String,
     val machineLabel: String,
     val icon: ImageVector,
-    val imagePaths: List<String>
+    val imagePaths: List<String>,
+    val force: String = "Unspecified",
+    val mechanic: String = "Unspecified",
+    val category: String = "Unspecified",
+    val rawEquipment: String = "Unspecified",
+    val primaryMuscles: List<String> = emptyList(),
+    val secondaryMuscles: List<String> = emptyList(),
+    val instructions: List<String> = emptyList()
 )
 
 private data class ExercisePlan(
@@ -2052,6 +2429,7 @@ private fun loadFreeExerciseDB(assets: AssetManager): List<ExerciseItem> = runCa
             val muscle = muscleGroupFor(primaryMuscles, secondaryMuscles, record.optString("category"))
             val equipment = equipmentFor(record.optString("equipment"), name)
             val icon = muscles.firstOrNull { it.title == muscle }?.icon ?: Icons.Filled.FitnessCenter
+            val instructions = record.optJSONArray("instructions").stringList()
 
             add(
                 ExerciseItem(
@@ -2061,7 +2439,14 @@ private fun loadFreeExerciseDB(assets: AssetManager): List<ExerciseItem> = runCa
                     level = experienceLevelFor(record.optString("level")),
                     machineLabel = equipmentFamilyFor(equipment),
                     icon = icon,
-                    imagePaths = record.optJSONArray("images").stringList()
+                    imagePaths = record.optJSONArray("images").stringList(),
+                    force = metadataTitle(record.optString("force")),
+                    mechanic = metadataTitle(record.optString("mechanic")),
+                    category = metadataTitle(record.optString("category")),
+                    rawEquipment = metadataTitle(record.optString("equipment")),
+                    primaryMuscles = primaryMuscles.map(::metadataTitle).filter { it != "Unspecified" },
+                    secondaryMuscles = secondaryMuscles.map(::metadataTitle).filter { it != "Unspecified" },
+                    instructions = instructions.ifEmpty { listOf("Move with control, keep your setup tight, and stop if form breaks.") }
                 )
             )
         }
@@ -2083,6 +2468,91 @@ private fun JSONArray?.stringList(): List<String> {
         }
     }
 }
+
+private fun metadataTitle(value: String?): String {
+    val trimmed = value?.trim().orEmpty()
+    if (trimmed.isEmpty() || trimmed == "null") {
+        return "Unspecified"
+    }
+
+    return trimmed
+        .split(" ")
+        .joinToString(" ") { word ->
+            word.split("-").joinToString("-") { segment ->
+                segment.replaceFirstChar { char ->
+                    if (char.isLowerCase()) char.titlecase(Locale.US) else char.toString()
+                }
+            }
+        }
+}
+
+private fun List<String>.distinctSorted(): List<String> =
+    distinct()
+        .filter { it.isNotBlank() }
+        .sortedWith(String.CASE_INSENSITIVE_ORDER)
+
+private fun LibraryMediaFilter.matches(item: ExerciseItem): Boolean =
+    when (this) {
+        LibraryMediaFilter.All -> true
+        LibraryMediaFilter.WithMedia -> item.imagePaths.isNotEmpty()
+        LibraryMediaFilter.NoMedia -> item.imagePaths.isEmpty()
+    }
+
+private fun LibrarySort.comparator(): Comparator<ExerciseItem> =
+    when (this) {
+        LibrarySort.BodyPart -> compareBy<ExerciseItem, String>(String.CASE_INSENSITIVE_ORDER) { it.muscle }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+        LibrarySort.Name -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+        LibrarySort.Level -> compareBy<ExerciseItem> { levelSortRank(it.level) }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+        LibrarySort.Equipment -> compareBy<ExerciseItem, String>(String.CASE_INSENSITIVE_ORDER) { it.equipment }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+        LibrarySort.Category -> compareBy<ExerciseItem, String>(String.CASE_INSENSITIVE_ORDER) { it.category }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+        LibrarySort.Force -> compareBy<ExerciseItem, String>(String.CASE_INSENSITIVE_ORDER) { it.force }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+        LibrarySort.Mechanic -> compareBy<ExerciseItem, String>(String.CASE_INSENSITIVE_ORDER) { it.mechanic }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+        LibrarySort.RawEquipment -> compareBy<ExerciseItem, String>(String.CASE_INSENSITIVE_ORDER) { it.rawEquipment }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+        LibrarySort.Media -> compareByDescending<ExerciseItem> { it.imagePaths.size }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+    }
+
+private fun levelSortRank(level: String): Int =
+    when (level) {
+        "Beginner" -> 0
+        "Intermediate" -> 1
+        "Advanced" -> 2
+        else -> 3
+    }
+
+private fun ExerciseItem.databaseSummary(): String {
+    val summary = listOf(category, force, mechanic)
+        .filter { it != "Unspecified" }
+        .joinToString(" - ")
+        .ifBlank { machineLabel }
+
+    return if (imagePaths.size > 1) "$summary - ${imagePaths.size} media" else summary
+}
+
+private fun ExerciseItem.searchableText(): String =
+    listOf(
+        name,
+        muscle,
+        equipment,
+        level,
+        machineLabel,
+        force,
+        mechanic,
+        category,
+        rawEquipment,
+        primaryMuscles.joinToString(" "),
+        secondaryMuscles.joinToString(" "),
+        instructions.joinToString(" ")
+    )
+        .joinToString(" ")
+        .lowercase(Locale.US)
 
 private fun muscleGroupFor(primaryMuscles: List<String>, secondaryMuscles: List<String>, category: String): String {
     val joined = (primaryMuscles + secondaryMuscles).joinToString(" ").lowercase()
