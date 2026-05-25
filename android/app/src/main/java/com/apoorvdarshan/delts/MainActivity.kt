@@ -803,6 +803,15 @@ private fun ProfileScreen(
                 placeholder = "Optional",
                 onValueChange = { updateProfile(profile.copy(extraGoals = it)) }
             )
+            ProfileRowDivider()
+            CompactMultiSelectRow(
+                title = "Issues",
+                icon = Icons.Filled.Warning,
+                items = issueOptions.map { it.title },
+                selected = profile.issues,
+            ) { item ->
+                updateProfile(profile.copy(issues = toggleInSet(profile.issues, item)))
+            }
         }
 
         ProfileSection(
@@ -842,6 +851,26 @@ private fun ProfileScreen(
             ) { updateProfile(profile.copy(frequency = it.coerceIn(1, 7))) }
             ProfileRowDivider()
             CompactDropdownRow(
+                title = "Workout split",
+                icon = Icons.Filled.Build,
+                value = profile.workoutSplit,
+                options = workoutSplitOptions,
+                selectedOption = profile.workoutSplit
+            ) { selected ->
+                updateProfile(profile.copy(workoutSplit = selected))
+            }
+            if (profile.workoutSplit == "Custom") {
+                ProfileRowDivider()
+                CompactTextFieldRow(
+                    title = "Custom split",
+                    icon = Icons.Filled.List,
+                    value = profile.customWorkoutSplit,
+                    placeholder = "Write split",
+                    onValueChange = { updateProfile(profile.copy(customWorkoutSplit = it)) }
+                )
+            }
+            ProfileRowDivider()
+            CompactDropdownRow(
                 title = "Workout duration",
                 icon = Icons.Filled.Timer,
                 value = "${profile.duration} min",
@@ -852,14 +881,7 @@ private fun ProfileScreen(
                     updateProfile(profile.copy(duration = nearestDuration(it)))
                 }
             }
-        }
-
-        ProfileSection(
-            title = "Equipment Library",
-            subtitle = "Select gear here only. Start uses this saved library.",
-            icon = Icons.Filled.FitnessCenter,
-            badge = profile.availableEquipment.size.toString()
-        ) {
+            ProfileRowDivider()
             CompactMultiSelectRow(
                 title = "Saved gear",
                 icon = Icons.Filled.FitnessCenter,
@@ -870,21 +892,6 @@ private fun ProfileScreen(
             }
         }
 
-        ProfileSection(
-            title = "Friction Points",
-            subtitle = "Flag what usually gets in the way.",
-            icon = Icons.Filled.Warning,
-            badge = profile.issues.size.toString()
-        ) {
-            CompactMultiSelectRow(
-                title = "Issues",
-                icon = Icons.Filled.Warning,
-                items = issueOptions.map { it.title },
-                selected = profile.issues,
-            ) { item ->
-                updateProfile(profile.copy(issues = toggleInSet(profile.issues, item)))
-            }
-        }
     }
 }
 
@@ -2535,6 +2542,8 @@ private fun SharedPreferences.loadProfile(): AndroidProfile =
         mainGoal = getString("profile_goal", "Muscle Gain").orEmpty(),
         extraGoals = getString("profile_extra_goals", "").orEmpty(),
         frequency = getInt("profile_frequency", 4),
+        workoutSplit = getString("profile_workout_split", "Push Pull Legs").orEmpty(),
+        customWorkoutSplit = getString("profile_custom_workout_split", "").orEmpty(),
         duration = getInt("profile_duration", 60),
         availableEquipment = getStringSet("profile_equipment", setOf("Dumbbells", "Bench", "Cable Machine")) ?: emptySet(),
         bodyFocus = getStringSet("profile_focus", setOf("Chest", "Shoulders", "Back")) ?: emptySet(),
@@ -2554,6 +2563,8 @@ private fun SharedPreferences.saveProfile(profile: AndroidProfile) {
         .putString("profile_goal", profile.mainGoal)
         .putString("profile_extra_goals", profile.extraGoals)
         .putInt("profile_frequency", profile.frequency)
+        .putString("profile_workout_split", profile.workoutSplit)
+        .putString("profile_custom_workout_split", profile.customWorkoutSplit)
         .putInt("profile_duration", profile.duration)
         .putStringSet("profile_equipment", profile.availableEquipment)
         .putStringSet("profile_focus", profile.bodyFocus)
@@ -2630,6 +2641,8 @@ private data class AndroidProfile(
     val mainGoal: String,
     val extraGoals: String,
     val frequency: Int,
+    val workoutSplit: String,
+    val customWorkoutSplit: String,
     val duration: Int,
     val availableEquipment: Set<String>,
     val bodyFocus: Set<String>,
@@ -2892,6 +2905,7 @@ private val muscles = listOf(
 
 private val levels = listOf("Beginner", "Intermediate", "Advanced")
 private val goals = listOf("Muscle Gain", "Fat Loss", "Strength", "Beginner Form")
+private val workoutSplitOptions = listOf("Full Body", "Push Pull Legs", "Upper Lower", "Bro Split", "Custom")
 private val durations = listOf(30, 45, 60, 90)
 
 private val equipmentOptions = listOf(
@@ -2955,6 +2969,8 @@ private fun DeltsAppPreview() {
                     mainGoal = "Muscle Gain",
                     extraGoals = "",
                     frequency = 4,
+                    workoutSplit = "Push Pull Legs",
+                    customWorkoutSplit = "",
                     duration = 60,
                     availableEquipment = setOf("Dumbbells", "Bench", "Cable Machine"),
                     bodyFocus = setOf("Chest", "Shoulders"),

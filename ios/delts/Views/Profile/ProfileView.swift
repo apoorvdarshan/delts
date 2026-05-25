@@ -41,6 +41,7 @@ private enum MeasurementSystem: String, CaseIterable, Hashable {
 private struct ProfileEditorView: View {
     @Bindable var profile: UserProfile
     @AppStorage("profile_measurement_system") private var measurementSystemRaw = MeasurementSystem.metric.rawValue
+    @AppStorage("profile_custom_workout_split") private var customWorkoutSplit = ""
     @State private var geminiAPIKey = LocalGeminiKeyStore.apiKey ?? ""
     @State private var hasSavedGeminiKey = GeminiConfig.hasAPIKey
 
@@ -55,9 +56,7 @@ private struct ProfileEditorView: View {
                 goalSection
                 aiSettingsSection
                 scheduleSection
-                equipmentSection
                 strengthSection
-                issuesSection
             }
             .padding(.horizontal, 20)
             .padding(.top, 10)
@@ -165,6 +164,14 @@ private struct ProfileEditorView: View {
                 )
                 ProfileDivider()
                 ProfileTextAreaRow(title: "Extra goals", systemImage: "text.alignleft", text: extraGoalsBinding)
+                ProfileDivider()
+                ProfileMultiSelectMenuRow(
+                    title: "Issues",
+                    systemImage: "exclamationmark.triangle.fill",
+                    options: FitnessIssue.allCases,
+                    selection: issuesBinding,
+                    label: { $0.title }
+                )
             }
         }
     }
@@ -209,6 +216,14 @@ private struct ProfileEditorView: View {
                     options: WorkoutSplit.allCases,
                     label: { $0.title }
                 )
+                if profile.workoutSplit == .custom {
+                    ProfileDivider()
+                    ProfileTextInputRow(
+                        title: "Custom split",
+                        systemImage: "text.line.first.and.arrowtriangle.forward",
+                        text: customWorkoutSplitBinding
+                    )
+                }
                 ProfileDivider()
                 ProfileSegmentedPicker(
                     title: "Workout duration",
@@ -217,18 +232,7 @@ private struct ProfileEditorView: View {
                     options: durationOptions,
                     label: { "\($0) min" }
                 )
-            }
-        }
-    }
-
-    private var equipmentSection: some View {
-        ProfileSection(
-            title: "Equipment Library",
-            subtitle: "Select gear here only. Start uses this saved library.",
-            systemImage: "dumbbell.fill",
-            badge: "\(profile.availableEquipment.count)"
-        ) {
-            ProfileRowStack {
+                ProfileDivider()
                 ProfileMultiSelectMenuRow(
                     title: "Saved gear",
                     systemImage: "dumbbell.fill",
@@ -273,25 +277,6 @@ private struct ProfileEditorView: View {
                     systemImage: "arrow.up",
                     suffix: "kg",
                     value: overheadPressBinding
-                )
-            }
-        }
-    }
-
-    private var issuesSection: some View {
-        ProfileSection(
-            title: "Friction Points",
-            subtitle: "Flag what usually gets in the way.",
-            systemImage: "exclamationmark.triangle.fill",
-            badge: "\(profile.fitnessIssues.count)"
-        ) {
-            ProfileRowStack {
-                ProfileMultiSelectMenuRow(
-                    title: "Issues",
-                    systemImage: "exclamationmark.triangle.fill",
-                    options: FitnessIssue.allCases,
-                    selection: issuesBinding,
-                    label: { $0.title }
                 )
             }
         }
@@ -403,6 +388,14 @@ private struct ProfileEditorView: View {
         } set: { newValue in
             profile.workoutSplit = newValue
             profile.updatedAt = Date()
+        }
+    }
+
+    private var customWorkoutSplitBinding: Binding<String> {
+        Binding {
+            customWorkoutSplit
+        } set: { newValue in
+            customWorkoutSplit = newValue
         }
     }
 

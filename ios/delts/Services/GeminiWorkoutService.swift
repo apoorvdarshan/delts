@@ -78,6 +78,14 @@ final class GeminiWorkoutService {
         let equipmentText = equipment.map(\.title).sorted().joined(separator: ", ")
         let bodyFocusText = profile.selectedBodyFocus.map(\.title).sorted().joined(separator: ", ")
         let issuesText = profile.fitnessIssues.map(\.title).sorted().joined(separator: ", ")
+        let customWorkoutSplit = UserDefaults.standard.string(forKey: "profile_custom_workout_split")?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let workoutSplitText: String
+        if profile.workoutSplit == .custom, !customWorkoutSplit.isEmpty {
+            workoutSplitText = "\(profile.workoutSplit.title): \(customWorkoutSplit)"
+        } else {
+            workoutSplitText = profile.workoutSplit.title
+        }
 
         return """
         You are delts, a premium gym workout planner. Return strict JSON only. No markdown.
@@ -93,7 +101,7 @@ final class GeminiWorkoutService {
         - Experience: \(profile.experienceLevel.title)
         - Main goal: \(profile.mainGoal.title)
         - Body focus: \(bodyFocusText)
-        - Split: \(profile.workoutSplit.title)
+        - Split: \(workoutSplitText)
         - Issues: \(issuesText)
         - Extra goals: \(profile.extraGoals)
 
@@ -237,4 +245,3 @@ private struct AIWorkoutExercise: Decodable {
     let formTip: String
     let difficulty: String
 }
-
