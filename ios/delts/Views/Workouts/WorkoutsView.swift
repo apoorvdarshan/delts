@@ -207,28 +207,31 @@ private struct ExerciseLibraryBrowserView: View {
                     }
 
                     filterMenuPill(
-                        title: "Muscles",
-                        value: rawMuscleFilterTitle,
-                        systemImage: "figure.strengthtraining.traditional"
+                        title: "Primary",
+                        value: selectedPrimaryMuscle ?? "All",
+                        systemImage: "scope"
                     ) {
-                        menuChoice("All Raw Muscles", isSelected: selectedPrimaryMuscle == nil && selectedSecondaryMuscle == nil) {
+                        menuChoice("All Primary", isSelected: selectedPrimaryMuscle == nil) {
                             selectedPrimaryMuscle = nil
-                            selectedSecondaryMuscle = nil
                         }
-                        Section("Primary") {
-                            ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
-                                menuChoice(muscle, isSelected: selectedPrimaryMuscle == muscle) {
-                                    selectedPrimaryMuscle = muscle
-                                    selectedSecondaryMuscle = nil
-                                }
+                        ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
+                            menuChoice(muscle, isSelected: selectedPrimaryMuscle == muscle) {
+                                selectedPrimaryMuscle = muscle
                             }
                         }
-                        Section("Secondary") {
-                            ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
-                                menuChoice(muscle, isSelected: selectedSecondaryMuscle == muscle) {
-                                    selectedPrimaryMuscle = nil
-                                    selectedSecondaryMuscle = muscle
-                                }
+                    }
+
+                    filterMenuPill(
+                        title: "Secondary",
+                        value: selectedSecondaryMuscle ?? "All",
+                        systemImage: "scope"
+                    ) {
+                        menuChoice("All Secondary", isSelected: selectedSecondaryMuscle == nil) {
+                            selectedSecondaryMuscle = nil
+                        }
+                        ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
+                            menuChoice(muscle, isSelected: selectedSecondaryMuscle == muscle) {
+                                selectedSecondaryMuscle = muscle
                             }
                         }
                     }
@@ -275,16 +278,6 @@ private struct ExerciseLibraryBrowserView: View {
             return group.title
         }
         return "\(selectedMuscleGroups.count) parts"
-    }
-
-    private var rawMuscleFilterTitle: String {
-        if let selectedPrimaryMuscle {
-            return "Primary \(selectedPrimaryMuscle)"
-        }
-        if let selectedSecondaryMuscle {
-            return "Secondary \(selectedSecondaryMuscle)"
-        }
-        return "All"
     }
 
     private func resetFilters() {

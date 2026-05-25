@@ -596,7 +596,6 @@ private fun WorkoutsScreen(
                         allTitle = "All Primary"
                     ) {
                         selectedPrimaryMuscle = it
-                        if (selectedPrimaryMuscle != null) selectedSecondaryMuscle = null
                     }
                     LibraryFilterMenu(
                         title = "Secondary",
@@ -608,7 +607,6 @@ private fun WorkoutsScreen(
                         allTitle = "All Secondary"
                     ) {
                         selectedSecondaryMuscle = it
-                        if (selectedSecondaryMuscle != null) selectedPrimaryMuscle = null
                     }
                 }
             }
