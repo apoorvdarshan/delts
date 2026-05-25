@@ -30,6 +30,7 @@ private struct ProfileEditorView: View {
     @State private var hasSavedGeminiKey = GeminiConfig.hasAPIKey
 
     private let genderOptions = ["Male", "Female", "Non-binary", "Prefer not to say"]
+    private let ageOptions = Array(13...90)
     private let durationOptions = [30, 45, 60, 90]
 
     var body: some View {
@@ -59,8 +60,8 @@ private struct ProfileEditorView: View {
 
     private var identitySection: some View {
         ProfileSection(
-            title: "Body Profile",
-            subtitle: "Used to shape plans and recommendations.",
+            title: "About",
+            subtitle: "Basic details used to shape plans.",
             systemImage: "person.text.rectangle"
         ) {
             ProfileRowStack {
@@ -74,7 +75,13 @@ private struct ProfileEditorView: View {
                     label: { $0 }
                 )
                 ProfileDivider()
-                ProfileStepperRow(title: "Age", systemImage: "calendar", value: ageBinding, range: 13...90)
+                ProfileMenuPicker(
+                    title: "Age",
+                    systemImage: "calendar",
+                    selection: ageBinding,
+                    options: ageOptions,
+                    label: { "\($0)" }
+                )
                 ProfileDivider()
                 ProfileNumberInputRow(title: "Height", systemImage: "ruler", suffix: "cm", value: heightBinding)
                 ProfileDivider()
@@ -120,7 +127,7 @@ private struct ProfileEditorView: View {
             title: "AI Settings",
             subtitle: "Gemini BYOK stays on this device.",
             systemImage: "key.fill",
-            badge: hasSavedGeminiKey ? "Ready" : "Local"
+            badge: hasSavedGeminiKey ? "Ready" : nil
         ) {
             GeminiKeySettingsCard(
                 apiKey: $geminiAPIKey,
@@ -568,15 +575,6 @@ private struct ProfileHero: View {
                 }
 
                 Spacer(minLength: 8)
-
-                if !dynamicTypeSize.isAccessibilitySize {
-                    Label("Local", systemImage: "lock.fill")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(Color.deltsSecondaryAccent)
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 5)
-                        .background(Color.deltsSecondaryAccent.opacity(0.12), in: Capsule())
-                }
             }
 
             if dynamicTypeSize.isAccessibilitySize {
@@ -705,6 +703,12 @@ private struct ProfileRowStack<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             content
+        }
+        .padding(.horizontal, 12)
+        .background(Color.deltsPanel.opacity(0.13), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
         }
     }
 }
