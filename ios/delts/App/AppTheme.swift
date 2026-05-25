@@ -42,20 +42,7 @@ extension Color {
 
 struct DeltsBackground: View {
     var body: some View {
-        ZStack {
-            Color.deltsBackground
-            LinearGradient(
-                colors: [
-                    Color.deltsBackground,
-                    Color.deltsAccent.opacity(0.09),
-                    Color.deltsPanel.opacity(0.22),
-                    Color.deltsSecondaryAccent.opacity(0.06),
-                    Color.deltsBackground
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
+        Color.deltsBackground
         .ignoresSafeArea()
     }
 }

@@ -24,8 +24,23 @@ struct ProfileView: View {
     }
 }
 
+private enum MeasurementSystem: String, CaseIterable, Hashable {
+    case metric
+    case imperial
+
+    var title: String {
+        switch self {
+        case .metric:
+            return "Metric"
+        case .imperial:
+            return "Imperial"
+        }
+    }
+}
+
 private struct ProfileEditorView: View {
     @Bindable var profile: UserProfile
+    @AppStorage("profile_measurement_system") private var measurementSystemRaw = MeasurementSystem.metric.rawValue
     @State private var geminiAPIKey = LocalGeminiKeyStore.apiKey ?? ""
     @State private var hasSavedGeminiKey = GeminiConfig.hasAPIKey
 
@@ -83,13 +98,41 @@ private struct ProfileEditorView: View {
                     label: { "\($0)" }
                 )
                 ProfileDivider()
-                ProfileNumberInputRow(title: "Height", systemImage: "ruler", suffix: "cm", value: heightBinding)
+                ProfileSegmentedPicker(
+                    title: "Units",
+                    systemImage: "ruler",
+                    selection: measurementSystemBinding,
+                    options: MeasurementSystem.allCases,
+                    label: { $0.title }
+                )
                 ProfileDivider()
-                ProfileNumberInputRow(title: "Weight", systemImage: "scalemass", suffix: "kg", value: weightBinding)
+                ProfileHeightPickerRow(
+                    title: "Height",
+                    systemImage: "ruler",
+                    system: measurementSystem,
+                    centimeters: heightBinding
+                )
                 ProfileDivider()
-                ProfileNumberInputRow(title: "Current body fat", systemImage: "percent", suffix: "%", value: currentBodyFatBinding)
+                ProfileWeightPickerRow(
+                    title: "Weight",
+                    systemImage: "scalemass",
+                    system: measurementSystem,
+                    kilograms: weightBinding
+                )
                 ProfileDivider()
-                ProfileNumberInputRow(title: "Desired body fat", systemImage: "scope", suffix: "%", value: desiredBodyFatBinding)
+                ProfilePercentPickerRow(
+                    title: "Current body fat",
+                    systemImage: "percent",
+                    value: currentBodyFatBinding,
+                    range: 3...60
+                )
+                ProfileDivider()
+                ProfilePercentPickerRow(
+                    title: "Desired body fat",
+                    systemImage: "scope",
+                    value: desiredBodyFatBinding,
+                    range: 3...45
+                )
             }
         }
     }
@@ -290,6 +333,18 @@ private struct ProfileEditorView: View {
         } set: { newValue in
             profile.extraGoals = newValue
             profile.updatedAt = Date()
+        }
+    }
+
+    private var measurementSystem: MeasurementSystem {
+        MeasurementSystem(rawValue: measurementSystemRaw) ?? .metric
+    }
+
+    private var measurementSystemBinding: Binding<MeasurementSystem> {
+        Binding {
+            measurementSystem
+        } set: { newValue in
+            measurementSystemRaw = newValue.rawValue
         }
     }
 
@@ -547,19 +602,44 @@ private struct ProfileHero: View {
 
     private var metricColumns: [GridItem] {
         if dynamicTypeSize.isAccessibilitySize {
-            return [GridItem(.adaptive(minimum: 220), spacing: 12, alignment: .top)]
+            return [GridItem(.adaptive(minimum: 210), spacing: 10, alignment: .top)]
         }
-        return Array(repeating: GridItem(.flexible(minimum: 66), spacing: 10, alignment: .top), count: 4)
+        return Array(repeating: GridItem(.flexible(minimum: 132), spacing: 10, alignment: .top), count: 2)
+    }
+
+    private var metrics: [(title: String, value: String, systemImage: String)] {
+        [
+            ("Weekly", "\(profile.workoutFrequencyPerWeek)x", "calendar"),
+            ("Duration", "\(profile.workoutDurationMinutes) min", "timer"),
+            ("Gear", "\(profile.availableEquipment.count)", "dumbbell.fill"),
+            ("Focus", "\(profile.selectedBodyFocus.count)", "scope")
+        ]
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top, spacing: 14) {
-                Image(systemName: "person.fill")
-                    .font(.system(size: 34, weight: .semibold))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(Color.deltsAccent)
-                    .frame(width: 46, height: 46)
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.deltsAccent, Color.deltsSecondaryAccent],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(color: Color.deltsAccent.opacity(0.20), radius: 14, x: 0, y: 8)
+
+                    Circle()
+                        .stroke(Color.deltsOnAccent.opacity(0.22), lineWidth: 1)
+                        .padding(0.5)
+
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 31, weight: .bold))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(Color.deltsOnAccent)
+                }
+                .frame(width: 58, height: 58)
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(displayName)
@@ -573,27 +653,44 @@ private struct ProfileHero: View {
                         .foregroundStyle(Color.deltsMutedText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                .padding(.top, 3)
 
                 Spacer(minLength: 8)
             }
 
-            if dynamicTypeSize.isAccessibilitySize {
-                LazyVGrid(columns: metricColumns, alignment: .leading, spacing: 12) {
-                    ProfileHeroMetric(title: "Weekly", value: "\(profile.workoutFrequencyPerWeek)x", systemImage: "calendar")
-                    ProfileHeroMetric(title: "Duration", value: "\(profile.workoutDurationMinutes) min", systemImage: "timer")
-                    ProfileHeroMetric(title: "Gear", value: "\(profile.availableEquipment.count)", systemImage: "dumbbell.fill")
-                    ProfileHeroMetric(title: "Focus", value: "\(profile.selectedBodyFocus.count)", systemImage: "scope")
-                }
-            } else {
-                HStack(spacing: 0) {
-                    ProfileHeroMetric(title: "Weekly", value: "\(profile.workoutFrequencyPerWeek)x", systemImage: "calendar")
-                    ProfileHeroMetric(title: "Duration", value: "\(profile.workoutDurationMinutes) min", systemImage: "timer")
-                    ProfileHeroMetric(title: "Gear", value: "\(profile.availableEquipment.count)", systemImage: "dumbbell.fill")
-                    ProfileHeroMetric(title: "Focus", value: "\(profile.selectedBodyFocus.count)", systemImage: "scope")
+            LazyVGrid(columns: metricColumns, alignment: .leading, spacing: 10) {
+                ForEach(metrics, id: \.title) { metric in
+                    ProfileHeroMetric(title: metric.title, value: metric.value, systemImage: metric.systemImage)
                 }
             }
         }
-        .padding(.bottom, 1)
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.deltsPanel.opacity(0.50),
+                            Color.deltsCard.opacity(0.26),
+                            Color.deltsPanel.opacity(0.18)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        }
+        .deltsLiquidBarSurface(cornerRadius: 28)
+        .overlay(alignment: .topTrailing) {
+            Capsule()
+                .fill(Color.deltsAccent.opacity(0.42))
+                .frame(width: 72, height: 4)
+                .padding(.top, 12)
+                .padding(.trailing, 18)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.75)
+        }
     }
 }
 
@@ -603,11 +700,16 @@ private struct ProfileHeroMetric: View {
     let systemImage: String
 
     var body: some View {
-        HStack(alignment: .center, spacing: 6) {
-            Image(systemName: systemImage)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Color.deltsAccent)
-                .frame(width: 16, height: 18, alignment: .leading)
+        HStack(alignment: .center, spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(Color.deltsAccent.opacity(0.14))
+
+                Image(systemName: systemImage)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Color.deltsAccent)
+            }
+            .frame(width: 30, height: 30)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(value)
@@ -622,6 +724,14 @@ private struct ProfileHeroMetric: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.70)
             }
+        }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, minHeight: 62, alignment: .leading)
+        .background(Color.deltsBackground.opacity(0.24), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.26), lineWidth: 0.5)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -879,6 +989,333 @@ private struct ProfileNumberInputRow: View {
             }
             .frame(width: dynamicTypeSize.isAccessibilitySize ? nil : 128, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
         }
+    }
+}
+
+private struct ProfileHeightPickerRow: View {
+    let title: String
+    let systemImage: String
+    let system: MeasurementSystem
+    @Binding var centimeters: Double
+    @State private var isPickerPresented = false
+
+    private var displayText: String {
+        switch system {
+        case .metric:
+            return "\(profileFormatDecimal(centimeters)) cm"
+        case .imperial:
+            let parts = profileImperialHeightParts(fromCentimeters: centimeters)
+            return "\(parts.feet) ft \(parts.inches).\(parts.decimal) in"
+        }
+    }
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            Button {
+                isPickerPresented = true
+            } label: {
+                ProfileMenuValueLabel(text: displayText)
+            }
+            .deltsPressable()
+            .sheet(isPresented: $isPickerPresented) {
+                switch system {
+                case .metric:
+                    ProfileDecimalWheelSheet(
+                        title: title,
+                        initialValue: centimeters,
+                        wholeRange: 120...230,
+                        unit: "cm"
+                    ) { newValue in
+                        centimeters = newValue
+                    }
+                case .imperial:
+                    ProfileImperialHeightWheelSheet(
+                        initialCentimeters: centimeters
+                    ) { newCentimeters in
+                        centimeters = newCentimeters
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct ProfileWeightPickerRow: View {
+    let title: String
+    let systemImage: String
+    let system: MeasurementSystem
+    @Binding var kilograms: Double
+    @State private var isPickerPresented = false
+
+    private var displayValue: Double {
+        switch system {
+        case .metric:
+            return kilograms
+        case .imperial:
+            return kilograms * 2.2046226218
+        }
+    }
+
+    private var unit: String {
+        system == .metric ? "kg" : "lb"
+    }
+
+    private var wholeRange: ClosedRange<Int> {
+        system == .metric ? 30...250 : 66...551
+    }
+
+    private var displayText: String {
+        "\(profileFormatDecimal(displayValue)) \(unit)"
+    }
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            Button {
+                isPickerPresented = true
+            } label: {
+                ProfileMenuValueLabel(text: displayText)
+            }
+            .deltsPressable()
+            .sheet(isPresented: $isPickerPresented) {
+                ProfileDecimalWheelSheet(
+                    title: title,
+                    initialValue: displayValue,
+                    wholeRange: wholeRange,
+                    unit: unit
+                ) { newDisplayValue in
+                    switch system {
+                    case .metric:
+                        kilograms = newDisplayValue
+                    case .imperial:
+                        kilograms = newDisplayValue / 2.2046226218
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct ProfilePercentPickerRow: View {
+    let title: String
+    let systemImage: String
+    @Binding var value: Double
+    let range: ClosedRange<Int>
+    @State private var isPickerPresented = false
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            Button {
+                isPickerPresented = true
+            } label: {
+                ProfileMenuValueLabel(text: "\(profileFormatDecimal(value))%")
+            }
+            .deltsPressable()
+            .sheet(isPresented: $isPickerPresented) {
+                ProfileDecimalWheelSheet(
+                    title: title,
+                    initialValue: value,
+                    wholeRange: range,
+                    unit: "%"
+                ) { newValue in
+                    value = newValue
+                }
+            }
+        }
+    }
+}
+
+private struct ProfileDecimalWheelSheet: View {
+    let title: String
+    let unit: String
+    let wholeOptions: [Int]
+    let onSave: (Double) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var whole: Int
+    @State private var decimal: Int
+
+    init(
+        title: String,
+        initialValue: Double,
+        wholeRange: ClosedRange<Int>,
+        unit: String,
+        onSave: @escaping (Double) -> Void
+    ) {
+        let parts = profileDecimalParts(for: initialValue, range: wholeRange)
+        self.title = title
+        self.unit = unit
+        self.wholeOptions = Array(wholeRange)
+        self.onSave = onSave
+        _whole = State(initialValue: parts.whole)
+        _decimal = State(initialValue: parts.decimal)
+    }
+
+    private var selectedValue: Double {
+        Double(whole) + (Double(decimal) / 10)
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 18) {
+                Text("\(profileFormatDecimal(selectedValue)) \(unit)")
+                    .font(.title2.monospacedDigit().weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .frame(maxWidth: .infinity, alignment: .center)
+
+                HStack(spacing: 10) {
+                    ProfileWheelColumn(title: "Whole", selection: $whole, values: wholeOptions) { "\($0)" }
+                    ProfileWheelColumn(title: "Decimal", selection: $decimal, values: Array(0...9)) { ".\($0)" }
+
+                    Text(unit)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .frame(width: 48)
+                }
+                .frame(height: 190)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 18)
+            .background(DeltsBackground())
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        onSave(selectedValue)
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                }
+            }
+        }
+        .presentationDetents([.height(340), .medium])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+private struct ProfileImperialHeightWheelSheet: View {
+    let onSave: (Double) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var feet: Int
+    @State private var inches: Int
+    @State private var decimal: Int
+
+    init(initialCentimeters: Double, onSave: @escaping (Double) -> Void) {
+        let parts = profileImperialHeightParts(fromCentimeters: initialCentimeters)
+        self.onSave = onSave
+        _feet = State(initialValue: parts.feet)
+        _inches = State(initialValue: parts.inches)
+        _decimal = State(initialValue: parts.decimal)
+    }
+
+    private var selectedInches: Double {
+        Double((feet * 12) + inches) + (Double(decimal) / 10)
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 18) {
+                Text("\(feet) ft \(inches).\(decimal) in")
+                    .font(.title2.monospacedDigit().weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .frame(maxWidth: .infinity, alignment: .center)
+
+                HStack(spacing: 8) {
+                    ProfileWheelColumn(title: "Feet", selection: $feet, values: Array(3...8)) { "\($0)" }
+                    ProfileWheelColumn(title: "Inches", selection: $inches, values: Array(0...11)) { "\($0)" }
+                    ProfileWheelColumn(title: "Decimal", selection: $decimal, values: Array(0...9)) { ".\($0)" }
+                }
+                .frame(height: 190)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 18)
+            .background(DeltsBackground())
+            .navigationTitle("Height")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        onSave(selectedInches * 2.54)
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                }
+            }
+        }
+        .presentationDetents([.height(340), .medium])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+private struct ProfileWheelColumn: View {
+    let title: String
+    @Binding var selection: Int
+    let values: [Int]
+    let label: (Int) -> String
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(title)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.deltsMutedText)
+
+            Picker(title, selection: $selection) {
+                ForEach(values, id: \.self) { value in
+                    Text(label(value))
+                        .font(.title3.monospacedDigit().weight(.semibold))
+                        .tag(value)
+                }
+            }
+            .pickerStyle(.wheel)
+            .labelsHidden()
+        }
+        .frame(maxWidth: .infinity)
+        .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
+        }
+    }
+}
+
+private func profileFormatDecimal(_ value: Double) -> String {
+    value.formatted(.number.precision(.fractionLength(1)))
+}
+
+private func profileDecimalParts(for value: Double, range: ClosedRange<Int>) -> (whole: Int, decimal: Int) {
+    let minimumTenths = range.lowerBound * 10
+    let maximumTenths = (range.upperBound * 10) + 9
+    let tenths = Int((value * 10).rounded()).clamped(to: minimumTenths...maximumTenths)
+    let whole = (tenths / 10).clamped(to: range)
+    let decimal = tenths % 10
+    return (whole, decimal)
+}
+
+private func profileImperialHeightParts(fromCentimeters centimeters: Double) -> (feet: Int, inches: Int, decimal: Int) {
+    let tenths = Int(((centimeters / 2.54) * 10).rounded()).clamped(to: 360...959)
+    let feet = (tenths / 120).clamped(to: 3...8)
+    let remainingTenths = max(0, tenths - (feet * 120))
+    let inches = (remainingTenths / 10).clamped(to: 0...11)
+    let decimal = remainingTenths % 10
+    return (feet, inches, decimal)
+}
+
+private extension Comparable {
+    func clamped(to range: ClosedRange<Self>) -> Self {
+        min(max(self, range.lowerBound), range.upperBound)
     }
 }
 

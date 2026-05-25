@@ -98,8 +98,10 @@ import com.apoorvdarshan.delts.ui.theme.DeltsOnAccent
 import com.apoorvdarshan.delts.ui.theme.DeltsSecondaryAccent
 import com.apoorvdarshan.delts.ui.theme.DeltsTheme
 import com.apoorvdarshan.delts.ui.theme.DeltsWarning
+import java.util.Locale
 import kotlinx.coroutines.delay
 import org.json.JSONArray
+import kotlin.math.roundToInt
 
 private const val SETTINGS_NAME = "delts_settings"
 
@@ -122,12 +124,18 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
     val context = LocalContext.current
     var selectedTab by rememberSaveable { mutableStateOf(DeltsTab.Start) }
     var profile by remember { mutableStateOf(settings.loadProfile()) }
+    var measurementSystem by rememberSaveable { mutableStateOf(settings.loadMeasurementSystem()) }
     val keyStore = remember(settings) { GeminiKeyStore(settings) }
     val exerciseLibrary = remember(context) { loadFreeExerciseDB(context.assets) }
 
     fun updateProfile(updatedProfile: AndroidProfile) {
         profile = updatedProfile
         settings.saveProfile(updatedProfile)
+    }
+
+    fun updateMeasurementSystem(updatedSystem: MeasurementSystem) {
+        measurementSystem = updatedSystem
+        settings.saveMeasurementSystem(updatedSystem)
     }
 
     Scaffold(
@@ -162,6 +170,8 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
                 DeltsTab.Profile -> ProfileScreen(
                     profile = profile,
                     updateProfile = ::updateProfile,
+                    measurementSystem = measurementSystem,
+                    updateMeasurementSystem = ::updateMeasurementSystem,
                     keyStore = keyStore,
                     padding = padding
                 )
@@ -491,6 +501,8 @@ private fun WorkoutsScreen(
 private fun ProfileScreen(
     profile: AndroidProfile,
     updateProfile: (AndroidProfile) -> Unit,
+    measurementSystem: MeasurementSystem,
+    updateMeasurementSystem: (MeasurementSystem) -> Unit,
     keyStore: GeminiKeyStore,
     padding: PaddingValues
 ) {
@@ -527,18 +539,37 @@ private fun ProfileScreen(
                 singleLine = true,
                 shape = RoundedCornerShape(18.dp)
             )
+            AgeDropdown(
+                title = "Age",
+                value = profile.age,
+                modifier = Modifier.fillMaxWidth()
+            ) { updateProfile(profile.copy(age = it)) }
+            MeasurementSystemSelector(
+                selected = measurementSystem,
+                modifier = Modifier.fillMaxWidth(),
+                onSelect = updateMeasurementSystem
+            )
+            HeightMeasurementPicker(
+                measurementSystem = measurementSystem,
+                centimeters = profile.heightCm
+            ) { updateProfile(profile.copy(heightCm = it)) }
+            WeightMeasurementPicker(
+                measurementSystem = measurementSystem,
+                kilograms = profile.weightKg
+            ) { updateProfile(profile.copy(weightKg = it)) }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                AgeDropdown(
-                    title = "Age",
-                    value = profile.age,
+                PercentMeasurementPicker(
+                    title = "Current body fat",
+                    value = profile.currentBodyFat,
+                    range = 3..60,
                     modifier = Modifier.weight(1f)
-                ) { updateProfile(profile.copy(age = it)) }
-                NumberStepper(
-                    title = "Weight",
-                    value = profile.weightKg,
-                    suffix = "kg",
+                ) { updateProfile(profile.copy(currentBodyFat = it)) }
+                PercentMeasurementPicker(
+                    title = "Desired body fat",
+                    value = profile.desiredBodyFat,
+                    range = 3..45,
                     modifier = Modifier.weight(1f)
-                ) { updateProfile(profile.copy(weightKg = it.coerceIn(30, 250))) }
+                ) { updateProfile(profile.copy(desiredBodyFat = it)) }
             }
         }
 
@@ -1198,49 +1229,80 @@ private fun EmptyHistory() {
 
 @Composable
 private fun ProfileHero(profile: AndroidProfile) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Box(
-                modifier = Modifier
-                    .size(46.dp)
-                    .clip(CircleShape)
-                    .background(DeltsAccent.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Filled.Person, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(30.dp))
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.30f))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Box(
+                    modifier = Modifier
+                        .size(58.dp)
+                        .clip(CircleShape)
+                        .background(DeltsAccent),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Filled.Person, contentDescription = null, tint = DeltsOnAccent, modifier = Modifier.size(34.dp))
+                }
+
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(
+                        text = profile.displayName,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        text = "${profile.experience} - ${profile.mainGoal}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text(
-                    text = profile.displayName,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = "${profile.experience} - ${profile.mainGoal}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ProfileMetric("Weekly", "${profile.frequency}x", Icons.Filled.CalendarToday, Modifier.weight(1f))
+                ProfileMetric("Duration", "${profile.duration} min", Icons.Filled.Timer, Modifier.weight(1f))
             }
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ProfileMetric("Weekly", "${profile.frequency}x", Icons.Filled.CalendarToday, Modifier.weight(1f))
-            ProfileMetric("Duration", "${profile.duration} min", Icons.Filled.Timer, Modifier.weight(1f))
-            ProfileMetric("Gear", profile.availableEquipment.size.toString(), Icons.Filled.FitnessCenter, Modifier.weight(1f))
-            ProfileMetric("Focus", profile.bodyFocus.size.toString(), Icons.Filled.Flag, Modifier.weight(1f))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ProfileMetric("Gear", profile.availableEquipment.size.toString(), Icons.Filled.FitnessCenter, Modifier.weight(1f))
+                ProfileMetric("Focus", profile.bodyFocus.size.toString(), Icons.Filled.Flag, Modifier.weight(1f))
+            }
         }
     }
 }
 
 @Composable
 private fun ProfileMetric(title: String, value: String, icon: ImageVector, modifier: Modifier = Modifier) {
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(15.dp))
-        Column {
-            Text(text = value, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onBackground, maxLines = 1)
-            Text(text = title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+    Surface(
+        modifier = modifier.heightIn(min = 62.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.background.copy(alpha = 0.28f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.24f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 11.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(CircleShape)
+                    .background(DeltsAccent.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(16.dp))
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(text = value, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onBackground, maxLines = 1)
+                Text(text = title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            }
         }
     }
 }
@@ -1460,6 +1522,310 @@ private fun AgeDropdown(
 }
 
 @Composable
+private fun MeasurementSystemSelector(
+    selected: MeasurementSystem,
+    modifier: Modifier = Modifier,
+    onSelect: (MeasurementSystem) -> Unit
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.28f))
+    ) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            Text(
+                text = "Units",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MeasurementSystem.values().forEach { system ->
+                    val isSelected = selected == system
+                    Text(
+                        text = system.title,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(14.dp))
+                            .clickable { onSelect(system) }
+                            .background(if (isSelected) DeltsAccent else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.46f))
+                            .padding(horizontal = 8.dp, vertical = 9.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (isSelected) DeltsOnAccent else MaterialTheme.colorScheme.onBackground,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeightMeasurementPicker(
+    measurementSystem: MeasurementSystem,
+    centimeters: Double,
+    modifier: Modifier = Modifier,
+    onChange: (Double) -> Unit
+) {
+    if (measurementSystem == MeasurementSystem.Metric) {
+        val parts = splitDecimal(centimeters, 120..230)
+        MeasurementPickerCard(
+            title = "Height",
+            valueText = "${formatOneDecimal(combineDecimal(parts.whole, parts.decimal))} cm",
+            modifier = modifier
+        ) {
+            ScrollingNumberSelector(
+                label = "cm",
+                value = parts.whole,
+                values = 120..230,
+                modifier = Modifier.weight(1f)
+            ) { onChange(combineDecimal(it, parts.decimal)) }
+            ScrollingNumberSelector(
+                label = "decimal",
+                value = parts.decimal,
+                values = 0..9,
+                modifier = Modifier.weight(1f),
+                display = { ".$it" }
+            ) { onChange(combineDecimal(parts.whole, it)) }
+        }
+    } else {
+        val parts = splitImperialHeight(centimeters)
+        MeasurementPickerCard(
+            title = "Height",
+            valueText = "${parts.feet} ft ${parts.inches}.${parts.decimal} in",
+            modifier = modifier
+        ) {
+            ScrollingNumberSelector(
+                label = "feet",
+                value = parts.feet,
+                values = 3..8,
+                modifier = Modifier.weight(1f)
+            ) { onChange(imperialHeightToCentimeters(it, parts.inches, parts.decimal)) }
+            ScrollingNumberSelector(
+                label = "inches",
+                value = parts.inches,
+                values = 0..11,
+                modifier = Modifier.weight(1f)
+            ) { onChange(imperialHeightToCentimeters(parts.feet, it, parts.decimal)) }
+            ScrollingNumberSelector(
+                label = "decimal",
+                value = parts.decimal,
+                values = 0..9,
+                modifier = Modifier.weight(1f),
+                display = { ".$it" }
+            ) { onChange(imperialHeightToCentimeters(parts.feet, parts.inches, it)) }
+        }
+    }
+}
+
+@Composable
+private fun WeightMeasurementPicker(
+    measurementSystem: MeasurementSystem,
+    kilograms: Double,
+    modifier: Modifier = Modifier,
+    onChange: (Double) -> Unit
+) {
+    val displayValue = if (measurementSystem == MeasurementSystem.Metric) kilograms else kilograms * 2.2046226218
+    val range = if (measurementSystem == MeasurementSystem.Metric) 30..250 else 66..551
+    val unit = if (measurementSystem == MeasurementSystem.Metric) "kg" else "lb"
+    val parts = splitDecimal(displayValue, range)
+
+    MeasurementPickerCard(
+        title = "Weight",
+        valueText = "${formatOneDecimal(combineDecimal(parts.whole, parts.decimal))} $unit",
+        modifier = modifier
+    ) {
+        ScrollingNumberSelector(
+            label = unit,
+            value = parts.whole,
+            values = range,
+            modifier = Modifier.weight(1f)
+        ) { selectedWhole ->
+            val nextValue = combineDecimal(selectedWhole, parts.decimal)
+            onChange(if (measurementSystem == MeasurementSystem.Metric) nextValue else nextValue / 2.2046226218)
+        }
+        ScrollingNumberSelector(
+            label = "decimal",
+            value = parts.decimal,
+            values = 0..9,
+            modifier = Modifier.weight(1f),
+            display = { ".$it" }
+        ) { selectedDecimal ->
+            val nextValue = combineDecimal(parts.whole, selectedDecimal)
+            onChange(if (measurementSystem == MeasurementSystem.Metric) nextValue else nextValue / 2.2046226218)
+        }
+    }
+}
+
+@Composable
+private fun PercentMeasurementPicker(
+    title: String,
+    value: Double,
+    range: IntRange,
+    modifier: Modifier = Modifier,
+    onChange: (Double) -> Unit
+) {
+    val parts = splitDecimal(value, range)
+    MeasurementPickerCard(
+        title = title,
+        valueText = "${formatOneDecimal(combineDecimal(parts.whole, parts.decimal))}%",
+        modifier = modifier
+    ) {
+        ScrollingNumberSelector(
+            label = "%",
+            value = parts.whole,
+            values = range,
+            modifier = Modifier.weight(1f)
+        ) { onChange(combineDecimal(it, parts.decimal)) }
+        ScrollingNumberSelector(
+            label = "decimal",
+            value = parts.decimal,
+            values = 0..9,
+            modifier = Modifier.weight(1f),
+            display = { ".$it" }
+        ) { onChange(combineDecimal(parts.whole, it)) }
+    }
+}
+
+@Composable
+private fun MeasurementPickerCard(
+    title: String,
+    valueText: String,
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.28f))
+    ) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
+            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = title,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = valueText,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), content = content)
+        }
+    }
+}
+
+@Composable
+private fun ScrollingNumberSelector(
+    label: String,
+    value: Int,
+    values: IntRange,
+    modifier: Modifier = Modifier,
+    display: (Int) -> String = { it.toString() },
+    onSelect: (Int) -> Unit
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val selectedValue = value.coerceIn(values.first, values.last)
+
+    Box(modifier = modifier) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(15.dp))
+                .clickable { expanded = true }
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.46f))
+                .padding(horizontal = 10.dp, vertical = 9.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = display(selectedValue),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1
+            )
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.heightIn(max = 320.dp)
+        ) {
+            values.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(display(option), style = MaterialTheme.typography.bodyLarge) },
+                    leadingIcon = if (option == selectedValue) {
+                        {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
+                                tint = DeltsAccent,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    } else {
+                        null
+                    },
+                    onClick = {
+                        onSelect(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+private data class DecimalParts(val whole: Int, val decimal: Int)
+
+private data class ImperialHeightParts(val feet: Int, val inches: Int, val decimal: Int)
+
+private fun splitDecimal(value: Double, range: IntRange): DecimalParts {
+    val minimumTenths = range.first * 10
+    val maximumTenths = (range.last * 10) + 9
+    val tenths = (value * 10).roundToInt().coerceIn(minimumTenths, maximumTenths)
+    return DecimalParts(
+        whole = (tenths / 10).coerceIn(range.first, range.last),
+        decimal = tenths % 10
+    )
+}
+
+private fun combineDecimal(whole: Int, decimal: Int): Double =
+    whole.toDouble() + (decimal.coerceIn(0, 9).toDouble() / 10.0)
+
+private fun splitImperialHeight(centimeters: Double): ImperialHeightParts {
+    val tenths = ((centimeters / 2.54) * 10).roundToInt().coerceIn(360, 959)
+    val feet = (tenths / 120).coerceIn(3, 8)
+    val remainingTenths = (tenths - (feet * 120)).coerceAtLeast(0)
+    return ImperialHeightParts(
+        feet = feet,
+        inches = (remainingTenths / 10).coerceIn(0, 11),
+        decimal = remainingTenths % 10
+    )
+}
+
+private fun imperialHeightToCentimeters(feet: Int, inches: Int, decimal: Int): Double {
+    val totalInches = ((feet * 12) + inches).toDouble() + (decimal.coerceIn(0, 9).toDouble() / 10.0)
+    return totalInches * 2.54
+}
+
+@Composable
 private fun IconStepper(icon: ImageVector, onClick: () -> Unit) {
     Box(
         modifier = Modifier
@@ -1498,17 +1864,7 @@ private fun DeltsScreenBackground(content: @Composable () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.background,
-                        DeltsAccent.copy(alpha = 0.09f),
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f),
-                        DeltsSecondaryAccent.copy(alpha = 0.06f),
-                        MaterialTheme.colorScheme.background
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
     ) {
         content()
     }
@@ -1574,7 +1930,10 @@ private fun SharedPreferences.loadProfile(): AndroidProfile =
     AndroidProfile(
         name = getString("profile_name", "Athlete").orEmpty(),
         age = getInt("profile_age", 24),
-        weightKg = getInt("profile_weight", 75),
+        heightCm = getDoubleCompat("profile_height_cm", 178.0),
+        weightKg = getDoubleCompat("profile_weight_kg", getDoubleCompat("profile_weight", 75.0)),
+        currentBodyFat = getDoubleCompat("profile_bodyfat_current", 18.0),
+        desiredBodyFat = getDoubleCompat("profile_bodyfat_desired", 12.0),
         experience = getString("profile_experience", "Intermediate").orEmpty(),
         mainGoal = getString("profile_goal", "Muscle Gain").orEmpty(),
         frequency = getInt("profile_frequency", 4),
@@ -1588,7 +1947,11 @@ private fun SharedPreferences.saveProfile(profile: AndroidProfile) {
     edit()
         .putString("profile_name", profile.name)
         .putInt("profile_age", profile.age)
-        .putInt("profile_weight", profile.weightKg)
+        .putString("profile_height_cm", formatOneDecimal(profile.heightCm))
+        .putString("profile_weight_kg", formatOneDecimal(profile.weightKg))
+        .putInt("profile_weight", profile.weightKg.roundToInt())
+        .putString("profile_bodyfat_current", formatOneDecimal(profile.currentBodyFat))
+        .putString("profile_bodyfat_desired", formatOneDecimal(profile.desiredBodyFat))
         .putString("profile_experience", profile.experience)
         .putString("profile_goal", profile.mainGoal)
         .putInt("profile_frequency", profile.frequency)
@@ -1599,10 +1962,34 @@ private fun SharedPreferences.saveProfile(profile: AndroidProfile) {
         .apply()
 }
 
+private fun SharedPreferences.getDoubleCompat(key: String, defaultValue: Double): Double {
+    return when (val value = all[key]) {
+        is Number -> value.toDouble()
+        is String -> value.toDoubleOrNull() ?: defaultValue
+        else -> defaultValue
+    }
+}
+
+private fun formatOneDecimal(value: Double): String =
+    String.format(Locale.US, "%.1f", value)
+
+private fun SharedPreferences.loadMeasurementSystem(): MeasurementSystem =
+    MeasurementSystem.values().firstOrNull { it.name == getString("profile_measurement_system", MeasurementSystem.Metric.name) }
+        ?: MeasurementSystem.Metric
+
+private fun SharedPreferences.saveMeasurementSystem(system: MeasurementSystem) {
+    edit().putString("profile_measurement_system", system.name).apply()
+}
+
 private enum class DeltsTab(val title: String, val icon: ImageVector) {
     Start("Start", Icons.Filled.PlayArrow),
     Workouts("Workouts", Icons.Filled.List),
     Profile("Profile", Icons.Filled.Person)
+}
+
+private enum class MeasurementSystem(val title: String) {
+    Metric("Metric"),
+    Imperial("Imperial")
 }
 
 private enum class EquipmentMode {
@@ -1618,7 +2005,10 @@ private enum class WorkoutsMode(val title: String, val icon: ImageVector) {
 private data class AndroidProfile(
     val name: String,
     val age: Int,
-    val weightKg: Int,
+    val heightCm: Double,
+    val weightKg: Double,
+    val currentBodyFat: Double,
+    val desiredBodyFat: Double,
     val experience: String,
     val mainGoal: String,
     val frequency: Int,
@@ -1839,7 +2229,10 @@ private fun DeltsAppPreview() {
                 profile = AndroidProfile(
                     name = "Athlete",
                     age = 24,
-                    weightKg = 75,
+                    heightCm = 178.0,
+                    weightKg = 75.0,
+                    currentBodyFat = 18.0,
+                    desiredBodyFat = 12.0,
                     experience = "Intermediate",
                     mainGoal = "Muscle Gain",
                     frequency = 4,
