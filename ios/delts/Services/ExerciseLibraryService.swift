@@ -119,7 +119,6 @@ struct ExerciseLibraryService {
     ]
 
     func filtered(
-        muscleGroups: Set<MuscleGroup>,
         level: ExperienceLevel?,
         equipment: Equipment?,
         equipmentFamily: ExerciseEquipmentFamily,
@@ -135,7 +134,6 @@ struct ExerciseLibraryService {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
         let filteredItems = exercises.filter { item in
-            let matchesMuscle = muscleGroups.isEmpty || muscleGroups.contains(item.muscleGroup)
             let matchesLevel = level == nil || item.level == level
             let matchesEquipment = equipment == nil || item.equipment == equipment
             let matchesFamily = equipmentFamily == .all || item.equipmentFamily == equipmentFamily
@@ -147,8 +145,7 @@ struct ExerciseLibraryService {
             let matchesCategory = category == nil || item.category == category
             let matchesSearch = query.isEmpty || item.searchableText.contains(query)
 
-            return matchesMuscle &&
-                matchesLevel &&
+            return matchesLevel &&
                 matchesEquipment &&
                 matchesFamily &&
                 matchesRawEquipment &&

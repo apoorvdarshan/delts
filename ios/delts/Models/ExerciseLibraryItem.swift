@@ -194,8 +194,8 @@ enum ExerciseEquipmentFamily: String, CaseIterable, Identifiable, Hashable {
 enum ExerciseLibrarySort: String, CaseIterable, Identifiable, Hashable {
     case name = "Name"
     case level = "Level"
-    case primaryMuscles = "Primary Muscles"
-    case secondaryMuscles = "Secondary Muscles"
+    case primaryMuscles = "Primary"
+    case secondaryMuscles = "Secondary"
     case category = "Category"
     case force = "Force"
     case mechanic = "Mechanic"

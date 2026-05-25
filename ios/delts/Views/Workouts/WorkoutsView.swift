@@ -14,7 +14,6 @@ struct WorkoutsView: View {
 
 private struct ExerciseLibraryBrowserView: View {
     @State private var searchText = ""
-    @State private var selectedMuscleGroups: Set<MuscleGroup> = []
     @State private var selectedLevel: ExperienceLevel?
     @State private var selectedEquipmentFamily: ExerciseEquipmentFamily = .all
     @State private var selectedRawEquipment: String?
@@ -30,7 +29,6 @@ private struct ExerciseLibraryBrowserView: View {
 
     private var items: [ExerciseLibraryItem] {
         service.filtered(
-            muscleGroups: selectedMuscleGroups,
             level: selectedLevel,
             equipment: nil,
             equipmentFamily: selectedEquipmentFamily,
@@ -47,7 +45,6 @@ private struct ExerciseLibraryBrowserView: View {
 
     private var hasActiveFilters: Bool {
         !searchText.isEmpty ||
-            !selectedMuscleGroups.isEmpty ||
             selectedLevel != nil ||
             selectedEquipmentFamily != .all ||
             selectedRawEquipment != nil ||
@@ -123,11 +120,11 @@ private struct ExerciseLibraryBrowserView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 9) {
                     filterMenuPill(
-                        title: "Primary Muscles",
+                        title: "Primary",
                         value: selectedPrimaryMuscle ?? "All",
                         systemImage: "scope"
                     ) {
-                        menuChoice("All Primary Muscles", isSelected: selectedPrimaryMuscle == nil) {
+                        menuChoice("All Primary", isSelected: selectedPrimaryMuscle == nil) {
                             selectedPrimaryMuscle = nil
                         }
                         ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
@@ -138,11 +135,11 @@ private struct ExerciseLibraryBrowserView: View {
                     }
 
                     filterMenuPill(
-                        title: "Secondary Muscles",
+                        title: "Secondary",
                         value: selectedSecondaryMuscle ?? "All",
                         systemImage: "scope"
                     ) {
-                        menuChoice("All Secondary Muscles", isSelected: selectedSecondaryMuscle == nil) {
+                        menuChoice("All Secondary", isSelected: selectedSecondaryMuscle == nil) {
                             selectedSecondaryMuscle = nil
                         }
                         ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
@@ -153,13 +150,29 @@ private struct ExerciseLibraryBrowserView: View {
                     }
 
                     filterMenuPill(
-                        title: "Body Part",
-                        value: bodyPartFilterTitle,
-                        systemImage: selectedMuscleGroups.count == 1 ? selectedMuscleGroups.first?.icon ?? "scope" : "scope"
+                        title: "Equipment",
+                        value: equipmentFilterTitle,
+                        systemImage: "dumbbell.fill"
                     ) {
-                        menuChoice("All Body Parts", isSelected: selectedMuscleGroups.isEmpty) { selectedMuscleGroups.removeAll() }
-                        ForEach(MuscleGroup.allCases) { group in
-                            multiSelectMenuToggle(group.title, group: group)
+                        menuChoice("All Equipment", isSelected: selectedEquipmentFamily == .all && selectedRawEquipment == nil) {
+                            selectedEquipmentFamily = .all
+                            selectedRawEquipment = nil
+                        }
+                        Section("Family") {
+                            ForEach(ExerciseEquipmentFamily.allCases.filter { $0 != .all }) { family in
+                                menuChoice(family.title, isSelected: selectedEquipmentFamily == family) {
+                                    selectedEquipmentFamily = family
+                                    selectedRawEquipment = nil
+                                }
+                            }
+                        }
+                        Section("Dataset") {
+                            ForEach(service.availableRawEquipment, id: \.self) { equipment in
+                                menuChoice(equipment, isSelected: selectedRawEquipment == equipment) {
+                                    selectedEquipmentFamily = .all
+                                    selectedRawEquipment = equipment
+                                }
+                            }
                         }
                     }
 
@@ -210,33 +223,6 @@ private struct ExerciseLibraryBrowserView: View {
                     }
 
                     filterMenuPill(
-                        title: "Equipment",
-                        value: equipmentFilterTitle,
-                        systemImage: "dumbbell.fill"
-                    ) {
-                        menuChoice("All Equipment", isSelected: selectedEquipmentFamily == .all && selectedRawEquipment == nil) {
-                            selectedEquipmentFamily = .all
-                            selectedRawEquipment = nil
-                        }
-                        Section("Family") {
-                            ForEach(ExerciseEquipmentFamily.allCases.filter { $0 != .all }) { family in
-                                menuChoice(family.title, isSelected: selectedEquipmentFamily == family) {
-                                    selectedEquipmentFamily = family
-                                    selectedRawEquipment = nil
-                                }
-                            }
-                        }
-                        Section("Dataset") {
-                            ForEach(service.availableRawEquipment, id: \.self) { equipment in
-                                menuChoice(equipment, isSelected: selectedRawEquipment == equipment) {
-                                    selectedEquipmentFamily = .all
-                                    selectedRawEquipment = equipment
-                                }
-                            }
-                        }
-                    }
-
-                    filterMenuPill(
                         title: "Sort",
                         value: selectedSort.title,
                         systemImage: "arrow.up.arrow.down"
@@ -270,19 +256,8 @@ private struct ExerciseLibraryBrowserView: View {
         categoryCount.category
     }
 
-    private var bodyPartFilterTitle: String {
-        if selectedMuscleGroups.isEmpty {
-            return "All"
-        }
-        if selectedMuscleGroups.count == 1, let group = selectedMuscleGroups.first {
-            return group.title
-        }
-        return "\(selectedMuscleGroups.count) parts"
-    }
-
     private func resetFilters() {
         searchText = ""
-        selectedMuscleGroups.removeAll()
         selectedLevel = nil
         selectedEquipmentFamily = .all
         selectedRawEquipment = nil
@@ -292,22 +267,6 @@ private struct ExerciseLibraryBrowserView: View {
         selectedMechanic = nil
         selectedCategory = nil
         selectedSort = .name
-    }
-
-    private func multiSelectMenuToggle(_ title: String, group: MuscleGroup) -> some View {
-        Toggle(
-            title,
-            isOn: Binding(
-                get: { selectedMuscleGroups.contains(group) },
-                set: { isSelected in
-                    if isSelected {
-                        selectedMuscleGroups.insert(group)
-                    } else {
-                        selectedMuscleGroups.remove(group)
-                    }
-                }
-            )
-        )
     }
 
     private func filterMenuPill<Content: View>(
@@ -834,10 +793,10 @@ private struct ExerciseLibraryDetailView: View {
                         DetailInfoRow(title: "Mechanic", value: item.mechanic, systemImage: "gearshape")
                         Divider()
                             .overlay(Color.deltsHairline.opacity(0.32))
-                        DetailInfoRow(title: "Primary muscles", value: item.primaryMusclesTitle, systemImage: "scope")
+                        DetailInfoRow(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope")
                         Divider()
                             .overlay(Color.deltsHairline.opacity(0.32))
-                        DetailInfoRow(title: "Secondary muscles", value: item.secondaryMusclesTitle, systemImage: "scope")
+                        DetailInfoRow(title: "Secondary", value: item.secondaryMusclesTitle, systemImage: "scope")
                         Divider()
                             .overlay(Color.deltsHairline.opacity(0.32))
                         DetailInfoRow(title: "Source", value: item.source, systemImage: "checkmark.seal")

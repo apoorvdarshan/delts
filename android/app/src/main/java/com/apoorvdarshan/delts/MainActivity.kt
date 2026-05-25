@@ -396,7 +396,6 @@ private fun WorkoutsScreen(
     exerciseLibrary: List<ExerciseItem>,
     padding: PaddingValues
 ) {
-    var selectedMuscles by rememberSaveable { mutableStateOf(emptyList<String>()) }
     var selectedLevel by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedRawEquipment by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedPrimaryMuscle by rememberSaveable { mutableStateOf<String?>(null) }
@@ -424,8 +423,7 @@ private fun WorkoutsScreen(
     }
 
     val hasActiveFilters =
-        selectedMuscles.isNotEmpty() ||
-            selectedLevel != null ||
+        selectedLevel != null ||
             selectedRawEquipment != null ||
             selectedPrimaryMuscle != null ||
             selectedSecondaryMuscle != null ||
@@ -436,7 +434,6 @@ private fun WorkoutsScreen(
             search.isNotBlank()
 
     fun resetLibraryFilters() {
-        selectedMuscles = emptyList()
         selectedLevel = null
         selectedRawEquipment = null
         selectedPrimaryMuscle = null
@@ -448,26 +445,10 @@ private fun WorkoutsScreen(
         search = ""
     }
 
-    fun toggleSelectedMuscle(muscle: String) {
-        selectedMuscles = if (selectedMuscles.contains(muscle)) {
-            selectedMuscles - muscle
-        } else {
-            selectedMuscles + muscle
-        }
-    }
-
-    fun selectedMuscleTitle(): String =
-        when (selectedMuscles.size) {
-            0 -> "All"
-            1 -> selectedMuscles.first()
-            else -> "${selectedMuscles.size} parts"
-        }
-
     fun selectedCategoryTitle(): String =
         selectedCategory ?: "All"
 
     val filteredExercises = remember(
-        selectedMuscles,
         selectedLevel,
         selectedRawEquipment,
         selectedPrimaryMuscle,
@@ -482,8 +463,7 @@ private fun WorkoutsScreen(
         val query = search.trim().lowercase(Locale.US)
         exerciseLibrary
             .filter { item ->
-                (selectedMuscles.isEmpty() || selectedMuscles.contains(item.muscle)) &&
-                    (selectedLevel == null || item.level == selectedLevel) &&
+                (selectedLevel == null || item.level == selectedLevel) &&
                     (selectedRawEquipment == null || item.rawEquipment == selectedRawEquipment) &&
                     (selectedPrimaryMuscle?.let { item.primaryMuscles.contains(it) } ?: true) &&
                     (selectedSecondaryMuscle?.let { item.secondaryMuscles.contains(it) } ?: true) &&
@@ -517,38 +497,36 @@ private fun WorkoutsScreen(
 
                 HorizontalChipRail {
                     LibraryFilterMenu(
-                        title = "Primary Muscles",
+                        title = "Primary",
                         value = selectedPrimaryMuscle ?: "All",
                         icon = Icons.Filled.FitnessCenter,
                         active = selectedPrimaryMuscle != null,
                         options = primaryMuscleOptions,
                         selectedOption = selectedPrimaryMuscle,
-                        allTitle = "All Primary Muscles"
+                        allTitle = "All Primary"
                     ) {
                         selectedPrimaryMuscle = it
                     }
                     LibraryFilterMenu(
-                        title = "Secondary Muscles",
+                        title = "Secondary",
                         value = selectedSecondaryMuscle ?: "All",
                         icon = Icons.Filled.FitnessCenter,
                         active = selectedSecondaryMuscle != null,
                         options = secondaryMuscleOptions,
                         selectedOption = selectedSecondaryMuscle,
-                        allTitle = "All Secondary Muscles"
+                        allTitle = "All Secondary"
                     ) {
                         selectedSecondaryMuscle = it
                     }
-                    MultiSelectLibraryFilterMenu(
-                        title = "Body Part",
-                        value = selectedMuscleTitle(),
-                        icon = Icons.Filled.FitnessCenter,
-                        active = selectedMuscles.isNotEmpty(),
-                        options = muscles.map { it.title },
-                        selectedOptions = selectedMuscles,
-                        allTitle = "All Body Parts",
-                        onClear = { selectedMuscles = emptyList() },
-                        onToggle = ::toggleSelectedMuscle
-                    )
+                    LibraryFilterMenu(
+                        title = "Equipment",
+                        value = selectedRawEquipment ?: "All",
+                        icon = Icons.Filled.Build,
+                        active = selectedRawEquipment != null,
+                        options = rawEquipmentOptions,
+                        selectedOption = selectedRawEquipment,
+                        allTitle = "All Equipment"
+                    ) { selectedRawEquipment = it }
                     LibraryFilterMenu(
                         title = "Level",
                         value = selectedLevel ?: "All",
@@ -581,15 +559,6 @@ private fun WorkoutsScreen(
                         selectedOption = selectedCategory,
                         allTitle = "All Categories"
                     ) { selectedCategory = it }
-                    LibraryFilterMenu(
-                        title = "Equipment",
-                        value = selectedRawEquipment ?: "All",
-                        icon = Icons.Filled.Build,
-                        active = selectedRawEquipment != null,
-                        options = rawEquipmentOptions,
-                        selectedOption = selectedRawEquipment,
-                        allTitle = "All Equipment"
-                    ) { selectedRawEquipment = it }
                     LibraryFilterMenu(
                         title = "Force",
                         value = selectedForce ?: "All",
@@ -1429,88 +1398,6 @@ private fun LibraryFilterMenu(
 }
 
 @Composable
-private fun MultiSelectLibraryFilterMenu(
-    title: String,
-    value: String,
-    icon: ImageVector,
-    active: Boolean,
-    options: List<String>,
-    selectedOptions: List<String>,
-    allTitle: String,
-    onClear: () -> Unit,
-    onToggle: (String) -> Unit
-) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-
-    Box {
-        Button(
-            onClick = { expanded = true },
-            modifier = Modifier.height(46.dp),
-            shape = RoundedCornerShape(17.dp),
-            contentPadding = PaddingValues(horizontal = 12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (active) DeltsAccent else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
-                contentColor = if (active) DeltsOnAccent else MaterialTheme.colorScheme.onBackground
-            ),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
-        ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(15.dp))
-            Spacer(modifier = Modifier.width(7.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.heightIn(max = 360.dp)
-        ) {
-            DropdownMenuItem(
-                text = { Text(allTitle, style = MaterialTheme.typography.bodyLarge) },
-                leadingIcon = if (selectedOptions.isEmpty()) {
-                    {
-                        Icon(Icons.Filled.Check, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(18.dp))
-                    }
-                } else {
-                    null
-                },
-                onClick = {
-                    onClear()
-                    expanded = false
-                }
-            )
-
-            options.forEach { option ->
-                val selected = selectedOptions.contains(option)
-                DropdownMenuItem(
-                    text = { Text(option, style = MaterialTheme.typography.bodyLarge) },
-                    leadingIcon = if (selected) {
-                        {
-                            Icon(Icons.Filled.Check, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(18.dp))
-                        }
-                    } else {
-                        null
-                    },
-                    onClick = { onToggle(option) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun <T> TwoColumnGrid(items: List<T>, content: @Composable (T) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         items.chunked(2).forEach { rowItems ->
@@ -1708,8 +1595,8 @@ private fun ExerciseLibraryMetadata(item: ExerciseItem) {
             MetadataLine("Force", item.force)
             MetadataLine("Mechanic", item.mechanic)
             MetadataLine("Raw equipment", item.rawEquipment)
-            MetadataLine("Primary Muscles", item.primaryMuscles.ifEmpty { listOf("Unspecified") }.joinToString(", "))
-            MetadataLine("Secondary Muscles", item.secondaryMuscles.ifEmpty { listOf("None") }.joinToString(", "))
+            MetadataLine("Primary", item.primaryMuscles.ifEmpty { listOf("Unspecified") }.joinToString(", "))
+            MetadataLine("Secondary", item.secondaryMuscles.ifEmpty { listOf("None") }.joinToString(", "))
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
@@ -2791,8 +2678,8 @@ private enum class EquipmentMode {
 private enum class LibrarySort(val title: String) {
     Name("Name"),
     Level("Level"),
-    PrimaryMuscles("Primary Muscles"),
-    SecondaryMuscles("Secondary Muscles"),
+    PrimaryMuscles("Primary"),
+    SecondaryMuscles("Secondary"),
     Category("Category"),
     Force("Force"),
     Mechanic("Mechanic"),
