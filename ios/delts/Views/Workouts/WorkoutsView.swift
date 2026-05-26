@@ -759,53 +759,60 @@ private struct ExerciseLibraryDetailView: View {
     @State private var activePlan: WorkoutPlan?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                detailHero
+        GeometryReader { geometry in
+            let screenWidth = geometry.size.width
 
-                VStack(alignment: .leading, spacing: 24) {
-                    DetailMetricGrid(item: item, restText: restText)
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: 0) {
+                    detailHero(width: screenWidth)
 
-                    Divider()
-                        .overlay(Color.deltsHairline.opacity(0.34))
+                    VStack(alignment: .leading, spacing: 24) {
+                        DetailMetricGrid(item: item, restText: restText)
 
-                    DetailTextSection(
-                        title: "Form tip",
-                        systemImage: "lightbulb",
-                        text: item.formTip
-                    )
+                        Divider()
+                            .overlay(Color.deltsHairline.opacity(0.34))
 
-                    DetailInstructionSection(instructions: item.instructions)
+                        DetailTextSection(
+                            title: "Form tip",
+                            systemImage: "lightbulb",
+                            text: item.formTip
+                        )
 
-                    VStack(spacing: 0) {
-                        DetailInfoRow(title: "Equipment", value: "\(item.equipment.title) - \(item.machineLabel)", systemImage: "dumbbell.fill")
-                        Divider()
-                            .overlay(Color.deltsHairline.opacity(0.32))
-                        DetailInfoRow(title: "Raw equipment", value: item.rawEquipment, systemImage: "wrench.and.screwdriver")
-                        Divider()
-                            .overlay(Color.deltsHairline.opacity(0.32))
-                        DetailInfoRow(title: "Category", value: item.category, systemImage: "tag")
-                        Divider()
-                            .overlay(Color.deltsHairline.opacity(0.32))
-                        DetailInfoRow(title: "Force", value: item.force, systemImage: "arrow.left.arrow.right")
-                        Divider()
-                            .overlay(Color.deltsHairline.opacity(0.32))
-                        DetailInfoRow(title: "Mechanic", value: item.mechanic, systemImage: "gearshape")
-                        Divider()
-                            .overlay(Color.deltsHairline.opacity(0.32))
-                        DetailInfoRow(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope")
-                        Divider()
-                            .overlay(Color.deltsHairline.opacity(0.32))
-                        DetailInfoRow(title: "Secondary", value: item.secondaryMusclesTitle, systemImage: "scope")
-                        Divider()
-                            .overlay(Color.deltsHairline.opacity(0.32))
-                        DetailInfoRow(title: "Source", value: item.source, systemImage: "checkmark.seal")
+                        DetailInstructionSection(instructions: item.instructions)
+
+                        VStack(spacing: 0) {
+                            DetailInfoRow(title: "Equipment", value: "\(item.equipment.title) - \(item.machineLabel)", systemImage: "dumbbell.fill")
+                            Divider()
+                                .overlay(Color.deltsHairline.opacity(0.32))
+                            DetailInfoRow(title: "Raw equipment", value: item.rawEquipment, systemImage: "wrench.and.screwdriver")
+                            Divider()
+                                .overlay(Color.deltsHairline.opacity(0.32))
+                            DetailInfoRow(title: "Category", value: item.category, systemImage: "tag")
+                            Divider()
+                                .overlay(Color.deltsHairline.opacity(0.32))
+                            DetailInfoRow(title: "Force", value: item.force, systemImage: "arrow.left.arrow.right")
+                            Divider()
+                                .overlay(Color.deltsHairline.opacity(0.32))
+                            DetailInfoRow(title: "Mechanic", value: item.mechanic, systemImage: "gearshape")
+                            Divider()
+                                .overlay(Color.deltsHairline.opacity(0.32))
+                            DetailInfoRow(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope")
+                            Divider()
+                                .overlay(Color.deltsHairline.opacity(0.32))
+                            DetailInfoRow(title: "Secondary", value: item.secondaryMusclesTitle, systemImage: "scope")
+                            Divider()
+                                .overlay(Color.deltsHairline.opacity(0.32))
+                            DetailInfoRow(title: "Source", value: item.source, systemImage: "checkmark.seal")
+                        }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 24)
+                    .padding(.bottom, 126)
+                    .frame(width: screenWidth, alignment: .leading)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 24)
-                .padding(.bottom, 126)
+                .frame(width: screenWidth, alignment: .leading)
             }
+            .scrollIndicators(.hidden)
         }
         .deltsScreen()
         .contentMargins(.bottom, 104, for: .scrollContent)
@@ -819,25 +826,24 @@ private struct ExerciseLibraryDetailView: View {
         }
     }
 
-    private var detailHero: some View {
-        AnimatedExerciseVisual(
-            muscleGroup: item.muscleGroup,
-            assetName: item.visualAssetName,
-            exerciseName: item.name,
-            imagePaths: item.imagePaths,
-            equipment: item.equipment,
-            height: 294
-        )
-        .frame(maxWidth: .infinity)
-        .clipped()
-        .overlay {
+    private func detailHero(width: CGFloat) -> some View {
+        ZStack(alignment: .bottomLeading) {
+            AnimatedExerciseVisual(
+                muscleGroup: item.muscleGroup,
+                assetName: item.visualAssetName,
+                exerciseName: item.name,
+                imagePaths: item.imagePaths,
+                equipment: item.equipment,
+                height: 294
+            )
+            .frame(width: width, height: 294)
+
             LinearGradient(
                 colors: [.clear, .black.opacity(0.18), .black.opacity(0.72)],
                 startPoint: .top,
                 endPoint: .bottom
             )
-        }
-        .overlay(alignment: .bottomLeading) {
+
             VStack(alignment: .leading, spacing: 8) {
                 Text(item.name)
                     .font(.system(.title, design: .rounded, weight: .bold))
@@ -853,8 +859,10 @@ private struct ExerciseLibraryDetailView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(width: width, alignment: .leading)
         }
+        .frame(width: width, height: 294, alignment: .bottomLeading)
+        .clipped()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text("\(item.name) exercise visual"))
     }
