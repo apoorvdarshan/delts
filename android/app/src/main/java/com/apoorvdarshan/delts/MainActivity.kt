@@ -38,6 +38,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
@@ -409,6 +410,7 @@ private fun WorkoutsScreen(
     var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedSort by rememberSaveable { mutableStateOf(LibrarySort.Name) }
     var search by rememberSaveable { mutableStateOf("") }
+    var selectedExerciseName by rememberSaveable { mutableStateOf<String?>(null) }
 
     val levelOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.level }.distinctSortedLevels() }
     val rawEquipmentOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.rawEquipment }.distinctSorted() }
@@ -451,6 +453,18 @@ private fun WorkoutsScreen(
 
     fun selectedCategoryTitle(): String =
         selectedCategory ?: "All"
+
+    val selectedExercise = remember(selectedExerciseName, exerciseLibrary) {
+        selectedExerciseName?.let { name -> exerciseLibrary.firstOrNull { it.name == name } }
+    }
+    if (selectedExercise != null) {
+        ExerciseLibraryDetailScreen(
+            item = selectedExercise,
+            padding = padding,
+            onBack = { selectedExerciseName = null }
+        )
+        return
+    }
 
     val filteredExercises = remember(
         selectedLevel,
@@ -594,7 +608,9 @@ private fun WorkoutsScreen(
         }
 
         items(filteredExercises, key = { it.name }) { item ->
-            ExerciseLibraryRow(item = item)
+            ExerciseLibraryRow(item = item) {
+                selectedExerciseName = item.name
+            }
         }
     }
 }
@@ -1425,13 +1441,11 @@ private fun ResultsHeader(title: String, subtitle: String, onReset: (() -> Unit)
 }
 
 @Composable
-private fun ExerciseLibraryRow(item: ExerciseItem) {
-    var expanded by rememberSaveable(item.name) { mutableStateOf(false) }
-
+private fun ExerciseLibraryRow(item: ExerciseItem, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { expanded = !expanded }
+            .clickable(onClick = onClick)
             .padding(vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -1470,76 +1484,320 @@ private fun ExerciseLibraryRow(item: ExerciseItem) {
                 )
             }
             Icon(
-                if (expanded) Icons.Filled.Close else Icons.Filled.KeyboardArrowRight,
+                Icons.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.outline
             )
-        }
-
-        if (expanded) {
-            ExerciseLibraryMetadata(item = item)
         }
     }
     HorizontalDivider(color = DividerDefaults.color.copy(alpha = 0.32f))
 }
 
 @Composable
-private fun ExerciseLibraryMetadata(item: ExerciseItem) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.22f))
+private fun ExerciseLibraryDetailScreen(
+    item: ExerciseItem,
+    padding: PaddingValues,
+    onBack: () -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding),
+        contentPadding = PaddingValues(bottom = 112.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            MetadataLine("Category", item.category)
-            MetadataLine("Force", item.force)
-            MetadataLine("Mechanic", item.mechanic)
-            MetadataLine("Raw equipment", item.rawEquipment)
-            MetadataLine("Primary", item.primaryMuscles.ifEmpty { listOf("Unspecified") }.joinToString(", "))
-            MetadataLine("Secondary", item.secondaryMuscles.ifEmpty { listOf("None") }.joinToString(", "))
+        item {
+            ExerciseDetailHeader(
+                title = item.name,
+                onBack = onBack,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)
+            )
+        }
 
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "Instructions",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                item.instructions.forEachIndexed { index, instruction ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.Top) {
-                        Text(
-                            text = "${index + 1}",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = DeltsAccent
-                        )
-                        Text(
-                            text = instruction,
-                            modifier = Modifier.weight(1f),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
+        item {
+            ExerciseDetailHero(item = item)
+        }
+
+        item {
+            ExerciseDetailMetricGrid(
+                item = item,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+        }
+
+        item {
+            HorizontalDivider(
+                color = DividerDefaults.color.copy(alpha = 0.34f),
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+        }
+
+        item {
+            ExerciseDetailInstructions(
+                instructions = item.instructions,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
         }
     }
 }
 
 @Composable
-private fun MetadataLine(label: String, value: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+private fun ExerciseDetailHeader(
+    title: String,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .size(56.dp)
+                .clip(CircleShape)
+                .clickable(onClick = onBack)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.64f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Filled.ArrowBack,
+                contentDescription = "Back",
+                tint = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.size(30.dp)
+            )
+        }
+
         Text(
-            text = label,
-            modifier = Modifier.width(86.dp),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onBackground
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 72.dp)
+        )
+    }
+}
+
+@Composable
+private fun ExerciseDetailHero(item: ExerciseItem) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(294.dp)
+    ) {
+        ExerciseVisual(
+            imagePaths = item.imagePaths,
+            fallbackIcon = Icons.Filled.FitnessCenter,
+            modifier = Modifier.matchParentSize(),
+            cornerRadius = 0,
+            iconSize = 112,
+            contentScale = ContentScale.Crop
+        )
+
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.18f),
+                            Color.Black.copy(alpha = 0.72f)
+                        )
+                    )
+                )
+        )
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(horizontal = 20.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = item.name,
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "${item.primaryMusclesTitle()} - ${item.rawEquipment} - ${item.level}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White.copy(alpha = 0.82f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExerciseDetailMetricGrid(
+    item: ExerciseItem,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        ExerciseDetailMetricRow(
+            leftTitle = "Level",
+            leftValue = item.level,
+            leftIcon = Icons.Filled.FlashOn,
+            rightTitle = "Category",
+            rightValue = item.category,
+            rightIcon = Icons.Filled.List
+        )
+        HorizontalDivider(color = DividerDefaults.color.copy(alpha = 0.34f))
+        ExerciseDetailMetricRow(
+            leftTitle = "Force",
+            leftValue = item.force,
+            leftIcon = Icons.Filled.Flag,
+            rightTitle = "Mechanic",
+            rightValue = item.mechanic,
+            rightIcon = Icons.Filled.Build
+        )
+        HorizontalDivider(color = DividerDefaults.color.copy(alpha = 0.34f))
+        ExerciseDetailMetricRow(
+            leftTitle = "Primary",
+            leftValue = item.primaryMusclesTitle(),
+            leftIcon = Icons.Filled.FitnessCenter,
+            rightTitle = "Secondary",
+            rightValue = item.secondaryMusclesTitle(),
+            rightIcon = Icons.Filled.FitnessCenter
+        )
+        HorizontalDivider(color = DividerDefaults.color.copy(alpha = 0.34f))
+        ExerciseDetailMetric(
+            title = "Equipment",
+            value = item.rawEquipment,
+            icon = Icons.Filled.FitnessCenter,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun ExerciseDetailMetricRow(
+    leftTitle: String,
+    leftValue: String,
+    leftIcon: ImageVector,
+    rightTitle: String,
+    rightValue: String,
+    rightIcon: ImageVector
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(0.dp), verticalAlignment = Alignment.Top) {
+        ExerciseDetailMetric(
+            title = leftTitle,
+            value = leftValue,
+            icon = leftIcon,
+            modifier = Modifier.weight(1f)
+        )
+        Box(
+            modifier = Modifier
+                .width(1.dp)
+                .height(56.dp)
+                .background(DividerDefaults.color.copy(alpha = 0.34f))
+        )
+        ExerciseDetailMetric(
+            title = rightTitle,
+            value = rightValue,
+            icon = rightIcon,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun ExerciseDetailMetric(
+    title: String,
+    value: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.padding(horizontal = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = DeltsAccent,
+            modifier = Modifier.size(28.dp)
         )
         Text(
             text = value,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
+        )
+    }
+}
+
+@Composable
+private fun ExerciseDetailInstructions(
+    instructions: List<String>,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Filled.List,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.size(28.dp)
+            )
+            Text(
+                text = "Instructions",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            instructions.forEachIndexed { index, instruction ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(DeltsAccent),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "${index + 1}",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = DeltsOnAccent
+                        )
+                    }
+                    Text(
+                        text = instruction,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
     }
 }
 

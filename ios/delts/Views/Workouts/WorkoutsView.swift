@@ -742,28 +742,6 @@ private struct ExerciseLibraryDetailView: View {
                             .overlay(Color.deltsHairline.opacity(0.34))
 
                         DetailInstructionSection(instructions: item.instructions)
-
-                        VStack(spacing: 0) {
-                            DetailInfoRow(title: "Equipment", value: item.rawEquipment, systemImage: "dumbbell.fill")
-                            Divider()
-                                .overlay(Color.deltsHairline.opacity(0.32))
-                            DetailInfoRow(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill")
-                            Divider()
-                                .overlay(Color.deltsHairline.opacity(0.32))
-                            DetailInfoRow(title: "Category", value: item.category, systemImage: "tag")
-                            Divider()
-                                .overlay(Color.deltsHairline.opacity(0.32))
-                            DetailInfoRow(title: "Force", value: item.force, systemImage: "arrow.left.arrow.right")
-                            Divider()
-                                .overlay(Color.deltsHairline.opacity(0.32))
-                            DetailInfoRow(title: "Mechanic", value: item.mechanic, systemImage: "gearshape")
-                            Divider()
-                                .overlay(Color.deltsHairline.opacity(0.32))
-                            DetailInfoRow(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope")
-                            Divider()
-                                .overlay(Color.deltsHairline.opacity(0.32))
-                            DetailInfoRow(title: "Secondary", value: item.secondaryMusclesTitle, systemImage: "scope")
-                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 24)
@@ -854,22 +832,52 @@ private struct DetailMetricGrid: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            HStack(spacing: 0) {
-                DetailMetric(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill")
-                Divider().frame(height: 48).overlay(Color.deltsHairline.opacity(0.34))
-                DetailMetric(title: "Category", value: item.category, systemImage: "tag")
-            }
+            DetailMetricRow(
+                left: DetailMetricContent(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill"),
+                right: DetailMetricContent(title: "Category", value: item.category, systemImage: "tag")
+            )
 
             Divider()
                 .overlay(Color.deltsHairline.opacity(0.34))
 
-            HStack(spacing: 0) {
-                DetailMetric(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope")
-                Divider().frame(height: 48).overlay(Color.deltsHairline.opacity(0.34))
-                DetailMetric(title: "Equipment", value: item.rawEquipment, systemImage: "dumbbell.fill")
-            }
+            DetailMetricRow(
+                left: DetailMetricContent(title: "Force", value: item.force, systemImage: "arrow.left.arrow.right"),
+                right: DetailMetricContent(title: "Mechanic", value: item.mechanic, systemImage: "gearshape")
+            )
+
+            Divider()
+                .overlay(Color.deltsHairline.opacity(0.34))
+
+            DetailMetricRow(
+                left: DetailMetricContent(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope"),
+                right: DetailMetricContent(title: "Secondary", value: item.secondaryMusclesTitle, systemImage: "scope")
+            )
+
+            Divider()
+                .overlay(Color.deltsHairline.opacity(0.34))
+
+            DetailMetric(title: "Equipment", value: item.rawEquipment, systemImage: "dumbbell.fill")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct DetailMetricContent {
+    let title: String
+    let value: String
+    let systemImage: String
+}
+
+private struct DetailMetricRow: View {
+    let left: DetailMetricContent
+    let right: DetailMetricContent
+
+    var body: some View {
+        HStack(spacing: 0) {
+            DetailMetric(title: left.title, value: left.value, systemImage: left.systemImage)
+            Divider().frame(height: 48).overlay(Color.deltsHairline.opacity(0.34))
+            DetailMetric(title: right.title, value: right.value, systemImage: right.systemImage)
+        }
     }
 }
 
@@ -898,35 +906,6 @@ private struct DetailMetric: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10)
-    }
-}
-
-private struct DetailInfoRow: View {
-    let title: String
-    let value: String
-    let systemImage: String
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.deltsSecondaryAccent)
-                .frame(width: 30, height: 30)
-
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.deltsCharcoal)
-
-            Spacer(minLength: 12)
-
-            Text(value)
-                .font(.subheadline)
-                .foregroundStyle(Color.deltsMutedText)
-                .lineLimit(2)
-                .multilineTextAlignment(.trailing)
-                .minimumScaleFactor(0.82)
-        }
-        .padding(.vertical, 12)
     }
 }
 
