@@ -5,14 +5,29 @@
 //  Created by Apoorv Darshan on 22/05/26.
 //
 
+import SwiftData
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
     @State private var selectedTab: DeltsTab = .initialTab
 
     var body: some View {
-        tabRoot
+        rootView
             .tint(Color.deltsAccent)
+            .task {
+                ensureDefaultProfile()
+            }
+    }
+
+    @ViewBuilder
+    private var rootView: some View {
+        if let scene = DeltsLaunchScene.initialScene {
+            launchScene(scene)
+        } else {
+            tabRoot
+        }
     }
 
     private var tabRoot: some View {
@@ -29,6 +44,133 @@ struct ContentView: View {
                 .tabItem { Label(DeltsTab.profile.title, systemImage: DeltsTab.profile.systemImage) }
                 .tag(DeltsTab.profile)
         }
+    }
+
+    @ViewBuilder
+    private func launchScene(_ scene: DeltsLaunchScene) -> some View {
+        switch scene {
+        case .plan:
+            PlanView()
+        case .workout:
+            NavigationStack {
+                WorkoutPlanView(plan: DeltsPreviewWorkoutFactory.plan())
+            }
+        case .active:
+            NavigationStack {
+                ActiveWorkoutView(plan: DeltsPreviewWorkoutFactory.plan())
+            }
+        case .summary:
+            NavigationStack {
+                CompletedWorkoutDetailView(workout: DeltsPreviewWorkoutFactory.completedWorkout())
+            }
+        }
+    }
+
+    private func ensureDefaultProfile() {
+        guard profiles.isEmpty else { return }
+        modelContext.insert(UserProfile.defaultProfile())
+        try? modelContext.save()
+    }
+}
+
+private enum DeltsLaunchScene: String {
+    case plan
+    case workout
+    case active
+    case summary
+
+    static var initialScene: DeltsLaunchScene? {
+        let arguments = ProcessInfo.processInfo.arguments
+        if let sceneFlagIndex = arguments.firstIndex(of: "--delts-scene"),
+           arguments.indices.contains(arguments.index(after: sceneFlagIndex)),
+           let scene = DeltsLaunchScene(rawValue: arguments[arguments.index(after: sceneFlagIndex)]) {
+            return scene
+        }
+
+        if let sceneValue = ProcessInfo.processInfo.environment["DELTS_INITIAL_SCENE"],
+           let scene = DeltsLaunchScene(rawValue: sceneValue) {
+            return scene
+        }
+
+        return nil
+    }
+}
+
+private enum DeltsPreviewWorkoutFactory {
+    static func plan() -> WorkoutPlan {
+        WorkoutPlan(
+            title: "Chest Session",
+            summary: "Press, fly, and finish with controlled volume.",
+            muscleGroup: .chest,
+            goal: .muscleGain,
+            durationMinutes: 60,
+            generatedByAI: false,
+            exercises: [
+                WorkoutExercise(
+                    orderIndex: 0,
+                    name: "Barbell Bench Press",
+                    targetMuscle: .chest,
+                    equipment: .barbell,
+                    sets: 4,
+                    reps: "6-8",
+                    restSeconds: 90,
+                    formTip: "Keep shoulder blades pinned and drive the bar in a steady path.",
+                    difficulty: ExperienceLevel.intermediate.title
+                ),
+                WorkoutExercise(
+                    orderIndex: 1,
+                    name: "Incline Dumbbell Press",
+                    targetMuscle: .chest,
+                    equipment: .dumbbells,
+                    sets: 3,
+                    reps: "8-10",
+                    restSeconds: 75,
+                    formTip: "Lower with control and stop before the shoulders roll forward.",
+                    difficulty: ExperienceLevel.intermediate.title
+                ),
+                WorkoutExercise(
+                    orderIndex: 2,
+                    name: "Cable Crossover",
+                    targetMuscle: .chest,
+                    equipment: .cableMachine,
+                    sets: 3,
+                    reps: "12-15",
+                    restSeconds: 60,
+                    formTip: "Move through the chest, not the elbows, and pause at the squeeze.",
+                    difficulty: ExperienceLevel.intermediate.title
+                )
+            ]
+        )
+    }
+
+    static func completedWorkout() -> CompletedWorkout {
+        CompletedWorkout(
+            title: "Chest Session",
+            durationMinutes: 58,
+            planSummary: "Press, fly, and finish with controlled volume.",
+            exerciseLogs: [
+                CompletedExerciseLog(
+                    name: "Barbell Bench Press",
+                    targetMuscle: MuscleGroup.chest.title,
+                    equipment: Equipment.barbell.title,
+                    sets: [
+                        CompletedSetLog(setNumber: 1, completed: true, weight: "80", reps: "8"),
+                        CompletedSetLog(setNumber: 2, completed: true, weight: "85", reps: "7"),
+                        CompletedSetLog(setNumber: 3, completed: true, weight: "85", reps: "6")
+                    ]
+                ),
+                CompletedExerciseLog(
+                    name: "Incline Dumbbell Press",
+                    targetMuscle: MuscleGroup.chest.title,
+                    equipment: Equipment.dumbbells.title,
+                    sets: [
+                        CompletedSetLog(setNumber: 1, completed: true, weight: "30", reps: "10"),
+                        CompletedSetLog(setNumber: 2, completed: true, weight: "30", reps: "9"),
+                        CompletedSetLog(setNumber: 3, completed: false, weight: "", reps: "")
+                    ]
+                )
+            ]
+        )
     }
 }
 
@@ -74,4 +216,11 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
 
 #Preview {
     ContentView()
+        .modelContainer(for: [
+            UserProfile.self,
+            Exercise.self,
+            WorkoutPlan.self,
+            WorkoutExercise.self,
+            CompletedWorkout.self
+        ], inMemory: true)
 }

@@ -2,9 +2,11 @@ import SwiftUI
 import UIKit
 
 struct AnimatedExerciseVisual: View {
+    var muscleGroup: MuscleGroup? = nil
     var assetName: String?
     var exerciseName: String?
     var imagePaths: [String] = []
+    var equipment: Equipment?
     var height: CGFloat = 170
     var fillsWidth = true
     var allowsDerivedImageLookup = true
@@ -41,12 +43,20 @@ struct AnimatedExerciseVisual: View {
             return []
         }
 
-        let namedURLs = FreeExerciseDBAssetResolver.imageURLs(forExerciseName: exerciseName)
+        let namedURLs = FreeExerciseDBAssetResolver.imageURLs(
+            forExerciseName: exerciseName,
+            muscleGroup: muscleGroup,
+            equipment: equipment
+        )
         if !namedURLs.isEmpty {
             return namedURLs
         }
 
-        return []
+        guard allowsDerivedImageLookup, let muscleGroup else {
+            return []
+        }
+
+        return FreeExerciseDBAssetResolver.imageURLs(forMuscleGroup: muscleGroup, equipment: equipment)
     }
 
     private var fallbackVisual: some View {
@@ -63,12 +73,17 @@ struct AnimatedExerciseVisual: View {
             .animation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true), value: animate)
 
             VStack(spacing: 12) {
-                Image(systemName: fallbackSystemImage)
+                Image(systemName: muscleGroup?.icon ?? fallbackSystemImage)
                     .font(.system(size: 36, weight: .semibold))
                     .symbolEffect(.pulse, options: .repeating, value: animate)
-                Text(fallbackTitle.uppercased())
+                Text((muscleGroup?.title ?? fallbackTitle).uppercased())
                     .font(.caption.weight(.bold))
                     .tracking(1.2)
+                if let equipment {
+                    Text(equipment.title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                }
             }
             .foregroundStyle(Color.deltsCharcoal)
         }

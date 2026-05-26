@@ -583,6 +583,131 @@ private struct ExerciseLibraryRow: View {
 
 }
 
+private struct CompletedWorkoutRow: View {
+    let workout: CompletedWorkout
+
+    var body: some View {
+        HStack(spacing: 14) {
+            WorkoutHistoryGlyph(workout: workout)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(workout.title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.84)
+
+                Text(workout.date.formatted(date: .abbreviated, time: .shortened))
+                    .font(.subheadline)
+                    .foregroundStyle(Color.deltsMutedText)
+
+                historySummaryStrip
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Color.deltsHairline)
+        }
+        .padding(.vertical, 14)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    private var logs: [CompletedExerciseLog] {
+        workout.exerciseLogs
+    }
+
+    private var completedSets: Int {
+        logs.reduce(0) { total, exercise in
+            total + exercise.sets.filter(\.completed).count
+        }
+    }
+
+    private var totalSets: Int {
+        logs.reduce(0) { total, exercise in
+            total + exercise.sets.count
+        }
+    }
+
+    private var historySummaryStrip: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                HistorySummaryItem(value: "\(logs.count)", label: logs.count == 1 ? "exercise" : "exercises", systemImage: "figure.strengthtraining.traditional")
+                HistorySummaryItem(value: "\(completedSets)/\(totalSets)", label: "sets", systemImage: "checkmark")
+                HistorySummaryItem(value: "\(workout.durationMinutes)m", label: "duration", systemImage: "clock")
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                HistorySummaryItem(value: "\(logs.count)", label: logs.count == 1 ? "exercise" : "exercises", systemImage: "figure.strengthtraining.traditional")
+                HistorySummaryItem(value: "\(completedSets)/\(totalSets)", label: "sets", systemImage: "checkmark")
+                HistorySummaryItem(value: "\(workout.durationMinutes)m", label: "duration", systemImage: "clock")
+            }
+        }
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(Color.deltsMutedText)
+    }
+}
+
+private struct WorkoutHistoryGlyph: View {
+    let workout: CompletedWorkout
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.deltsSecondaryAccent.opacity(0.12))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.deltsHairline.opacity(0.32), lineWidth: 0.5)
+                }
+
+            if let iconName {
+                Image(systemName: iconName)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.deltsSecondaryAccent)
+            } else {
+                Text(initial)
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsSecondaryAccent)
+            }
+        }
+        .frame(width: 56, height: 56)
+        .accessibilityHidden(true)
+    }
+
+    private var primaryExercise: CompletedExerciseLog? {
+        workout.exerciseLogs.first
+    }
+
+    private var iconName: String? {
+        guard let target = primaryExercise?.targetMuscle else { return nil }
+        return MuscleGroup(rawValue: target)?.icon
+    }
+
+    private var initial: String {
+        let trimmedTitle = workout.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedTitle.first.map { String($0).uppercased() } ?? "W"
+    }
+}
+
+private struct HistorySummaryItem: View {
+    let value: String
+    let label: String
+    let systemImage: String
+
+    var body: some View {
+        Label {
+            Text("\(value) \(label)")
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
+        } icon: {
+            Image(systemName: systemImage)
+        }
+        .labelStyle(.titleAndIcon)
+    }
+}
+
 private struct LibraryTag: View {
     let title: String
     let systemImage: String
@@ -802,6 +927,190 @@ private struct DetailInfoRow: View {
                 .minimumScaleFactor(0.82)
         }
         .padding(.vertical, 12)
+    }
+}
+
+struct CompletedWorkoutDetailView: View {
+    let workout: CompletedWorkout
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                detailHeader
+                    .padding(.horizontal, 20)
+                    .padding(.top, 18)
+                    .padding(.bottom, 18)
+
+                ForEach(workout.exerciseLogs) { exercise in
+                    CompletedExerciseLogSection(exercise: exercise)
+
+                    if exercise.id != workout.exerciseLogs.last?.id {
+                        Divider()
+                            .overlay(Color.deltsHairline.opacity(0.32))
+                            .padding(.horizontal, 20)
+                    }
+                }
+            }
+            .padding(.bottom, 112)
+        }
+        .deltsScreen()
+        .contentMargins(.bottom, 104, for: .scrollContent)
+        .navigationTitle("Summary")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var completedSets: Int {
+        workout.exerciseLogs.reduce(0) { total, exercise in
+            total + exercise.sets.filter(\.completed).count
+        }
+    }
+
+    private var totalSets: Int {
+        workout.exerciseLogs.reduce(0) { total, exercise in
+            total + exercise.sets.count
+        }
+    }
+
+    private var detailHeader: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 14) {
+                WorkoutHistoryGlyph(workout: workout)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(workout.title)
+                        .font(.title.weight(.bold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.76)
+
+                    Text(workout.date.formatted(date: .complete, time: .shortened))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.deltsSecondaryAccent)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Text(workout.planSummary)
+                .font(.body)
+                .foregroundStyle(Color.deltsMutedText)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 0) {
+                WorkoutSummaryMetric(value: "\(workout.exerciseLogs.count)", title: "Exercises", systemImage: "figure.strengthtraining.traditional")
+                Divider().frame(height: 42).overlay(Color.deltsHairline.opacity(0.34))
+                WorkoutSummaryMetric(value: "\(completedSets)/\(totalSets)", title: "Sets", systemImage: "checkmark")
+                Divider().frame(height: 42).overlay(Color.deltsHairline.opacity(0.34))
+                WorkoutSummaryMetric(value: "\(workout.durationMinutes)m", title: "Duration", systemImage: "clock")
+            }
+        }
+    }
+}
+
+private struct CompletedExerciseLogSection: View {
+    let exercise: CompletedExerciseLog
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(exercise.name)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.84)
+
+                    Text("\(exercise.targetMuscle) - \(exercise.equipment)")
+                        .font(.caption)
+                        .foregroundStyle(Color.deltsMutedText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+                }
+
+                Spacer(minLength: 12)
+
+                Label("\(completedSets)/\(exercise.sets.count)", systemImage: "checkmark")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.deltsSecondaryAccent)
+                    .padding(.vertical, 5)
+                    .padding(.horizontal, 8)
+                    .background(Color.deltsSecondaryAccent.opacity(0.12), in: Capsule())
+            }
+
+            VStack(spacing: 0) {
+                ForEach(exercise.sets) { set in
+                    CompletedSetLogRow(set: set)
+
+                    if set.id != exercise.sets.last?.id {
+                        Divider()
+                            .overlay(Color.deltsHairline.opacity(0.28))
+                            .padding(.leading, 34)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+    }
+
+    private var completedSets: Int {
+        exercise.sets.filter(\.completed).count
+    }
+}
+
+private struct CompletedSetLogRow: View {
+    let set: CompletedSetLog
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: set.completed ? "checkmark" : "minus")
+                .foregroundStyle(set.completed ? Color.deltsAccent : Color.deltsMutedText)
+                .accessibilityHidden(true)
+
+            Text("Set \(set.setNumber)")
+                .foregroundStyle(Color.deltsCharcoal)
+
+            Spacer()
+
+            Text(weightRepText)
+                .foregroundStyle(Color.deltsMutedText)
+                .monospacedDigit()
+        }
+        .font(.subheadline)
+        .padding(.vertical, 10)
+    }
+
+    private var weightRepText: String {
+        let weight = set.weight.isEmpty ? "--" : set.weight
+        let reps = set.reps.isEmpty ? "--" : set.reps
+        return "\(weight) x \(reps)"
+    }
+}
+
+private struct WorkoutSummaryMetric: View {
+    let value: String
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.deltsAccent)
+                .frame(width: 24, height: 24)
+
+            Text(value)
+                .font(.headline.weight(.bold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
     }
 }
 
