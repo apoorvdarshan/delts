@@ -141,10 +141,10 @@ final class GeminiWorkoutService {
               "targetMuscle": "Chest|Back|Legs|Shoulders|Arms|Core|Full Body",
               "equipment": "Dumbbells|Barbell|Cable Machine|Smith Machine|Bench|Chest Press|Shoulder Press|Lat Pulldown|Row Machine|Leg Press|Leg Extension|Leg Curl|Pull-up Bar|Treadmill|Bodyweight",
               "sets": 3,
-              "reps": "8-12",
+              "reps": "",
               "restSeconds": 75,
               "formTip": "string",
-              "difficulty": "Beginner|Intermediate|Advanced|Challenging|High Intensity"
+              "difficulty": "Beginner|Intermediate|Expert|Challenging|High Intensity"
             }
           ]
         }

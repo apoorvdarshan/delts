@@ -58,7 +58,7 @@ enum FitnessGoal: String, CaseIterable, Identifiable, Codable, Hashable {
 enum ExperienceLevel: String, CaseIterable, Identifiable, Codable, Hashable {
     case beginner = "Beginner"
     case intermediate = "Intermediate"
-    case advanced = "Advanced"
+    case advanced = "Expert"
 
     var id: String { rawValue }
     var title: String { rawValue }

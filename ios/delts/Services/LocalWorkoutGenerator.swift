@@ -65,7 +65,7 @@ struct LocalWorkoutGenerator {
 
         switch goal {
         case .muscleGain:
-            return (baseSets, "8-12", 75)
+            return (baseSets, "", 75)
         case .endurance:
             return (max(3, baseSets - 1), "12-18", 45)
         case .maxStrength:
@@ -86,7 +86,7 @@ struct LocalWorkoutGenerator {
         case .intermediate:
             return index < 4 ? "Intermediate" : "Challenging"
         case .advanced:
-            return index < 3 ? "Advanced" : "High Intensity"
+            return index < 3 ? "Expert" : "High Intensity"
         }
     }
 
@@ -169,4 +169,3 @@ struct LocalWorkoutGenerator {
         }
     }
 }
-

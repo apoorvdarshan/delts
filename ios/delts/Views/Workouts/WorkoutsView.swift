@@ -565,13 +565,11 @@ private struct ExerciseLibraryRow: View {
 
     private var thumbnail: some View {
         AnimatedExerciseVisual(
-            muscleGroup: item.muscleGroup,
-            assetName: item.visualAssetName,
             exerciseName: item.name,
             imagePaths: item.imagePaths,
-            equipment: item.equipment,
             height: 104,
-            fillsWidth: false
+            fillsWidth: false,
+            allowsDerivedImageLookup: false
         )
         .frame(width: 104, height: 104)
         .background(Color.deltsPanel.opacity(0.32), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -785,12 +783,10 @@ private struct ExerciseLibraryDetailView: View {
     private func detailHero(width: CGFloat) -> some View {
         ZStack(alignment: .bottomLeading) {
             AnimatedExerciseVisual(
-                muscleGroup: item.muscleGroup,
-                assetName: item.visualAssetName,
                 exerciseName: item.name,
                 imagePaths: item.imagePaths,
-                equipment: item.equipment,
-                height: 294
+                height: 294,
+                allowsDerivedImageLookup: false
             )
             .frame(width: width, height: 294)
 

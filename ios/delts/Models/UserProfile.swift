@@ -78,7 +78,12 @@ final class UserProfile: Identifiable {
     }
 
     var experienceLevel: ExperienceLevel {
-        get { ExperienceLevel(rawValue: experienceLevelRaw) ?? .beginner }
+        get {
+            if experienceLevelRaw == "Advanced" {
+                return .advanced
+            }
+            return ExperienceLevel(rawValue: experienceLevelRaw) ?? .beginner
+        }
         set {
             experienceLevelRaw = newValue.rawValue
             updatedAt = Date()
@@ -125,4 +130,3 @@ final class UserProfile: Identifiable {
         }
     }
 }
-

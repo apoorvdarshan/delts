@@ -2,13 +2,16 @@ import SwiftUI
 import UIKit
 
 struct AnimatedExerciseVisual: View {
-    let muscleGroup: MuscleGroup
+    var muscleGroup: MuscleGroup? = nil
     var assetName: String?
     var exerciseName: String?
     var imagePaths: [String] = []
     var equipment: Equipment?
     var height: CGFloat = 170
     var fillsWidth = true
+    var allowsDerivedImageLookup = true
+    var fallbackSystemImage = "figure.strengthtraining.traditional"
+    var fallbackTitle = "Exercise"
     @State private var animate = false
 
     var body: some View {
@@ -36,6 +39,10 @@ struct AnimatedExerciseVisual: View {
             return directURLs
         }
 
+        guard allowsDerivedImageLookup else {
+            return []
+        }
+
         let namedURLs = FreeExerciseDBAssetResolver.imageURLs(
             forExerciseName: exerciseName,
             muscleGroup: muscleGroup,
@@ -45,10 +52,11 @@ struct AnimatedExerciseVisual: View {
             return namedURLs
         }
 
-        return FreeExerciseDBAssetResolver.imageURLs(
-            forMuscleGroup: muscleGroup,
-            equipment: equipment
-        )
+        guard allowsDerivedImageLookup, let muscleGroup else {
+            return []
+        }
+
+        return FreeExerciseDBAssetResolver.imageURLs(forMuscleGroup: muscleGroup, equipment: equipment)
     }
 
     private var fallbackVisual: some View {
@@ -65,10 +73,10 @@ struct AnimatedExerciseVisual: View {
             .animation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true), value: animate)
 
             VStack(spacing: 12) {
-                Image(systemName: muscleGroup.icon)
+                Image(systemName: muscleGroup?.icon ?? fallbackSystemImage)
                     .font(.system(size: 36, weight: .semibold))
                     .symbolEffect(.pulse, options: .repeating, value: animate)
-                Text(muscleGroup.title.uppercased())
+                Text((muscleGroup?.title ?? fallbackTitle).uppercased())
                     .font(.caption.weight(.bold))
                     .tracking(1.2)
                 if let equipment {

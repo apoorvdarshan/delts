@@ -77,12 +77,10 @@ struct HomeView: View {
 
         return ZStack(alignment: .bottomLeading) {
             AnimatedExerciseVisual(
-                muscleGroup: item?.muscleGroup ?? .fullBody,
-                assetName: item?.visualAssetName,
                 exerciseName: item?.name,
                 imagePaths: item?.imagePaths ?? [],
-                equipment: item?.equipment,
-                height: 248
+                height: 248,
+                allowsDerivedImageLookup: false
             )
             .saturation(0.74)
             .contrast(1.06)
@@ -401,13 +399,11 @@ private struct StartExercisePreviewRow: View {
     var body: some View {
         HStack(spacing: 14) {
             AnimatedExerciseVisual(
-                muscleGroup: item.muscleGroup,
-                assetName: item.visualAssetName,
                 exerciseName: item.name,
                 imagePaths: item.imagePaths,
-                equipment: item.equipment,
                 height: 82,
-                fillsWidth: false
+                fillsWidth: false,
+                allowsDerivedImageLookup: false
             )
             .frame(width: 82, height: 82)
 

@@ -3,17 +3,8 @@ import Foundation
 struct ExerciseLibraryItem: Identifiable, Hashable {
     let id: String
     let name: String
-    let muscleGroup: MuscleGroup
-    let equipment: Equipment
-    let level: ExperienceLevel
     let rawLevel: String
-    let goal: FitnessGoal
-    let sets: Int
-    let reps: String
-    let restSeconds: Int
-    let formTip: String
     let imagePaths: [String]
-    let source: String
     let force: String
     let mechanic: String
     let category: String
@@ -25,17 +16,8 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
     init(
         id: String,
         name: String,
-        muscleGroup: MuscleGroup,
-        equipment: Equipment,
-        level: ExperienceLevel,
         rawLevel: String? = nil,
-        goal: FitnessGoal,
-        sets: Int,
-        reps: String,
-        restSeconds: Int,
-        formTip: String,
         imagePaths: [String] = [],
-        source: String = "delts",
         force: String? = nil,
         mechanic: String? = nil,
         category: String? = nil,
@@ -46,17 +28,8 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
     ) {
         self.id = id
         self.name = name
-        self.muscleGroup = muscleGroup
-        self.equipment = equipment
-        self.level = level
-        self.rawLevel = Self.metadataTitle(rawLevel ?? level.rawValue)
-        self.goal = goal
-        self.sets = sets
-        self.reps = reps
-        self.restSeconds = restSeconds
-        self.formTip = formTip
+        self.rawLevel = Self.metadataTitle(rawLevel)
         self.imagePaths = imagePaths
-        self.source = source
         self.force = Self.metadataTitle(force)
         self.mechanic = Self.metadataTitle(mechanic)
         self.category = Self.metadataTitle(category)
@@ -64,15 +37,7 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
         self.primaryMuscles = Self.metadataTitles(primaryMuscles)
         self.secondaryMuscles = Self.metadataTitles(secondaryMuscles)
         let cleanedInstructions = instructions.compactMap { $0.trimmed.nilIfEmpty }
-        self.instructions = cleanedInstructions.isEmpty ? [formTip.trimmed].compactMap { $0.nilIfEmpty } : cleanedInstructions
-    }
-
-    var difficulty: String {
-        level.title
-    }
-
-    var visualAssetName: String {
-        id
+        self.instructions = cleanedInstructions
     }
 
     var primaryMusclesTitle: String {
@@ -104,32 +69,6 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
         ]
         .joined(separator: " ")
         .lowercased()
-    }
-
-    func workoutExercise(orderIndex: Int = 0) -> WorkoutExercise {
-        WorkoutExercise(
-            orderIndex: orderIndex,
-            name: name,
-            targetMuscle: muscleGroup,
-            equipment: equipment,
-            sets: sets,
-            reps: reps,
-            restSeconds: restSeconds,
-            formTip: formTip,
-            difficulty: difficulty
-        )
-    }
-
-    func singleExercisePlan() -> WorkoutPlan {
-        WorkoutPlan(
-            title: name,
-            summary: "\(muscleGroup.title) movement for \(goal.title.lowercased()) using \(equipment.title.lowercased()).",
-            muscleGroup: muscleGroup,
-            goal: goal,
-            durationMinutes: 15,
-            generatedByAI: false,
-            exercises: [workoutExercise()]
-        )
     }
 
     nonisolated private static func metadataTitles(_ values: [String]) -> [String] {

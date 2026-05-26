@@ -42,7 +42,6 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Flag
@@ -210,7 +209,7 @@ private fun StartScreen(
 
     val primaryMuscleOptions = remember(exerciseLibrary) { exerciseLibrary.flatMap { it.primaryMuscles }.distinctSorted() }
     val rawEquipmentOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.rawEquipment }.distinctSorted() }
-    val levelOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.level }.distinctSorted() }
+    val levelOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.level }.distinctSortedLevels() }
     val categoryOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.category }.distinctSorted() }
 
     val matchingItems = remember(
@@ -253,7 +252,7 @@ private fun StartScreen(
         DatasetStartHero(
             item = heroExercise,
             imagePaths = heroExercise?.imagePaths.orEmpty(),
-            fallbackIcon = heroExercise?.icon ?: Icons.Filled.FitnessCenter
+            fallbackIcon = Icons.Filled.FitnessCenter
         )
 
         StartSection(
@@ -411,7 +410,7 @@ private fun WorkoutsScreen(
     var selectedSort by rememberSaveable { mutableStateOf(LibrarySort.Name) }
     var search by rememberSaveable { mutableStateOf("") }
 
-    val levelOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.level }.distinctSorted() }
+    val levelOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.level }.distinctSortedLevels() }
     val rawEquipmentOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.rawEquipment }.distinctSorted() }
     val primaryMuscleOptions = remember(exerciseLibrary) { exerciseLibrary.flatMap { it.primaryMuscles }.distinctSorted() }
     val secondaryMuscleOptions = remember(exerciseLibrary) { exerciseLibrary.flatMap { it.secondaryMuscles }.distinctSorted() }
@@ -617,6 +616,14 @@ private fun ProfileScreen(
     var hasSavedKey by remember { mutableStateOf(keyStore.hasKey()) }
     var fallbackApiKey by remember { mutableStateOf(fallbackKeyStore.load()) }
     var hasSavedFallbackKey by remember { mutableStateOf(fallbackKeyStore.hasKey()) }
+    val datasetLevels = remember(exerciseLibrary) { exerciseLibrary.map { it.level }.distinctSortedLevels() }
+    val selectedDatasetLevel = remember(profile.experience, datasetLevels) {
+        when {
+            datasetLevels.contains(profile.experience) -> profile.experience
+            profile.experience == "Advanced" && datasetLevels.contains("Expert") -> "Expert"
+            else -> datasetLevels.firstOrNull().orEmpty()
+        }
+    }
     val datasetPrimaryMuscles = remember(exerciseLibrary) { exerciseLibrary.flatMap { it.primaryMuscles }.distinctSorted() }
     val datasetRawEquipment = remember(exerciseLibrary) { exerciseLibrary.map { it.rawEquipment }.distinctSorted() }
 
@@ -681,40 +688,20 @@ private fun ProfileScreen(
         }
 
         ProfileSection(
-            title = "Goals & Constraints",
-            subtitle = "Training targets, focus, and limits before plans are generated.",
+            title = "Dataset Preferences",
+            subtitle = "Dataset preferences from FreeExerciseDB.",
             icon = Icons.Filled.Flag
         ) {
             CompactDropdownRow(
-                title = "Experience",
+                title = "Level",
                 icon = Icons.Filled.FlashOn,
-                value = profile.experience,
-                options = levels,
-                selectedOption = profile.experience
-            ) { updateProfile(profile.copy(experience = it)) }
-            ProfileRowDivider()
-            CompactMultiSelectRow(
-                title = "Goals",
-                icon = Icons.Filled.Flag,
-                items = profileGoalOptions,
-                selected = profile.selectedGoals.ifEmpty { setOf(profile.mainGoal) },
-            ) { item ->
-                val nextGoals = toggleInSet(profile.selectedGoals.ifEmpty { setOf(profile.mainGoal) }, item)
-                    .ifEmpty { setOf(profile.mainGoal) }
-                val primaryGoal = profileGoalOptions.firstOrNull {
-                    it != otherGoalOption && nextGoals.contains(it)
-                } ?: profile.mainGoal
-                updateProfile(profile.copy(mainGoal = primaryGoal, selectedGoals = nextGoals))
-            }
-            if (profile.selectedGoals.contains(otherGoalOption)) {
-                ProfileRowDivider()
-                CompactTextFieldRow(
-                    title = "Extra goals",
-                    icon = Icons.Filled.List,
-                    value = profile.extraGoals,
-                    placeholder = "Optional",
-                    onValueChange = { updateProfile(profile.copy(extraGoals = it)) }
-                )
+                value = selectedDatasetLevel.ifBlank { "Unspecified" },
+                options = datasetLevels.ifEmpty { listOf("Unspecified") },
+                selectedOption = selectedDatasetLevel.ifBlank { "Unspecified" }
+            ) { selected ->
+                if (datasetLevels.contains(selected)) {
+                    updateProfile(profile.copy(experience = selected))
+                }
             }
             ProfileRowDivider()
             CompactMultiSelectRow(
@@ -724,25 +711,6 @@ private fun ProfileScreen(
                 selected = profile.bodyFocus,
             ) { item ->
                 updateProfile(profile.copy(bodyFocus = toggleInSet(profile.bodyFocus, item)))
-            }
-            ProfileRowDivider()
-            CompactMultiSelectRow(
-                title = "Issues",
-                icon = Icons.Filled.Warning,
-                items = issueOptions.map { it.title },
-                selected = profile.issues,
-            ) { item ->
-                updateProfile(profile.copy(issues = toggleInSet(profile.issues, item)))
-            }
-            if (profile.issues.contains(otherIssueOption)) {
-                ProfileRowDivider()
-                CompactTextFieldRow(
-                    title = "Extra issues",
-                    icon = Icons.Filled.List,
-                    value = profile.extraIssues,
-                    placeholder = "Optional",
-                    onValueChange = { updateProfile(profile.copy(extraIssues = it)) }
-                )
             }
         }
 
@@ -877,46 +845,10 @@ private fun ProfileScreen(
         }
 
         ProfileSection(
-            title = "Workout Setup",
-            subtitle = "Tune how training fits into the week.",
-            icon = Icons.Filled.CalendarToday
+            title = "Dataset Equipment",
+            subtitle = "Equipment values from the FreeExerciseDB equipment field.",
+            icon = Icons.Filled.FitnessCenter
         ) {
-            CompactDropdownRow(
-                title = "Frequency",
-                icon = Icons.Filled.CalendarToday,
-                value = "${profile.frequency.coerceIn(1, 7)} days/week",
-                options = frequencyOptions,
-                selectedOption = "${profile.frequency.coerceIn(1, 7)} days/week"
-            ) { selected ->
-                selected.substringBefore(" ").toIntOrNull()?.let {
-                    updateProfile(profile.copy(frequency = it.coerceIn(1, 7)))
-                }
-            }
-            ProfileRowDivider()
-            CompactDropdownRow(
-                title = "Workout split",
-                icon = Icons.Filled.Build,
-                value = profile.workoutSplit,
-                options = workoutSplitOptions,
-                selectedOption = profile.workoutSplit
-            ) { selected ->
-                updateProfile(profile.copy(workoutSplit = selected))
-            }
-            if (profile.workoutSplit == "Custom") {
-                ProfileRowDivider()
-                CompactTextFieldRow(
-                    title = "Custom split",
-                    icon = Icons.Filled.List,
-                    value = profile.customWorkoutSplit,
-                    placeholder = "Write split",
-                    onValueChange = { updateProfile(profile.copy(customWorkoutSplit = it)) }
-                )
-            }
-            ProfileRowDivider()
-            CompactDurationRow(duration = profile.duration) {
-                updateProfile(profile.copy(duration = it))
-            }
-            ProfileRowDivider()
             CompactMultiSelectRow(
                 title = "Equipment",
                 icon = Icons.Filled.FitnessCenter,
@@ -1364,7 +1296,7 @@ private fun ExercisePlanRow(exercise: ExercisePlan) {
     ) {
         ExerciseVisual(
             imagePaths = exercise.imagePaths,
-            fallbackIcon = exercise.icon,
+            fallbackIcon = Icons.Filled.FitnessCenter,
             modifier = Modifier.size(82.dp),
             cornerRadius = 18,
             iconSize = 34
@@ -1430,7 +1362,7 @@ private fun ExerciseLibraryRow(item: ExerciseItem) {
         ) {
             ExerciseVisual(
                 imagePaths = item.imagePaths,
-                fallbackIcon = item.icon,
+                fallbackIcon = Icons.Filled.FitnessCenter,
                 modifier = Modifier.size(104.dp),
                 cornerRadius = 18,
                 iconSize = 42
@@ -2412,7 +2344,6 @@ private fun buildPlan(
             rawEquipment = item.rawEquipment,
             level = item.level,
             category = item.category,
-            icon = item.icon,
             imagePaths = item.imagePaths
         )
     }
@@ -2424,22 +2355,11 @@ private fun toggleInSet(set: Set<String>, item: String): Set<String> =
 private fun toggleInList(list: List<String>, item: String): List<String> =
     if (list.contains(item)) list - item else list + item
 
-private fun nearestDuration(value: Int): Int =
-    durations.minBy { kotlin.math.abs(it - value) }
-
 private val AndroidProfile.displayName: String
     get() = name.trim().ifEmpty { "Athlete" }
 
 private fun SharedPreferences.loadProfile(): AndroidProfile {
-    val mainGoal = getString("profile_goal", "Muscle Gain").orEmpty()
-    val extraGoals = getString("profile_extra_goals", "").orEmpty()
-    val defaultGoals = buildSet {
-        add(mainGoal)
-        if (extraGoals.isNotBlank()) {
-            add(otherGoalOption)
-        }
-    }
-    val selectedGoals = getStringSet("profile_goals", defaultGoals) ?: defaultGoals
+    val storedDatasetLevel = getString("profile_experience", "Intermediate").orEmpty()
 
     return AndroidProfile(
         name = getString("profile_name", "Athlete").orEmpty(),
@@ -2448,18 +2368,9 @@ private fun SharedPreferences.loadProfile(): AndroidProfile {
         weightKg = getDoubleCompat("profile_weight_kg", getDoubleCompat("profile_weight", 75.0)),
         currentBodyFat = getDoubleCompat("profile_bodyfat_current", 18.0),
         desiredBodyFat = getDoubleCompat("profile_bodyfat_desired", 12.0),
-        experience = getString("profile_experience", "Intermediate").orEmpty(),
-        mainGoal = mainGoal,
-        selectedGoals = selectedGoals,
-        extraGoals = extraGoals,
-        extraIssues = getString("profile_extra_issues", "").orEmpty(),
-        frequency = getInt("profile_frequency", 4),
-        workoutSplit = getString("profile_workout_split", "Push Pull Legs").orEmpty(),
-        customWorkoutSplit = getString("profile_custom_workout_split", "").orEmpty(),
-        duration = getInt("profile_duration", 60),
+        experience = if (storedDatasetLevel == "Advanced") "Expert" else storedDatasetLevel,
         availableEquipment = getStringSet("profile_equipment", setOf("Dumbbells", "Bench", "Cable Machine")) ?: emptySet(),
-        bodyFocus = getStringSet("profile_focus", setOf("Chest", "Shoulders", "Back")) ?: emptySet(),
-        issues = getStringSet("profile_issues", emptySet()) ?: emptySet()
+        bodyFocus = getStringSet("profile_focus", setOf("Chest", "Shoulders", "Back")) ?: emptySet()
     )
 }
 
@@ -2473,17 +2384,8 @@ private fun SharedPreferences.saveProfile(profile: AndroidProfile) {
         .putString("profile_bodyfat_current", formatOneDecimal(profile.currentBodyFat))
         .putString("profile_bodyfat_desired", formatOneDecimal(profile.desiredBodyFat))
         .putString("profile_experience", profile.experience)
-        .putString("profile_goal", profile.mainGoal)
-        .putStringSet("profile_goals", profile.selectedGoals)
-        .putString("profile_extra_goals", profile.extraGoals)
-        .putString("profile_extra_issues", profile.extraIssues)
-        .putInt("profile_frequency", profile.frequency)
-        .putString("profile_workout_split", profile.workoutSplit)
-        .putString("profile_custom_workout_split", profile.customWorkoutSplit)
-        .putInt("profile_duration", profile.duration)
         .putStringSet("profile_equipment", profile.availableEquipment)
         .putStringSet("profile_focus", profile.bodyFocus)
-        .putStringSet("profile_issues", profile.issues)
         .apply()
 }
 
@@ -2563,17 +2465,8 @@ private data class AndroidProfile(
     val currentBodyFat: Double,
     val desiredBodyFat: Double,
     val experience: String,
-    val mainGoal: String,
-    val selectedGoals: Set<String>,
-    val extraGoals: String,
-    val extraIssues: String,
-    val frequency: Int,
-    val workoutSplit: String,
-    val customWorkoutSplit: String,
-    val duration: Int,
     val availableEquipment: Set<String>,
-    val bodyFocus: Set<String>,
-    val issues: Set<String>
+    val bodyFocus: Set<String>
 )
 
 private data class AISettings(
@@ -2618,10 +2511,7 @@ private data class DeltsOption(
 
 private data class ExerciseItem(
     val name: String,
-    val muscle: String,
-    val equipment: String,
     val level: String,
-    val icon: ImageVector,
     val imagePaths: List<String>,
     val force: String = "Unspecified",
     val mechanic: String = "Unspecified",
@@ -2638,7 +2528,6 @@ private data class ExercisePlan(
     val rawEquipment: String,
     val level: String,
     val category: String,
-    val icon: ImageVector,
     val imagePaths: List<String>
 )
 
@@ -2656,18 +2545,13 @@ private fun loadFreeExerciseDB(assets: AssetManager): List<ExerciseItem> = runCa
 
             val primaryMuscles = record.optJSONArray("primaryMuscles").stringList()
             val secondaryMuscles = record.optJSONArray("secondaryMuscles").stringList()
-            val muscle = muscleGroupFor(primaryMuscles, secondaryMuscles, record.optString("category"))
             val rawEquipment = metadataTitle(record.optString("equipment"))
-            val icon = muscles.firstOrNull { it.title == muscle }?.icon ?: Icons.Filled.FitnessCenter
             val instructions = record.optJSONArray("instructions").stringList()
 
             add(
                 ExerciseItem(
                     name = name,
-                    muscle = muscle,
-                    equipment = rawEquipment,
                     level = metadataTitle(record.optString("level")),
-                    icon = icon,
                     imagePaths = record.optJSONArray("images").stringList(),
                     force = metadataTitle(record.optString("force")),
                     mechanic = metadataTitle(record.optString("mechanic")),
@@ -2720,6 +2604,14 @@ private fun List<String>.distinctSorted(): List<String> =
         .filter { it.isNotBlank() }
         .sortedWith(String.CASE_INSENSITIVE_ORDER)
 
+private fun List<String>.distinctSortedLevels(): List<String> =
+    distinct()
+        .filter { it.isNotBlank() }
+        .sortedWith(
+            compareBy<String> { levelSortRank(it) }
+                .thenBy(String.CASE_INSENSITIVE_ORDER) { it }
+        )
+
 private fun LibrarySort.comparator(): Comparator<ExerciseItem> =
     when (this) {
         LibrarySort.Name -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.name }
@@ -2749,7 +2641,7 @@ private fun levelSortRank(level: String): Int =
     when (level) {
         "Beginner" -> 0
         "Intermediate" -> 1
-        "Expert" -> 2
+        "Expert", "Advanced" -> 2
         else -> 3
     }
 
@@ -2777,43 +2669,6 @@ private fun ExerciseItem.searchableText(): String =
         .joinToString(" ")
         .lowercase(Locale.US)
 
-private fun muscleGroupFor(primaryMuscles: List<String>, secondaryMuscles: List<String>, category: String): String {
-    val joined = (primaryMuscles + secondaryMuscles).joinToString(" ").lowercase()
-
-    return when {
-        "chest" in joined -> "Chest"
-        "lats" in joined || "back" in joined || "traps" in joined -> "Back"
-        "quadriceps" in joined ||
-            "hamstrings" in joined ||
-            "calves" in joined ||
-            "glutes" in joined ||
-            "adductors" in joined ||
-            "abductors" in joined -> "Legs"
-        "shoulders" in joined -> "Shoulders"
-        "biceps" in joined || "triceps" in joined || "forearms" in joined -> "Arms"
-        "abdominals" in joined -> "Core"
-        category.lowercase() in setOf("cardio", "plyometrics", "strongman", "olympic weightlifting") -> "Full Body"
-        else -> "Full Body"
-    }
-}
-
-private val muscles = listOf(
-    DeltsOption("Chest", "Press, fly, and finish controlled volume.", Icons.Filled.FitnessCenter),
-    DeltsOption("Back", "Rows, pulls, and strong scapular control.", Icons.Filled.FitnessCenter),
-    DeltsOption("Shoulders", "Delts, stability, and overhead strength.", Icons.Filled.FitnessCenter),
-    DeltsOption("Legs", "Squat, hinge, and athletic lower-body work.", Icons.Filled.DirectionsRun),
-    DeltsOption("Arms", "Biceps, triceps, and high-quality pump work.", Icons.Filled.FitnessCenter),
-    DeltsOption("Core", "Bracing, rotation, and trunk endurance.", Icons.Filled.Favorite),
-    DeltsOption("Full Body", "Carry, condition, and train the whole system.", Icons.Filled.DirectionsRun)
-)
-
-private val levels = listOf("Beginner", "Intermediate", "Advanced")
-private val goals = listOf("Muscle Gain", "Fat Loss", "Strength", "Beginner Form")
-private const val otherGoalOption = "Other"
-private val profileGoalOptions = goals + otherGoalOption
-private val frequencyOptions = (1..7).map { "$it days/week" }
-private val workoutSplitOptions = listOf("Full Body", "Push Pull Legs", "Upper Lower", "Bro Split", "Custom")
-private val durations = listOf(30, 45, 60, 90)
 private const val customAIProvider = "Custom"
 private const val customAIModel = "Custom model"
 
@@ -2927,33 +2782,21 @@ private fun modelOptionsForProvider(provider: String): List<String> =
 private fun defaultModelForProvider(provider: String): String =
     aiModelsByProvider[provider]?.firstOrNull() ?: customAIModel
 
-private const val otherIssueOption = "Other"
-
-private val issueOptions = listOf(
-    DeltsOption("Low motivation", "Consistency risk.", Icons.Filled.Warning),
-    DeltsOption("No equipment", "Gear limits.", Icons.Filled.Warning),
-    DeltsOption("Knee pain", "Lower-body caution.", Icons.Filled.Warning),
-    DeltsOption("Shoulder pain", "Pressing caution.", Icons.Filled.Warning),
-    DeltsOption("Busy schedule", "Time pressure.", Icons.Filled.Warning),
-    DeltsOption("Beginner form", "Technique focus.", Icons.Filled.Warning),
-    DeltsOption(otherIssueOption, "Custom issue.", Icons.Filled.Warning)
-)
-
 private val sampleExerciseLibrary = listOf(
-    ExerciseItem("Barbell Bench Press", "Chest", "Barbell", "Intermediate", Icons.Filled.FitnessCenter, emptyList(), rawEquipment = "Barbell", primaryMuscles = listOf("Chest")),
-    ExerciseItem("Incline Dumbbell Press", "Chest", "Dumbbells", "Intermediate", Icons.Filled.FitnessCenter, emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Chest")),
-    ExerciseItem("Cable Crossover", "Chest", "Cable Machine", "Beginner", Icons.Filled.Build, emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Chest")),
-    ExerciseItem("Lat Pulldown", "Back", "Cable Machine", "Beginner", Icons.Filled.FitnessCenter, emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Lats")),
-    ExerciseItem("One-Arm Dumbbell Row", "Back", "Dumbbells", "Intermediate", Icons.Filled.FitnessCenter, emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Middle Back")),
-    ExerciseItem("Seated Cable Row", "Back", "Cable Machine", "Beginner", Icons.Filled.Build, emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Middle Back")),
-    ExerciseItem("Dumbbell Shoulder Press", "Shoulders", "Dumbbells", "Intermediate", Icons.Filled.FitnessCenter, emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Shoulders")),
-    ExerciseItem("Lateral Raise", "Shoulders", "Dumbbells", "Beginner", Icons.Filled.FitnessCenter, emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Shoulders")),
-    ExerciseItem("Back Squat", "Legs", "Barbell", "Expert", Icons.Filled.DirectionsRun, emptyList(), rawEquipment = "Barbell", primaryMuscles = listOf("Quadriceps")),
-    ExerciseItem("Goblet Squat", "Legs", "Dumbbells", "Beginner", Icons.Filled.DirectionsRun, emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Quadriceps")),
-    ExerciseItem("Dumbbell Curl", "Arms", "Dumbbells", "Beginner", Icons.Filled.FitnessCenter, emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Biceps")),
-    ExerciseItem("Cable Triceps Pressdown", "Arms", "Cable Machine", "Beginner", Icons.Filled.Build, emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Triceps")),
-    ExerciseItem("Plank", "Core", "Bodyweight", "Beginner", Icons.Filled.Favorite, emptyList(), rawEquipment = "Bodyweight", primaryMuscles = listOf("Abdominals")),
-    ExerciseItem("Cable Woodchop", "Core", "Cable Machine", "Intermediate", Icons.Filled.Build, emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Abdominals"))
+    ExerciseItem(name = "Barbell Bench Press", level = "Intermediate", imagePaths = emptyList(), rawEquipment = "Barbell", primaryMuscles = listOf("Chest")),
+    ExerciseItem(name = "Incline Dumbbell Press", level = "Intermediate", imagePaths = emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Chest")),
+    ExerciseItem(name = "Cable Crossover", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Chest")),
+    ExerciseItem(name = "Lat Pulldown", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Lats")),
+    ExerciseItem(name = "One-Arm Dumbbell Row", level = "Intermediate", imagePaths = emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Middle Back")),
+    ExerciseItem(name = "Seated Cable Row", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Middle Back")),
+    ExerciseItem(name = "Dumbbell Shoulder Press", level = "Intermediate", imagePaths = emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Shoulders")),
+    ExerciseItem(name = "Lateral Raise", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Shoulders")),
+    ExerciseItem(name = "Back Squat", level = "Expert", imagePaths = emptyList(), rawEquipment = "Barbell", primaryMuscles = listOf("Quadriceps")),
+    ExerciseItem(name = "Goblet Squat", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Quadriceps")),
+    ExerciseItem(name = "Dumbbell Curl", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Biceps")),
+    ExerciseItem(name = "Cable Triceps Pressdown", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Triceps")),
+    ExerciseItem(name = "Plank", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Bodyweight", primaryMuscles = listOf("Abdominals")),
+    ExerciseItem(name = "Cable Woodchop", level = "Intermediate", imagePaths = emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Abdominals"))
 )
 
 @Preview(showBackground = true)
@@ -2970,17 +2813,8 @@ private fun DeltsAppPreview() {
                     currentBodyFat = 18.0,
                     desiredBodyFat = 12.0,
                     experience = "Intermediate",
-                    mainGoal = "Muscle Gain",
-                    selectedGoals = setOf("Muscle Gain"),
-                    extraGoals = "",
-                    extraIssues = "",
-                    frequency = 4,
-                    workoutSplit = "Push Pull Legs",
-                    customWorkoutSplit = "",
-                    duration = 60,
                     availableEquipment = setOf("Dumbbells", "Bench", "Cable Machine"),
-                    bodyFocus = setOf("Chest", "Shoulders"),
-                    issues = emptySet()
+                    bodyFocus = setOf("Chest", "Shoulders")
                 ),
                 exerciseLibrary = sampleExerciseLibrary,
                 padding = PaddingValues()
