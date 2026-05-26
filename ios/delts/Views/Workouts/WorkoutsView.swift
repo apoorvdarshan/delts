@@ -14,8 +14,7 @@ struct WorkoutsView: View {
 
 private struct ExerciseLibraryBrowserView: View {
     @State private var searchText = ""
-    @State private var selectedLevel: ExperienceLevel?
-    @State private var selectedEquipmentFamily: ExerciseEquipmentFamily = .all
+    @State private var selectedLevel: String?
     @State private var selectedRawEquipment: String?
     @State private var selectedPrimaryMuscle: String?
     @State private var selectedSecondaryMuscle: String?
@@ -23,15 +22,12 @@ private struct ExerciseLibraryBrowserView: View {
     @State private var selectedMechanic: String?
     @State private var selectedCategory: String?
     @State private var selectedSort: ExerciseLibrarySort = .name
-    @State private var generatedPlan: WorkoutPlan?
 
     private let service = ExerciseLibraryService.shared
 
     private var items: [ExerciseLibraryItem] {
         service.filtered(
             level: selectedLevel,
-            equipment: nil,
-            equipmentFamily: selectedEquipmentFamily,
             rawEquipment: selectedRawEquipment,
             primaryMuscle: selectedPrimaryMuscle,
             secondaryMuscle: selectedSecondaryMuscle,
@@ -46,7 +42,6 @@ private struct ExerciseLibraryBrowserView: View {
     private var hasActiveFilters: Bool {
         !searchText.isEmpty ||
             selectedLevel != nil ||
-            selectedEquipmentFamily != .all ||
             selectedRawEquipment != nil ||
             selectedPrimaryMuscle != nil ||
             selectedSecondaryMuscle != nil ||
@@ -108,9 +103,6 @@ private struct ExerciseLibraryBrowserView: View {
         }
         .deltsScreen()
         .contentMargins(.bottom, 104, for: .scrollContent)
-        .navigationDestination(item: $generatedPlan) { plan in
-            WorkoutPlanView(plan: plan)
-        }
     }
 
     private var filters: some View {
@@ -154,36 +146,24 @@ private struct ExerciseLibraryBrowserView: View {
                         value: equipmentFilterTitle,
                         systemImage: "dumbbell.fill"
                     ) {
-                        menuChoice("All Equipment", isSelected: selectedEquipmentFamily == .all && selectedRawEquipment == nil) {
-                            selectedEquipmentFamily = .all
+                        menuChoice("All Equipment", isSelected: selectedRawEquipment == nil) {
                             selectedRawEquipment = nil
                         }
-                        Section("Family") {
-                            ForEach(ExerciseEquipmentFamily.allCases.filter { $0 != .all }) { family in
-                                menuChoice(family.title, isSelected: selectedEquipmentFamily == family) {
-                                    selectedEquipmentFamily = family
-                                    selectedRawEquipment = nil
-                                }
-                            }
-                        }
-                        Section("Dataset") {
-                            ForEach(service.availableRawEquipment, id: \.self) { equipment in
-                                menuChoice(equipment, isSelected: selectedRawEquipment == equipment) {
-                                    selectedEquipmentFamily = .all
-                                    selectedRawEquipment = equipment
-                                }
+                        ForEach(service.availableRawEquipment, id: \.self) { equipment in
+                            menuChoice(equipment, isSelected: selectedRawEquipment == equipment) {
+                                selectedRawEquipment = equipment
                             }
                         }
                     }
 
                     filterMenuPill(
                         title: "Level",
-                        value: selectedLevel.map(workoutLevelTitle) ?? "All",
+                        value: selectedLevel ?? "All",
                         systemImage: "chart.bar.fill"
                     ) {
                         menuChoice("All Levels", isSelected: selectedLevel == nil) { selectedLevel = nil }
-                        ForEach(ExperienceLevel.allCases) { level in
-                            menuChoice(workoutLevelTitle(level), isSelected: selectedLevel == level) { selectedLevel = level }
+                        ForEach(service.availableLevels, id: \.self) { level in
+                            menuChoice(level, isSelected: selectedLevel == level) { selectedLevel = level }
                         }
                     }
 
@@ -239,9 +219,6 @@ private struct ExerciseLibraryBrowserView: View {
     }
 
     private var equipmentFilterTitle: String {
-        if selectedEquipmentFamily != .all {
-            return selectedEquipmentFamily.title
-        }
         if let selectedRawEquipment {
             return selectedRawEquipment
         }
@@ -259,7 +236,6 @@ private struct ExerciseLibraryBrowserView: View {
     private func resetFilters() {
         searchText = ""
         selectedLevel = nil
-        selectedEquipmentFamily = .all
         selectedRawEquipment = nil
         selectedPrimaryMuscle = nil
         selectedSecondaryMuscle = nil
@@ -292,10 +268,6 @@ private struct ExerciseLibraryBrowserView: View {
             }
         }
     }
-}
-
-private func workoutLevelTitle(_ level: ExperienceLevel) -> String {
-    level == .advanced ? "Expert" : level.title
 }
 
 private struct WorkoutFilterPanel<Content: View>: View {
@@ -562,14 +534,14 @@ private struct ExerciseLibraryRow: View {
 
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 8) {
-                        LibraryTag(title: item.muscleGroup.title, systemImage: item.muscleGroup.icon, tint: Color.deltsMutedText)
-                        LibraryTag(title: item.equipment.title, systemImage: item.equipment.icon, tint: Color.deltsMutedText)
-                        LibraryTag(title: workoutLevelTitle(item.level), systemImage: "chart.bar.fill", tint: Color.deltsMutedText)
+                        LibraryTag(title: item.primaryMusclesTitle, systemImage: "scope", tint: Color.deltsMutedText)
+                        LibraryTag(title: item.rawEquipment, systemImage: "dumbbell.fill", tint: Color.deltsMutedText)
+                        LibraryTag(title: item.rawLevel, systemImage: "chart.bar.fill", tint: Color.deltsMutedText)
                     }
 
                     VStack(alignment: .leading, spacing: 5) {
-                        LibraryTag(title: item.muscleGroup.title, systemImage: item.muscleGroup.icon, tint: Color.deltsMutedText)
-                        LibraryTag(title: "\(item.equipment.title) - \(workoutLevelTitle(item.level))", systemImage: item.equipment.icon, tint: Color.deltsMutedText)
+                        LibraryTag(title: item.primaryMusclesTitle, systemImage: "scope", tint: Color.deltsMutedText)
+                        LibraryTag(title: "\(item.rawEquipment) - \(item.rawLevel)", systemImage: "dumbbell.fill", tint: Color.deltsMutedText)
                     }
                 }
 
@@ -756,7 +728,6 @@ private struct LibraryTag: View {
 
 private struct ExerciseLibraryDetailView: View {
     let item: ExerciseLibraryItem
-    @State private var activePlan: WorkoutPlan?
 
     var body: some View {
         GeometryReader { geometry in
@@ -767,24 +738,18 @@ private struct ExerciseLibraryDetailView: View {
                     detailHero(width: screenWidth)
 
                     VStack(alignment: .leading, spacing: 24) {
-                        DetailMetricGrid(item: item, restText: restText)
+                        DetailMetricGrid(item: item)
 
                         Divider()
                             .overlay(Color.deltsHairline.opacity(0.34))
 
-                        DetailTextSection(
-                            title: "Form tip",
-                            systemImage: "lightbulb",
-                            text: item.formTip
-                        )
-
                         DetailInstructionSection(instructions: item.instructions)
 
                         VStack(spacing: 0) {
-                            DetailInfoRow(title: "Equipment", value: "\(item.equipment.title) - \(item.machineLabel)", systemImage: "dumbbell.fill")
+                            DetailInfoRow(title: "Equipment", value: item.rawEquipment, systemImage: "dumbbell.fill")
                             Divider()
                                 .overlay(Color.deltsHairline.opacity(0.32))
-                            DetailInfoRow(title: "Raw equipment", value: item.rawEquipment, systemImage: "wrench.and.screwdriver")
+                            DetailInfoRow(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill")
                             Divider()
                                 .overlay(Color.deltsHairline.opacity(0.32))
                             DetailInfoRow(title: "Category", value: item.category, systemImage: "tag")
@@ -800,14 +765,11 @@ private struct ExerciseLibraryDetailView: View {
                             Divider()
                                 .overlay(Color.deltsHairline.opacity(0.32))
                             DetailInfoRow(title: "Secondary", value: item.secondaryMusclesTitle, systemImage: "scope")
-                            Divider()
-                                .overlay(Color.deltsHairline.opacity(0.32))
-                            DetailInfoRow(title: "Source", value: item.source, systemImage: "checkmark.seal")
                         }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 24)
-                    .padding(.bottom, 126)
+                    .padding(.bottom, 112)
                     .frame(width: screenWidth, alignment: .leading)
                 }
                 .frame(width: screenWidth, alignment: .leading)
@@ -816,14 +778,8 @@ private struct ExerciseLibraryDetailView: View {
         }
         .deltsScreen()
         .contentMargins(.bottom, 104, for: .scrollContent)
-        .safeAreaInset(edge: .bottom) {
-            startExerciseBar
-        }
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(item: $activePlan) { plan in
-            ActiveWorkoutView(plan: plan)
-        }
     }
 
     private func detailHero(width: CGFloat) -> some View {
@@ -851,7 +807,7 @@ private struct ExerciseLibraryDetailView: View {
                     .lineLimit(3)
                     .minimumScaleFactor(0.7)
 
-                Text("\(item.muscleGroup.title) - \(item.equipment.title) - \(workoutLevelTitle(item.level))")
+                Text("\(item.primaryMusclesTitle) - \(item.rawEquipment) - \(item.rawLevel)")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.82))
                     .lineLimit(2)
@@ -865,50 +821,6 @@ private struct ExerciseLibraryDetailView: View {
         .clipped()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text("\(item.name) exercise visual"))
-    }
-
-    private var startExerciseBar: some View {
-        Button {
-            activePlan = item.singleExercisePlan()
-        } label: {
-            Label("Start Exercise", systemImage: "play.fill")
-                .font(.headline.weight(.bold))
-                .foregroundStyle(Color.deltsOnAccent)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(Color.deltsAccent, in: Capsule())
-                .overlay {
-                    Capsule()
-                        .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
-                }
-        }
-        .deltsPressable()
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 6)
-        .deltsBottomActionBackground()
-    }
-
-    private var restText: String {
-        item.restSeconds == 0 ? "--" : "\(item.restSeconds)s"
-    }
-}
-
-private struct DetailTextSection: View {
-    let title: String
-    let systemImage: String
-    let text: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(title, systemImage: systemImage)
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(Color.deltsCharcoal)
-            Text(text)
-                .font(.body)
-                .foregroundStyle(Color.deltsMutedText)
-                .fixedSize(horizontal: false, vertical: true)
-        }
     }
 }
 
@@ -943,27 +855,22 @@ private struct DetailInstructionSection: View {
 
 private struct DetailMetricGrid: View {
     let item: ExerciseLibraryItem
-    let restText: String
 
     var body: some View {
         VStack(spacing: 14) {
             HStack(spacing: 0) {
-                DetailMetric(title: "Sets", value: "\(item.sets)", systemImage: "number")
+                DetailMetric(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill")
                 Divider().frame(height: 48).overlay(Color.deltsHairline.opacity(0.34))
-                DetailMetric(title: "Reps", value: item.reps, systemImage: "repeat")
-                Divider().frame(height: 48).overlay(Color.deltsHairline.opacity(0.34))
-                DetailMetric(title: "Rest", value: restText, systemImage: "timer")
+                DetailMetric(title: "Category", value: item.category, systemImage: "tag")
             }
 
             Divider()
                 .overlay(Color.deltsHairline.opacity(0.34))
 
             HStack(spacing: 0) {
-                DetailMetric(title: "Level", value: workoutLevelTitle(item.level), systemImage: "chart.bar.fill")
+                DetailMetric(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope")
                 Divider().frame(height: 48).overlay(Color.deltsHairline.opacity(0.34))
-                DetailMetric(title: "Body", value: item.muscleGroup.title, systemImage: item.muscleGroup.icon)
-                Divider().frame(height: 48).overlay(Color.deltsHairline.opacity(0.34))
-                DetailMetric(title: "Equipment", value: item.equipment.title, systemImage: "dumbbell.fill")
+                DetailMetric(title: "Equipment", value: item.rawEquipment, systemImage: "dumbbell.fill")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

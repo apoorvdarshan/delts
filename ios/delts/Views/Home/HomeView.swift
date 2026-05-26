@@ -1,28 +1,30 @@
-import SwiftData
 import SwiftUI
 
 struct HomeView: View {
-    @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
-    @StateObject private var viewModel = PlanViewModel()
-    @State private var generatedPlan: WorkoutPlan?
-    @State private var reviewPlan: WorkoutPlan?
-    @State private var equipmentMode: StartEquipmentMode = .profile
-    @State private var selectedProfileEquipment: Set<Equipment> = []
-    @State private var didSyncProfile = false
+    @State private var selectedPrimaryMuscle: String?
+    @State private var selectedRawEquipment: String?
+    @State private var selectedLevel: String?
+    @State private var selectedCategory: String?
+    @State private var shownItems: [ExerciseLibraryItem] = []
 
-    private let durationOptions = [30, 45, 60, 90]
+    private let service = ExerciseLibraryService.shared
 
-    private var profile: UserProfile? {
-        profiles.first
+    private var matchingItems: [ExerciseLibraryItem] {
+        service.filtered(
+            level: selectedLevel,
+            rawEquipment: selectedRawEquipment,
+            primaryMuscle: selectedPrimaryMuscle,
+            secondaryMuscle: nil,
+            force: nil,
+            mechanic: nil,
+            category: selectedCategory,
+            sort: .name,
+            searchText: ""
+        )
     }
 
-    private var displayedEquipment: Set<Equipment> {
-        switch equipmentMode {
-        case .profile:
-            return selectedProfileEquipment
-        case .bodyweight:
-            return [.bodyweight]
-        }
+    private var heroItem: ExerciseLibraryItem? {
+        matchingItems.first ?? service.exercises.first
     }
 
     var body: some View {
@@ -31,10 +33,10 @@ struct HomeView: View {
                 LazyVStack(alignment: .leading, spacing: 28) {
                     startHeader
                     startHero
+                    primaryMuscleStep
                     equipmentStep
-                    muscleStep
-                    levelStep
-                    planPreview
+                    datasetFilterStep
+                    exercisePreview
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
@@ -47,10 +49,6 @@ struct HomeView: View {
             .safeAreaInset(edge: .bottom) {
                 startBar
             }
-            .navigationDestination(item: $reviewPlan) { plan in
-                WorkoutPlanView(plan: plan)
-            }
-            .onAppear(perform: syncProfileOnce)
         }
     }
 
@@ -65,7 +63,7 @@ struct HomeView: View {
                 .font(.system(.largeTitle, design: .rounded, weight: .bold))
                 .foregroundStyle(Color.deltsCharcoal)
 
-            Text("\(viewModel.selectedMuscleGroup.title) - \(viewModel.selectedExperience.title) - \(equipmentSummary)")
+            Text(datasetHeaderSummary)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.deltsMutedText)
                 .lineLimit(1)
@@ -75,10 +73,15 @@ struct HomeView: View {
     }
 
     private var startHero: some View {
-        ZStack(alignment: .bottomLeading) {
+        let item = heroItem
+
+        return ZStack(alignment: .bottomLeading) {
             AnimatedExerciseVisual(
-                muscleGroup: viewModel.selectedMuscleGroup,
-                equipment: displayedEquipment.first,
+                muscleGroup: item?.muscleGroup ?? .fullBody,
+                assetName: item?.visualAssetName,
+                exerciseName: item?.name,
+                imagePaths: item?.imagePaths ?? [],
+                equipment: item?.equipment,
                 height: 248
             )
             .saturation(0.74)
@@ -98,31 +101,28 @@ struct HomeView: View {
             .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
 
             VStack(alignment: .leading, spacing: 16) {
-                Label("Guided workout", systemImage: "sparkles")
+                Label("FreeExerciseDB", systemImage: "server.rack")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.white.opacity(0.86))
 
                 Spacer(minLength: 44)
 
                 VStack(alignment: .leading, spacing: 9) {
-                    Text("\(viewModel.selectedMuscleGroup.title) workout")
+                    Text(item?.name ?? "Exercise Library")
                         .font(.system(.largeTitle, design: .rounded, weight: .bold))
                         .foregroundStyle(.white)
                         .lineLimit(2)
                         .minimumScaleFactor(0.72)
 
-                    Text(heroSubtitle)
+                    Text(item.map { heroSubtitle(for: $0) } ?? "Dataset fields only")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.76))
                         .lineLimit(2)
                 }
 
-                StartProgressStrip(
-                    muscle: viewModel.selectedMuscleGroup,
-                    level: viewModel.selectedExperience,
-                    equipmentCount: displayedEquipment.count,
-                    duration: viewModel.selectedDuration
-                )
+                if let item {
+                    StartDatasetStrip(item: item)
+                }
             }
             .padding(20)
         }
@@ -132,137 +132,89 @@ struct HomeView: View {
         }
     }
 
-    private var heroSubtitle: String {
-        let name = profile?.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let displayName = (name?.isEmpty == false ? name : "Athlete") ?? "Athlete"
-        return "\(displayName) - \(viewModel.selectedExperience.title) - \(viewModel.selectedDuration) min"
+    private var datasetHeaderSummary: String {
+        [
+            selectedPrimaryMuscle ?? "All primary",
+            selectedRawEquipment ?? "All equipment",
+            selectedLevel ?? "All levels"
+        ].joined(separator: " - ")
     }
 
-    private var equipmentSummary: String {
-        displayedEquipment.count == 1 ? "1 item" : "\(displayedEquipment.count) items"
+    private func heroSubtitle(for item: ExerciseLibraryItem) -> String {
+        "\(item.primaryMusclesTitle) - \(item.rawEquipment) - \(item.rawLevel)"
+    }
+
+    private var primaryMuscleStep: some View {
+        StartSection(
+            index: "01",
+            title: "Primary",
+            subtitle: "Choose from the dataset primaryMuscles field."
+        ) {
+            StartHorizontalRail {
+                StartOptionButton(title: "All", systemImage: "scope", isSelected: selectedPrimaryMuscle == nil) {
+                    selectedPrimaryMuscle = nil
+                    shownItems = []
+                }
+                ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
+                    StartOptionButton(title: muscle, systemImage: "scope", isSelected: selectedPrimaryMuscle == muscle) {
+                        selectedPrimaryMuscle = muscle
+                        shownItems = []
+                    }
+                }
+            }
+        }
     }
 
     private var equipmentStep: some View {
         StartSection(
-            index: "01",
-            title: "Equipment",
-            subtitle: "Use profile gear, pick from saved gear, or skip to bodyweight."
-        ) {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(spacing: 10) {
-                    StartOptionButton(
-                        title: "Profile gear",
-                        systemImage: "dumbbell.fill",
-                        isSelected: equipmentMode == .profile
-                    ) {
-                        equipmentMode = .profile
-                        viewModel.selectedEquipment = selectedProfileEquipment
-                    }
-
-                    StartOptionButton(
-                        title: "Skip",
-                        systemImage: "figure.cooldown",
-                        isSelected: equipmentMode == .bodyweight
-                    ) {
-                        equipmentMode = .bodyweight
-                        viewModel.selectedEquipment = [.bodyweight]
-                    }
-                }
-
-                if profileEquipment.isEmpty {
-                    Text("No saved equipment yet. Add it from Profile when you want machine-specific plans.")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.deltsMutedText)
-                        .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: 10)], spacing: 10) {
-                        ForEach(profileEquipment) { equipment in
-                            StartEquipmentChip(
-                                equipment: equipment,
-                                isSelected: selectedProfileEquipment.contains(equipment) && equipmentMode == .profile
-                            ) {
-                                equipmentMode = .profile
-                                if selectedProfileEquipment.contains(equipment) {
-                                    selectedProfileEquipment.remove(equipment)
-                                } else {
-                                    selectedProfileEquipment.insert(equipment)
-                                }
-                                viewModel.selectedEquipment = selectedProfileEquipment
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private var profileEquipment: [Equipment] {
-        guard let profile else { return [] }
-        return Equipment.allCases.filter { profile.availableEquipment.contains($0) }
-    }
-
-    private var muscleStep: some View {
-        StartSection(
             index: "02",
-            title: "Body Part",
-            subtitle: "Pick what you are training now. The library previews move between exercise frames."
+            title: "Equipment",
+            subtitle: "Choose from the dataset equipment field."
         ) {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: 14)], spacing: 14) {
-                ForEach(MuscleGroup.allCases) { group in
-                    StartMuscleCard(
-                        group: group,
-                        isSelected: viewModel.selectedMuscleGroup == group
-                    ) {
-                        viewModel.selectedMuscleGroup = group
-                        generatedPlan = nil
+            StartHorizontalRail {
+                StartOptionButton(title: "All", systemImage: "dumbbell.fill", isSelected: selectedRawEquipment == nil) {
+                    selectedRawEquipment = nil
+                    shownItems = []
+                }
+                ForEach(service.availableRawEquipment, id: \.self) { equipment in
+                    StartOptionButton(title: equipment, systemImage: "dumbbell.fill", isSelected: selectedRawEquipment == equipment) {
+                        selectedRawEquipment = equipment
+                        shownItems = []
                     }
                 }
             }
         }
     }
 
-    private var levelStep: some View {
+    private var datasetFilterStep: some View {
         StartSection(
             index: "03",
-            title: "Level",
-            subtitle: "Choose intensity, duration, and training bias."
+            title: "Dataset",
+            subtitle: "Filter by raw level and category."
         ) {
             VStack(alignment: .leading, spacing: 16) {
                 StartHorizontalRail {
-                    ForEach(ExperienceLevel.allCases) { level in
-                        StartOptionButton(
-                            title: level.title,
-                            systemImage: planExperienceIcon(level),
-                            isSelected: viewModel.selectedExperience == level
-                        ) {
-                            viewModel.selectedExperience = level
-                            generatedPlan = nil
+                    StartOptionButton(title: "All levels", systemImage: "chart.bar.fill", isSelected: selectedLevel == nil) {
+                        selectedLevel = nil
+                        shownItems = []
+                    }
+                    ForEach(service.availableLevels, id: \.self) { level in
+                        StartOptionButton(title: level, systemImage: "chart.bar.fill", isSelected: selectedLevel == level) {
+                            selectedLevel = level
+                            shownItems = []
                         }
                     }
                 }
 
                 StartHorizontalRail {
-                    ForEach(FitnessGoal.planCases) { goal in
-                        StartOptionButton(
-                            title: goal.title,
-                            systemImage: planGoalIcon(goal),
-                            isSelected: viewModel.selectedGoal == goal
-                        ) {
-                            viewModel.selectedGoal = goal
-                            generatedPlan = nil
-                        }
+                    StartOptionButton(title: "All categories", systemImage: "tag", isSelected: selectedCategory == nil) {
+                        selectedCategory = nil
+                        shownItems = []
                     }
-                }
-
-                StartHorizontalRail {
-                    ForEach(durationOptions, id: \.self) { duration in
-                        StartOptionButton(
-                            title: "\(duration) min",
-                            systemImage: planDurationIcon(duration),
-                            isSelected: viewModel.selectedDuration == duration
-                        ) {
-                            viewModel.selectedDuration = duration
-                            generatedPlan = nil
+                    ForEach(service.availableCategoryCounts) { categoryCount in
+                        StartOptionButton(title: categoryCount.category, systemImage: "tag", isSelected: selectedCategory == categoryCount.category) {
+                            selectedCategory = categoryCount.category
+                            shownItems = []
                         }
                     }
                 }
@@ -271,42 +223,16 @@ struct HomeView: View {
     }
 
     @ViewBuilder
-    private var planPreview: some View {
-        if let generatedPlan {
+    private var exercisePreview: some View {
+        if !shownItems.isEmpty {
             StartSection(
                 index: "04",
-                title: "Workout",
-                subtitle: "Review the session, then log sets, reps, weight, skips, and rest inside Active Workout."
+                title: "Exercises",
+                subtitle: "\(shownItems.count) matching dataset record\(shownItems.count == 1 ? "" : "s")."
             ) {
                 VStack(alignment: .leading, spacing: 14) {
-                    ForEach(generatedPlan.exercises.sorted { $0.orderIndex < $1.orderIndex }.prefix(5)) { exercise in
-                        StartExercisePreviewRow(exercise: exercise)
-                    }
-
-                    HStack(spacing: 10) {
-                        Button {
-                            reviewPlan = generatedPlan
-                        } label: {
-                            Label("Review All", systemImage: "list.clipboard.fill")
-                                .font(.subheadline.weight(.bold))
-                                .foregroundStyle(Color.deltsCharcoal)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 50)
-                                .background(Color.deltsPanel.opacity(0.28), in: Capsule())
-                        }
-                        .deltsPressable()
-
-                        NavigationLink {
-                            ActiveWorkoutView(plan: generatedPlan)
-                        } label: {
-                            Label("Start", systemImage: "play.fill")
-                                .font(.subheadline.weight(.bold))
-                                .foregroundStyle(Color.deltsOnAccent)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 50)
-                                .background(Color.deltsAccent, in: Capsule())
-                        }
-                        .deltsPressable()
+                    ForEach(shownItems.prefix(5)) { item in
+                        StartExercisePreviewRow(item: item)
                     }
                 }
             }
@@ -316,26 +242,16 @@ struct HomeView: View {
     private var startBar: some View {
         VStack(spacing: 8) {
             PrimaryButton(
-                title: viewModel.isGenerating ? "Building Workout" : "Show Workouts",
-                systemImage: "play.fill",
-                isLoading: viewModel.isGenerating
+                title: "Show Dataset Exercises",
+                systemImage: "list.clipboard.fill"
             ) {
-                Task {
-                    if equipmentMode == .bodyweight {
-                        viewModel.selectedEquipment = [.bodyweight]
-                    } else {
-                        viewModel.selectedEquipment = selectedProfileEquipment
-                    }
-                    generatedPlan = await viewModel.generateWorkout(profile: profile)
-                }
+                shownItems = matchingItems
             }
 
-            if let statusText {
-                Text(statusText)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            Text("\(matchingItems.count) currently match the selected dataset fields.")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.deltsMutedText)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 20)
         .padding(.top, 10)
@@ -343,26 +259,6 @@ struct HomeView: View {
         .deltsBottomActionBackground()
     }
 
-    private var statusText: String? {
-        if viewModel.isGenerating {
-            return "Using \(displayedEquipment.count) equipment option\(displayedEquipment.count == 1 ? "" : "s") from this flow."
-        }
-        return viewModel.statusMessage
-    }
-
-    private func syncProfileOnce() {
-        guard !didSyncProfile else { return }
-        didSyncProfile = true
-        viewModel.syncDefaults(from: profile)
-        selectedProfileEquipment = profile?.availableEquipment ?? []
-        equipmentMode = selectedProfileEquipment.isEmpty ? .bodyweight : .profile
-        viewModel.selectedEquipment = displayedEquipment
-    }
-}
-
-private enum StartEquipmentMode {
-    case profile
-    case bodyweight
 }
 
 private struct StartSection<Content: View>: View {
@@ -401,21 +297,18 @@ private struct StartSection<Content: View>: View {
     }
 }
 
-private struct StartProgressStrip: View {
-    let muscle: MuscleGroup
-    let level: ExperienceLevel
-    let equipmentCount: Int
-    let duration: Int
+private struct StartDatasetStrip: View {
+    let item: ExerciseLibraryItem
 
     var body: some View {
         HStack(spacing: 0) {
-            StartHeroMetric(title: "Focus", value: muscle.title, systemImage: muscle.icon)
+            StartHeroMetric(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope")
             StartHeroDivider()
-            StartHeroMetric(title: "Level", value: level.title, systemImage: planExperienceIcon(level))
+            StartHeroMetric(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill")
             StartHeroDivider()
-            StartHeroMetric(title: "Gear", value: "\(equipmentCount)", systemImage: "dumbbell.fill")
+            StartHeroMetric(title: "Gear", value: item.rawEquipment, systemImage: "dumbbell.fill")
             StartHeroDivider()
-            StartHeroMetric(title: "Time", value: "\(duration)", systemImage: "timer")
+            StartHeroMetric(title: "Category", value: item.category, systemImage: "tag")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 12)
@@ -502,103 +395,37 @@ private struct StartHorizontalRail<Content: View>: View {
     }
 }
 
-private struct StartEquipmentChip: View {
-    let equipment: Equipment
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 9) {
-                Image(systemName: equipment.icon)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsSecondaryAccent)
-
-                Text(equipment.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.76)
-
-                Spacer(minLength: 0)
-
-                Image(systemName: isSelected ? "checkmark" : "plus")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsHairline)
-            }
-            .padding(.horizontal, 12)
-            .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-            .background(isSelected ? Color.deltsAccent.opacity(0.11) : Color.deltsPanel.opacity(0.16), in: Capsule())
-            .overlay {
-                Capsule()
-                    .stroke(isSelected ? Color.deltsAccent.opacity(0.36) : Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
-            }
-        }
-        .deltsPressable()
-    }
-}
-
-private struct StartMuscleCard: View {
-    let group: MuscleGroup
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 10) {
-                AnimatedExerciseVisual(muscleGroup: group, height: 126)
-
-                HStack(spacing: 8) {
-                    Image(systemName: group.icon)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color.deltsAccent)
-
-                    Text(group.title)
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(Color.deltsCharcoal)
-                        .lineLimit(1)
-
-                    Spacer(minLength: 0)
-
-                    Image(systemName: isSelected ? "checkmark" : "chevron.right")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsMutedText)
-                }
-            }
-            .padding(10)
-            .background(isSelected ? Color.deltsAccent.opacity(0.10) : Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 30, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .stroke(isSelected ? Color.deltsAccent.opacity(0.42) : Color.deltsHairline.opacity(0.24), lineWidth: 0.75)
-            }
-        }
-        .deltsPressable()
-    }
-}
-
 private struct StartExercisePreviewRow: View {
-    let exercise: WorkoutExercise
+    let item: ExerciseLibraryItem
 
     var body: some View {
         HStack(spacing: 14) {
             AnimatedExerciseVisual(
-                muscleGroup: exercise.targetMuscle,
-                exerciseName: exercise.name,
-                equipment: exercise.equipment,
+                muscleGroup: item.muscleGroup,
+                assetName: item.visualAssetName,
+                exerciseName: item.name,
+                imagePaths: item.imagePaths,
+                equipment: item.equipment,
                 height: 82,
                 fillsWidth: false
             )
             .frame(width: 82, height: 82)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(exercise.name)
+                Text(item.name)
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(2)
 
-                Text("\(exercise.sets) sets - \(exercise.reps) reps - \(exercise.restDisplay)")
+                Text("\(item.primaryMusclesTitle) - \(item.rawEquipment) - \(item.rawLevel)")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+
+                Text(item.databaseMetadataSummary)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.deltsSecondaryAccent)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
             }

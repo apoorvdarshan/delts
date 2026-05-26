@@ -35,6 +35,7 @@ struct FreeExerciseDBLoader {
             muscleGroup: muscleGroup(for: record),
             equipment: equipment(for: record),
             level: level,
+            rawLevel: record.level,
             goal: goal,
             sets: sets(for: goal, level: level),
             reps: reps(for: goal, level: level),

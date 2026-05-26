@@ -16,6 +16,10 @@ struct ExerciseLibraryService {
         Self.sortedUnique(exercises.map(\.force))
     }
 
+    var availableLevels: [String] {
+        Self.sortedUnique(exercises.map(\.rawLevel))
+    }
+
     var availableMechanics: [String] {
         Self.sortedUnique(exercises.map(\.mechanic))
     }
@@ -119,9 +123,7 @@ struct ExerciseLibraryService {
     ]
 
     func filtered(
-        level: ExperienceLevel?,
-        equipment: Equipment?,
-        equipmentFamily: ExerciseEquipmentFamily,
+        level: String?,
         rawEquipment: String?,
         primaryMuscle: String?,
         secondaryMuscle: String?,
@@ -134,9 +136,7 @@ struct ExerciseLibraryService {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
         let filteredItems = exercises.filter { item in
-            let matchesLevel = level == nil || item.level == level
-            let matchesEquipment = equipment == nil || item.equipment == equipment
-            let matchesFamily = equipmentFamily == .all || item.equipmentFamily == equipmentFamily
+            let matchesLevel = level == nil || item.rawLevel == level
             let matchesRawEquipment = rawEquipment == nil || item.rawEquipment == rawEquipment
             let matchesPrimaryMuscle = primaryMuscle == nil || item.primaryMuscles.contains(primaryMuscle ?? "")
             let matchesSecondaryMuscle = secondaryMuscle == nil || item.secondaryMuscles.contains(secondaryMuscle ?? "")
@@ -146,8 +146,6 @@ struct ExerciseLibraryService {
             let matchesSearch = query.isEmpty || item.searchableText.contains(query)
 
             return matchesLevel &&
-                matchesEquipment &&
-                matchesFamily &&
                 matchesRawEquipment &&
                 matchesPrimaryMuscle &&
                 matchesSecondaryMuscle &&
@@ -162,10 +160,10 @@ struct ExerciseLibraryService {
             case .name:
                 return lhs.name < rhs.name
             case .level:
-                if lhs.level.sortRank == rhs.level.sortRank {
+                if Self.levelSortRank(lhs.rawLevel) == Self.levelSortRank(rhs.rawLevel) {
                     return lhs.name < rhs.name
                 }
-                return lhs.level.sortRank < rhs.level.sortRank
+                return Self.levelSortRank(lhs.rawLevel) < Self.levelSortRank(rhs.rawLevel)
             case .primaryMuscles:
                 return Self.compare(lhs.primaryMusclesTitle, rhs.primaryMusclesTitle, lhsName: lhs.name, rhsName: rhs.name)
             case .secondaryMuscles:
@@ -227,14 +225,13 @@ struct ExerciseLibraryService {
         }
         return lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
     }
-}
 
-private extension ExperienceLevel {
-    var sortRank: Int {
-        switch self {
-        case .beginner: return 0
-        case .intermediate: return 1
-        case .advanced: return 2
+    private static func levelSortRank(_ level: String) -> Int {
+        switch level.lowercased() {
+        case "beginner": return 0
+        case "intermediate": return 1
+        case "expert", "advanced": return 2
+        default: return 3
         }
     }
 }

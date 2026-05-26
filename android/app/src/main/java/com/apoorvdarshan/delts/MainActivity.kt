@@ -28,6 +28,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -180,6 +182,7 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
                 DeltsTab.Profile -> ProfileScreen(
                     profile = profile,
                     updateProfile = ::updateProfile,
+                    exerciseLibrary = exerciseLibrary,
                     measurementSystem = measurementSystem,
                     updateMeasurementSystem = ::updateMeasurementSystem,
                     aiSettings = aiSettings,
@@ -199,24 +202,38 @@ private fun StartScreen(
     exerciseLibrary: List<ExerciseItem>,
     padding: PaddingValues
 ) {
-    var selectedMuscle by rememberSaveable { mutableStateOf("Chest") }
-    var selectedLevel by rememberSaveable { mutableStateOf("Intermediate") }
-    var selectedGoal by rememberSaveable { mutableStateOf("Muscle Gain") }
-    var selectedDuration by rememberSaveable { mutableStateOf(60) }
-    var equipmentMode by rememberSaveable { mutableStateOf(defaultEquipmentMode(profile)) }
-    var selectedEquipment by rememberSaveable { mutableStateOf(defaultEquipment(profile).toList()) }
+    var selectedPrimaryMuscle by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedRawEquipment by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedLevel by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
     var generatedPlan by remember { mutableStateOf<List<ExercisePlan>>(emptyList()) }
 
-    LaunchedEffect(profile.availableEquipment) {
-        val defaultEquipment = defaultEquipment(profile)
-        equipmentMode = defaultEquipmentMode(profile)
-        selectedEquipment = defaultEquipment.toList()
-        generatedPlan = emptyList()
+    val primaryMuscleOptions = remember(exerciseLibrary) { exerciseLibrary.flatMap { it.primaryMuscles }.distinctSorted() }
+    val rawEquipmentOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.rawEquipment }.distinctSorted() }
+    val levelOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.level }.distinctSorted() }
+    val categoryOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.category }.distinctSorted() }
+
+    val matchingItems = remember(
+        selectedPrimaryMuscle,
+        selectedRawEquipment,
+        selectedLevel,
+        selectedCategory,
+        exerciseLibrary
+    ) {
+        exerciseLibrary.filter { item ->
+            (selectedPrimaryMuscle?.let { item.primaryMuscles.contains(it) } ?: true) &&
+                (selectedRawEquipment == null || item.rawEquipment == selectedRawEquipment) &&
+                (selectedLevel == null || item.level == selectedLevel) &&
+                (selectedCategory == null || item.category == selectedCategory)
+        }
     }
 
-    val muscle = muscles.first { it.title == selectedMuscle }
-    val equipmentCount = selectedEquipment.size
-    val heroExercise = exerciseLibrary.firstOrNull { it.muscle == selectedMuscle && it.imagePaths.isNotEmpty() }
+    val heroExercise = matchingItems.firstOrNull { it.imagePaths.isNotEmpty() } ?: matchingItems.firstOrNull() ?: exerciseLibrary.firstOrNull()
+    val headerSubtitle = listOf(
+        selectedPrimaryMuscle ?: "All primary",
+        selectedRawEquipment ?: "All equipment",
+        selectedLevel ?: "All levels"
+    ).joinToString(" - ")
 
     Column(
         modifier = Modifier
@@ -230,90 +247,84 @@ private fun StartScreen(
         ScreenHeader(
             eyebrow = "DELTS",
             title = "Start",
-            subtitle = "$selectedMuscle - $selectedLevel - $equipmentCount ${if (equipmentCount == 1) "item" else "items"}"
+            subtitle = headerSubtitle
         )
 
-        StartHero(
-            muscle = muscle,
+        DatasetStartHero(
+            item = heroExercise,
             imagePaths = heroExercise?.imagePaths.orEmpty(),
-            profile = profile,
-            selectedLevel = selectedLevel,
-            selectedDuration = selectedDuration,
-            equipmentCount = equipmentCount
+            fallbackIcon = heroExercise?.icon ?: Icons.Filled.FitnessCenter
         )
 
         StartSection(
             index = "01",
-            title = "Equipment",
-            subtitle = "Use profile gear, pick from saved gear, or skip to bodyweight."
+            title = "Primary",
+            subtitle = "Choose from the dataset primaryMuscles field."
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HorizontalChipRail {
                 DeltsPillButton(
-                    title = "Profile gear",
+                    title = "All",
                     icon = Icons.Filled.FitnessCenter,
-                    selected = equipmentMode == EquipmentMode.Profile,
-                    modifier = Modifier.weight(1f)
+                    selected = selectedPrimaryMuscle == null
                 ) {
-                    equipmentMode = EquipmentMode.Profile
-                    selectedEquipment = profile.availableEquipment.ifEmpty { setOf("Dumbbells") }.toList()
+                    selectedPrimaryMuscle = null
                     generatedPlan = emptyList()
                 }
-                DeltsPillButton(
-                    title = "Skip",
-                    icon = Icons.Filled.DirectionsRun,
-                    selected = equipmentMode == EquipmentMode.Bodyweight,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    equipmentMode = EquipmentMode.Bodyweight
-                    selectedEquipment = listOf("Bodyweight")
-                    generatedPlan = emptyList()
-                }
-            }
-
-            if (profile.availableEquipment.isEmpty()) {
-                Text(
-                    text = "No saved equipment yet. Add it from Profile when you want machine-specific plans.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                DeltsChipGrid(
-                    items = profile.availableEquipment.toList(),
-                    selected = selectedEquipment.toSet(),
-                    itemIcon = { equipmentOptions.firstOrNull { it.title == this }?.icon ?: Icons.Filled.FitnessCenter }
-                ) { equipment ->
-                    equipmentMode = EquipmentMode.Profile
-                    selectedEquipment = toggleInList(selectedEquipment, equipment).ifEmpty { listOf("Bodyweight") }
-                    generatedPlan = emptyList()
+                primaryMuscleOptions.forEach { muscle ->
+                    DeltsPillButton(
+                        title = muscle,
+                        icon = Icons.Filled.FitnessCenter,
+                        selected = selectedPrimaryMuscle == muscle
+                    ) {
+                        selectedPrimaryMuscle = muscle
+                        generatedPlan = emptyList()
+                    }
                 }
             }
         }
 
         StartSection(
             index = "02",
-            title = "Body Part",
-            subtitle = "Pick what you are training now. The library previews move between exercise frames."
+            title = "Equipment",
+            subtitle = "Choose from the dataset equipment field."
         ) {
-            TwoColumnGrid(muscles) { option ->
-                val preview = exerciseLibrary.firstOrNull { it.muscle == option.title && it.imagePaths.isNotEmpty() }
-                MuscleCard(
-                    option = option,
-                    previewImagePaths = preview?.imagePaths.orEmpty(),
-                    selected = selectedMuscle == option.title
+            HorizontalChipRail {
+                DeltsPillButton(
+                    title = "All",
+                    icon = Icons.Filled.FitnessCenter,
+                    selected = selectedRawEquipment == null
                 ) {
-                    selectedMuscle = option.title
+                    selectedRawEquipment = null
                     generatedPlan = emptyList()
+                }
+                rawEquipmentOptions.forEach { equipment ->
+                    DeltsPillButton(
+                        title = equipment,
+                        icon = Icons.Filled.FitnessCenter,
+                        selected = selectedRawEquipment == equipment
+                    ) {
+                        selectedRawEquipment = equipment
+                        generatedPlan = emptyList()
+                    }
                 }
             }
         }
 
         StartSection(
             index = "03",
-            title = "Level",
-            subtitle = "Choose intensity, duration, and training bias."
+            title = "Dataset",
+            subtitle = "Filter by raw level and category."
         ) {
             HorizontalChipRail {
-                levels.forEach { level ->
+                DeltsPillButton(
+                    title = "All levels",
+                    icon = Icons.Filled.FlashOn,
+                    selected = selectedLevel == null
+                ) {
+                    selectedLevel = null
+                    generatedPlan = emptyList()
+                }
+                levelOptions.forEach { level ->
                     DeltsPillButton(
                         title = level,
                         icon = Icons.Filled.FlashOn,
@@ -326,26 +337,21 @@ private fun StartScreen(
             }
 
             HorizontalChipRail {
-                goals.forEach { goal ->
-                    DeltsPillButton(
-                        title = goal,
-                        icon = Icons.Filled.Flag,
-                        selected = selectedGoal == goal
-                    ) {
-                        selectedGoal = goal
-                        generatedPlan = emptyList()
-                    }
+                DeltsPillButton(
+                    title = "All categories",
+                    icon = Icons.Filled.List,
+                    selected = selectedCategory == null
+                ) {
+                    selectedCategory = null
+                    generatedPlan = emptyList()
                 }
-            }
-
-            HorizontalChipRail {
-                durations.forEach { duration ->
+                categoryOptions.forEach { category ->
                     DeltsPillButton(
-                        title = "$duration min",
-                        icon = Icons.Filled.Timer,
-                        selected = selectedDuration == duration
+                        title = category,
+                        icon = Icons.Filled.List,
+                        selected = selectedCategory == category
                     ) {
-                        selectedDuration = duration
+                        selectedCategory = category
                         generatedPlan = emptyList()
                     }
                 }
@@ -355,8 +361,8 @@ private fun StartScreen(
         if (generatedPlan.isNotEmpty()) {
             StartSection(
                 index = "04",
-                title = "Workout",
-                subtitle = "Review the session, then log sets, reps, weight, skips, and rest inside Active Workout."
+                title = "Exercises",
+                subtitle = "${matchingItems.size} matching dataset ${if (matchingItems.size == 1) "record" else "records"}."
             ) {
                 generatedPlan.take(5).forEach { exercise ->
                     ExercisePlanRow(exercise = exercise)
@@ -367,11 +373,10 @@ private fun StartScreen(
         Button(
             onClick = {
                 generatedPlan = buildPlan(
-                    muscle = selectedMuscle,
+                    primaryMuscle = selectedPrimaryMuscle,
                     level = selectedLevel,
-                    goal = selectedGoal,
-                    duration = selectedDuration,
-                    equipment = selectedEquipment,
+                    rawEquipment = selectedRawEquipment,
+                    category = selectedCategory,
                     exerciseLibrary = exerciseLibrary
                 )
             },
@@ -386,7 +391,7 @@ private fun StartScreen(
         ) {
             Icon(Icons.Filled.PlayArrow, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Show Workouts", fontWeight = FontWeight.Bold)
+            Text("Show Dataset Exercises", fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -475,19 +480,15 @@ private fun WorkoutsScreen(
             .sortedWith(selectedSort.comparator())
     }
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(padding)
+            .padding(horizontal = 20.dp),
+        contentPadding = PaddingValues(top = 16.dp, bottom = 112.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-                .padding(top = 16.dp, bottom = 112.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
-        ) {
+        item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 LibrarySearchPill(
                     search = search,
@@ -579,7 +580,9 @@ private fun WorkoutsScreen(
                     ) { selectedMechanic = it }
                 }
             }
+        }
 
+        item {
             ResultsHeader(
                 title = "${filteredExercises.size} ${if (filteredExercises.size == 1) "exercise" else "exercises"}",
                 subtitle = selectedSort.title,
@@ -589,9 +592,10 @@ private fun WorkoutsScreen(
                     null
                 }
             )
-            filteredExercises.forEach { item ->
-                ExerciseLibraryRow(item = item)
-            }
+        }
+
+        items(filteredExercises, key = { it.name }) { item ->
+            ExerciseLibraryRow(item = item)
         }
     }
 }
@@ -600,6 +604,7 @@ private fun WorkoutsScreen(
 private fun ProfileScreen(
     profile: AndroidProfile,
     updateProfile: (AndroidProfile) -> Unit,
+    exerciseLibrary: List<ExerciseItem>,
     measurementSystem: MeasurementSystem,
     updateMeasurementSystem: (MeasurementSystem) -> Unit,
     aiSettings: AISettings,
@@ -612,6 +617,8 @@ private fun ProfileScreen(
     var hasSavedKey by remember { mutableStateOf(keyStore.hasKey()) }
     var fallbackApiKey by remember { mutableStateOf(fallbackKeyStore.load()) }
     var hasSavedFallbackKey by remember { mutableStateOf(fallbackKeyStore.hasKey()) }
+    val datasetPrimaryMuscles = remember(exerciseLibrary) { exerciseLibrary.flatMap { it.primaryMuscles }.distinctSorted() }
+    val datasetRawEquipment = remember(exerciseLibrary) { exerciseLibrary.map { it.rawEquipment }.distinctSorted() }
 
     Column(
         modifier = Modifier
@@ -711,9 +718,9 @@ private fun ProfileScreen(
             }
             ProfileRowDivider()
             CompactMultiSelectRow(
-                title = "Body parts",
+                title = "Primary muscles",
                 icon = Icons.Filled.FitnessCenter,
-                items = bodyFocusOptions.map { it.title },
+                items = datasetPrimaryMuscles,
                 selected = profile.bodyFocus,
             ) { item ->
                 updateProfile(profile.copy(bodyFocus = toggleInSet(profile.bodyFocus, item)))
@@ -913,7 +920,7 @@ private fun ProfileScreen(
             CompactMultiSelectRow(
                 title = "Equipment",
                 icon = Icons.Filled.FitnessCenter,
-                items = equipmentOptions.map { it.title },
+                items = datasetRawEquipment,
                 selected = profile.availableEquipment,
             ) { item ->
                 updateProfile(profile.copy(availableEquipment = toggleInSet(profile.availableEquipment, item)))
@@ -954,13 +961,10 @@ private fun ScreenHeader(
 }
 
 @Composable
-private fun StartHero(
-    muscle: DeltsOption,
+private fun DatasetStartHero(
+    item: ExerciseItem?,
     imagePaths: List<String>,
-    profile: AndroidProfile,
-    selectedLevel: String,
-    selectedDuration: Int,
-    equipmentCount: Int
+    fallbackIcon: ImageVector
 ) {
     Box(
         modifier = Modifier
@@ -979,7 +983,7 @@ private fun StartHero(
     ) {
         ExerciseVisual(
             imagePaths = imagePaths,
-            fallbackIcon = muscle.icon,
+            fallbackIcon = fallbackIcon,
             modifier = Modifier.matchParentSize(),
             cornerRadius = 34,
             iconSize = 108,
@@ -1006,12 +1010,12 @@ private fun StartHero(
                 .padding(20.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            DeltsGlassLabel(title = "Guided workout", icon = Icons.Filled.FlashOn)
+            DeltsGlassLabel(title = "FreeExerciseDB", icon = Icons.Filled.List)
 
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "${muscle.title} workout",
+                        text = item?.name ?: "Exercise Library",
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.White,
@@ -1019,7 +1023,7 @@ private fun StartHero(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "${profile.displayName} - $selectedLevel - $selectedDuration min",
+                        text = item?.let { "${it.primaryMusclesTitle()} - ${it.rawEquipment} - ${it.level}" } ?: "Dataset fields only",
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White.copy(alpha = 0.76f),
                         maxLines = 2,
@@ -1027,18 +1031,20 @@ private fun StartHero(
                     )
                 }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(Color.Black.copy(alpha = 0.36f))
-                        .padding(horizontal = 12.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    HeroMetric("Focus", muscle.title, muscle.icon, Modifier.weight(1f))
-                    HeroMetric("Level", selectedLevel, Icons.Filled.FlashOn, Modifier.weight(1f))
-                    HeroMetric("Gear", equipmentCount.toString(), Icons.Filled.FitnessCenter, Modifier.weight(1f))
-                    HeroMetric("Time", selectedDuration.toString(), Icons.Filled.Timer, Modifier.weight(1f))
+                if (item != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(Color.Black.copy(alpha = 0.36f))
+                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        HeroMetric("Primary", item.primaryMusclesTitle(), Icons.Filled.FitnessCenter, Modifier.weight(1f))
+                        HeroMetric("Level", item.level, Icons.Filled.FlashOn, Modifier.weight(1f))
+                        HeroMetric("Gear", item.rawEquipment, Icons.Filled.FitnessCenter, Modifier.weight(1f))
+                        HeroMetric("Category", item.category, Icons.Filled.List, Modifier.weight(1f))
+                    }
                 }
             }
         }
@@ -1156,56 +1162,6 @@ private fun StartSection(index: String, title: String, subtitle: String, content
             }
         }
         Column(verticalArrangement = Arrangement.spacedBy(14.dp), content = content)
-    }
-}
-
-@Composable
-private fun MuscleCard(
-    option: DeltsOption,
-    previewImagePaths: List<String>,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    val shape = RoundedCornerShape(30.dp)
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .clickable(onClick = onClick)
-            .background(
-                if (selected) DeltsAccent.copy(alpha = 0.10f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f)
-            )
-            .padding(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        ExerciseVisual(
-            imagePaths = previewImagePaths,
-            fallbackIcon = option.icon,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(104.dp),
-            cornerRadius = 22,
-            iconSize = 48,
-            contentScale = ContentScale.Crop
-        )
-
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(option.icon, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(18.dp))
-            Text(
-                text = option.title,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Icon(
-                if (selected) Icons.Filled.Check else Icons.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = if (selected) DeltsAccent else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
-            )
-        }
     }
 }
 
@@ -1398,79 +1354,6 @@ private fun LibraryFilterMenu(
 }
 
 @Composable
-private fun <T> TwoColumnGrid(items: List<T>, content: @Composable (T) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        items.chunked(2).forEach { rowItems ->
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                rowItems.forEach { item ->
-                    Box(modifier = Modifier.weight(1f)) {
-                        content(item)
-                    }
-                }
-                if (rowItems.size == 1) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DeltsChipGrid(
-    items: List<String>,
-    selected: Set<String>,
-    itemIcon: String.() -> ImageVector,
-    onToggle: (String) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        items.chunked(2).forEach { rowItems ->
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                rowItems.forEach { item ->
-                    val isSelected = selected.contains(item)
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp),
-                        shape = RoundedCornerShape(24.dp),
-                        color = if (isSelected) DeltsAccent.copy(alpha = 0.11f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
-                        border = BorderStroke(
-                            1.dp,
-                            if (isSelected) DeltsAccent.copy(alpha = 0.42f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.26f)
-                        ),
-                        onClick = { onToggle(item) }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(item.itemIcon(), contentDescription = null, tint = if (isSelected) DeltsAccent else DeltsSecondaryAccent, modifier = Modifier.size(17.dp))
-                            Text(
-                                text = item,
-                                modifier = Modifier.weight(1f),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Icon(
-                                if (isSelected) Icons.Filled.Check else Icons.Filled.Add,
-                                contentDescription = null,
-                                tint = if (isSelected) DeltsAccent else MaterialTheme.colorScheme.outline,
-                                modifier = Modifier.size(17.dp)
-                            )
-                        }
-                    }
-                }
-                if (rowItems.size == 1) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun ExercisePlanRow(exercise: ExercisePlan) {
     Row(
         modifier = Modifier
@@ -1495,9 +1378,16 @@ private fun ExercisePlanRow(exercise: ExercisePlan) {
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = "${exercise.sets} sets - ${exercise.reps} reps - ${exercise.restSeconds}s rest",
+                text = "${exercise.primaryMuscles.ifEmpty { listOf("Unspecified") }.joinToString(", ")} - ${exercise.rawEquipment} - ${exercise.level}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = exercise.category,
+                style = MaterialTheme.typography.labelLarge,
+                color = DeltsSecondaryAccent,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -1554,7 +1444,7 @@ private fun ExerciseLibraryRow(item: ExerciseItem) {
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "${item.muscle} - ${item.equipment} - ${item.level}",
+                    text = "${item.primaryMusclesTitle()} - ${item.rawEquipment} - ${item.level}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -2501,48 +2391,32 @@ private fun DeltsScreenBackground(content: @Composable () -> Unit) {
 }
 
 private fun buildPlan(
-    muscle: String,
-    level: String,
-    goal: String,
-    duration: Int,
-    equipment: List<String>,
+    primaryMuscle: String?,
+    level: String?,
+    rawEquipment: String?,
+    category: String?,
     exerciseLibrary: List<ExerciseItem>
 ): List<ExercisePlan> {
-    val base = exerciseLibrary.filter { it.muscle == muscle }.ifEmpty { exerciseLibrary }
-    val setCount = when {
-        duration <= 30 -> 3
-        duration >= 90 -> 5
-        else -> 4
-    }
-    val repTarget = when (goal) {
-        "Fat Loss" -> "12-15"
-        "Strength" -> "4-6"
-        else -> "8-10"
-    }
-    val rest = when (level) {
-        "Beginner" -> 60
-        "Advanced" -> 105
-        else -> 90
-    }
+    val base = exerciseLibrary
+        .filter { item ->
+            (primaryMuscle?.let { item.primaryMuscles.contains(it) } ?: true) &&
+                (level == null || item.level == level) &&
+                (rawEquipment == null || item.rawEquipment == rawEquipment) &&
+                (category == null || item.category == category)
+        }
 
     return base.take(5).map { item ->
         ExercisePlan(
             name = item.name,
-            sets = setCount,
-            reps = repTarget,
-            restSeconds = rest,
+            primaryMuscles = item.primaryMuscles,
+            rawEquipment = item.rawEquipment,
+            level = item.level,
+            category = item.category,
             icon = item.icon,
-            imagePaths = item.imagePaths,
-            equipment = equipment.firstOrNull() ?: item.equipment
+            imagePaths = item.imagePaths
         )
     }
 }
-
-private fun defaultEquipment(profile: AndroidProfile): Set<String> =
-    profile.availableEquipment.ifEmpty { setOf("Bodyweight") }
-
-private fun defaultEquipmentMode(profile: AndroidProfile): EquipmentMode =
-    if (profile.availableEquipment.isEmpty()) EquipmentMode.Bodyweight else EquipmentMode.Profile
 
 private fun toggleInSet(set: Set<String>, item: String): Set<String> =
     if (set.contains(item)) set - item else set + item
@@ -2670,11 +2544,6 @@ private enum class MeasurementSystem(val title: String) {
     Imperial("Imperial")
 }
 
-private enum class EquipmentMode {
-    Profile,
-    Bodyweight
-}
-
 private enum class LibrarySort(val title: String) {
     Name("Name"),
     Level("Level"),
@@ -2752,7 +2621,6 @@ private data class ExerciseItem(
     val muscle: String,
     val equipment: String,
     val level: String,
-    val machineLabel: String,
     val icon: ImageVector,
     val imagePaths: List<String>,
     val force: String = "Unspecified",
@@ -2766,10 +2634,10 @@ private data class ExerciseItem(
 
 private data class ExercisePlan(
     val name: String,
-    val sets: Int,
-    val reps: String,
-    val restSeconds: Int,
-    val equipment: String,
+    val primaryMuscles: List<String>,
+    val rawEquipment: String,
+    val level: String,
+    val category: String,
     val icon: ImageVector,
     val imagePaths: List<String>
 )
@@ -2789,7 +2657,7 @@ private fun loadFreeExerciseDB(assets: AssetManager): List<ExerciseItem> = runCa
             val primaryMuscles = record.optJSONArray("primaryMuscles").stringList()
             val secondaryMuscles = record.optJSONArray("secondaryMuscles").stringList()
             val muscle = muscleGroupFor(primaryMuscles, secondaryMuscles, record.optString("category"))
-            val equipment = equipmentFor(record.optString("equipment"), name)
+            val rawEquipment = metadataTitle(record.optString("equipment"))
             val icon = muscles.firstOrNull { it.title == muscle }?.icon ?: Icons.Filled.FitnessCenter
             val instructions = record.optJSONArray("instructions").stringList()
 
@@ -2797,15 +2665,14 @@ private fun loadFreeExerciseDB(assets: AssetManager): List<ExerciseItem> = runCa
                 ExerciseItem(
                     name = name,
                     muscle = muscle,
-                    equipment = equipment,
-                    level = experienceLevelFor(record.optString("level")),
-                    machineLabel = equipmentFamilyFor(equipment),
+                    equipment = rawEquipment,
+                    level = metadataTitle(record.optString("level")),
                     icon = icon,
                     imagePaths = record.optJSONArray("images").stringList(),
                     force = metadataTitle(record.optString("force")),
                     mechanic = metadataTitle(record.optString("mechanic")),
                     category = metadataTitle(record.optString("category")),
-                    rawEquipment = metadataTitle(record.optString("equipment")),
+                    rawEquipment = rawEquipment,
                     primaryMuscles = primaryMuscles.map(::metadataTitle).filter { it != "Unspecified" },
                     secondaryMuscles = secondaryMuscles.map(::metadataTitle).filter { it != "Unspecified" },
                     instructions = instructions.ifEmpty { listOf("Move with control, keep your setup tight, and stop if form breaks.") }
@@ -2890,7 +2757,7 @@ private fun ExerciseItem.databaseSummary(): String {
     val summary = listOf(category, force, mechanic)
         .filter { it != "Unspecified" }
         .joinToString(" - ")
-        .ifBlank { machineLabel }
+        .ifBlank { rawEquipment }
 
     return summary
 }
@@ -2898,10 +2765,7 @@ private fun ExerciseItem.databaseSummary(): String {
 private fun ExerciseItem.searchableText(): String =
     listOf(
         name,
-        muscle,
-        equipment,
         level,
-        machineLabel,
         force,
         mechanic,
         category,
@@ -2932,55 +2796,6 @@ private fun muscleGroupFor(primaryMuscles: List<String>, secondaryMuscles: List<
         else -> "Full Body"
     }
 }
-
-private fun equipmentFor(rawEquipment: String, exerciseName: String): String {
-    val equipment = rawEquipment.lowercase()
-    val name = exerciseName.lowercase()
-
-    return when {
-        "treadmill" in name -> "Treadmill"
-        "pull-up" in name || "pull up" in name || "chin-up" in name || "chin up" in name -> "Pull-Up Bar"
-        "leg press" in name -> "Leg Press"
-        "leg extension" in name -> "Leg Extension"
-        "leg curl" in name -> "Leg Curl"
-        "lat pulldown" in name || "pulldown" in name -> "Lat Pulldown"
-        "chest press" in name -> "Chest Press"
-        "shoulder press" in name && "machine" in equipment -> "Shoulder Press"
-        "row" in name && "machine" in equipment -> "Row Machine"
-        "dumbbell" in equipment || "kettlebell" in equipment -> "Dumbbells"
-        "barbell" in equipment || "e-z" in equipment -> "Barbell"
-        "cable" in equipment -> "Cable Machine"
-        "machine" in equipment -> "Cable Machine"
-        "bench" in name -> "Bench"
-        else -> "Bodyweight"
-    }
-}
-
-private fun experienceLevelFor(rawLevel: String): String =
-    when (rawLevel.lowercase()) {
-        "beginner" -> "Beginner"
-        "expert", "advanced" -> "Expert"
-        else -> "Intermediate"
-    }
-
-private fun equipmentFamilyFor(equipment: String): String =
-    when (equipment) {
-        "Chest Press",
-        "Shoulder Press",
-        "Lat Pulldown",
-        "Row Machine",
-        "Leg Press",
-        "Leg Extension",
-        "Leg Curl",
-        "Smith Machine",
-        "Cable Machine",
-        "Treadmill" -> "Machines"
-        "Dumbbells",
-        "Barbell",
-        "Bench",
-        "Pull-Up Bar" -> "Free Weights"
-        else -> "Bodyweight"
-    }
 
 private val muscles = listOf(
     DeltsOption("Chest", "Press, fly, and finish controlled volume.", Icons.Filled.FitnessCenter),
@@ -3112,24 +2927,6 @@ private fun modelOptionsForProvider(provider: String): List<String> =
 private fun defaultModelForProvider(provider: String): String =
     aiModelsByProvider[provider]?.firstOrNull() ?: customAIModel
 
-private val equipmentOptions = listOf(
-    DeltsOption("Bodyweight", "No gear.", Icons.Filled.DirectionsRun),
-    DeltsOption("Dumbbells", "Free weights.", Icons.Filled.FitnessCenter),
-    DeltsOption("Barbell", "Heavy compounds.", Icons.Filled.FitnessCenter),
-    DeltsOption("Cable Machine", "Constant tension.", Icons.Filled.Build),
-    DeltsOption("Bench", "Pressing support.", Icons.Filled.FitnessCenter),
-    DeltsOption("Resistance Bands", "Portable tension.", Icons.Filled.Build)
-)
-
-private val bodyFocusOptions = listOf(
-    DeltsOption("Chest", "Upper body push.", Icons.Filled.FitnessCenter),
-    DeltsOption("Back", "Pulling strength.", Icons.Filled.FitnessCenter),
-    DeltsOption("Shoulders", "Delts.", Icons.Filled.FitnessCenter),
-    DeltsOption("Legs", "Lower body.", Icons.Filled.DirectionsRun),
-    DeltsOption("Arms", "Arm work.", Icons.Filled.FitnessCenter),
-    DeltsOption("Core", "Trunk.", Icons.Filled.Favorite)
-)
-
 private const val otherIssueOption = "Other"
 
 private val issueOptions = listOf(
@@ -3143,20 +2940,20 @@ private val issueOptions = listOf(
 )
 
 private val sampleExerciseLibrary = listOf(
-    ExerciseItem("Barbell Bench Press", "Chest", "Barbell", "Intermediate", "Barbell", Icons.Filled.FitnessCenter, emptyList()),
-    ExerciseItem("Incline Dumbbell Press", "Chest", "Dumbbells", "Intermediate", "Dumbbells", Icons.Filled.FitnessCenter, emptyList()),
-    ExerciseItem("Cable Crossover", "Chest", "Cable Machine", "Beginner", "Cable Machine", Icons.Filled.Build, emptyList()),
-    ExerciseItem("Lat Pulldown", "Back", "Cable Machine", "Beginner", "Cable Machine", Icons.Filled.FitnessCenter, emptyList()),
-    ExerciseItem("One-Arm Dumbbell Row", "Back", "Dumbbells", "Intermediate", "Dumbbells", Icons.Filled.FitnessCenter, emptyList()),
-    ExerciseItem("Seated Cable Row", "Back", "Cable Machine", "Beginner", "Cable Machine", Icons.Filled.Build, emptyList()),
-    ExerciseItem("Dumbbell Shoulder Press", "Shoulders", "Dumbbells", "Intermediate", "Dumbbells", Icons.Filled.FitnessCenter, emptyList()),
-    ExerciseItem("Lateral Raise", "Shoulders", "Dumbbells", "Beginner", "Dumbbells", Icons.Filled.FitnessCenter, emptyList()),
-    ExerciseItem("Back Squat", "Legs", "Barbell", "Expert", "Barbell", Icons.Filled.DirectionsRun, emptyList()),
-    ExerciseItem("Goblet Squat", "Legs", "Dumbbells", "Beginner", "Dumbbells", Icons.Filled.DirectionsRun, emptyList()),
-    ExerciseItem("Dumbbell Curl", "Arms", "Dumbbells", "Beginner", "Dumbbells", Icons.Filled.FitnessCenter, emptyList()),
-    ExerciseItem("Cable Triceps Pressdown", "Arms", "Cable Machine", "Beginner", "Cable Machine", Icons.Filled.Build, emptyList()),
-    ExerciseItem("Plank", "Core", "Bodyweight", "Beginner", "Bodyweight", Icons.Filled.Favorite, emptyList()),
-    ExerciseItem("Cable Woodchop", "Core", "Cable Machine", "Intermediate", "Cable Machine", Icons.Filled.Build, emptyList())
+    ExerciseItem("Barbell Bench Press", "Chest", "Barbell", "Intermediate", Icons.Filled.FitnessCenter, emptyList(), rawEquipment = "Barbell", primaryMuscles = listOf("Chest")),
+    ExerciseItem("Incline Dumbbell Press", "Chest", "Dumbbells", "Intermediate", Icons.Filled.FitnessCenter, emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Chest")),
+    ExerciseItem("Cable Crossover", "Chest", "Cable Machine", "Beginner", Icons.Filled.Build, emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Chest")),
+    ExerciseItem("Lat Pulldown", "Back", "Cable Machine", "Beginner", Icons.Filled.FitnessCenter, emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Lats")),
+    ExerciseItem("One-Arm Dumbbell Row", "Back", "Dumbbells", "Intermediate", Icons.Filled.FitnessCenter, emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Middle Back")),
+    ExerciseItem("Seated Cable Row", "Back", "Cable Machine", "Beginner", Icons.Filled.Build, emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Middle Back")),
+    ExerciseItem("Dumbbell Shoulder Press", "Shoulders", "Dumbbells", "Intermediate", Icons.Filled.FitnessCenter, emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Shoulders")),
+    ExerciseItem("Lateral Raise", "Shoulders", "Dumbbells", "Beginner", Icons.Filled.FitnessCenter, emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Shoulders")),
+    ExerciseItem("Back Squat", "Legs", "Barbell", "Expert", Icons.Filled.DirectionsRun, emptyList(), rawEquipment = "Barbell", primaryMuscles = listOf("Quadriceps")),
+    ExerciseItem("Goblet Squat", "Legs", "Dumbbells", "Beginner", Icons.Filled.DirectionsRun, emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Quadriceps")),
+    ExerciseItem("Dumbbell Curl", "Arms", "Dumbbells", "Beginner", Icons.Filled.FitnessCenter, emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Biceps")),
+    ExerciseItem("Cable Triceps Pressdown", "Arms", "Cable Machine", "Beginner", Icons.Filled.Build, emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Triceps")),
+    ExerciseItem("Plank", "Core", "Bodyweight", "Beginner", Icons.Filled.Favorite, emptyList(), rawEquipment = "Bodyweight", primaryMuscles = listOf("Abdominals")),
+    ExerciseItem("Cable Woodchop", "Core", "Cable Machine", "Intermediate", Icons.Filled.Build, emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Abdominals"))
 )
 
 @Preview(showBackground = true)

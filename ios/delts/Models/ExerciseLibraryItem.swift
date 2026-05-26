@@ -6,6 +6,7 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
     let muscleGroup: MuscleGroup
     let equipment: Equipment
     let level: ExperienceLevel
+    let rawLevel: String
     let goal: FitnessGoal
     let sets: Int
     let reps: String
@@ -27,6 +28,7 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
         muscleGroup: MuscleGroup,
         equipment: Equipment,
         level: ExperienceLevel,
+        rawLevel: String? = nil,
         goal: FitnessGoal,
         sets: Int,
         reps: String,
@@ -47,6 +49,7 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
         self.muscleGroup = muscleGroup
         self.equipment = equipment
         self.level = level
+        self.rawLevel = Self.metadataTitle(rawLevel ?? level.rawValue)
         self.goal = goal
         self.sets = sets
         self.reps = reps
@@ -66,14 +69,6 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
 
     var difficulty: String {
         level.title
-    }
-
-    var machineLabel: String {
-        equipmentFamily.title
-    }
-
-    var equipmentFamily: ExerciseEquipmentFamily {
-        ExerciseEquipmentFamily(equipment: equipment)
     }
 
     var visualAssetName: String {
@@ -98,13 +93,7 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
     var searchableText: String {
         [
             name,
-            muscleGroup.title,
-            equipment.title,
-            level.title,
-            goal.title,
-            machineLabel,
-            formTip,
-            source,
+            rawLevel,
             force,
             mechanic,
             category,
@@ -167,27 +156,6 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
                     .joined(separator: "-")
             }
             .joined(separator: " ")
-    }
-}
-
-enum ExerciseEquipmentFamily: String, CaseIterable, Identifiable, Hashable {
-    case all = "All"
-    case machines = "Machines"
-    case freeWeights = "Free Weights"
-    case bodyweight = "Bodyweight"
-
-    var id: String { rawValue }
-    var title: String { rawValue }
-
-    init(equipment: Equipment) {
-        switch equipment {
-        case .chestPress, .shoulderPress, .latPulldown, .rowMachine, .legPress, .legExtension, .legCurl, .smithMachine, .cableMachine, .treadmill:
-            self = .machines
-        case .dumbbells, .barbell, .bench, .pullUpBar:
-            self = .freeWeights
-        case .bodyweight:
-            self = .bodyweight
-        }
     }
 }
 

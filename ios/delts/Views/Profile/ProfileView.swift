@@ -175,11 +175,14 @@ private struct ProfileEditorView: View {
     @AppStorage("profile_ai_fallback_custom_provider") private var aiFallbackCustomProvider = ""
     @AppStorage("profile_ai_fallback_model") private var aiFallbackModel = AIProviderCatalog.defaultModel(for: "OpenRouter")
     @AppStorage("profile_ai_fallback_custom_model") private var aiFallbackCustomModel = ""
+    @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
+    @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
     @State private var primaryAPIKey = LocalGeminiKeyStore.apiKey ?? ""
     @State private var fallbackAPIKey = LocalGeminiKeyStore.fallbackAPIKey ?? ""
     @State private var hasSavedPrimaryAPIKey = LocalGeminiKeyStore.apiKey != nil
     @State private var hasSavedFallbackAPIKey = LocalGeminiKeyStore.fallbackAPIKey != nil
 
+    private let exerciseLibraryService = ExerciseLibraryService.shared
     private let genderOptions = ["Male", "Female", "Non-binary", "Prefer not to say"]
     private let ageRange = 0...120
     private let frequencyOptions = Array(1...7)
@@ -302,11 +305,11 @@ private struct ProfileEditorView: View {
                 }
                 ProfileDivider()
                 ProfileMultiSelectMenuRow(
-                    title: "Body parts",
-                    systemImage: "figure.strengthtraining.functional",
-                    options: BodyFocus.allCases,
-                    selection: bodyFocusBinding,
-                    label: { $0.title }
+                    title: "Primary muscles",
+                    systemImage: "scope",
+                    options: exerciseLibraryService.availablePrimaryMuscles,
+                    selection: datasetPrimaryMusclesBinding,
+                    label: { $0 }
                 )
                 ProfileDivider()
                 ProfileMultiSelectMenuRow(
@@ -473,9 +476,9 @@ private struct ProfileEditorView: View {
                 ProfileMultiSelectMenuRow(
                     title: "Equipment",
                     systemImage: "dumbbell.fill",
-                    options: Equipment.allCases,
-                    selection: equipmentBinding,
-                    label: { $0.title }
+                    options: exerciseLibraryService.availableRawEquipment,
+                    selection: datasetRawEquipmentBinding,
+                    label: { $0 }
                 )
             }
         }
@@ -711,6 +714,22 @@ private struct ProfileEditorView: View {
         }
     }
 
+    private var datasetPrimaryMusclesBinding: Binding<Set<String>> {
+        Binding {
+            datasetStoredSet(datasetPrimaryMusclesRaw, allowedValues: exerciseLibraryService.availablePrimaryMuscles)
+        } set: { newValue in
+            datasetPrimaryMusclesRaw = datasetStoredString(newValue, allowedValues: exerciseLibraryService.availablePrimaryMuscles)
+        }
+    }
+
+    private var datasetRawEquipmentBinding: Binding<Set<String>> {
+        Binding {
+            datasetStoredSet(datasetRawEquipmentRaw, allowedValues: exerciseLibraryService.availableRawEquipment)
+        } set: { newValue in
+            datasetRawEquipmentRaw = datasetStoredString(newValue, allowedValues: exerciseLibraryService.availableRawEquipment)
+        }
+    }
+
     private var frequencyBinding: Binding<Int> {
         Binding {
             profile.workoutFrequencyPerWeek
@@ -753,6 +772,20 @@ private struct ProfileEditorView: View {
             profile.availableEquipment = newValue
             profile.updatedAt = Date()
         }
+    }
+
+    private func datasetStoredSet(_ rawValue: String, allowedValues: [String]) -> Set<String> {
+        Set(rawValue
+            .split(separator: "|")
+            .map(String.init)
+            .filter { allowedValues.contains($0) })
+    }
+
+    private func datasetStoredString(_ values: Set<String>, allowedValues: [String]) -> String {
+        values
+            .filter { allowedValues.contains($0) }
+            .sorted()
+            .joined(separator: "|")
     }
 
     private var benchBinding: Binding<Double> {
