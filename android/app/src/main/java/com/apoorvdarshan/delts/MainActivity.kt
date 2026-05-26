@@ -31,31 +31,23 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.FlashOn
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -72,7 +64,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -91,8 +82,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -104,7 +93,6 @@ import com.apoorvdarshan.delts.ui.theme.DeltsTheme
 import java.util.Locale
 import kotlinx.coroutines.delay
 import org.json.JSONArray
-import kotlin.math.roundToInt
 
 private const val SETTINGS_NAME = "delts_settings"
 
@@ -126,27 +114,12 @@ class MainActivity : ComponentActivity() {
 private fun DeltsAndroidApp(settings: SharedPreferences) {
     val context = LocalContext.current
     var selectedTab by rememberSaveable { mutableStateOf(DeltsTab.Start) }
-    var profile by remember { mutableStateOf(settings.loadProfile()) }
-    var measurementSystem by rememberSaveable { mutableStateOf(settings.loadMeasurementSystem()) }
-    var aiSettings by remember { mutableStateOf(settings.loadAISettings()) }
-    val keyStore = remember(settings) { GeminiKeyStore(settings) }
-    val fallbackKeyStore = remember(settings) { GeminiKeyStore(settings, "ai_fallback_api_key") }
+    var datasetPreferences by remember { mutableStateOf(settings.loadDatasetPreferences()) }
     val exerciseLibrary = remember(context) { loadFreeExerciseDB(context.assets) }
 
-    fun updateProfile(updatedProfile: AndroidProfile) {
-        profile = updatedProfile
-        settings.saveProfile(updatedProfile)
-    }
-
-    fun updateMeasurementSystem(updatedSystem: MeasurementSystem) {
-        measurementSystem = updatedSystem
-        settings.saveMeasurementSystem(updatedSystem)
-    }
-
-    fun updateAISettings(updatedSettings: AISettings) {
-        val normalizedSettings = updatedSettings.normalized()
-        aiSettings = normalizedSettings
-        settings.saveAISettings(normalizedSettings)
+    fun updateDatasetPreferences(updatedPreferences: DatasetPreferences) {
+        datasetPreferences = updatedPreferences
+        settings.saveDatasetPreferences(updatedPreferences)
     }
 
     Scaffold(
@@ -170,7 +143,6 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
         DeltsScreenBackground {
             when (selectedTab) {
                 DeltsTab.Start -> StartScreen(
-                    profile = profile,
                     exerciseLibrary = exerciseLibrary,
                     padding = padding
                 )
@@ -179,15 +151,9 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
                     padding = padding
                 )
                 DeltsTab.Profile -> ProfileScreen(
-                    profile = profile,
-                    updateProfile = ::updateProfile,
+                    datasetPreferences = datasetPreferences,
+                    updateDatasetPreferences = ::updateDatasetPreferences,
                     exerciseLibrary = exerciseLibrary,
-                    measurementSystem = measurementSystem,
-                    updateMeasurementSystem = ::updateMeasurementSystem,
-                    aiSettings = aiSettings,
-                    updateAISettings = ::updateAISettings,
-                    keyStore = keyStore,
-                    fallbackKeyStore = fallbackKeyStore,
                     padding = padding
                 )
             }
@@ -197,7 +163,6 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
 
 @Composable
 private fun StartScreen(
-    profile: AndroidProfile,
     exerciseLibrary: List<ExerciseItem>,
     padding: PaddingValues
 ) {
@@ -205,7 +170,6 @@ private fun StartScreen(
     var selectedRawEquipment by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedLevel by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
-    var generatedPlan by remember { mutableStateOf<List<ExercisePlan>>(emptyList()) }
 
     val primaryMuscleOptions = remember(exerciseLibrary) { exerciseLibrary.flatMap { it.primaryMuscles }.distinctSorted() }
     val rawEquipmentOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.rawEquipment }.distinctSorted() }
@@ -267,7 +231,6 @@ private fun StartScreen(
                     selected = selectedPrimaryMuscle == null
                 ) {
                     selectedPrimaryMuscle = null
-                    generatedPlan = emptyList()
                 }
                 primaryMuscleOptions.forEach { muscle ->
                     DeltsPillButton(
@@ -276,7 +239,6 @@ private fun StartScreen(
                         selected = selectedPrimaryMuscle == muscle
                     ) {
                         selectedPrimaryMuscle = muscle
-                        generatedPlan = emptyList()
                     }
                 }
             }
@@ -294,7 +256,6 @@ private fun StartScreen(
                     selected = selectedRawEquipment == null
                 ) {
                     selectedRawEquipment = null
-                    generatedPlan = emptyList()
                 }
                 rawEquipmentOptions.forEach { equipment ->
                     DeltsPillButton(
@@ -303,7 +264,6 @@ private fun StartScreen(
                         selected = selectedRawEquipment == equipment
                     ) {
                         selectedRawEquipment = equipment
-                        generatedPlan = emptyList()
                     }
                 }
             }
@@ -321,7 +281,6 @@ private fun StartScreen(
                     selected = selectedLevel == null
                 ) {
                     selectedLevel = null
-                    generatedPlan = emptyList()
                 }
                 levelOptions.forEach { level ->
                     DeltsPillButton(
@@ -330,7 +289,6 @@ private fun StartScreen(
                         selected = selectedLevel == level
                     ) {
                         selectedLevel = level
-                        generatedPlan = emptyList()
                     }
                 }
             }
@@ -342,7 +300,6 @@ private fun StartScreen(
                     selected = selectedCategory == null
                 ) {
                     selectedCategory = null
-                    generatedPlan = emptyList()
                 }
                 categoryOptions.forEach { category ->
                     DeltsPillButton(
@@ -351,46 +308,19 @@ private fun StartScreen(
                         selected = selectedCategory == category
                     ) {
                         selectedCategory = category
-                        generatedPlan = emptyList()
                     }
                 }
             }
         }
 
-        if (generatedPlan.isNotEmpty()) {
-            StartSection(
-                index = "04",
-                title = "Exercises",
-                subtitle = "${matchingItems.size} matching dataset ${if (matchingItems.size == 1) "record" else "records"}."
-            ) {
-                generatedPlan.take(5).forEach { exercise ->
-                    ExercisePlanRow(exercise = exercise)
-                }
-            }
-        }
-
-        Button(
-            onClick = {
-                generatedPlan = buildPlan(
-                    primaryMuscle = selectedPrimaryMuscle,
-                    level = selectedLevel,
-                    rawEquipment = selectedRawEquipment,
-                    category = selectedCategory,
-                    exerciseLibrary = exerciseLibrary
-                )
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp),
-            shape = RoundedCornerShape(27.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = DeltsAccent,
-                contentColor = DeltsOnAccent
-            )
+        StartSection(
+            index = "04",
+            title = "Exercises",
+            subtitle = "${matchingItems.size} matching dataset ${if (matchingItems.size == 1) "record" else "records"}."
         ) {
-            Icon(Icons.Filled.PlayArrow, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Show Dataset Exercises", fontWeight = FontWeight.Bold)
+            matchingItems.take(5).forEach { exercise ->
+                StartExerciseRow(exercise = exercise)
+            }
         }
     }
 }
@@ -601,27 +531,16 @@ private fun WorkoutsScreen(
 
 @Composable
 private fun ProfileScreen(
-    profile: AndroidProfile,
-    updateProfile: (AndroidProfile) -> Unit,
+    datasetPreferences: DatasetPreferences,
+    updateDatasetPreferences: (DatasetPreferences) -> Unit,
     exerciseLibrary: List<ExerciseItem>,
-    measurementSystem: MeasurementSystem,
-    updateMeasurementSystem: (MeasurementSystem) -> Unit,
-    aiSettings: AISettings,
-    updateAISettings: (AISettings) -> Unit,
-    keyStore: GeminiKeyStore,
-    fallbackKeyStore: GeminiKeyStore,
     padding: PaddingValues
 ) {
-    var apiKey by remember { mutableStateOf(keyStore.load()) }
-    var hasSavedKey by remember { mutableStateOf(keyStore.hasKey()) }
-    var fallbackApiKey by remember { mutableStateOf(fallbackKeyStore.load()) }
-    var hasSavedFallbackKey by remember { mutableStateOf(fallbackKeyStore.hasKey()) }
     val datasetLevels = remember(exerciseLibrary) { exerciseLibrary.map { it.level }.distinctSortedLevels() }
-    val selectedDatasetLevel = remember(profile.experience, datasetLevels) {
+    val selectedDatasetLevel = remember(datasetPreferences.level, datasetLevels) {
         when {
-            datasetLevels.contains(profile.experience) -> profile.experience
-            profile.experience == "Advanced" && datasetLevels.contains("Expert") -> "Expert"
-            else -> datasetLevels.firstOrNull().orEmpty()
+            datasetLevels.contains(datasetPreferences.level) -> datasetPreferences.level
+            else -> ""
         }
     }
     val datasetPrimaryMuscles = remember(exerciseLibrary) { exerciseLibrary.flatMap { it.primaryMuscles }.distinctSorted() }
@@ -636,55 +555,23 @@ private fun ProfileScreen(
             .padding(top = 12.dp, bottom = 112.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
+        ScreenHeader(
+            eyebrow = "FreeExerciseDB",
+            title = "Profile",
+            subtitle = "Dataset fields only",
+            compact = true
+        )
+
         ProfileSection(
-            title = "About",
-            subtitle = "Basic details used to shape plans.",
-            icon = Icons.Filled.Person
+            title = "Dataset Summary",
+            subtitle = "Available values loaded from exercises.json.",
+            icon = Icons.Filled.List
         ) {
-            CompactTextFieldRow(
-                title = "Name",
-                icon = Icons.Filled.Person,
-                value = profile.name,
-                onValueChange = { updateProfile(profile.copy(name = it)) }
-            )
-            ProfileRowDivider()
-            CompactAgeRow(age = profile.age) {
-                updateProfile(profile.copy(age = it))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                DatasetSummaryMetric("Levels", datasetLevels.size, Icons.Filled.FlashOn, Modifier.weight(1f))
+                DatasetSummaryMetric("Primary", datasetPrimaryMuscles.size, Icons.Filled.FitnessCenter, Modifier.weight(1f))
+                DatasetSummaryMetric("Equipment", datasetRawEquipment.size, Icons.Filled.FitnessCenter, Modifier.weight(1f))
             }
-            ProfileRowDivider()
-            CompactDropdownRow(
-                title = "Units",
-                icon = Icons.Filled.Build,
-                value = measurementSystem.title,
-                options = MeasurementSystem.values().map { it.title },
-                selectedOption = measurementSystem.title
-            ) { selected ->
-                MeasurementSystem.values().firstOrNull { it.title == selected }?.let(updateMeasurementSystem)
-            }
-            ProfileRowDivider()
-            HeightMeasurementCompactRow(
-                measurementSystem = measurementSystem,
-                centimeters = profile.heightCm
-            ) { updateProfile(profile.copy(heightCm = it)) }
-            ProfileRowDivider()
-            WeightMeasurementCompactRow(
-                measurementSystem = measurementSystem,
-                kilograms = profile.weightKg
-            ) { updateProfile(profile.copy(weightKg = it)) }
-            ProfileRowDivider()
-            PercentMeasurementCompactRow(
-                title = "Current body fat",
-                icon = Icons.Filled.Favorite,
-                value = profile.currentBodyFat,
-                range = 3..60
-            ) { updateProfile(profile.copy(currentBodyFat = it)) }
-            ProfileRowDivider()
-            PercentMeasurementCompactRow(
-                title = "Desired body fat",
-                icon = Icons.Filled.Flag,
-                value = profile.desiredBodyFat,
-                range = 3..45
-            ) { updateProfile(profile.copy(desiredBodyFat = it)) }
         }
 
         ProfileSection(
@@ -695,151 +582,22 @@ private fun ProfileScreen(
             CompactDropdownRow(
                 title = "Level",
                 icon = Icons.Filled.FlashOn,
-                value = selectedDatasetLevel.ifBlank { "Unspecified" },
-                options = datasetLevels.ifEmpty { listOf("Unspecified") },
-                selectedOption = selectedDatasetLevel.ifBlank { "Unspecified" }
+                value = selectedDatasetLevel.ifBlank { "All levels" },
+                options = listOf("All levels") + datasetLevels,
+                selectedOption = selectedDatasetLevel.ifBlank { "All levels" }
             ) { selected ->
-                if (datasetLevels.contains(selected)) {
-                    updateProfile(profile.copy(experience = selected))
-                }
+                val nextLevel = selected.takeIf { datasetLevels.contains(it) }.orEmpty()
+                updateDatasetPreferences(datasetPreferences.copy(level = nextLevel))
             }
             ProfileRowDivider()
             CompactMultiSelectRow(
                 title = "Primary muscles",
                 icon = Icons.Filled.FitnessCenter,
                 items = datasetPrimaryMuscles,
-                selected = profile.bodyFocus,
+                selected = datasetPreferences.primaryMuscles,
             ) { item ->
-                updateProfile(profile.copy(bodyFocus = toggleInSet(profile.bodyFocus, item)))
-            }
-        }
-
-        ProfileSection(
-            title = "AI Settings",
-            subtitle = "Provider, model, local key, and fallback.",
-            icon = Icons.Filled.VpnKey,
-            badge = if (hasSavedKey) "Ready" else null
-        ) {
-            CompactDropdownRow(
-                title = "Provider",
-                icon = Icons.Filled.Build,
-                value = aiSettings.provider,
-                options = aiProviderOptions,
-                selectedOption = aiSettings.provider
-            ) { selected ->
-                updateAISettings(aiSettings.withProvider(selected))
-            }
-            if (aiSettings.provider == customAIProvider) {
-                ProfileRowDivider()
-                CompactTextFieldRow(
-                    title = "Provider name",
-                    icon = Icons.Filled.List,
-                    value = aiSettings.customProvider,
-                    placeholder = "Custom provider",
-                    onValueChange = { updateAISettings(aiSettings.copy(customProvider = it)) }
-                )
-            }
-            ProfileRowDivider()
-            CompactDropdownRow(
-                title = "Model",
-                icon = Icons.Filled.List,
-                value = aiSettings.model,
-                options = modelOptionsForProvider(aiSettings.provider),
-                selectedOption = aiSettings.model
-            ) { selected ->
-                updateAISettings(aiSettings.copy(model = selected))
-            }
-            if (aiSettings.model == customAIModel) {
-                ProfileRowDivider()
-                CompactTextFieldRow(
-                    title = "Model name",
-                    icon = Icons.Filled.List,
-                    value = aiSettings.customModel,
-                    placeholder = "Custom model",
-                    onValueChange = { updateAISettings(aiSettings.copy(customModel = it)) }
-                )
-            }
-            ProfileRowDivider()
-            CompactAPIKeyRow(
-                title = "API key",
-                apiKey = apiKey,
-                hasSavedKey = hasSavedKey,
-                onApiKeyChange = { apiKey = it },
-                save = {
-                    keyStore.save(apiKey)
-                    apiKey = keyStore.load()
-                    hasSavedKey = keyStore.hasKey()
-                },
-                clear = {
-                    keyStore.clear()
-                    apiKey = ""
-                    hasSavedKey = false
-                }
-            )
-            ProfileRowDivider()
-            CompactToggleRow(
-                title = "Fallback",
-                icon = Icons.Filled.History,
-                checked = aiSettings.fallbackEnabled,
-                onCheckedChange = { updateAISettings(aiSettings.copy(fallbackEnabled = it)) }
-            )
-            if (aiSettings.fallbackEnabled) {
-                ProfileRowDivider()
-                CompactDropdownRow(
-                    title = "Fallback provider",
-                    icon = Icons.Filled.Build,
-                    value = aiSettings.fallbackProvider,
-                    options = aiProviderOptions,
-                    selectedOption = aiSettings.fallbackProvider
-                ) { selected ->
-                    updateAISettings(aiSettings.withFallbackProvider(selected))
-                }
-                if (aiSettings.fallbackProvider == customAIProvider) {
-                    ProfileRowDivider()
-                    CompactTextFieldRow(
-                        title = "Fallback name",
-                        icon = Icons.Filled.List,
-                        value = aiSettings.fallbackCustomProvider,
-                        placeholder = "Custom provider",
-                        onValueChange = { updateAISettings(aiSettings.copy(fallbackCustomProvider = it)) }
-                    )
-                }
-                ProfileRowDivider()
-                CompactDropdownRow(
-                    title = "Fallback model",
-                    icon = Icons.Filled.List,
-                    value = aiSettings.fallbackModel,
-                    options = modelOptionsForProvider(aiSettings.fallbackProvider),
-                    selectedOption = aiSettings.fallbackModel
-                ) { selected ->
-                    updateAISettings(aiSettings.copy(fallbackModel = selected))
-                }
-                if (aiSettings.fallbackModel == customAIModel) {
-                    ProfileRowDivider()
-                    CompactTextFieldRow(
-                        title = "Fallback model name",
-                        icon = Icons.Filled.List,
-                        value = aiSettings.fallbackCustomModel,
-                        placeholder = "Custom model",
-                        onValueChange = { updateAISettings(aiSettings.copy(fallbackCustomModel = it)) }
-                    )
-                }
-                ProfileRowDivider()
-                CompactAPIKeyRow(
-                    title = "Fallback key",
-                    apiKey = fallbackApiKey,
-                    hasSavedKey = hasSavedFallbackKey,
-                    onApiKeyChange = { fallbackApiKey = it },
-                    save = {
-                        fallbackKeyStore.save(fallbackApiKey)
-                        fallbackApiKey = fallbackKeyStore.load()
-                        hasSavedFallbackKey = fallbackKeyStore.hasKey()
-                    },
-                    clear = {
-                        fallbackKeyStore.clear()
-                        fallbackApiKey = ""
-                        hasSavedFallbackKey = false
-                    }
+                updateDatasetPreferences(
+                    datasetPreferences.copy(primaryMuscles = toggleInSet(datasetPreferences.primaryMuscles, item))
                 )
             }
         }
@@ -853,9 +611,11 @@ private fun ProfileScreen(
                 title = "Equipment",
                 icon = Icons.Filled.FitnessCenter,
                 items = datasetRawEquipment,
-                selected = profile.availableEquipment,
+                selected = datasetPreferences.rawEquipment,
             ) { item ->
-                updateProfile(profile.copy(availableEquipment = toggleInSet(profile.availableEquipment, item)))
+                updateDatasetPreferences(
+                    datasetPreferences.copy(rawEquipment = toggleInSet(datasetPreferences.rawEquipment, item))
+                )
             }
         }
 
@@ -1286,7 +1046,7 @@ private fun LibraryFilterMenu(
 }
 
 @Composable
-private fun ExercisePlanRow(exercise: ExercisePlan) {
+private fun StartExerciseRow(exercise: ExerciseItem) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1514,6 +1274,39 @@ private fun ProfileSection(
 }
 
 @Composable
+private fun DatasetSummaryMetric(
+    title: String,
+    value: Int,
+    icon: ImageVector,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .padding(vertical = 14.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.42f))
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        Icon(icon, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(22.dp))
+        Text(
+            text = value.toString(),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
 private fun ProfileSettingRow(
     title: String,
     icon: ImageVector,
@@ -1548,43 +1341,6 @@ private fun ProfileRowDivider() {
         modifier = Modifier.padding(start = 52.dp),
         color = DividerDefaults.color.copy(alpha = 0.30f)
     )
-}
-
-@Composable
-private fun CompactTextFieldRow(
-    title: String,
-    icon: ImageVector,
-    value: String,
-    placeholder: String = title,
-    onValueChange: (String) -> Unit
-) {
-    ProfileSettingRow(title = title, icon = icon) {
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.width(178.dp),
-            singleLine = true,
-            textStyle = MaterialTheme.typography.titleMedium.copy(
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.End,
-                fontWeight = FontWeight.SemiBold
-            ),
-            decorationBox = { innerTextField ->
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                    if (value.isBlank()) {
-                        Text(
-                            text = placeholder,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    innerTextField()
-                }
-            }
-        )
-    }
 }
 
 @Composable
@@ -1697,601 +1453,6 @@ private fun CompactValueLabel(value: String) {
 }
 
 @Composable
-private fun CompactAPIKeyRow(
-    title: String,
-    apiKey: String,
-    hasSavedKey: Boolean,
-    onApiKeyChange: (String) -> Unit,
-    save: () -> Unit,
-    clear: () -> Unit
-) {
-    ProfileSettingRow(
-        title = title,
-        icon = if (hasSavedKey) Icons.Filled.Check else Icons.Filled.VpnKey
-    ) {
-        BasicTextField(
-            value = apiKey,
-            onValueChange = onApiKeyChange,
-            modifier = Modifier.width(92.dp),
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            textStyle = MaterialTheme.typography.titleMedium.copy(
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.End,
-                fontWeight = FontWeight.SemiBold
-            ),
-            decorationBox = { innerTextField ->
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                    if (apiKey.isBlank()) {
-                        Text(
-                            text = if (hasSavedKey) "Saved" else "Paste key",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    innerTextField()
-                }
-            }
-        )
-        CompactIconButton(icon = Icons.Filled.Check, onClick = save)
-        CompactIconButton(icon = Icons.Filled.Close, onClick = clear)
-    }
-}
-
-@Composable
-private fun CompactToggleRow(
-    title: String,
-    icon: ImageVector,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    ProfileSettingRow(title = title, icon = icon) {
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
-
-@Composable
-private fun CompactIconButton(icon: ImageVector, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(32.dp)
-            .clip(CircleShape)
-            .clickable(onClick = onClick)
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.58f)),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(17.dp))
-    }
-}
-
-@Composable
-private fun CompactNumberStepperRow(
-    title: String,
-    icon: ImageVector,
-    value: Int,
-    range: IntRange,
-    suffix: String,
-    onChange: (Int) -> Unit
-) {
-    ProfileSettingRow(title = title, icon = icon) {
-        Text(
-            text = "$value $suffix",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 1
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            CompactIconButton(Icons.Filled.Close) { onChange((value - 1).coerceIn(range)) }
-            CompactIconButton(Icons.Filled.Add) { onChange((value + 1).coerceIn(range)) }
-        }
-    }
-}
-
-@Composable
-private fun CompactAgeRow(
-    age: Int,
-    onChange: (Int) -> Unit
-) {
-    val ageRange = 0..120
-    val selectedAge = age.coerceIn(ageRange)
-
-    CompactMeasurementRow(
-        title = "Age",
-        icon = Icons.Filled.CalendarToday,
-        valueText = "$selectedAge yr"
-    ) {
-        ScrollingNumberSelector("yr", selectedAge, ageRange, Modifier.fillMaxWidth()) {
-            onChange(it)
-        }
-    }
-}
-
-@Composable
-private fun CompactDurationRow(
-    duration: Int,
-    onChange: (Int) -> Unit
-) {
-    val durationRange = 1..300
-    val selectedDuration = duration.coerceIn(durationRange)
-
-    CompactMeasurementRow(
-        title = "Workout duration",
-        icon = Icons.Filled.Timer,
-        valueText = "$selectedDuration min"
-    ) {
-        ScrollingNumberSelector("min", selectedDuration, durationRange, Modifier.fillMaxWidth()) {
-            onChange(it)
-        }
-    }
-}
-
-@Composable
-private fun CompactMeasurementRow(
-    title: String,
-    icon: ImageVector,
-    valueText: String,
-    content: @Composable () -> Unit
-) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-
-    Column {
-        ProfileSettingRow(
-            title = title,
-            icon = icon,
-            modifier = Modifier.clickable { expanded = !expanded }
-        ) {
-            CompactValueLabel(value = valueText)
-        }
-        if (expanded) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 52.dp, bottom = 12.dp)
-            ) {
-                content()
-            }
-        }
-    }
-}
-
-@Composable
-private fun HeightMeasurementCompactRow(
-    measurementSystem: MeasurementSystem,
-    centimeters: Double,
-    onChange: (Double) -> Unit
-) {
-    if (measurementSystem == MeasurementSystem.Metric) {
-        val parts = splitDecimal(centimeters, 120..230)
-        CompactMeasurementRow(
-            title = "Height",
-            icon = Icons.Filled.Build,
-            valueText = "${formatOneDecimal(combineDecimal(parts.whole, parts.decimal))} cm"
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ScrollingNumberSelector("cm", parts.whole, 120..230, Modifier.weight(1f)) {
-                    onChange(combineDecimal(it, parts.decimal))
-                }
-                ScrollingNumberSelector("decimal", parts.decimal, 0..9, Modifier.weight(1f), display = { ".$it" }) {
-                    onChange(combineDecimal(parts.whole, it))
-                }
-            }
-        }
-    } else {
-        val parts = splitImperialHeight(centimeters)
-        CompactMeasurementRow(
-            title = "Height",
-            icon = Icons.Filled.Build,
-            valueText = "${parts.feet} ft ${parts.inches} in"
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ScrollingNumberSelector("feet", parts.feet, 3..8, Modifier.weight(1f)) {
-                    onChange(imperialHeightToCentimeters(it, parts.inches))
-                }
-                ScrollingNumberSelector("inches", parts.inches, 0..11, Modifier.weight(1f)) {
-                    onChange(imperialHeightToCentimeters(parts.feet, it))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun WeightMeasurementCompactRow(
-    measurementSystem: MeasurementSystem,
-    kilograms: Double,
-    onChange: (Double) -> Unit
-) {
-    val displayValue = if (measurementSystem == MeasurementSystem.Metric) kilograms else kilograms * 2.2046226218
-    val range = if (measurementSystem == MeasurementSystem.Metric) 30..250 else 66..551
-    val unit = if (measurementSystem == MeasurementSystem.Metric) "kg" else "lb"
-    val parts = splitDecimal(displayValue, range)
-
-    CompactMeasurementRow(
-        title = "Weight",
-        icon = Icons.Filled.FitnessCenter,
-        valueText = "${formatOneDecimal(combineDecimal(parts.whole, parts.decimal))} $unit"
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ScrollingNumberSelector(unit, parts.whole, range, Modifier.weight(1f)) { selectedWhole ->
-                val nextValue = combineDecimal(selectedWhole, parts.decimal)
-                onChange(if (measurementSystem == MeasurementSystem.Metric) nextValue else nextValue / 2.2046226218)
-            }
-            ScrollingNumberSelector("decimal", parts.decimal, 0..9, Modifier.weight(1f), display = { ".$it" }) { selectedDecimal ->
-                val nextValue = combineDecimal(parts.whole, selectedDecimal)
-                onChange(if (measurementSystem == MeasurementSystem.Metric) nextValue else nextValue / 2.2046226218)
-            }
-        }
-    }
-}
-
-@Composable
-private fun PercentMeasurementCompactRow(
-    title: String,
-    icon: ImageVector,
-    value: Double,
-    range: IntRange,
-    onChange: (Double) -> Unit
-) {
-    val parts = splitDecimal(value, range)
-    CompactMeasurementRow(
-        title = title,
-        icon = icon,
-        valueText = "${formatOneDecimal(combineDecimal(parts.whole, parts.decimal))}%"
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ScrollingNumberSelector("%", parts.whole, range, Modifier.weight(1f)) {
-                onChange(combineDecimal(it, parts.decimal))
-            }
-            ScrollingNumberSelector("decimal", parts.decimal, 0..9, Modifier.weight(1f), display = { ".$it" }) {
-                onChange(combineDecimal(parts.whole, it))
-            }
-        }
-    }
-}
-
-@Composable
-private fun NumberStepper(
-    title: String,
-    value: Int,
-    suffix: String,
-    modifier: Modifier = Modifier,
-    onChange: (Int) -> Unit
-) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f)),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.26f))
-    ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                IconStepper(Icons.Filled.Close) { onChange(value - 1) }
-                Text(
-                    text = if (suffix.isBlank()) value.toString() else "$value $suffix",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                IconStepper(Icons.Filled.Add) { onChange(value + 1) }
-            }
-        }
-    }
-}
-
-@Composable
-private fun MeasurementSystemSelector(
-    selected: MeasurementSystem,
-    modifier: Modifier = Modifier,
-    onSelect: (MeasurementSystem) -> Unit
-) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.28f))
-    ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            Text(
-                text = "Units",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MeasurementSystem.values().forEach { system ->
-                    val isSelected = selected == system
-                    Text(
-                        text = system.title,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(14.dp))
-                            .clickable { onSelect(system) }
-                            .background(if (isSelected) DeltsAccent else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.46f))
-                            .padding(horizontal = 8.dp, vertical = 9.dp),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = if (isSelected) DeltsOnAccent else MaterialTheme.colorScheme.onBackground,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun HeightMeasurementPicker(
-    measurementSystem: MeasurementSystem,
-    centimeters: Double,
-    modifier: Modifier = Modifier,
-    onChange: (Double) -> Unit
-) {
-    if (measurementSystem == MeasurementSystem.Metric) {
-        val parts = splitDecimal(centimeters, 120..230)
-        MeasurementPickerCard(
-            title = "Height",
-            valueText = "${formatOneDecimal(combineDecimal(parts.whole, parts.decimal))} cm",
-            modifier = modifier
-        ) {
-            ScrollingNumberSelector(
-                label = "cm",
-                value = parts.whole,
-                values = 120..230,
-                modifier = Modifier.weight(1f)
-            ) { onChange(combineDecimal(it, parts.decimal)) }
-            ScrollingNumberSelector(
-                label = "decimal",
-                value = parts.decimal,
-                values = 0..9,
-                modifier = Modifier.weight(1f),
-                display = { ".$it" }
-            ) { onChange(combineDecimal(parts.whole, it)) }
-        }
-    } else {
-        val parts = splitImperialHeight(centimeters)
-        MeasurementPickerCard(
-            title = "Height",
-            valueText = "${parts.feet} ft ${parts.inches} in",
-            modifier = modifier
-        ) {
-            ScrollingNumberSelector(
-                label = "feet",
-                value = parts.feet,
-                values = 3..8,
-                modifier = Modifier.weight(1f)
-            ) { onChange(imperialHeightToCentimeters(it, parts.inches)) }
-            ScrollingNumberSelector(
-                label = "inches",
-                value = parts.inches,
-                values = 0..11,
-                modifier = Modifier.weight(1f)
-            ) { onChange(imperialHeightToCentimeters(parts.feet, it)) }
-        }
-    }
-}
-
-@Composable
-private fun WeightMeasurementPicker(
-    measurementSystem: MeasurementSystem,
-    kilograms: Double,
-    modifier: Modifier = Modifier,
-    onChange: (Double) -> Unit
-) {
-    val displayValue = if (measurementSystem == MeasurementSystem.Metric) kilograms else kilograms * 2.2046226218
-    val range = if (measurementSystem == MeasurementSystem.Metric) 30..250 else 66..551
-    val unit = if (measurementSystem == MeasurementSystem.Metric) "kg" else "lb"
-    val parts = splitDecimal(displayValue, range)
-
-    MeasurementPickerCard(
-        title = "Weight",
-        valueText = "${formatOneDecimal(combineDecimal(parts.whole, parts.decimal))} $unit",
-        modifier = modifier
-    ) {
-        ScrollingNumberSelector(
-            label = unit,
-            value = parts.whole,
-            values = range,
-            modifier = Modifier.weight(1f)
-        ) { selectedWhole ->
-            val nextValue = combineDecimal(selectedWhole, parts.decimal)
-            onChange(if (measurementSystem == MeasurementSystem.Metric) nextValue else nextValue / 2.2046226218)
-        }
-        ScrollingNumberSelector(
-            label = "decimal",
-            value = parts.decimal,
-            values = 0..9,
-            modifier = Modifier.weight(1f),
-            display = { ".$it" }
-        ) { selectedDecimal ->
-            val nextValue = combineDecimal(parts.whole, selectedDecimal)
-            onChange(if (measurementSystem == MeasurementSystem.Metric) nextValue else nextValue / 2.2046226218)
-        }
-    }
-}
-
-@Composable
-private fun PercentMeasurementPicker(
-    title: String,
-    value: Double,
-    range: IntRange,
-    modifier: Modifier = Modifier,
-    onChange: (Double) -> Unit
-) {
-    val parts = splitDecimal(value, range)
-    MeasurementPickerCard(
-        title = title,
-        valueText = "${formatOneDecimal(combineDecimal(parts.whole, parts.decimal))}%",
-        modifier = modifier
-    ) {
-        ScrollingNumberSelector(
-            label = "%",
-            value = parts.whole,
-            values = range,
-            modifier = Modifier.weight(1f)
-        ) { onChange(combineDecimal(it, parts.decimal)) }
-        ScrollingNumberSelector(
-            label = "decimal",
-            value = parts.decimal,
-            values = 0..9,
-            modifier = Modifier.weight(1f),
-            display = { ".$it" }
-        ) { onChange(combineDecimal(parts.whole, it)) }
-    }
-}
-
-@Composable
-private fun MeasurementPickerCard(
-    title: String,
-    valueText: String,
-    modifier: Modifier = Modifier,
-    content: @Composable RowScope.() -> Unit
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.28f))
-    ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
-            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = title,
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = valueText,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), content = content)
-        }
-    }
-}
-
-@Composable
-private fun ScrollingNumberSelector(
-    label: String,
-    value: Int,
-    values: IntRange,
-    modifier: Modifier = Modifier,
-    display: (Int) -> String = { it.toString() },
-    onSelect: (Int) -> Unit
-) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    val selectedValue = value.coerceIn(values.first, values.last)
-
-    Box(modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(15.dp))
-                .clickable { expanded = true }
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.46f))
-                .padding(horizontal = 10.dp, vertical = 9.dp),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = display(selectedValue),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 1
-            )
-        }
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.heightIn(max = 320.dp)
-        ) {
-            values.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(display(option), style = MaterialTheme.typography.bodyLarge) },
-                    leadingIcon = if (option == selectedValue) {
-                        {
-                            Icon(
-                                imageVector = Icons.Filled.Check,
-                                contentDescription = null,
-                                tint = DeltsAccent,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    } else {
-                        null
-                    },
-                    onClick = {
-                        onSelect(option)
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
-}
-
-private data class DecimalParts(val whole: Int, val decimal: Int)
-
-private data class ImperialHeightParts(val feet: Int, val inches: Int)
-
-private fun splitDecimal(value: Double, range: IntRange): DecimalParts {
-    val minimumTenths = range.first * 10
-    val maximumTenths = (range.last * 10) + 9
-    val tenths = (value * 10).roundToInt().coerceIn(minimumTenths, maximumTenths)
-    return DecimalParts(
-        whole = (tenths / 10).coerceIn(range.first, range.last),
-        decimal = tenths % 10
-    )
-}
-
-private fun combineDecimal(whole: Int, decimal: Int): Double =
-    whole.toDouble() + (decimal.coerceIn(0, 9).toDouble() / 10.0)
-
-private fun splitImperialHeight(centimeters: Double): ImperialHeightParts {
-    val totalInches = (centimeters / 2.54).roundToInt().coerceIn(36, 107)
-    val feet = (totalInches / 12).coerceIn(3, 8)
-    return ImperialHeightParts(
-        feet = feet,
-        inches = (totalInches - (feet * 12)).coerceIn(0, 11)
-    )
-}
-
-private fun imperialHeightToCentimeters(feet: Int, inches: Int): Double {
-    val totalInches = ((feet * 12) + inches).toDouble()
-    return totalInches * 2.54
-}
-
-@Composable
-private fun IconStepper(icon: ImageVector, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(32.dp)
-            .clip(CircleShape)
-            .clickable(onClick = onClick)
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.60f)),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(18.dp))
-    }
-}
-
-@Composable
 private fun DeltsGlassLabel(title: String, icon: ImageVector, dark: Boolean = true) {
     Row(
         modifier = Modifier
@@ -2322,116 +1483,21 @@ private fun DeltsScreenBackground(content: @Composable () -> Unit) {
     }
 }
 
-private fun buildPlan(
-    primaryMuscle: String?,
-    level: String?,
-    rawEquipment: String?,
-    category: String?,
-    exerciseLibrary: List<ExerciseItem>
-): List<ExercisePlan> {
-    val base = exerciseLibrary
-        .filter { item ->
-            (primaryMuscle?.let { item.primaryMuscles.contains(it) } ?: true) &&
-                (level == null || item.level == level) &&
-                (rawEquipment == null || item.rawEquipment == rawEquipment) &&
-                (category == null || item.category == category)
-        }
-
-    return base.take(5).map { item ->
-        ExercisePlan(
-            name = item.name,
-            primaryMuscles = item.primaryMuscles,
-            rawEquipment = item.rawEquipment,
-            level = item.level,
-            category = item.category,
-            imagePaths = item.imagePaths
-        )
-    }
-}
-
 private fun toggleInSet(set: Set<String>, item: String): Set<String> =
     if (set.contains(item)) set - item else set + item
 
-private fun toggleInList(list: List<String>, item: String): List<String> =
-    if (list.contains(item)) list - item else list + item
-
-private val AndroidProfile.displayName: String
-    get() = name.trim().ifEmpty { "Athlete" }
-
-private fun SharedPreferences.loadProfile(): AndroidProfile {
-    val storedDatasetLevel = getString("profile_experience", "Intermediate").orEmpty()
-
-    return AndroidProfile(
-        name = getString("profile_name", "Athlete").orEmpty(),
-        age = getInt("profile_age", 24),
-        heightCm = getDoubleCompat("profile_height_cm", 178.0),
-        weightKg = getDoubleCompat("profile_weight_kg", getDoubleCompat("profile_weight", 75.0)),
-        currentBodyFat = getDoubleCompat("profile_bodyfat_current", 18.0),
-        desiredBodyFat = getDoubleCompat("profile_bodyfat_desired", 12.0),
-        experience = if (storedDatasetLevel == "Advanced") "Expert" else storedDatasetLevel,
-        availableEquipment = getStringSet("profile_equipment", setOf("Dumbbells", "Bench", "Cable Machine")) ?: emptySet(),
-        bodyFocus = getStringSet("profile_focus", setOf("Chest", "Shoulders", "Back")) ?: emptySet()
+private fun SharedPreferences.loadDatasetPreferences(): DatasetPreferences =
+    DatasetPreferences(
+        level = getString("profile_experience", "").orEmpty(),
+        rawEquipment = getStringSet("profile_equipment", emptySet()) ?: emptySet(),
+        primaryMuscles = getStringSet("profile_focus", emptySet()) ?: emptySet()
     )
-}
 
-private fun SharedPreferences.saveProfile(profile: AndroidProfile) {
+private fun SharedPreferences.saveDatasetPreferences(preferences: DatasetPreferences) {
     edit()
-        .putString("profile_name", profile.name)
-        .putInt("profile_age", profile.age)
-        .putString("profile_height_cm", formatOneDecimal(profile.heightCm))
-        .putString("profile_weight_kg", formatOneDecimal(profile.weightKg))
-        .putInt("profile_weight", profile.weightKg.roundToInt())
-        .putString("profile_bodyfat_current", formatOneDecimal(profile.currentBodyFat))
-        .putString("profile_bodyfat_desired", formatOneDecimal(profile.desiredBodyFat))
-        .putString("profile_experience", profile.experience)
-        .putStringSet("profile_equipment", profile.availableEquipment)
-        .putStringSet("profile_focus", profile.bodyFocus)
-        .apply()
-}
-
-private fun SharedPreferences.getDoubleCompat(key: String, defaultValue: Double): Double {
-    return when (val value = all[key]) {
-        is Number -> value.toDouble()
-        is String -> value.toDoubleOrNull() ?: defaultValue
-        else -> defaultValue
-    }
-}
-
-private fun formatOneDecimal(value: Double): String =
-    String.format(Locale.US, "%.1f", value)
-
-private fun SharedPreferences.loadMeasurementSystem(): MeasurementSystem =
-    MeasurementSystem.values().firstOrNull { it.name == getString("profile_measurement_system", MeasurementSystem.Metric.name) }
-        ?: MeasurementSystem.Metric
-
-private fun SharedPreferences.saveMeasurementSystem(system: MeasurementSystem) {
-    edit().putString("profile_measurement_system", system.name).apply()
-}
-
-private fun SharedPreferences.loadAISettings(): AISettings =
-    AISettings(
-        provider = getString("profile_ai_provider", "Gemini").orEmpty(),
-        customProvider = getString("profile_ai_custom_provider", "").orEmpty(),
-        model = getString("profile_ai_model", defaultModelForProvider("Gemini")).orEmpty(),
-        customModel = getString("profile_ai_custom_model", "").orEmpty(),
-        fallbackEnabled = getBoolean("profile_ai_fallback_enabled", false),
-        fallbackProvider = getString("profile_ai_fallback_provider", "OpenRouter").orEmpty(),
-        fallbackCustomProvider = getString("profile_ai_fallback_custom_provider", "").orEmpty(),
-        fallbackModel = getString("profile_ai_fallback_model", defaultModelForProvider("OpenRouter")).orEmpty(),
-        fallbackCustomModel = getString("profile_ai_fallback_custom_model", "").orEmpty()
-    ).normalized()
-
-private fun SharedPreferences.saveAISettings(settings: AISettings) {
-    edit()
-        .putString("profile_ai_provider", settings.provider)
-        .putString("profile_ai_custom_provider", settings.customProvider)
-        .putString("profile_ai_model", settings.model)
-        .putString("profile_ai_custom_model", settings.customModel)
-        .putBoolean("profile_ai_fallback_enabled", settings.fallbackEnabled)
-        .putString("profile_ai_fallback_provider", settings.fallbackProvider)
-        .putString("profile_ai_fallback_custom_provider", settings.fallbackCustomProvider)
-        .putString("profile_ai_fallback_model", settings.fallbackModel)
-        .putString("profile_ai_fallback_custom_model", settings.fallbackCustomModel)
+        .putString("profile_experience", preferences.level)
+        .putStringSet("profile_equipment", preferences.rawEquipment)
+        .putStringSet("profile_focus", preferences.primaryMuscles)
         .apply()
 }
 
@@ -2439,11 +1505,6 @@ private enum class DeltsTab(val title: String, val icon: ImageVector) {
     Start("Start", Icons.Filled.PlayArrow),
     Workouts("Workouts", Icons.Filled.List),
     Profile("Profile", Icons.Filled.Person)
-}
-
-private enum class MeasurementSystem(val title: String) {
-    Metric("Metric"),
-    Imperial("Imperial")
 }
 
 private enum class LibrarySort(val title: String) {
@@ -2457,56 +1518,10 @@ private enum class LibrarySort(val title: String) {
     RawEquipment("Equipment")
 }
 
-private data class AndroidProfile(
-    val name: String,
-    val age: Int,
-    val heightCm: Double,
-    val weightKg: Double,
-    val currentBodyFat: Double,
-    val desiredBodyFat: Double,
-    val experience: String,
-    val availableEquipment: Set<String>,
-    val bodyFocus: Set<String>
-)
-
-private data class AISettings(
-    val provider: String,
-    val customProvider: String,
-    val model: String,
-    val customModel: String,
-    val fallbackEnabled: Boolean,
-    val fallbackProvider: String,
-    val fallbackCustomProvider: String,
-    val fallbackModel: String,
-    val fallbackCustomModel: String
-) {
-    fun normalized(): AISettings {
-        val safeProvider = provider.takeIf { aiProviderOptions.contains(it) } ?: customAIProvider
-        val safeFallbackProvider = fallbackProvider.takeIf { aiProviderOptions.contains(it) } ?: customAIProvider
-        val safeModel = model.takeIf { modelOptionsForProvider(safeProvider).contains(it) }
-            ?: defaultModelForProvider(safeProvider)
-        val safeFallbackModel = fallbackModel.takeIf { modelOptionsForProvider(safeFallbackProvider).contains(it) }
-            ?: defaultModelForProvider(safeFallbackProvider)
-
-        return copy(
-            provider = safeProvider,
-            model = safeModel,
-            fallbackProvider = safeFallbackProvider,
-            fallbackModel = safeFallbackModel
-        )
-    }
-
-    fun withProvider(nextProvider: String): AISettings =
-        copy(provider = nextProvider, model = defaultModelForProvider(nextProvider)).normalized()
-
-    fun withFallbackProvider(nextProvider: String): AISettings =
-        copy(fallbackProvider = nextProvider, fallbackModel = defaultModelForProvider(nextProvider)).normalized()
-}
-
-private data class DeltsOption(
-    val title: String,
-    val detail: String,
-    val icon: ImageVector
+private data class DatasetPreferences(
+    val level: String,
+    val rawEquipment: Set<String>,
+    val primaryMuscles: Set<String>
 )
 
 private data class ExerciseItem(
@@ -2520,15 +1535,6 @@ private data class ExerciseItem(
     val primaryMuscles: List<String> = emptyList(),
     val secondaryMuscles: List<String> = emptyList(),
     val instructions: List<String> = emptyList()
-)
-
-private data class ExercisePlan(
-    val name: String,
-    val primaryMuscles: List<String>,
-    val rawEquipment: String,
-    val level: String,
-    val category: String,
-    val imagePaths: List<String>
 )
 
 private fun loadFreeExerciseDB(assets: AssetManager): List<ExerciseItem> = runCatching {
@@ -2565,7 +1571,7 @@ private fun loadFreeExerciseDB(assets: AssetManager): List<ExerciseItem> = runCa
         }
     }.sortedBy { it.name.lowercase() }
 }.getOrElse {
-    sampleExerciseLibrary
+    emptyList()
 }
 
 private fun JSONArray?.stringList(): List<String> {
@@ -2641,7 +1647,7 @@ private fun levelSortRank(level: String): Int =
     when (level) {
         "Beginner" -> 0
         "Intermediate" -> 1
-        "Expert", "Advanced" -> 2
+        "Expert" -> 2
         else -> 3
     }
 
@@ -2669,154 +1675,13 @@ private fun ExerciseItem.searchableText(): String =
         .joinToString(" ")
         .lowercase(Locale.US)
 
-private const val customAIProvider = "Custom"
-private const val customAIModel = "Custom model"
-
-private val aiProviderOptions = listOf(
-    "Gemini",
-    "OpenAI",
-    "Anthropic Claude",
-    "xAI Grok",
-    "OpenRouter",
-    "Together AI",
-    "Groq",
-    "Hugging Face",
-    "Fireworks AI",
-    "DeepInfra",
-    "Mistral",
-    "Ollama",
-    customAIProvider
-)
-
-private val aiModelsByProvider = mapOf(
-    "Gemini" to listOf(
-        "gemini-3.5-flash",
-        "gemini-3.1-pro",
-        "gemini-3-flash",
-        "gemini-2.5-pro",
-        "gemini-2.5-flash"
-    ),
-    "OpenAI" to listOf(
-        "gpt-5.5",
-        "gpt-5.4",
-        "gpt-5.4-mini",
-        "gpt-5.4-nano",
-        "gpt-5",
-        "gpt-5-mini",
-        "gpt-4.1"
-    ),
-    "Anthropic Claude" to listOf(
-        "claude-opus-4-7",
-        "claude-sonnet-4-6",
-        "claude-haiku-4-5-20251001",
-        "claude-opus-4-6",
-        "claude-sonnet-4-5"
-    ),
-    "xAI Grok" to listOf(
-        "grok-4.3",
-        "grok-4.3-latest",
-        "grok-build-0.1",
-        "grok-4"
-    ),
-    "OpenRouter" to listOf(
-        "openrouter/auto",
-        "google/gemini-2.5-pro",
-        "anthropic/claude-sonnet-4.5",
-        "openai/gpt-5",
-        "x-ai/grok-4"
-    ),
-    "Together AI" to listOf(
-        "moonshotai/Kimi-K2.5",
-        "zai-org/GLM-5.1",
-        "openai/gpt-oss-120b",
-        "deepseek-ai/DeepSeek-R1",
-        "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8"
-    ),
-    "Groq" to listOf(
-        "openai/gpt-oss-120b",
-        "openai/gpt-oss-20b",
-        "meta-llama/llama-4-maverick-17b-128e-instruct",
-        "meta-llama/llama-4-scout-17b-16e-instruct",
-        "llama-3.3-70b-versatile"
-    ),
-    "Hugging Face" to listOf(
-        "openai/gpt-oss-120b:fastest",
-        "Qwen/Qwen3-235B-A22B:fastest",
-        "deepseek-ai/DeepSeek-V3.1:fastest",
-        "meta-llama/Llama-4-Maverick-17B-128E-Instruct:fastest"
-    ),
-    "Fireworks AI" to listOf(
-        "accounts/fireworks/models/kimi-k2-instruct-0905",
-        "accounts/fireworks/models/deepseek-v3p1",
-        "accounts/fireworks/models/deepseek-r1",
-        "accounts/fireworks/models/qwen3-235b-a22b",
-        "accounts/fireworks/models/llama-v3p1-405b-instruct"
-    ),
-    "DeepInfra" to listOf(
-        "deepseek-ai/DeepSeek-V3.2",
-        "deepseek-ai/DeepSeek-R1",
-        "Qwen/Qwen3-235B-A22B-Instruct-2507",
-        "moonshotai/Kimi-K2-Instruct",
-        "openai/gpt-oss-120b"
-    ),
-    "Mistral" to listOf(
-        "mistral-large-latest",
-        "mistral-medium-latest",
-        "mistral-small-latest",
-        "codestral-latest",
-        "devstral-small-latest"
-    ),
-    "Ollama" to listOf(
-        "llama4",
-        "gemma3",
-        "qwen3",
-        "deepseek-r1",
-        "llama3.3",
-        "phi4"
-    )
-)
-
-private fun modelOptionsForProvider(provider: String): List<String> =
-    (aiModelsByProvider[provider] ?: emptyList()) + customAIModel
-
-private fun defaultModelForProvider(provider: String): String =
-    aiModelsByProvider[provider]?.firstOrNull() ?: customAIModel
-
-private val sampleExerciseLibrary = listOf(
-    ExerciseItem(name = "Barbell Bench Press", level = "Intermediate", imagePaths = emptyList(), rawEquipment = "Barbell", primaryMuscles = listOf("Chest")),
-    ExerciseItem(name = "Incline Dumbbell Press", level = "Intermediate", imagePaths = emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Chest")),
-    ExerciseItem(name = "Cable Crossover", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Chest")),
-    ExerciseItem(name = "Lat Pulldown", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Lats")),
-    ExerciseItem(name = "One-Arm Dumbbell Row", level = "Intermediate", imagePaths = emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Middle Back")),
-    ExerciseItem(name = "Seated Cable Row", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Middle Back")),
-    ExerciseItem(name = "Dumbbell Shoulder Press", level = "Intermediate", imagePaths = emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Shoulders")),
-    ExerciseItem(name = "Lateral Raise", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Shoulders")),
-    ExerciseItem(name = "Back Squat", level = "Expert", imagePaths = emptyList(), rawEquipment = "Barbell", primaryMuscles = listOf("Quadriceps")),
-    ExerciseItem(name = "Goblet Squat", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Quadriceps")),
-    ExerciseItem(name = "Dumbbell Curl", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Dumbbells", primaryMuscles = listOf("Biceps")),
-    ExerciseItem(name = "Cable Triceps Pressdown", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Triceps")),
-    ExerciseItem(name = "Plank", level = "Beginner", imagePaths = emptyList(), rawEquipment = "Bodyweight", primaryMuscles = listOf("Abdominals")),
-    ExerciseItem(name = "Cable Woodchop", level = "Intermediate", imagePaths = emptyList(), rawEquipment = "Cable Machine", primaryMuscles = listOf("Abdominals"))
-)
-
 @Preview(showBackground = true)
 @Composable
 private fun DeltsAppPreview() {
     DeltsTheme {
         DeltsScreenBackground {
             StartScreen(
-                profile = AndroidProfile(
-                    name = "Athlete",
-                    age = 24,
-                    heightCm = 178.0,
-                    weightKg = 75.0,
-                    currentBodyFat = 18.0,
-                    desiredBodyFat = 12.0,
-                    experience = "Intermediate",
-                    availableEquipment = setOf("Dumbbells", "Bench", "Cable Machine"),
-                    bodyFocus = setOf("Chest", "Shoulders")
-                ),
-                exerciseLibrary = sampleExerciseLibrary,
+                exerciseLibrary = emptyList(),
                 padding = PaddingValues()
             )
         }
