@@ -1734,9 +1734,7 @@ private fun ExerciseDetailMetric(
             text = value,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            color = MaterialTheme.colorScheme.onBackground
         )
         Text(
             text = title,

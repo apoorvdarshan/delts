@@ -896,7 +896,7 @@ private struct DetailMetric: View {
             Text(value)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.deltsCharcoal)
-                .lineLimit(1)
+                .fixedSize(horizontal: false, vertical: true)
                 .minimumScaleFactor(0.72)
 
             Text(title)
