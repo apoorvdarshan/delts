@@ -163,6 +163,9 @@ private enum AIProviderCatalog {
 private struct ProfileEditorView: View {
     @Bindable var profile: UserProfile
     @AppStorage("profile_measurement_system") private var measurementSystemRaw = MeasurementSystem.metric.rawValue
+    @AppStorage("profile_custom_workout_split") private var customWorkoutSplit = ""
+    @AppStorage("profile_selected_goals") private var selectedGoalRawValues = ""
+    @AppStorage("profile_extra_issues") private var extraIssues = ""
     @AppStorage("profile_ai_provider") private var aiProvider = "Gemini"
     @AppStorage("profile_ai_custom_provider") private var aiCustomProvider = ""
     @AppStorage("profile_ai_model") private var aiModel = AIProviderCatalog.defaultModel(for: "Gemini")
@@ -183,7 +186,13 @@ private struct ProfileEditorView: View {
     private let exerciseLibraryService = ExerciseLibraryService.shared
     private let genderOptions = ["Male", "Female", "Non-binary", "Prefer not to say"]
     private let ageRange = 0...120
+    private let frequencyOptions = Array(1...7)
+    private let durationRange = 1...300
     private let aiProviderOptions = AIProviderCatalog.providerNames
+    private let otherGoalTitle = "Other"
+    private var profileGoalOptions: [String] {
+        FitnessGoal.profileCases.map(\.title) + [otherGoalTitle]
+    }
 
     var body: some View {
         ScrollView {
@@ -271,8 +280,8 @@ private struct ProfileEditorView: View {
 
     private var goalSection: some View {
         ProfileSection(
-            title: "Dataset Preferences",
-            subtitle: "Dataset preferences from FreeExerciseDB.",
+            title: "Goals & Constraints",
+            subtitle: "Training targets, focus, and limits before plans are generated.",
             systemImage: "scope"
         ) {
             ProfileRowStack {
@@ -285,12 +294,40 @@ private struct ProfileEditorView: View {
                 )
                 ProfileDivider()
                 ProfileMultiSelectMenuRow(
+                    title: "Goals",
+                    systemImage: "flag.checkered",
+                    options: profileGoalOptions,
+                    selection: selectedGoalsBinding,
+                    label: { $0 }
+                )
+                if selectedGoalTitles.contains(otherGoalTitle) {
+                    ProfileDivider()
+                    ProfileTextAreaRow(title: "Extra goals", systemImage: "text.alignleft", text: extraGoalsBinding)
+                }
+                ProfileDivider()
+                ProfileMultiSelectMenuRow(
                     title: "Primary muscles",
                     systemImage: "scope",
                     options: exerciseLibraryService.availablePrimaryMuscles,
                     selection: datasetPrimaryMusclesBinding,
                     label: { $0 }
                 )
+                ProfileDivider()
+                ProfileMultiSelectMenuRow(
+                    title: "Issues",
+                    systemImage: "exclamationmark.triangle.fill",
+                    options: FitnessIssue.allCases,
+                    selection: issuesBinding,
+                    label: { $0.title }
+                )
+                if profile.fitnessIssues.contains(.other) {
+                    ProfileDivider()
+                    ProfileTextAreaRow(
+                        title: "Extra issues",
+                        systemImage: "text.bubble",
+                        text: extraIssuesBinding
+                    )
+                }
             }
         }
     }
@@ -400,11 +437,43 @@ private struct ProfileEditorView: View {
 
     private var scheduleSection: some View {
         ProfileSection(
-            title: "Dataset Equipment",
-            subtitle: "Equipment values from the FreeExerciseDB equipment field.",
-            systemImage: "dumbbell.fill"
+            title: "Workout Setup",
+            subtitle: "Tune how training fits into the week.",
+            systemImage: "calendar.badge.clock"
         ) {
             ProfileRowStack {
+                ProfileMenuPicker(
+                    title: "Frequency",
+                    systemImage: "calendar",
+                    selection: frequencyBinding,
+                    options: frequencyOptions,
+                    label: { "\($0) days/week" }
+                )
+                ProfileDivider()
+                ProfileMenuPicker(
+                    title: "Workout split",
+                    systemImage: "square.split.2x2",
+                    selection: splitBinding,
+                    options: WorkoutSplit.allCases,
+                    label: { $0.title }
+                )
+                if profile.workoutSplit == .custom {
+                    ProfileDivider()
+                    ProfileTextInputRow(
+                        title: "Custom split",
+                        systemImage: "text.line.first.and.arrowtriangle.forward",
+                        text: customWorkoutSplitBinding
+                    )
+                }
+                ProfileDivider()
+                ProfileIntegerPickerRow(
+                    title: "Workout duration",
+                    systemImage: "timer",
+                    value: durationBinding,
+                    range: durationRange,
+                    unit: "min"
+                )
+                ProfileDivider()
                 ProfileMultiSelectMenuRow(
                     title: "Equipment",
                     systemImage: "dumbbell.fill",
@@ -577,6 +646,57 @@ private struct ProfileEditorView: View {
         doubleBinding(\.desiredBodyFatPercentage)
     }
 
+    private var extraGoalsBinding: Binding<String> {
+        Binding {
+            profile.extraGoals
+        } set: { newValue in
+            profile.extraGoals = newValue
+            profile.updatedAt = Date()
+        }
+    }
+
+    private var extraIssuesBinding: Binding<String> {
+        Binding {
+            extraIssues
+        } set: { newValue in
+            extraIssues = newValue
+        }
+    }
+
+    private var selectedGoalTitles: Set<String> {
+        let storedGoals = Set(
+            selectedGoalRawValues
+                .split(separator: "|")
+                .map(String.init)
+                .filter { profileGoalOptions.contains($0) }
+        )
+        if !storedGoals.isEmpty {
+            return storedGoals
+        }
+
+        var defaultGoals: Set<String> = [profile.mainGoal.title]
+        if !profile.extraGoals.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            defaultGoals.insert(otherGoalTitle)
+        }
+        return defaultGoals
+    }
+
+    private var selectedGoalsBinding: Binding<Set<String>> {
+        Binding {
+            selectedGoalTitles
+        } set: { newValue in
+            let normalizedGoals = Set(newValue.filter { profileGoalOptions.contains($0) })
+            let nextGoals = normalizedGoals.isEmpty ? Set([profile.mainGoal.title]) : normalizedGoals
+            selectedGoalRawValues = nextGoals.sorted().joined(separator: "|")
+
+            if let primaryTitle = profileGoalOptions.first(where: { $0 != otherGoalTitle && nextGoals.contains($0) }),
+               let primaryGoal = FitnessGoal(rawValue: primaryTitle) {
+                profile.mainGoal = primaryGoal
+                profile.updatedAt = Date()
+            }
+        }
+    }
+
     private var datasetPrimaryMusclesBinding: Binding<Set<String>> {
         Binding {
             datasetStoredSet(datasetPrimaryMusclesRaw, allowedValues: exerciseLibraryService.availablePrimaryMuscles)
@@ -602,6 +722,41 @@ private struct ProfileEditorView: View {
             if exerciseLibraryService.availableLevels.contains(newValue) {
                 datasetLevelRaw = newValue
             }
+        }
+    }
+
+    private var frequencyBinding: Binding<Int> {
+        Binding {
+            profile.workoutFrequencyPerWeek
+        } set: { newValue in
+            profile.workoutFrequencyPerWeek = newValue
+            profile.updatedAt = Date()
+        }
+    }
+
+    private var splitBinding: Binding<WorkoutSplit> {
+        Binding {
+            profile.workoutSplit
+        } set: { newValue in
+            profile.workoutSplit = newValue
+            profile.updatedAt = Date()
+        }
+    }
+
+    private var customWorkoutSplitBinding: Binding<String> {
+        Binding {
+            customWorkoutSplit
+        } set: { newValue in
+            customWorkoutSplit = newValue
+        }
+    }
+
+    private var durationBinding: Binding<Int> {
+        Binding {
+            profile.workoutDurationMinutes
+        } set: { newValue in
+            profile.workoutDurationMinutes = newValue
+            profile.updatedAt = Date()
         }
     }
 
@@ -641,6 +796,15 @@ private struct ProfileEditorView: View {
 
     private var overheadPressBinding: Binding<Double> {
         doubleBinding(\.overheadPressOneRM)
+    }
+
+    private var issuesBinding: Binding<Set<FitnessIssue>> {
+        Binding {
+            profile.fitnessIssues
+        } set: { newValue in
+            profile.fitnessIssues = newValue
+            profile.updatedAt = Date()
+        }
     }
 
     private func doubleBinding(_ keyPath: ReferenceWritableKeyPath<UserProfile, Double>) -> Binding<Double> {
