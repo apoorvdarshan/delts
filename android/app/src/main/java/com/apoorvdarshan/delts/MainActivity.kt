@@ -1093,15 +1093,6 @@ private fun ProgressScreen(
             .padding(top = 12.dp, bottom = 118.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        ProgressOverview(
-            range = selectedRange,
-            workoutCount = filteredWorkouts.size,
-            latestWeightKg = filteredSnapshots.lastOrNull()?.weightKg,
-            latestBodyFat = filteredSnapshots.lastOrNull()?.bodyFat,
-            metricCount = filteredSnapshots.size,
-            measurementSystem = measurementSystem
-        )
-
         MetricActionRow(
             onLogWeight = { activeMetricDialog = MetricDialogType.Weight },
             onLogBodyFat = { activeMetricDialog = MetricDialogType.BodyFat }
@@ -1163,68 +1154,6 @@ private fun ProgressScreen(
                     WorkoutHistoryCard(workout = workout)
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun ProgressOverview(
-    range: ProgressRange,
-    workoutCount: Int,
-    latestWeightKg: Double?,
-    latestBodyFat: Double?,
-    metricCount: Int,
-    measurementSystem: MeasurementSystem
-) {
-    val latestWeightText = latestWeightKg?.let {
-        val value = if (measurementSystem == MeasurementSystem.Imperial) it * 2.2046226218 else it
-        String.format(Locale.US, "%.1f %s", value, measurementSystem.weightUnit)
-    } ?: "--"
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(15.dp)
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text(
-                    text = "PROGRESS",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = DeltsAccent
-                )
-                Text(
-                    text = range.title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = "$workoutCount ${if (workoutCount == 1) "workout" else "workouts"} tracked in this range",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(DeltsAccent.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Filled.History, contentDescription = null, tint = DeltsAccent)
-            }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OverviewMiniMetric("Weight", latestWeightText, Modifier.weight(1f))
-            OverviewMiniMetric("Body fat", latestBodyFat?.let { String.format(Locale.US, "%.1f%%", it) } ?: "--", Modifier.weight(1f))
-            OverviewMiniMetric("Logs", metricCount.toString(), Modifier.weight(1f))
         }
     }
 }

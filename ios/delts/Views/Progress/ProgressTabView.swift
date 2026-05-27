@@ -28,7 +28,6 @@ struct ProgressTabView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
-                    progressOverview
                     metricActions
                     rangePicker
                     metricGraphs
@@ -85,47 +84,6 @@ struct ProgressTabView: View {
                     updateSnapshot(updated)
                 }
             }
-        }
-    }
-
-    private var progressOverview: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Progress")
-                        .font(.caption.weight(.heavy))
-                        .textCase(.uppercase)
-                        .foregroundStyle(Color.deltsAccent)
-                    Text(selectedRange.title)
-                        .font(.title2.weight(.heavy))
-                        .foregroundStyle(Color.deltsCharcoal)
-                    Text("\(filteredWorkouts.count) workout\(filteredWorkouts.count == 1 ? "" : "s") tracked in this range")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.deltsMutedText)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                }
-
-                Spacer(minLength: 8)
-
-                Image(systemName: "chart.line.uptrend.xyaxis")
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(Color.deltsAccent)
-                    .frame(width: 48, height: 48)
-                    .background(Color.deltsAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            }
-
-            HStack(spacing: 10) {
-                ProgressOverviewMetric(title: "Weight", value: latestWeightKg.map { formattedWeight($0) } ?? "--")
-                ProgressOverviewMetric(title: "Body fat", value: latestBodyFat.map { String(format: "%.1f%%", $0) } ?? "--")
-                ProgressOverviewMetric(title: "Logs", value: "\(filteredSnapshots.count)")
-            }
-        }
-        .padding(16)
-        .background(Color.deltsPanel.opacity(0.24), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
         }
     }
 
@@ -488,28 +446,6 @@ private struct ProgressMetricPoint: Identifiable, Hashable {
     var id: Date { date }
     let date: Date
     let value: Double
-}
-
-private struct ProgressOverviewMetric: View {
-    let title: String
-    let value: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(Color.deltsMutedText)
-            Text(value)
-                .font(.subheadline.monospacedDigit().weight(.heavy))
-                .foregroundStyle(Color.deltsCharcoal)
-                .lineLimit(1)
-                .minimumScaleFactor(0.66)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
-        .frame(height: 58)
-        .background(Color.black.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
 }
 
 private struct MetricActionButton: View {
