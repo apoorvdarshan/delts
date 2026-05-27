@@ -1075,8 +1075,6 @@ private fun ProgressScreen(
             .padding(top = 12.dp, bottom = 118.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        ProgressHeader()
-
         MetricActionRow(
             onLogWeight = { activeMetricDialog = MetricDialogType.Weight },
             onLogBodyFat = { activeMetricDialog = MetricDialogType.BodyFat }
@@ -1138,39 +1136,6 @@ private fun ProgressScreen(
                     WorkoutHistoryCard(workout = workout)
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun ProgressHeader() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "PROGRESS",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.ExtraBold,
-            color = DeltsAccent,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .weight(1f)
-                .height(48.dp)
-                .wrapContentHeight(Alignment.CenterVertically)
-        )
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(DeltsAccent.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(Icons.Filled.History, contentDescription = null, tint = DeltsAccent)
         }
     }
 }

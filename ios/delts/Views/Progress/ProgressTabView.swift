@@ -28,7 +28,6 @@ struct ProgressTabView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
-                    progressHeader
                     metricActions
                     rangePicker
                     metricGraphs
@@ -86,27 +85,6 @@ struct ProgressTabView: View {
                 }
             }
         }
-    }
-
-    private var progressHeader: some View {
-        HStack(alignment: .center, spacing: 12) {
-            Text("Progress")
-                .font(.system(size: 26, weight: .heavy, design: .rounded))
-                .textCase(.uppercase)
-                .foregroundStyle(Color.deltsAccent)
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
-                .frame(height: 48, alignment: .center)
-
-            Spacer(minLength: 8)
-
-            Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.title2.weight(.bold))
-                .foregroundStyle(Color.deltsAccent)
-                .frame(width: 48, height: 48)
-                .background(Color.deltsAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        }
-        .padding(.horizontal, 2)
     }
 
     private var metricActions: some View {
