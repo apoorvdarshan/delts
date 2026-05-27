@@ -759,38 +759,13 @@ private struct ExerciseLibraryDetailView: View {
     }
 
     private func detailHero(width: CGFloat) -> some View {
-        ZStack(alignment: .bottomLeading) {
-            AnimatedExerciseVisual(
-                exerciseName: item.name,
-                imagePaths: item.imagePaths,
-                height: 294,
-                allowsDerivedImageLookup: false
-            )
-            .frame(width: width, height: 294)
-
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.18), .black.opacity(0.72)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text(item.name)
-                    .font(.system(.title, design: .rounded, weight: .bold))
-                    .foregroundStyle(.white)
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.7)
-
-                Text("\(item.primaryMusclesTitle) - \(item.rawEquipment) - \(item.rawLevel)")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.82))
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.82)
-            }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
-            .frame(width: width, alignment: .leading)
-        }
+        AnimatedExerciseVisual(
+            exerciseName: item.name,
+            imagePaths: item.imagePaths,
+            height: 294,
+            allowsDerivedImageLookup: false
+        )
+        .frame(width: width, height: 294)
         .frame(width: width, height: 294, alignment: .bottomLeading)
         .clipped()
         .accessibilityElement(children: .combine)
