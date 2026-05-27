@@ -66,9 +66,13 @@ enum ExperienceLevel: String, CaseIterable, Identifiable, Codable, Hashable {
 
 enum WorkoutSplit: String, CaseIterable, Identifiable, Codable, Hashable {
     case fullBody = "Full Body"
-    case pushPullLegs = "Push Pull Legs"
     case upperLower = "Upper Lower"
+    case pushPullLegs = "Push Pull Legs"
     case broSplit = "Bro Split"
+    case arnoldSplit = "Arnold Split"
+    case pushPull = "Push Pull"
+    case antagonistSplit = "Antagonist Split"
+    case hybridSplit = "Hybrid Split"
     case custom = "Custom"
 
     var id: String { rawValue }

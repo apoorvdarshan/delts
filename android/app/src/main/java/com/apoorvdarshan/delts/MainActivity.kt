@@ -4484,7 +4484,17 @@ private fun defaultModelForProvider(provider: String): String =
 private const val otherGoalOption = "Other"
 private val profileGoalOptions = listOf("Muscle Gain", "Fat Loss", "Strength", "Beginner Form", otherGoalOption)
 private val frequencyOptions = (1..7).map { "$it days/week" }
-private val workoutSplitOptions = listOf("Full Body", "Push Pull Legs", "Upper Lower", "Bro Split", "Custom")
+private val workoutSplitOptions = listOf(
+    "Full Body",
+    "Upper Lower",
+    "Push Pull Legs",
+    "Bro Split",
+    "Arnold Split",
+    "Push Pull",
+    "Antagonist Split",
+    "Hybrid Split",
+    "Custom"
+)
 private const val otherIssueOption = "Other"
 private val issueOptions = listOf(
     DeltsOption("Low motivation", "Consistency risk.", Icons.Filled.Warning),
