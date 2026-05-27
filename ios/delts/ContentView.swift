@@ -40,6 +40,10 @@ struct ContentView: View {
                 .tabItem { Label(DeltsTab.workouts.title, systemImage: DeltsTab.workouts.systemImage) }
                 .tag(DeltsTab.workouts)
 
+            ProgressTabView()
+                .tabItem { Label(DeltsTab.progress.title, systemImage: DeltsTab.progress.systemImage) }
+                .tag(DeltsTab.progress)
+
             ProfileView()
                 .tabItem { Label(DeltsTab.profile.title, systemImage: DeltsTab.profile.systemImage) }
                 .tag(DeltsTab.profile)
@@ -177,6 +181,7 @@ private enum DeltsPreviewWorkoutFactory {
 private enum DeltsTab: String, CaseIterable, Identifiable {
     case home
     case workouts
+    case progress
     case profile
 
     var id: String { rawValue }
@@ -201,6 +206,7 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
         switch self {
         case .home: return "Start"
         case .workouts: return "Workouts"
+        case .progress: return "Progress"
         case .profile: return "Profile"
         }
     }
@@ -209,6 +215,7 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
         switch self {
         case .home: return "play.fill"
         case .workouts: return "list.clipboard.fill"
+        case .progress: return "chart.line.uptrend.xyaxis"
         case .profile: return "person.fill"
         }
     }

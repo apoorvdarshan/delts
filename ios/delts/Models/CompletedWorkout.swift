@@ -7,13 +7,25 @@ struct CompletedSetLog: Codable, Identifiable, Hashable {
     var completed: Bool
     var weight: String
     var reps: String
+    var elapsedSeconds: Int?
+    var completedAt: Date?
 
-    init(id: UUID = UUID(), setNumber: Int, completed: Bool, weight: String, reps: String) {
+    init(
+        id: UUID = UUID(),
+        setNumber: Int,
+        completed: Bool,
+        weight: String,
+        reps: String,
+        elapsedSeconds: Int? = nil,
+        completedAt: Date? = nil
+    ) {
         self.id = id
         self.setNumber = setNumber
         self.completed = completed
         self.weight = weight
         self.reps = reps
+        self.elapsedSeconds = elapsedSeconds
+        self.completedAt = completedAt
     }
 }
 
@@ -72,4 +84,3 @@ final class CompletedWorkout: Identifiable {
         return String(data: data, encoding: .utf8) ?? "[]"
     }
 }
-

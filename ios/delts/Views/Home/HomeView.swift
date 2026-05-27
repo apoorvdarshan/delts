@@ -1,53 +1,58 @@
 import SwiftUI
 
 struct HomeView: View {
-    @State private var selectedPrimaryMuscle: String?
-    @State private var selectedRawEquipment: String?
-    @State private var selectedLevel: String?
-    @State private var selectedCategory: String?
-    @State private var shownItems: [ExerciseLibraryItem] = []
+    @State private var routineDays: [WeeklyRoutineDay] = WeeklyRoutineStore.load()
+    @State private var selectedDayIndex = WeeklyRoutineStore.todayIndex()
+    @State private var exerciseSearch = ""
+    @State private var activePlan: WorkoutPlan?
 
     private let service = ExerciseLibraryService.shared
 
-    private var matchingItems: [ExerciseLibraryItem] {
-        service.filtered(
-            level: selectedLevel,
-            rawEquipment: selectedRawEquipment,
-            primaryMuscle: selectedPrimaryMuscle,
+    private var selectedDay: WeeklyRoutineDay {
+        routineDays.indices.contains(selectedDayIndex) ? routineDays[selectedDayIndex] : WeeklyRoutineStore.defaultDays[0]
+    }
+
+    private var matchingExercises: [ExerciseLibraryItem] {
+        let search = exerciseSearch.trimmingCharacters(in: .whitespacesAndNewlines)
+        return service.filtered(
+            level: nil,
+            rawEquipment: nil,
+            primaryMuscle: selectedDay.bodyPart == WeeklyRoutineStore.anyBodyPart ? nil : selectedDay.bodyPart,
             secondaryMuscle: nil,
             force: nil,
             mechanic: nil,
-            category: selectedCategory,
+            category: nil,
             sort: .name,
-            searchText: ""
+            searchText: search
         )
-    }
-
-    private var heroItem: ExerciseLibraryItem? {
-        matchingItems.first ?? service.exercises.first
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 28) {
+                LazyVStack(alignment: .leading, spacing: 24) {
                     startHeader
-                    startHero
-                    primaryMuscleStep
-                    equipmentStep
-                    datasetFilterStep
-                    exercisePreview
+                    weekRail
+                    routineEditor
+                    plannedExercises
+                    quickStart
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
-                .padding(.bottom, 122)
+                .padding(.bottom, 128)
             }
             .deltsScreen()
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle("Start")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .bottom) {
                 startBar
+            }
+            .sheet(item: $activePlan) { plan in
+                NavigationStack {
+                    ActiveWorkoutView(plan: plan)
+                }
             }
         }
     }
@@ -59,194 +64,203 @@ struct HomeView: View {
                 .foregroundStyle(Color.deltsAccent)
                 .textCase(.uppercase)
 
-            Text("Start")
+            Text("Weekly Routine")
                 .font(.system(.largeTitle, design: .rounded, weight: .bold))
                 .foregroundStyle(Color.deltsCharcoal)
 
-            Text(datasetHeaderSummary)
+            Text("\(selectedDay.name) - \(selectedDay.bodyPart) - \(selectedDay.exercises.count) exercise\(selectedDay.exercises.count == 1 ? "" : "s")")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.deltsMutedText)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.78)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var startHero: some View {
-        let item = heroItem
-
-        return ZStack(alignment: .bottomLeading) {
-            AnimatedExerciseVisual(
-                exerciseName: item?.name,
-                imagePaths: item?.imagePaths ?? [],
-                height: 248,
-                allowsDerivedImageLookup: false
-            )
-            .saturation(0.74)
-            .contrast(1.06)
-            .brightness(-0.07)
-            .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
-
-            LinearGradient(
-                colors: [
-                    Color.deltsBackground.opacity(0.10),
-                    .black.opacity(0.26),
-                    .black.opacity(0.88)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 16) {
-                Label("FreeExerciseDB", systemImage: "server.rack")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.86))
-
-                Spacer(minLength: 44)
-
-                VStack(alignment: .leading, spacing: 9) {
-                    Text(item?.name ?? "Exercise Library")
-                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.72)
-
-                    Text(item.map { heroSubtitle(for: $0) } ?? "Dataset fields only")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.76))
-                        .lineLimit(2)
-                }
-
-                if let item {
-                    StartDatasetStrip(item: item)
-                }
-            }
-            .padding(20)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 34, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
-        }
-    }
-
-    private var datasetHeaderSummary: String {
-        [
-            selectedPrimaryMuscle ?? "All primary",
-            selectedRawEquipment ?? "All equipment",
-            selectedLevel ?? "All levels"
-        ].joined(separator: " - ")
-    }
-
-    private func heroSubtitle(for item: ExerciseLibraryItem) -> String {
-        "\(item.primaryMusclesTitle) - \(item.rawEquipment) - \(item.rawLevel)"
-    }
-
-    private var primaryMuscleStep: some View {
-        StartSection(
-            index: "01",
-            title: "Primary",
-            subtitle: "Choose from the dataset primaryMuscles field."
-        ) {
-            StartHorizontalRail {
-                StartOptionButton(title: "All", systemImage: "scope", isSelected: selectedPrimaryMuscle == nil) {
-                    selectedPrimaryMuscle = nil
-                    shownItems = []
-                }
-                ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
-                    StartOptionButton(title: muscle, systemImage: "scope", isSelected: selectedPrimaryMuscle == muscle) {
-                        selectedPrimaryMuscle = muscle
-                        shownItems = []
+    private var weekRail: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(routineDays.indices, id: \.self) { index in
+                    let day = routineDays[index]
+                    Button {
+                        selectedDayIndex = index
+                    } label: {
+                        VStack(alignment: .leading, spacing: 7) {
+                            Text(day.shortName)
+                                .font(.headline.weight(.bold))
+                            Text(day.bodyPart)
+                                .font(.caption.weight(.semibold))
+                                .lineLimit(1)
+                            Text("\(day.exercises.count) planned")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(index == selectedDayIndex ? Color.deltsOnAccent.opacity(0.72) : Color.deltsMutedText)
+                        }
+                        .foregroundStyle(index == selectedDayIndex ? Color.deltsOnAccent : Color.deltsCharcoal)
+                        .frame(width: 108, alignment: .leading)
+                        .padding(14)
+                        .background(index == selectedDayIndex ? Color.deltsAccent : Color.deltsPanel.opacity(0.25), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .stroke(Color.deltsHairline.opacity(index == selectedDayIndex ? 0.22 : 0.34), lineWidth: 0.5)
+                        }
                     }
+                    .deltsPressable()
                 }
             }
+            .padding(.horizontal, 1)
         }
     }
 
-    private var equipmentStep: some View {
-        StartSection(
-            index: "02",
-            title: "Equipment",
-            subtitle: "Choose from the dataset equipment field."
-        ) {
-            StartHorizontalRail {
-                StartOptionButton(title: "All", systemImage: "dumbbell.fill", isSelected: selectedRawEquipment == nil) {
-                    selectedRawEquipment = nil
-                    shownItems = []
-                }
-                ForEach(service.availableRawEquipment, id: \.self) { equipment in
-                    StartOptionButton(title: equipment, systemImage: "dumbbell.fill", isSelected: selectedRawEquipment == equipment) {
-                        selectedRawEquipment = equipment
-                        shownItems = []
-                    }
-                }
-            }
-        }
-    }
-
-    private var datasetFilterStep: some View {
-        StartSection(
-            index: "03",
-            title: "Dataset",
-            subtitle: "Filter by raw level and category."
-        ) {
+    private var routineEditor: some View {
+        StartSection(index: "01", title: "Routine", subtitle: "\(selectedDay.name) body part and dataset exercises.") {
             VStack(alignment: .leading, spacing: 16) {
                 StartHorizontalRail {
-                    StartOptionButton(title: "All levels", systemImage: "chart.bar.fill", isSelected: selectedLevel == nil) {
-                        selectedLevel = nil
-                        shownItems = []
+                    StartOptionButton(
+                        title: WeeklyRoutineStore.anyBodyPart,
+                        systemImage: "scope",
+                        isSelected: selectedDay.bodyPart == WeeklyRoutineStore.anyBodyPart
+                    ) {
+                        updateSelectedDay { $0.bodyPart = WeeklyRoutineStore.anyBodyPart }
                     }
-                    ForEach(service.availableLevels, id: \.self) { level in
-                        StartOptionButton(title: level, systemImage: "chart.bar.fill", isSelected: selectedLevel == level) {
-                            selectedLevel = level
-                            shownItems = []
+
+                    ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
+                        StartOptionButton(
+                            title: muscle,
+                            systemImage: "scope",
+                            isSelected: selectedDay.bodyPart == muscle
+                        ) {
+                            updateSelectedDay { $0.bodyPart = muscle }
                         }
                     }
                 }
 
-                StartHorizontalRail {
-                    StartOptionButton(title: "All categories", systemImage: "tag", isSelected: selectedCategory == nil) {
-                        selectedCategory = nil
-                        shownItems = []
+                TextField("Search dataset exercise", text: $exerciseSearch)
+                    .textFieldStyle(.plain)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .padding(.horizontal, 14)
+                    .frame(height: 48)
+                    .background(Color.deltsPanel.opacity(0.32), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
                     }
-                    ForEach(service.availableCategoryCounts) { categoryCount in
-                        StartOptionButton(title: categoryCount.category, systemImage: "tag", isSelected: selectedCategory == categoryCount.category) {
-                            selectedCategory = categoryCount.category
-                            shownItems = []
+
+                HStack(spacing: 10) {
+                    Menu {
+                        ForEach(matchingExercises.prefix(60)) { item in
+                            Button(item.name) {
+                                addExercise(item)
+                            }
                         }
+                    } label: {
+                        Label("Add Exercise", systemImage: "plus")
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(Color.deltsCharcoal)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                            .background(Color.deltsPanel.opacity(0.28), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
+                            }
                     }
+
+                    Button {
+                        if let item = matchingExercises.randomElement() {
+                            addExercise(item)
+                        }
+                    } label: {
+                        Image(systemName: "shuffle")
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(Color.deltsSecondaryAccent)
+                            .frame(width: 52, height: 48)
+                            .background(Color.deltsPanel.opacity(0.28), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
+                            }
+                    }
+                    .deltsPressable()
+                    .accessibilityLabel("Add random dataset exercise")
                 }
             }
         }
     }
 
     @ViewBuilder
-    private var exercisePreview: some View {
-        if !shownItems.isEmpty {
-            StartSection(
-                index: "04",
-                title: "Exercises",
-                subtitle: "\(shownItems.count) matching dataset record\(shownItems.count == 1 ? "" : "s")."
-            ) {
+    private var plannedExercises: some View {
+        if selectedDay.exercises.isEmpty {
+            StartSection(index: "02", title: "Plan", subtitle: "No exercises set for \(selectedDay.name).") {
+                EmptyRoutineCard()
+            }
+        } else {
+            StartSection(index: "02", title: "Plan", subtitle: "\(selectedDay.exercises.count) exercise\(selectedDay.exercises.count == 1 ? "" : "s") ready.") {
                 VStack(alignment: .leading, spacing: 14) {
-                    ForEach(shownItems.prefix(5)) { item in
-                        StartExercisePreviewRow(item: item)
+                    ForEach(selectedDay.exercises) { exercise in
+                        PlannedExerciseRow(
+                            exercise: exercise,
+                            updateSets: { sets in
+                                updateExercise(exercise.id) { $0.sets = sets }
+                            },
+                            updateReps: { reps in
+                                updateExercise(exercise.id) { $0.reps = reps }
+                            },
+                            remove: {
+                                removeExercise(exercise.id)
+                            }
+                        )
                     }
                 }
             }
         }
     }
 
+    private var quickStart: some View {
+        StartSection(index: "03", title: "Random Start", subtitle: "\(matchingExercises.count) matching dataset exercise\(matchingExercises.count == 1 ? "" : "s").") {
+            Button {
+                if let item = matchingExercises.randomElement() {
+                    activePlan = makePlan(
+                        title: item.name,
+                        summary: "Random dataset start",
+                        bodyPart: item.primaryMuscles.first ?? WeeklyRoutineStore.anyBodyPart,
+                        exercises: [PlannedRoutineExercise(item: item)]
+                    )
+                }
+            } label: {
+                Label("Start Random Exercise", systemImage: "shuffle")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(Color.deltsPanel.opacity(0.28), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
+                    }
+            }
+            .disabled(matchingExercises.isEmpty)
+            .deltsPressable()
+        }
+    }
+
     private var startBar: some View {
         VStack(spacing: 8) {
             PrimaryButton(
-                title: "Show Dataset Exercises",
-                systemImage: "list.clipboard.fill"
+                title: selectedDay.exercises.isEmpty ? "Add Exercise To Start" : "Start \(selectedDay.name)",
+                systemImage: "play.fill"
             ) {
-                shownItems = matchingItems
+                guard !selectedDay.exercises.isEmpty else { return }
+                activePlan = makePlan(
+                    title: "\(selectedDay.name) \(selectedDay.bodyPart)",
+                    summary: "\(selectedDay.name) routine",
+                    bodyPart: selectedDay.bodyPart,
+                    exercises: selectedDay.exercises
+                )
             }
+            .disabled(selectedDay.exercises.isEmpty)
 
-            Text("\(matchingItems.count) currently match the selected dataset fields.")
+            Text("\(selectedDay.exercises.reduce(0) { $0 + max($1.sets, 1) }) total set\(selectedDay.exercises.reduce(0) { $0 + max($1.sets, 1) } == 1 ? "" : "s") planned.")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.deltsMutedText)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -257,6 +271,239 @@ struct HomeView: View {
         .deltsBottomActionBackground()
     }
 
+    private func addExercise(_ item: ExerciseLibraryItem) {
+        updateSelectedDay { day in
+            day.exercises.append(PlannedRoutineExercise(item: item))
+        }
+    }
+
+    private func removeExercise(_ id: UUID) {
+        updateSelectedDay { day in
+            day.exercises.removeAll { $0.id == id }
+        }
+    }
+
+    private func updateExercise(_ id: UUID, mutate: (inout PlannedRoutineExercise) -> Void) {
+        updateSelectedDay { day in
+            guard let index = day.exercises.firstIndex(where: { $0.id == id }) else { return }
+            mutate(&day.exercises[index])
+        }
+    }
+
+    private func updateSelectedDay(_ mutate: (inout WeeklyRoutineDay) -> Void) {
+        guard routineDays.indices.contains(selectedDayIndex) else { return }
+        mutate(&routineDays[selectedDayIndex])
+        WeeklyRoutineStore.save(routineDays)
+    }
+
+    private func makePlan(title: String, summary: String, bodyPart: String, exercises: [PlannedRoutineExercise]) -> WorkoutPlan {
+        WorkoutPlan(
+            title: title,
+            summary: summary,
+            muscleGroup: muscleGroup(for: bodyPart),
+            goal: .generalFitness,
+            durationMinutes: 0,
+            generatedByAI: false,
+            exercises: exercises.enumerated().map { index, exercise in
+                WorkoutExercise(
+                    orderIndex: index,
+                    name: exercise.name,
+                    targetMuscle: muscleGroup(for: exercise.primaryMuscles.first ?? bodyPart),
+                    equipment: equipment(for: exercise.rawEquipment),
+                    sets: max(exercise.sets, 1),
+                    reps: exercise.reps,
+                    restSeconds: 0,
+                    formTip: exercise.instructions.first ?? "",
+                    difficulty: exercise.rawLevel
+                )
+            }
+        )
+    }
+
+    private func muscleGroup(for rawValue: String) -> MuscleGroup {
+        let value = rawValue.lowercased()
+        if value.contains("chest") { return .chest }
+        if value.contains("back") || value.contains("lat") || value.contains("trap") { return .back }
+        if value.contains("leg") || value.contains("quad") || value.contains("hamstring") || value.contains("calf") || value.contains("glute") || value.contains("adductor") || value.contains("abductor") { return .legs }
+        if value.contains("shoulder") || value.contains("delt") { return .shoulders }
+        if value.contains("bicep") || value.contains("tricep") || value.contains("forearm") { return .arms }
+        if value.contains("abdominal") || value.contains("core") { return .core }
+        return .fullBody
+    }
+
+    private func equipment(for rawValue: String) -> Equipment {
+        let value = rawValue.lowercased()
+        if value.contains("dumbbell") || value.contains("kettlebell") { return .dumbbells }
+        if value.contains("barbell") { return .barbell }
+        if value.contains("cable") { return .cableMachine }
+        if value.contains("smith") { return .smithMachine }
+        if value.contains("bench") { return .bench }
+        if value.contains("pull") { return .pullUpBar }
+        if value.contains("treadmill") { return .treadmill }
+        return .bodyweight
+    }
+}
+
+private struct WeeklyRoutineDay: Codable, Identifiable, Hashable {
+    var id: UUID = UUID()
+    var name: String
+    var shortName: String
+    var bodyPart: String
+    var exercises: [PlannedRoutineExercise] = []
+}
+
+private struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
+    var id: UUID = UUID()
+    var itemID: String
+    var name: String
+    var primaryMuscles: [String]
+    var rawEquipment: String
+    var rawLevel: String
+    var category: String
+    var imagePaths: [String]
+    var instructions: [String]
+    var sets: Int = 1
+    var reps: String = ""
+
+    init(item: ExerciseLibraryItem) {
+        self.itemID = item.id
+        self.name = item.name
+        self.primaryMuscles = item.primaryMuscles
+        self.rawEquipment = item.rawEquipment
+        self.rawLevel = item.rawLevel
+        self.category = item.category
+        self.imagePaths = item.imagePaths
+        self.instructions = item.instructions
+    }
+}
+
+private enum WeeklyRoutineStore {
+    static let anyBodyPart = "Any"
+    private static let key = "delts.weeklyRoutine.v1"
+
+    static let defaultDays: [WeeklyRoutineDay] = [
+        WeeklyRoutineDay(name: "Monday", shortName: "Mon", bodyPart: "Chest"),
+        WeeklyRoutineDay(name: "Tuesday", shortName: "Tue", bodyPart: "Back"),
+        WeeklyRoutineDay(name: "Wednesday", shortName: "Wed", bodyPart: "Legs"),
+        WeeklyRoutineDay(name: "Thursday", shortName: "Thu", bodyPart: "Shoulders"),
+        WeeklyRoutineDay(name: "Friday", shortName: "Fri", bodyPart: "Arms"),
+        WeeklyRoutineDay(name: "Saturday", shortName: "Sat", bodyPart: "Abdominals"),
+        WeeklyRoutineDay(name: "Sunday", shortName: "Sun", bodyPart: anyBodyPart)
+    ]
+
+    static func todayIndex() -> Int {
+        let weekday = Calendar.current.component(.weekday, from: Date())
+        return (weekday + 5) % 7
+    }
+
+    static func load() -> [WeeklyRoutineDay] {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let days = try? JSONDecoder().decode([WeeklyRoutineDay].self, from: data),
+              days.count == 7
+        else {
+            return defaultDays
+        }
+        return days
+    }
+
+    static func save(_ days: [WeeklyRoutineDay]) {
+        guard let data = try? JSONEncoder().encode(days) else { return }
+        UserDefaults.standard.set(data, forKey: key)
+    }
+}
+
+private struct EmptyRoutineCard: View {
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "calendar.badge.plus")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Color.deltsAccent)
+                .frame(width: 42, height: 42)
+                .background(Color.deltsAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            Text("Add a dataset exercise to this day.")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.deltsPanel.opacity(0.24), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
+        }
+    }
+}
+
+private struct PlannedExerciseRow: View {
+    let exercise: PlannedRoutineExercise
+    let updateSets: (Int) -> Void
+    let updateReps: (String) -> Void
+    let remove: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                AnimatedExerciseVisual(
+                    exerciseName: exercise.name,
+                    imagePaths: exercise.imagePaths,
+                    height: 62,
+                    fillsWidth: false,
+                    allowsDerivedImageLookup: false
+                )
+                .frame(width: 62, height: 62)
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(exercise.name)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .lineLimit(2)
+
+                    Text("\(exercise.primaryMuscles.joined(separator: ", ")) - \(exercise.rawEquipment) - \(exercise.rawLevel)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                }
+
+                Spacer(minLength: 0)
+
+                Button(action: remove) {
+                    Image(systemName: "trash")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Color.deltsInferno)
+                        .frame(width: 36, height: 36)
+                }
+                .deltsPressable()
+            }
+
+            HStack(spacing: 12) {
+                Stepper(value: Binding(get: { exercise.sets }, set: updateSets), in: 1...12) {
+                    Text("\(exercise.sets) set\(exercise.sets == 1 ? "" : "s")")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                }
+
+                TextField("Reps", text: Binding(get: { exercise.reps }, set: updateReps))
+                    .keyboardType(.numberPad)
+                    .textFieldStyle(.plain)
+                    .font(.subheadline.monospacedDigit().weight(.bold))
+                    .multilineTextAlignment(.center)
+                    .frame(width: 74, height: 38)
+                    .background(Color.deltsPanel.opacity(0.34), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
+                    }
+            }
+        }
+        .padding(12)
+        .background(Color.deltsPanel.opacity(0.20), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
+        }
+    }
 }
 
 private struct StartSection<Content: View>: View {
@@ -292,58 +539,6 @@ private struct StartSection<Content: View>: View {
 
             content
         }
-    }
-}
-
-private struct StartDatasetStrip: View {
-    let item: ExerciseLibraryItem
-
-    var body: some View {
-        HStack(spacing: 0) {
-            StartHeroMetric(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope")
-            StartHeroDivider()
-            StartHeroMetric(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill")
-            StartHeroDivider()
-            StartHeroMetric(title: "Gear", value: item.rawEquipment, systemImage: "dumbbell.fill")
-            StartHeroDivider()
-            StartHeroMetric(title: "Category", value: item.category, systemImage: "tag")
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 12)
-        .background(.black.opacity(0.36), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-    }
-}
-
-private struct StartHeroMetric: View {
-    let title: String
-    let value: String
-    let systemImage: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Image(systemName: systemImage)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(Color.deltsAccent)
-            Text(value)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
-            Text(title)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.58))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
-    }
-}
-
-private struct StartHeroDivider: View {
-    var body: some View {
-        Rectangle()
-            .fill(.white.opacity(0.16))
-            .frame(width: 0.5, height: 42)
-            .padding(.horizontal, 8)
     }
 }
 
@@ -390,44 +585,5 @@ private struct StartHorizontalRail<Content: View>: View {
             }
             .padding(.horizontal, 1)
         }
-    }
-}
-
-private struct StartExercisePreviewRow: View {
-    let item: ExerciseLibraryItem
-
-    var body: some View {
-        HStack(spacing: 14) {
-            AnimatedExerciseVisual(
-                exerciseName: item.name,
-                imagePaths: item.imagePaths,
-                height: 82,
-                fillsWidth: false,
-                allowsDerivedImageLookup: false
-            )
-            .frame(width: 82, height: 82)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(item.name)
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(2)
-
-                Text("\(item.primaryMusclesTitle) - \(item.rawEquipment) - \(item.rawLevel)")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-
-                Text(item.databaseMetadataSummary)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.deltsSecondaryAccent)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, 4)
     }
 }

@@ -15,6 +15,7 @@ struct ActiveWorkoutView: View {
     @FocusState private var focusedField: ActiveWorkoutLogField?
     @State private var restSecondsRemaining = 0
     @State private var restTimerRunning = false
+    @State private var now = Date()
 
     init(plan: WorkoutPlan, startIndex: Int = 0) {
         _viewModel = StateObject(wrappedValue: ActiveWorkoutViewModel(plan: plan, startIndex: startIndex))
@@ -74,6 +75,13 @@ struct ActiveWorkoutView: View {
                 restTimerRunning = false
             }
         }
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard !Task.isCancelled else { return }
+                now = Date()
+            }
+        }
     }
 
     private var activeHeader: some View {
@@ -90,6 +98,15 @@ struct ActiveWorkoutView: View {
             }
 
             Spacer(minLength: 12)
+
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("Elapsed")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                Text(ActiveWorkoutViewModel.elapsedDisplay(Int(now.timeIntervalSince(viewModel.startedAt))))
+                    .font(.headline.monospacedDigit().weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+            }
 
             Button {
                 finishWorkout()
@@ -399,7 +416,7 @@ struct ActiveWorkoutView: View {
 
     private func standardSetLoggerRow(_ setIndex: Int) -> some View {
         HStack(alignment: .center, spacing: 10) {
-            setNumberBadge(setIndex)
+            setStamp(setIndex)
 
             setEntryField(
                 title: "Weight",
@@ -431,7 +448,7 @@ struct ActiveWorkoutView: View {
     private func stackedSetLoggerRow(_ setIndex: Int) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
-                setNumberBadge(setIndex)
+                setStamp(setIndex)
 
                 Text("Set \(setIndex + 1)")
                     .font(.headline.weight(.semibold))
@@ -446,6 +463,19 @@ struct ActiveWorkoutView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 12)
+    }
+
+    private func setStamp(_ setIndex: Int) -> some View {
+        VStack(spacing: 5) {
+            setNumberBadge(setIndex)
+            if let elapsed = viewModel.setElapsedDisplay(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex) {
+                Text(elapsed)
+                    .font(.caption2.monospacedDigit().weight(.bold))
+                    .foregroundStyle(Color.deltsSecondaryAccent)
+                    .lineLimit(1)
+            }
+        }
+        .frame(width: 48)
     }
 
     @ViewBuilder
@@ -688,7 +718,7 @@ struct ActiveWorkoutView: View {
 
     private func finishWorkout() {
         focusedField = nil
-        let completed = viewModel.makeCompletedWorkout()
+        let completed = viewModel.makeCompletedWorkout(finishedAt: Date())
         modelContext.insert(completed)
         try? modelContext.save()
         dismiss()

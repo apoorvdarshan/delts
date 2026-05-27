@@ -109,8 +109,10 @@ import com.apoorvdarshan.delts.ui.theme.DeltsOnAccent
 import com.apoorvdarshan.delts.ui.theme.DeltsSecondaryAccent
 import com.apoorvdarshan.delts.ui.theme.DeltsTheme
 import java.util.Locale
+import java.util.UUID
 import kotlinx.coroutines.delay
 import org.json.JSONArray
+import org.json.JSONObject
 import kotlin.math.roundToInt
 
 private const val SETTINGS_NAME = "delts_settings"
@@ -136,6 +138,8 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
     var profile by remember { mutableStateOf(settings.loadProfile()) }
     var measurementSystem by rememberSaveable { mutableStateOf(settings.loadMeasurementSystem()) }
     var aiSettings by remember { mutableStateOf(settings.loadAISettings()) }
+    var workoutHistory by remember { mutableStateOf(settings.loadWorkoutHistory()) }
+    var metricSnapshots by remember { mutableStateOf(settings.recordMetricSnapshot(profile)) }
     val keyStore = remember(settings) { GeminiKeyStore(settings) }
     val fallbackKeyStore = remember(settings) { GeminiKeyStore(settings, "ai_fallback_api_key") }
     val exerciseLibrary = remember(context) { loadFreeExerciseDB(context.assets) }
@@ -143,6 +147,7 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
     fun updateProfile(updatedProfile: AndroidProfile) {
         profile = updatedProfile
         settings.saveProfile(updatedProfile)
+        metricSnapshots = settings.recordMetricSnapshot(updatedProfile)
     }
 
     fun updateMeasurementSystem(updatedSystem: MeasurementSystem) {
@@ -154,6 +159,11 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
         val normalizedSettings = updatedSettings.normalized()
         aiSettings = normalizedSettings
         settings.saveAISettings(normalizedSettings)
+    }
+
+    fun saveCompletedWorkout(record: WorkoutHistoryRecord) {
+        workoutHistory = (listOf(record) + workoutHistory).take(200)
+        settings.saveWorkoutHistory(workoutHistory)
     }
 
     Scaffold(
@@ -179,10 +189,19 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
                 DeltsTab.Start -> StartScreen(
                     profile = profile,
                     exerciseLibrary = exerciseLibrary,
+                    settings = settings,
+                    onWorkoutCompleted = ::saveCompletedWorkout,
                     padding = padding
                 )
                 DeltsTab.Workouts -> WorkoutsScreen(
                     exerciseLibrary = exerciseLibrary,
+                    padding = padding
+                )
+                DeltsTab.Progress -> ProgressScreen(
+                    profile = profile,
+                    measurementSystem = measurementSystem,
+                    snapshots = metricSnapshots,
+                    workouts = workoutHistory,
                     padding = padding
                 )
                 DeltsTab.Profile -> ProfileScreen(
@@ -206,40 +225,73 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
 private fun StartScreen(
     profile: AndroidProfile,
     exerciseLibrary: List<ExerciseItem>,
+    settings: SharedPreferences? = null,
+    onWorkoutCompleted: (WorkoutHistoryRecord) -> Unit = {},
     padding: PaddingValues
 ) {
-    var selectedPrimaryMuscle by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedRawEquipment by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedLevel by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
-    var generatedPlan by remember { mutableStateOf<List<ExercisePlan>>(emptyList()) }
+    var routineDays by remember(settings) { mutableStateOf(settings?.loadWeeklyRoutine() ?: defaultRoutineDays) }
+    var selectedDayIndex by rememberSaveable { mutableStateOf(todayRoutineIndex()) }
+    var search by rememberSaveable { mutableStateOf("") }
+    var activeSession by remember { mutableStateOf<ActiveWorkoutSession?>(null) }
+    var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
 
-    val primaryMuscleOptions = remember(exerciseLibrary) { exerciseLibrary.flatMap { it.primaryMuscles }.distinctSorted() }
-    val rawEquipmentOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.rawEquipment }.distinctSorted() }
-    val levelOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.level }.distinctSortedLevels() }
-    val categoryOptions = remember(exerciseLibrary) { exerciseLibrary.map { it.category }.distinctSorted() }
-
-    val matchingItems = remember(
-        selectedPrimaryMuscle,
-        selectedRawEquipment,
-        selectedLevel,
-        selectedCategory,
-        exerciseLibrary
-    ) {
-        exerciseLibrary.filter { item ->
-            (selectedPrimaryMuscle?.let { item.primaryMuscles.contains(it) } ?: true) &&
-                (selectedRawEquipment == null || item.rawEquipment == selectedRawEquipment) &&
-                (selectedLevel == null || item.level == selectedLevel) &&
-                (selectedCategory == null || item.category == selectedCategory)
+    LaunchedEffect(activeSession?.startedAtMs) {
+        while (activeSession != null) {
+            nowMs = System.currentTimeMillis()
+            delay(1000)
         }
     }
 
-    val heroExercise = matchingItems.firstOrNull { it.imagePaths.isNotEmpty() } ?: matchingItems.firstOrNull() ?: exerciseLibrary.firstOrNull()
-    val headerSubtitle = listOf(
-        selectedPrimaryMuscle ?: "All primary",
-        selectedRawEquipment ?: "All equipment",
-        selectedLevel ?: "All levels"
-    ).joinToString(" - ")
+    val selectedDay = routineDays.getOrElse(selectedDayIndex) { defaultRoutineDays.first() }
+    val bodyPartOptions = remember(exerciseLibrary) { exerciseLibrary.flatMap { it.primaryMuscles }.distinctSorted() }
+    val matchingItems = remember(selectedDay.bodyPart, search, exerciseLibrary) {
+        exerciseLibrary.filter { item ->
+            (selectedDay.bodyPart == anyRoutineBodyPart || item.primaryMuscles.contains(selectedDay.bodyPart)) &&
+                (search.isBlank() || item.name.contains(search, ignoreCase = true))
+        }
+    }
+
+    fun updateSelectedDay(transform: (RoutineDay) -> RoutineDay) {
+        routineDays = routineDays.mapIndexed { index, day ->
+            if (index == selectedDayIndex) transform(day) else day
+        }
+        settings?.saveWeeklyRoutine(routineDays)
+    }
+
+    fun addExercise(item: ExerciseItem) {
+        updateSelectedDay { day ->
+            day.copy(exercises = day.exercises + RoutineExercise.from(item))
+        }
+    }
+
+    fun updateExercise(exerciseId: String, transform: (RoutineExercise) -> RoutineExercise) {
+        updateSelectedDay { day ->
+            day.copy(exercises = day.exercises.map { exercise ->
+                if (exercise.id == exerciseId) transform(exercise) else exercise
+            })
+        }
+    }
+
+    fun removeExercise(exerciseId: String) {
+        updateSelectedDay { day ->
+            day.copy(exercises = day.exercises.filterNot { it.id == exerciseId })
+        }
+    }
+
+    activeSession?.let { session ->
+        ActiveRoutineScreen(
+            session = session,
+            nowMs = nowMs,
+            onSessionChange = { activeSession = it },
+            onFinish = {
+                val finishedAt = System.currentTimeMillis()
+                onWorkoutCompleted(session.toHistoryRecord(finishedAt))
+                activeSession = null
+            },
+            padding = padding
+        )
+        return
+    }
 
     Column(
         modifier = Modifier
@@ -248,42 +300,27 @@ private fun StartScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
             .padding(top = 12.dp, bottom = 118.dp),
-        verticalArrangement = Arrangement.spacedBy(28.dp)
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         ScreenHeader(
             eyebrow = "DELTS",
-            title = "Start",
-            subtitle = headerSubtitle
-        )
-
-        DatasetStartHero(
-            item = heroExercise,
-            imagePaths = heroExercise?.imagePaths.orEmpty(),
-            fallbackIcon = Icons.Filled.FitnessCenter
+            title = "Weekly Routine",
+            subtitle = "${selectedDay.name} - ${selectedDay.bodyPart} - ${selectedDay.exercises.size} ${if (selectedDay.exercises.size == 1) "exercise" else "exercises"}"
         )
 
         StartSection(
             index = "01",
-            title = "Primary",
-            subtitle = "Choose from the dataset primaryMuscles field."
+            title = "Week",
+            subtitle = profile.displayName
         ) {
             HorizontalChipRail {
-                DeltsPillButton(
-                    title = "All",
-                    icon = Icons.Filled.FitnessCenter,
-                    selected = selectedPrimaryMuscle == null
-                ) {
-                    selectedPrimaryMuscle = null
-                    generatedPlan = emptyList()
-                }
-                primaryMuscleOptions.forEach { muscle ->
+                routineDays.forEachIndexed { index, day ->
                     DeltsPillButton(
-                        title = muscle,
-                        icon = Icons.Filled.FitnessCenter,
-                        selected = selectedPrimaryMuscle == muscle
+                        title = "${day.shortName} ${day.exercises.size}",
+                        icon = Icons.Filled.CalendarToday,
+                        selected = selectedDayIndex == index
                     ) {
-                        selectedPrimaryMuscle = muscle
-                        generatedPlan = emptyList()
+                        selectedDayIndex = index
                     }
                 }
             }
@@ -291,105 +328,139 @@ private fun StartScreen(
 
         StartSection(
             index = "02",
-            title = "Equipment",
-            subtitle = "Choose from the dataset equipment field."
+            title = "Routine",
+            subtitle = selectedDay.name
         ) {
             HorizontalChipRail {
                 DeltsPillButton(
-                    title = "All",
+                    title = anyRoutineBodyPart,
                     icon = Icons.Filled.FitnessCenter,
-                    selected = selectedRawEquipment == null
+                    selected = selectedDay.bodyPart == anyRoutineBodyPart
                 ) {
-                    selectedRawEquipment = null
-                    generatedPlan = emptyList()
+                    updateSelectedDay { it.copy(bodyPart = anyRoutineBodyPart) }
                 }
-                rawEquipmentOptions.forEach { equipment ->
+                bodyPartOptions.forEach { muscle ->
                     DeltsPillButton(
-                        title = equipment,
+                        title = muscle,
                         icon = Icons.Filled.FitnessCenter,
-                        selected = selectedRawEquipment == equipment
+                        selected = selectedDay.bodyPart == muscle
                     ) {
-                        selectedRawEquipment = equipment
-                        generatedPlan = emptyList()
+                        updateSelectedDay { it.copy(bodyPart = muscle) }
                     }
+                }
+            }
+
+            LibrarySearchPill(search = search, onSearchChange = { search = it })
+
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                var expanded by rememberSaveable { mutableStateOf(false) }
+                Box(modifier = Modifier.weight(1f)) {
+                    Button(
+                        onClick = { expanded = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
+                            contentColor = MaterialTheme.colorScheme.onBackground
+                        )
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Add Exercise", fontWeight = FontWeight.Bold)
+                    }
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.heightIn(max = 420.dp)) {
+                        matchingItems.take(80).forEach { item ->
+                            DropdownMenuItem(
+                                text = { Text(item.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                                onClick = {
+                                    addExercise(item)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                Button(
+                    onClick = { matchingItems.randomOrNull()?.let(::addExercise) },
+                    modifier = Modifier.size(52.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
+                        contentColor = DeltsSecondaryAccent
+                    )
+                ) {
+                    Icon(Icons.Filled.FlashOn, contentDescription = null)
                 }
             }
         }
 
         StartSection(
             index = "03",
-            title = "Dataset",
-            subtitle = "Filter by raw level and category."
+            title = "Plan",
+            subtitle = "${selectedDay.exercises.sumOf { it.sets.coerceAtLeast(1) }} total ${if (selectedDay.exercises.sumOf { it.sets.coerceAtLeast(1) } == 1) "set" else "sets"}"
         ) {
-            HorizontalChipRail {
-                DeltsPillButton(
-                    title = "All levels",
-                    icon = Icons.Filled.FlashOn,
-                    selected = selectedLevel == null
-                ) {
-                    selectedLevel = null
-                    generatedPlan = emptyList()
-                }
-                levelOptions.forEach { level ->
-                    DeltsPillButton(
-                        title = level,
-                        icon = Icons.Filled.FlashOn,
-                        selected = selectedLevel == level
-                    ) {
-                        selectedLevel = level
-                        generatedPlan = emptyList()
-                    }
-                }
-            }
-
-            HorizontalChipRail {
-                DeltsPillButton(
-                    title = "All categories",
-                    icon = Icons.Filled.List,
-                    selected = selectedCategory == null
-                ) {
-                    selectedCategory = null
-                    generatedPlan = emptyList()
-                }
-                categoryOptions.forEach { category ->
-                    DeltsPillButton(
-                        title = category,
-                        icon = Icons.Filled.List,
-                        selected = selectedCategory == category
-                    ) {
-                        selectedCategory = category
-                        generatedPlan = emptyList()
-                    }
+            if (selectedDay.exercises.isEmpty()) {
+                EmptyRoutineCard()
+            } else {
+                selectedDay.exercises.forEach { exercise ->
+                    RoutineExerciseRow(
+                        exercise = exercise,
+                        onSetsChange = { sets -> updateExercise(exercise.id) { it.copy(sets = sets) } },
+                        onRepsChange = { reps -> updateExercise(exercise.id) { it.copy(reps = reps) } },
+                        onRemove = { removeExercise(exercise.id) }
+                    )
                 }
             }
         }
 
-        if (generatedPlan.isNotEmpty()) {
-            StartSection(
-                index = "04",
-                title = "Exercises",
-                subtitle = "${matchingItems.size} matching dataset ${if (matchingItems.size == 1) "record" else "records"}."
+        StartSection(
+            index = "04",
+            title = "Random Start",
+            subtitle = "${matchingItems.size} matching dataset ${if (matchingItems.size == 1) "exercise" else "exercises"}"
+        ) {
+            Button(
+                onClick = {
+                    matchingItems.randomOrNull()?.let { item ->
+                        activeSession = ActiveWorkoutSession.from(
+                            title = item.name,
+                            bodyPart = item.primaryMuscles.firstOrNull() ?: anyRoutineBodyPart,
+                            exercises = listOf(RoutineExercise.from(item)),
+                            startedAtMs = System.currentTimeMillis()
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(18.dp),
+                enabled = matchingItems.isNotEmpty(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
+                    contentColor = MaterialTheme.colorScheme.onBackground
+                )
             ) {
-                generatedPlan.take(5).forEach { exercise ->
-                    ExercisePlanRow(exercise = exercise)
-                }
+                Icon(Icons.Filled.FlashOn, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Start Random Exercise", fontWeight = FontWeight.Bold)
             }
         }
 
         Button(
             onClick = {
-                generatedPlan = buildPlan(
-                    primaryMuscle = selectedPrimaryMuscle,
-                    level = selectedLevel,
-                    rawEquipment = selectedRawEquipment,
-                    category = selectedCategory,
-                    exerciseLibrary = exerciseLibrary
+                activeSession = ActiveWorkoutSession.from(
+                    title = "${selectedDay.name} ${selectedDay.bodyPart}",
+                    bodyPart = selectedDay.bodyPart,
+                    exercises = selectedDay.exercises,
+                    startedAtMs = System.currentTimeMillis()
                 )
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(54.dp),
             shape = RoundedCornerShape(27.dp),
+            enabled = selectedDay.exercises.isNotEmpty(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = DeltsAccent,
                 contentColor = DeltsOnAccent
@@ -397,8 +468,285 @@ private fun StartScreen(
         ) {
             Icon(Icons.Filled.PlayArrow, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Show Dataset Exercises", fontWeight = FontWeight.Bold)
+            Text(if (selectedDay.exercises.isEmpty()) "Add Exercise To Start" else "Start ${selectedDay.name}", fontWeight = FontWeight.Bold)
         }
+    }
+}
+
+@Composable
+private fun EmptyRoutineCard() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f))
+            .padding(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Filled.CalendarToday, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(28.dp))
+        Text(
+            text = "Add a dataset exercise to this day.",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+    }
+}
+
+@Composable
+private fun RoutineExerciseRow(
+    exercise: RoutineExercise,
+    onSetsChange: (Int) -> Unit,
+    onRepsChange: (String) -> Unit,
+    onRemove: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            ExerciseVisual(
+                imagePaths = exercise.imagePaths,
+                fallbackIcon = Icons.Filled.FitnessCenter,
+                modifier = Modifier.size(62.dp),
+                cornerRadius = 16,
+                iconSize = 28
+            )
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = exercise.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "${exercise.primaryMuscles.ifEmpty { listOf("Unspecified") }.joinToString(", ")} - ${exercise.rawEquipment} - ${exercise.level}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Icon(
+                Icons.Filled.Close,
+                contentDescription = "Remove",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .size(28.dp)
+                    .clickable(onClick = onRemove)
+            )
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            DeltsPillButton(
+                title = "-",
+                icon = Icons.Filled.Close,
+                selected = false,
+                modifier = Modifier.width(54.dp)
+            ) {
+                onSetsChange((exercise.sets - 1).coerceAtLeast(1))
+            }
+            Text(
+                text = "${exercise.sets.coerceAtLeast(1)} ${if (exercise.sets == 1) "set" else "sets"}",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center
+            )
+            DeltsPillButton(
+                title = "+",
+                icon = Icons.Filled.Add,
+                selected = false,
+                modifier = Modifier.width(54.dp)
+            ) {
+                onSetsChange((exercise.sets + 1).coerceAtMost(12))
+            }
+            OutlinedTextField(
+                value = exercise.reps,
+                onValueChange = onRepsChange,
+                modifier = Modifier.width(92.dp),
+                singleLine = true,
+                label = { Text("Reps") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActiveRoutineScreen(
+    session: ActiveWorkoutSession,
+    nowMs: Long,
+    onSessionChange: (ActiveWorkoutSession) -> Unit,
+    onFinish: () -> Unit,
+    padding: PaddingValues
+) {
+    fun updateSet(exerciseId: String, setNumber: Int, transform: (ActiveSetLog) -> ActiveSetLog) {
+        onSessionChange(
+            session.copy(
+                exercises = session.exercises.map { exercise ->
+                    if (exercise.id != exerciseId) {
+                        exercise
+                    } else {
+                        exercise.copy(sets = exercise.sets.map { set ->
+                            if (set.setNumber == setNumber) transform(set) else set
+                        })
+                    }
+                }
+            )
+        )
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp)
+            .padding(top = 12.dp, bottom = 118.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
+    ) {
+        ScreenHeader(
+            eyebrow = "ACTIVE",
+            title = session.title,
+            subtitle = "Elapsed ${elapsedDisplay(((nowMs - session.startedAtMs) / 1000).toInt())}"
+        )
+
+        session.exercises.forEach { exercise ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f))
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    ExerciseVisual(
+                        imagePaths = exercise.imagePaths,
+                        fallbackIcon = Icons.Filled.FitnessCenter,
+                        modifier = Modifier.size(70.dp),
+                        cornerRadius = 18,
+                        iconSize = 30
+                    )
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = exercise.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "${exercise.primaryMuscles.ifEmpty { listOf("Unspecified") }.joinToString(", ")} - ${exercise.rawEquipment}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                exercise.sets.forEach { set ->
+                    ActiveSetRow(
+                        set = set,
+                        onWeightChange = { value -> updateSet(exercise.id, set.setNumber) { it.copy(weight = value) } },
+                        onRepsChange = { value -> updateSet(exercise.id, set.setNumber) { it.copy(reps = value) } },
+                        onToggleComplete = {
+                            val elapsed = ((nowMs - session.startedAtMs) / 1000).toInt().coerceAtLeast(0)
+                            updateSet(exercise.id, set.setNumber) {
+                                if (it.completed) {
+                                    it.copy(completed = false, elapsedSeconds = null)
+                                } else {
+                                    it.copy(completed = true, elapsedSeconds = elapsed)
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        Button(
+            onClick = onFinish,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp),
+            shape = RoundedCornerShape(27.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = DeltsAccent, contentColor = DeltsOnAccent)
+        ) {
+            Icon(Icons.Filled.Check, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("End Workout", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun ActiveSetRow(
+    set: ActiveSetLog,
+    onWeightChange: (String) -> Unit,
+    onRepsChange: (String) -> Unit,
+    onToggleComplete: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (set.completed) DeltsSecondaryAccent.copy(alpha = 0.10f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.36f))
+            .padding(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(44.dp)) {
+            Text(
+                text = set.setNumber.toString(),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            set.elapsedSeconds?.let {
+                Text(
+                    text = elapsedDisplay(it),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = DeltsSecondaryAccent,
+                    maxLines = 1
+                )
+            }
+        }
+        OutlinedTextField(
+            value = set.weight,
+            onValueChange = onWeightChange,
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+            label = { Text("Weight") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        OutlinedTextField(
+            value = set.reps,
+            onValueChange = onRepsChange,
+            modifier = Modifier.width(86.dp),
+            singleLine = true,
+            label = { Text("Reps") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        Icon(
+            imageVector = if (set.completed) Icons.Filled.Check else Icons.Filled.Add,
+            contentDescription = null,
+            tint = if (set.completed) DeltsSecondaryAccent else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .size(34.dp)
+                .clickable(onClick = onToggleComplete)
+        )
     }
 }
 
@@ -616,6 +964,199 @@ private fun WorkoutsScreen(
         items(filteredExercises, key = { it.name }) { item ->
             ExerciseLibraryRow(item = item) {
                 selectedExerciseName = item.name
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProgressScreen(
+    profile: AndroidProfile,
+    measurementSystem: MeasurementSystem,
+    snapshots: List<MetricSnapshot>,
+    workouts: List<WorkoutHistoryRecord>,
+    padding: PaddingValues
+) {
+    var selectedRange by rememberSaveable { mutableStateOf(ProgressRange.Month) }
+    val filteredSnapshots = remember(selectedRange, snapshots) { selectedRange.filterSnapshots(snapshots).sortedBy { it.dateMs } }
+    val filteredWorkouts = remember(selectedRange, workouts) { selectedRange.filterWorkouts(workouts) }
+    val usesImperial = measurementSystem == MeasurementSystem.Imperial
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp)
+            .padding(top = 12.dp, bottom = 118.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
+        ScreenHeader(
+            eyebrow = "DELTS",
+            title = "Progress",
+            subtitle = "${filteredWorkouts.size} ${if (filteredWorkouts.size == 1) "workout" else "workouts"} in ${selectedRange.title.lowercase(Locale.US)}"
+        )
+
+        HorizontalChipRail {
+            ProgressRange.entries.forEach { range ->
+                DeltsPillButton(
+                    title = range.title,
+                    icon = Icons.Filled.History,
+                    selected = selectedRange == range
+                ) {
+                    selectedRange = range
+                }
+            }
+        }
+
+        val weightPoints = filteredSnapshots.map { snapshot ->
+            if (usesImperial) snapshot.weightKg * 2.2046226218 else snapshot.weightKg
+        }
+        ProgressMetricCard(
+            title = "Body Weight",
+            unit = if (usesImperial) "lb" else "kg",
+            values = weightPoints
+        )
+        ProgressMetricCard(
+            title = "Body Fat",
+            unit = "%",
+            values = filteredSnapshots.map { it.bodyFat }
+        )
+
+        StartSection(
+            index = "01",
+            title = "Workout History",
+            subtitle = "${profile.displayName} - ${selectedRange.title}"
+        ) {
+            if (filteredWorkouts.isEmpty()) {
+                Text(
+                    text = "No completed workouts in this range.",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f))
+                        .padding(16.dp)
+                )
+            } else {
+                filteredWorkouts.forEach { workout ->
+                    WorkoutHistoryCard(workout = workout)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProgressMetricCard(title: String, unit: String, values: List<Double>) {
+    val latest = values.lastOrNull()
+    val minValue = values.minOrNull() ?: 0.0
+    val maxValue = values.maxOrNull() ?: 1.0
+    val spread = (maxValue - minValue).takeIf { it > 0.0 } ?: 1.0
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    text = if (values.size <= 1) "Current profile value" else "${values.size} entries",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (latest != null) {
+                Text(
+                    text = if (unit == "%") String.format(Locale.US, "%.1f%%", latest) else String.format(Locale.US, "%.1f %s", latest, unit),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(130.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            val chartValues = values.ifEmpty { listOf(0.0) }
+            chartValues.forEach { value ->
+                val ratio = ((value - minValue) / spread).coerceIn(0.0, 1.0)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height((18 + ratio * 112).dp)
+                        .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp, bottomStart = 4.dp, bottomEnd = 4.dp))
+                        .background(if (values.isEmpty()) MaterialTheme.colorScheme.outline.copy(alpha = 0.20f) else DeltsAccent)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WorkoutHistoryCard(workout: WorkoutHistoryRecord) {
+    val completedSets = workout.exercises.sumOf { exercise -> exercise.sets.count { it.completed } }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f))
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp)
+    ) {
+        Row(verticalAlignment = Alignment.Top) {
+            Text(
+                text = workout.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "${workout.durationMinutes}m",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = DeltsAccent
+            )
+        }
+        Text(
+            text = "${completedSets} ${if (completedSets == 1) "set" else "sets"} - ${workout.bodyPart}",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        val stamps = workout.exercises.flatMap { it.sets }.mapNotNull { it.elapsedSeconds }.take(4)
+        if (stamps.isNotEmpty()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                stamps.forEach { seconds ->
+                    Text(
+                        text = elapsedDisplay(seconds),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = DeltsSecondaryAccent,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(13.dp))
+                            .background(DeltsSecondaryAccent.copy(alpha = 0.10f))
+                            .padding(horizontal = 8.dp, vertical = 5.dp)
+                    )
+                }
             }
         }
     }
@@ -2665,6 +3206,112 @@ private fun toggleInList(list: List<String>, item: String): List<String> =
 private val AndroidProfile.displayName: String
     get() = name.trim().ifEmpty { "Athlete" }
 
+private fun SharedPreferences.loadWeeklyRoutine(): List<RoutineDay> {
+    val raw = getString("weekly_routine_v1", null) ?: return defaultRoutineDays
+    return runCatching {
+        val array = JSONArray(raw)
+        buildList {
+            for (index in 0 until array.length()) {
+                val dayObject = array.getJSONObject(index)
+                val exercises = dayObject.optJSONArray("exercises").routineExercises()
+                add(
+                    RoutineDay(
+                        name = dayObject.optString("name"),
+                        shortName = dayObject.optString("shortName"),
+                        bodyPart = dayObject.optString("bodyPart", anyRoutineBodyPart),
+                        exercises = exercises
+                    )
+                )
+            }
+        }.takeIf { it.size == 7 } ?: defaultRoutineDays
+    }.getOrElse { defaultRoutineDays }
+}
+
+private fun SharedPreferences.saveWeeklyRoutine(days: List<RoutineDay>) {
+    val array = JSONArray()
+    days.forEach { day ->
+        array.put(
+            JSONObject()
+                .put("name", day.name)
+                .put("shortName", day.shortName)
+                .put("bodyPart", day.bodyPart)
+                .put("exercises", JSONArray().apply {
+                    day.exercises.forEach { exercise ->
+                        put(exercise.toJSON())
+                    }
+                })
+        )
+    }
+    edit().putString("weekly_routine_v1", array.toString()).apply()
+}
+
+private fun SharedPreferences.loadWorkoutHistory(): List<WorkoutHistoryRecord> {
+    val raw = getString("workout_history_v1", null) ?: return emptyList()
+    return runCatching {
+        val array = JSONArray(raw)
+        buildList {
+            for (index in 0 until array.length()) {
+                add(array.getJSONObject(index).toWorkoutHistoryRecord())
+            }
+        }
+    }.getOrElse { emptyList() }
+}
+
+private fun SharedPreferences.saveWorkoutHistory(records: List<WorkoutHistoryRecord>) {
+    val array = JSONArray()
+    records.forEach { record -> array.put(record.toJSON()) }
+    edit().putString("workout_history_v1", array.toString()).apply()
+}
+
+private fun SharedPreferences.loadMetricSnapshots(): List<MetricSnapshot> {
+    val raw = getString("metric_snapshots_v1", null) ?: return emptyList()
+    return runCatching {
+        val array = JSONArray(raw)
+        buildList {
+            for (index in 0 until array.length()) {
+                val item = array.getJSONObject(index)
+                add(
+                    MetricSnapshot(
+                        id = item.optString("id", UUID.randomUUID().toString()),
+                        dateMs = item.optLong("dateMs"),
+                        weightKg = item.optDouble("weightKg"),
+                        bodyFat = item.optDouble("bodyFat")
+                    )
+                )
+            }
+        }
+    }.getOrElse { emptyList() }
+}
+
+private fun SharedPreferences.recordMetricSnapshot(profile: AndroidProfile): List<MetricSnapshot> {
+    val todayStartMs = java.util.Calendar.getInstance().apply {
+        set(java.util.Calendar.HOUR_OF_DAY, 0)
+        set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0)
+        set(java.util.Calendar.MILLISECOND, 0)
+    }.timeInMillis
+    val now = System.currentTimeMillis()
+    val snapshots = loadMetricSnapshots().toMutableList()
+    val todayIndex = snapshots.indexOfFirst { it.dateMs >= todayStartMs }
+    if (todayIndex >= 0) {
+        snapshots[todayIndex] = snapshots[todayIndex].copy(dateMs = now, weightKg = profile.weightKg, bodyFat = profile.currentBodyFat)
+    } else {
+        snapshots.add(MetricSnapshot(dateMs = now, weightKg = profile.weightKg, bodyFat = profile.currentBodyFat))
+    }
+    val array = JSONArray()
+    snapshots.forEach { snapshot ->
+        array.put(
+            JSONObject()
+                .put("id", snapshot.id)
+                .put("dateMs", snapshot.dateMs)
+                .put("weightKg", snapshot.weightKg)
+                .put("bodyFat", snapshot.bodyFat)
+        )
+    }
+    edit().putString("metric_snapshots_v1", array.toString()).apply()
+    return snapshots
+}
+
 private fun SharedPreferences.loadProfile(): AndroidProfile {
     val mainGoal = getString("profile_goal", "Muscle Gain").orEmpty()
     val extraGoals = getString("profile_extra_goals", "").orEmpty()
@@ -2772,6 +3419,7 @@ private fun SharedPreferences.saveAISettings(settings: AISettings) {
 private enum class DeltsTab(val title: String, val icon: ImageVector) {
     Start("Start", Icons.Filled.PlayArrow),
     Workouts("Workouts", Icons.Filled.List),
+    Progress("Progress", Icons.Filled.History),
     Profile("Profile", Icons.Filled.Person)
 }
 
@@ -2874,6 +3522,192 @@ private data class ExercisePlan(
     val imagePaths: List<String>
 )
 
+private const val anyRoutineBodyPart = "Any"
+
+private data class RoutineDay(
+    val name: String,
+    val shortName: String,
+    val bodyPart: String,
+    val exercises: List<RoutineExercise> = emptyList()
+)
+
+private data class RoutineExercise(
+    val id: String = UUID.randomUUID().toString(),
+    val itemId: String,
+    val name: String,
+    val primaryMuscles: List<String>,
+    val rawEquipment: String,
+    val level: String,
+    val category: String,
+    val imagePaths: List<String>,
+    val instructions: List<String>,
+    val sets: Int = 1,
+    val reps: String = ""
+) {
+    companion object {
+        fun from(item: ExerciseItem): RoutineExercise =
+            RoutineExercise(
+                itemId = item.name,
+                name = item.name,
+                primaryMuscles = item.primaryMuscles,
+                rawEquipment = item.rawEquipment,
+                level = item.level,
+                category = item.category,
+                imagePaths = item.imagePaths,
+                instructions = item.instructions
+            )
+    }
+}
+
+private data class ActiveWorkoutSession(
+    val id: String = UUID.randomUUID().toString(),
+    val title: String,
+    val bodyPart: String,
+    val startedAtMs: Long,
+    val exercises: List<ActiveExerciseLog>
+) {
+    companion object {
+        fun from(title: String, bodyPart: String, exercises: List<RoutineExercise>, startedAtMs: Long): ActiveWorkoutSession =
+            ActiveWorkoutSession(
+                title = title,
+                bodyPart = bodyPart,
+                startedAtMs = startedAtMs,
+                exercises = exercises.map { exercise ->
+                    ActiveExerciseLog(
+                        id = exercise.id,
+                        name = exercise.name,
+                        primaryMuscles = exercise.primaryMuscles,
+                        rawEquipment = exercise.rawEquipment,
+                        level = exercise.level,
+                        imagePaths = exercise.imagePaths,
+                        sets = (1..exercise.sets.coerceAtLeast(1)).map { setNumber ->
+                            ActiveSetLog(setNumber = setNumber, reps = exercise.reps)
+                        }
+                    )
+                }
+            )
+    }
+
+    fun toHistoryRecord(finishedAtMs: Long): WorkoutHistoryRecord {
+        val elapsedMs = (finishedAtMs - startedAtMs).coerceAtLeast(0)
+        return WorkoutHistoryRecord(
+            id = id,
+            title = title,
+            bodyPart = bodyPart,
+            startedAtMs = startedAtMs,
+            endedAtMs = finishedAtMs,
+            durationMinutes = ((elapsedMs + 59_999L) / 60_000L).toInt().coerceAtLeast(1),
+            exercises = exercises.map { exercise ->
+                CompletedExerciseRecord(
+                    name = exercise.name,
+                    primaryMuscles = exercise.primaryMuscles,
+                    rawEquipment = exercise.rawEquipment,
+                    sets = exercise.sets.map { set ->
+                        CompletedSetRecord(
+                            setNumber = set.setNumber,
+                            completed = set.completed,
+                            weight = set.weight,
+                            reps = set.reps,
+                            elapsedSeconds = set.elapsedSeconds
+                        )
+                    }
+                )
+            }
+        )
+    }
+}
+
+private data class ActiveExerciseLog(
+    val id: String,
+    val name: String,
+    val primaryMuscles: List<String>,
+    val rawEquipment: String,
+    val level: String,
+    val imagePaths: List<String>,
+    val sets: List<ActiveSetLog>
+)
+
+private data class ActiveSetLog(
+    val setNumber: Int,
+    val weight: String = "",
+    val reps: String = "",
+    val completed: Boolean = false,
+    val elapsedSeconds: Int? = null
+)
+
+private data class WorkoutHistoryRecord(
+    val id: String,
+    val title: String,
+    val bodyPart: String,
+    val startedAtMs: Long,
+    val endedAtMs: Long,
+    val durationMinutes: Int,
+    val exercises: List<CompletedExerciseRecord>
+)
+
+private data class CompletedExerciseRecord(
+    val name: String,
+    val primaryMuscles: List<String>,
+    val rawEquipment: String,
+    val sets: List<CompletedSetRecord>
+)
+
+private data class CompletedSetRecord(
+    val setNumber: Int,
+    val completed: Boolean,
+    val weight: String,
+    val reps: String,
+    val elapsedSeconds: Int?
+)
+
+private data class MetricSnapshot(
+    val id: String = UUID.randomUUID().toString(),
+    val dateMs: Long,
+    val weightKg: Double,
+    val bodyFat: Double
+)
+
+private enum class ProgressRange(val title: String, private val durationMs: Long?) {
+    Week("Week", 7L * 24L * 60L * 60L * 1000L),
+    Month("Month", 31L * 24L * 60L * 60L * 1000L),
+    ThreeMonths("3M", 93L * 24L * 60L * 60L * 1000L),
+    SixMonths("6M", 186L * 24L * 60L * 60L * 1000L),
+    Year("1Y", 366L * 24L * 60L * 60L * 1000L),
+    All("All", null);
+
+    private fun startMs(): Long? = durationMs?.let { System.currentTimeMillis() - it }
+
+    fun filterSnapshots(snapshots: List<MetricSnapshot>): List<MetricSnapshot> {
+        val start = startMs() ?: return snapshots
+        return snapshots.filter { it.dateMs >= start }
+    }
+
+    fun filterWorkouts(workouts: List<WorkoutHistoryRecord>): List<WorkoutHistoryRecord> {
+        val start = startMs() ?: return workouts
+        return workouts.filter { it.startedAtMs >= start }
+    }
+}
+
+private val defaultRoutineDays = listOf(
+    RoutineDay("Monday", "Mon", "Chest"),
+    RoutineDay("Tuesday", "Tue", "Back"),
+    RoutineDay("Wednesday", "Wed", "Legs"),
+    RoutineDay("Thursday", "Thu", "Shoulders"),
+    RoutineDay("Friday", "Fri", "Arms"),
+    RoutineDay("Saturday", "Sat", "Abdominals"),
+    RoutineDay("Sunday", "Sun", anyRoutineBodyPart)
+)
+
+private fun todayRoutineIndex(): Int {
+    val calendar = java.util.Calendar.getInstance()
+    return (calendar.get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7
+}
+
+private fun elapsedDisplay(seconds: Int): String {
+    val safeSeconds = seconds.coerceAtLeast(0)
+    return String.format(Locale.US, "%d:%02d", safeSeconds / 60, safeSeconds % 60)
+}
+
 private fun loadFreeExerciseDB(assets: AssetManager): List<ExerciseItem> = runCatching {
     val rawJSON = assets.open("dist/exercises.json").bufferedReader().use { it.readText() }
     val records = JSONArray(rawJSON)
@@ -2923,6 +3757,118 @@ private fun JSONArray?.stringList(): List<String> {
             }
         }
     }
+}
+
+private fun JSONArray?.routineExercises(): List<RoutineExercise> {
+    if (this == null) {
+        return emptyList()
+    }
+    return buildList {
+        for (index in 0 until length()) {
+            val item = optJSONObject(index) ?: continue
+            add(
+                RoutineExercise(
+                    id = item.optString("id", UUID.randomUUID().toString()),
+                    itemId = item.optString("itemId"),
+                    name = item.optString("name"),
+                    primaryMuscles = item.optJSONArray("primaryMuscles").stringList(),
+                    rawEquipment = item.optString("rawEquipment", "Unspecified"),
+                    level = item.optString("level", "Unspecified"),
+                    category = item.optString("category", "Unspecified"),
+                    imagePaths = item.optJSONArray("imagePaths").stringList(),
+                    instructions = item.optJSONArray("instructions").stringList(),
+                    sets = item.optInt("sets", 1).coerceAtLeast(1),
+                    reps = item.optString("reps")
+                )
+            )
+        }
+    }
+}
+
+private fun RoutineExercise.toJSON(): JSONObject =
+    JSONObject()
+        .put("id", id)
+        .put("itemId", itemId)
+        .put("name", name)
+        .put("primaryMuscles", JSONArray(primaryMuscles))
+        .put("rawEquipment", rawEquipment)
+        .put("level", level)
+        .put("category", category)
+        .put("imagePaths", JSONArray(imagePaths))
+        .put("instructions", JSONArray(instructions))
+        .put("sets", sets)
+        .put("reps", reps)
+
+private fun WorkoutHistoryRecord.toJSON(): JSONObject =
+    JSONObject()
+        .put("id", id)
+        .put("title", title)
+        .put("bodyPart", bodyPart)
+        .put("startedAtMs", startedAtMs)
+        .put("endedAtMs", endedAtMs)
+        .put("durationMinutes", durationMinutes)
+        .put("exercises", JSONArray().apply {
+            exercises.forEach { exercise ->
+                put(
+                    JSONObject()
+                        .put("name", exercise.name)
+                        .put("primaryMuscles", JSONArray(exercise.primaryMuscles))
+                        .put("rawEquipment", exercise.rawEquipment)
+                        .put("sets", JSONArray().apply {
+                            exercise.sets.forEach { set ->
+                                put(
+                                    JSONObject()
+                                        .put("setNumber", set.setNumber)
+                                        .put("completed", set.completed)
+                                        .put("weight", set.weight)
+                                        .put("reps", set.reps)
+                                        .put("elapsedSeconds", set.elapsedSeconds ?: JSONObject.NULL)
+                                )
+                            }
+                        })
+                )
+            }
+        })
+
+private fun JSONObject.toWorkoutHistoryRecord(): WorkoutHistoryRecord {
+    val exerciseArray = optJSONArray("exercises") ?: JSONArray()
+    val exercises = buildList {
+        for (exerciseIndex in 0 until exerciseArray.length()) {
+            val exercise = exerciseArray.optJSONObject(exerciseIndex) ?: continue
+            val setArray = exercise.optJSONArray("sets") ?: JSONArray()
+            val sets = buildList {
+                for (setIndex in 0 until setArray.length()) {
+                    val set = setArray.optJSONObject(setIndex) ?: continue
+                    add(
+                        CompletedSetRecord(
+                            setNumber = set.optInt("setNumber"),
+                            completed = set.optBoolean("completed"),
+                            weight = set.optString("weight"),
+                            reps = set.optString("reps"),
+                            elapsedSeconds = if (set.isNull("elapsedSeconds")) null else set.optInt("elapsedSeconds")
+                        )
+                    )
+                }
+            }
+            add(
+                CompletedExerciseRecord(
+                    name = exercise.optString("name"),
+                    primaryMuscles = exercise.optJSONArray("primaryMuscles").stringList(),
+                    rawEquipment = exercise.optString("rawEquipment"),
+                    sets = sets
+                )
+            )
+        }
+    }
+    return WorkoutHistoryRecord(
+        id = optString("id", UUID.randomUUID().toString()),
+        title = optString("title"),
+        bodyPart = optString("bodyPart"),
+        startedAtMs = optLong("startedAtMs"),
+        endedAtMs = optLong("endedAtMs"),
+        durationMinutes = optInt("durationMinutes", 1),
+        exercises = exercises
+    )
 }
 
 private fun metadataTitle(value: String?): String {
