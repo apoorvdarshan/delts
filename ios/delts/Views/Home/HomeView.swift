@@ -12,6 +12,14 @@ struct HomeView: View {
         routineDays.indices.contains(selectedDayIndex) ? routineDays[selectedDayIndex] : WeeklyRoutineStore.defaultDays[0]
     }
 
+    private var todayIndex: Int {
+        WeeklyRoutineStore.todayIndex()
+    }
+
+    private var selectedSetCount: Int {
+        selectedDay.exercises.reduce(0) { $0 + max($1.sets, 1) }
+    }
+
     private var matchingExercises: [ExerciseLibraryItem] {
         let search = exerciseSearch.trimmingCharacters(in: .whitespacesAndNewlines)
         return service.filtered(
@@ -31,10 +39,8 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
+                    startOverview
                     weekRail
-                    routineEditor
-                    plannedExercises
-                    quickStart
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
@@ -56,6 +62,47 @@ struct HomeView: View {
         }
     }
 
+    private var startOverview: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Workout Planner")
+                        .font(.caption.weight(.heavy))
+                        .textCase(.uppercase)
+                        .foregroundStyle(Color.deltsAccent)
+                    Text(selectedDay.name)
+                        .font(.title2.weight(.heavy))
+                        .foregroundStyle(Color.deltsCharcoal)
+                    Text(selectedDay.exercises.first?.name ?? "Build the day from dataset workouts")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                }
+
+                Spacer(minLength: 8)
+
+                Image(systemName: "calendar.badge.clock")
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .frame(width: 48, height: 48)
+                    .background(Color.deltsAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+
+            HStack(spacing: 10) {
+                PlannerOverviewMetric(title: "Workouts", value: "\(selectedDay.exercises.count)")
+                PlannerOverviewMetric(title: "Sets", value: "\(selectedSetCount)")
+                PlannerOverviewMetric(title: "Body", value: selectedDay.bodyPart)
+            }
+        }
+        .padding(16)
+        .background(Color.deltsPanel.opacity(0.24), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
+        }
+    }
+
     private var weekRail: some View {
         VStack(spacing: 10) {
             ForEach(routineDays.indices, id: \.self) { index in
@@ -69,118 +116,111 @@ struct HomeView: View {
                             .frame(width: 44, alignment: .leading)
 
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(day.bodyPart)
-                                .font(.subheadline.weight(.bold))
-                                .lineLimit(1)
+                            HStack(spacing: 7) {
+                                Text(day.bodyPart)
+                                    .font(.subheadline.weight(.bold))
+                                    .lineLimit(1)
+                                if index == todayIndex {
+                                    Text("Today")
+                                        .font(.caption2.weight(.heavy))
+                                        .textCase(.uppercase)
+                                        .foregroundStyle(index == selectedDayIndex ? Color.deltsAccent : Color.deltsAccent)
+                                        .padding(.horizontal, 7)
+                                        .frame(height: 20)
+                                        .background(Color.deltsAccent.opacity(0.12), in: Capsule())
+                                }
+                            }
                             Text("\(day.exercises.count) workout\(day.exercises.count == 1 ? "" : "s")")
                                 .font(.caption.weight(.semibold))
-                                .foregroundStyle(index == selectedDayIndex ? Color.deltsOnAccent.opacity(0.72) : Color.deltsMutedText)
+                                .foregroundStyle(Color.deltsMutedText)
                         }
 
                         Spacer(minLength: 8)
 
                         Image(systemName: index == selectedDayIndex ? "checkmark.circle.fill" : "chevron.right")
                             .font(.headline.weight(.bold))
+                            .foregroundStyle(index == selectedDayIndex ? Color.deltsAccent : Color.deltsMutedText)
                     }
-                    .foregroundStyle(index == selectedDayIndex ? Color.deltsOnAccent : Color.deltsCharcoal)
+                    .foregroundStyle(Color.deltsCharcoal)
                     .padding(.horizontal, 14)
                     .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
-                    .background(index == selectedDayIndex ? Color.deltsAccent : Color.deltsPanel.opacity(0.25), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(Color.deltsPanel.opacity(index == selectedDayIndex ? 0.34 : 0.24), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .stroke(Color.deltsHairline.opacity(index == selectedDayIndex ? 0.22 : 0.34), lineWidth: 0.5)
+                            .stroke((index == selectedDayIndex ? Color.deltsAccent : Color.deltsHairline).opacity(index == selectedDayIndex ? 0.48 : 0.34), lineWidth: 0.5)
                     }
                 }
                 .deltsPressable()
+
+                if index == selectedDayIndex {
+                    selectedDayEditor
+                        .padding(.top, 2)
+                }
             }
         }
     }
 
-    private var routineEditor: some View {
-        StartSection(title: "Routine", subtitle: "\(selectedDay.name) body part and dataset exercises.") {
-            VStack(alignment: .leading, spacing: 16) {
-                StartHorizontalRail {
-                    StartOptionButton(
-                        title: WeeklyRoutineStore.anyBodyPart,
-                        systemImage: "scope",
-                        isSelected: selectedDay.bodyPart == WeeklyRoutineStore.anyBodyPart
-                    ) {
-                        updateSelectedDay { $0.bodyPart = WeeklyRoutineStore.anyBodyPart }
-                    }
+    private var selectedDayEditor: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Body Part")
+                .font(.caption.weight(.heavy))
+                .textCase(.uppercase)
+                .foregroundStyle(Color.deltsMutedText)
 
-                    ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
-                        StartOptionButton(
-                            title: muscle,
-                            systemImage: "scope",
-                            isSelected: selectedDay.bodyPart == muscle
-                        ) {
-                            updateSelectedDay { $0.bodyPart = muscle }
-                        }
-                    }
+            StartHorizontalRail {
+                StartOptionButton(
+                    title: WeeklyRoutineStore.anyBodyPart,
+                    systemImage: "scope",
+                    isSelected: selectedDay.bodyPart == WeeklyRoutineStore.anyBodyPart
+                ) {
+                    updateSelectedDay { $0.bodyPart = WeeklyRoutineStore.anyBodyPart }
                 }
 
-                TextField("Search dataset exercise", text: $exerciseSearch)
-                    .textFieldStyle(.plain)
-                    .font(.headline.weight(.semibold))
+                ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
+                    StartOptionButton(
+                        title: muscle,
+                        systemImage: "scope",
+                        isSelected: selectedDay.bodyPart == muscle
+                    ) {
+                        updateSelectedDay { $0.bodyPart = muscle }
+                    }
+                }
+            }
+
+            TextField("Search dataset workouts", text: $exerciseSearch)
+                .textFieldStyle(.plain)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .padding(.horizontal, 14)
+                .frame(height: 48)
+                .background(Color.deltsPanel.opacity(0.32), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
+                }
+
+            Menu {
+                ForEach(matchingExercises.prefix(60)) { item in
+                    Button(item.name) {
+                        addExercise(item)
+                    }
+                }
+            } label: {
+                Label("Add Workout", systemImage: "plus")
+                    .font(.headline.weight(.bold))
                     .foregroundStyle(Color.deltsCharcoal)
-                    .padding(.horizontal, 14)
+                    .frame(maxWidth: .infinity)
                     .frame(height: 48)
-                    .background(Color.deltsPanel.opacity(0.32), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .background(Color.deltsPanel.opacity(0.28), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
                     }
-
-                HStack(spacing: 10) {
-                    Menu {
-                        ForEach(matchingExercises.prefix(60)) { item in
-                            Button(item.name) {
-                                addExercise(item)
-                            }
-                        }
-                    } label: {
-                        Label("Add Exercise", systemImage: "plus")
-                            .font(.headline.weight(.bold))
-                            .foregroundStyle(Color.deltsCharcoal)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 48)
-                            .background(Color.deltsPanel.opacity(0.28), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
-                            }
-                    }
-
-                    Button {
-                        if let item = matchingExercises.randomElement() {
-                            addExercise(item)
-                        }
-                    } label: {
-                        Image(systemName: "shuffle")
-                            .font(.headline.weight(.bold))
-                            .foregroundStyle(Color.deltsSecondaryAccent)
-                            .frame(width: 52, height: 48)
-                            .background(Color.deltsPanel.opacity(0.28), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
-                            }
-                    }
-                    .deltsPressable()
-                    .accessibilityLabel("Add random dataset exercise")
-                }
             }
-        }
-    }
 
-    @ViewBuilder
-    private var plannedExercises: some View {
-        if selectedDay.exercises.isEmpty {
-            StartSection(title: "Plan", subtitle: "No exercises set for \(selectedDay.name).") {
+            if selectedDay.exercises.isEmpty {
                 EmptyRoutineCard()
-            }
-        } else {
-            StartSection(title: "Plan", subtitle: "\(selectedDay.exercises.count) exercise\(selectedDay.exercises.count == 1 ? "" : "s") ready.") {
+            } else {
                 VStack(alignment: .leading, spacing: 14) {
                     ForEach(selectedDay.exercises) { exercise in
                         PlannedExerciseRow(
@@ -199,40 +239,18 @@ struct HomeView: View {
                 }
             }
         }
-    }
-
-    private var quickStart: some View {
-        StartSection(title: "Random Start", subtitle: "\(matchingExercises.count) matching dataset exercise\(matchingExercises.count == 1 ? "" : "s").") {
-            Button {
-                if let item = matchingExercises.randomElement() {
-                    activePlan = makePlan(
-                        title: item.name,
-                        summary: "Random dataset start",
-                        bodyPart: item.primaryMuscles.first ?? WeeklyRoutineStore.anyBodyPart,
-                        exercises: [PlannedRoutineExercise(item: item)]
-                    )
-                }
-            } label: {
-                Label("Start Random Exercise", systemImage: "shuffle")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(Color.deltsPanel.opacity(0.28), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
-                    }
-            }
-            .disabled(matchingExercises.isEmpty)
-            .deltsPressable()
+        .padding(12)
+        .background(Color.deltsPanel.opacity(0.16), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
         }
     }
 
     private var startBar: some View {
         VStack(spacing: 8) {
             PrimaryButton(
-                title: selectedDay.exercises.isEmpty ? "Add Exercise To Start" : "Start \(selectedDay.name)",
+                title: selectedDay.exercises.isEmpty ? "Add Workout To Start" : "Start \(selectedDay.name)",
                 systemImage: "play.fill"
             ) {
                 guard !selectedDay.exercises.isEmpty else { return }
@@ -406,7 +424,7 @@ private struct EmptyRoutineCard: View {
                 .frame(width: 42, height: 42)
                 .background(Color.deltsAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-            Text("Add a dataset exercise to this day.")
+            Text("Add a dataset workout to this day.")
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(Color.deltsCharcoal)
         }
@@ -491,34 +509,6 @@ private struct PlannedExerciseRow: View {
     }
 }
 
-private struct StartSection<Content: View>: View {
-    let title: String
-    let subtitle: String
-    let content: Content
-
-    init(title: String, subtitle: String, @ViewBuilder content: () -> Content) {
-        self.title = title
-        self.subtitle = subtitle
-        self.content = content()
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(Color.deltsMutedText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            content
-        }
-    }
-}
-
 private struct StartOptionButton: View {
     let title: String
     let systemImage: String
@@ -562,5 +552,27 @@ private struct StartHorizontalRail<Content: View>: View {
             }
             .padding(.horizontal, 1)
         }
+    }
+}
+
+private struct PlannerOverviewMetric: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.deltsMutedText)
+            Text(value)
+                .font(.subheadline.weight(.heavy))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+                .minimumScaleFactor(0.68)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .frame(height: 58)
+        .background(Color.black.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }

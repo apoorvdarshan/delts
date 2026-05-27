@@ -60,6 +60,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -77,6 +78,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -108,6 +110,8 @@ import com.apoorvdarshan.delts.ui.theme.DeltsAccent
 import com.apoorvdarshan.delts.ui.theme.DeltsOnAccent
 import com.apoorvdarshan.delts.ui.theme.DeltsSecondaryAccent
 import com.apoorvdarshan.delts.ui.theme.DeltsTheme
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import kotlinx.coroutines.delay
@@ -116,6 +120,7 @@ import org.json.JSONObject
 import kotlin.math.roundToInt
 
 private const val SETTINGS_NAME = "delts_settings"
+private val metricDateFormatter = SimpleDateFormat("MMM d, h:mm a", Locale.US)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -202,6 +207,15 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
                     measurementSystem = measurementSystem,
                     snapshots = metricSnapshots,
                     workouts = workoutHistory,
+                    onSnapshotsChange = { updated ->
+                        metricSnapshots = updated.sortedBy { it.dateMs }
+                        settings.saveMetricSnapshots(metricSnapshots)
+                    },
+                    onProgressProfileChange = { weightKg, bodyFat ->
+                        val updatedProfile = profile.copy(weightKg = weightKg, currentBodyFat = bodyFat)
+                        profile = updatedProfile
+                        settings.saveProfile(updatedProfile)
+                    },
                     padding = padding
                 )
                 DeltsTab.Profile -> ProfileScreen(
@@ -302,136 +316,90 @@ private fun StartScreen(
             .padding(top = 12.dp, bottom = 118.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        StartSection(
-            title = "Week",
-            subtitle = profile.displayName
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                routineDays.forEachIndexed { index, day ->
-                    RoutineDayRow(
-                        day = day,
-                        selected = selectedDayIndex == index,
-                        onClick = { selectedDayIndex = index }
-                    )
-                }
-            }
-        }
+        PlannerOverview(day = selectedDay)
 
-        StartSection(
-            title = "Routine",
-            subtitle = selectedDay.name
-        ) {
-            HorizontalChipRail {
-                DeltsPillButton(
-                    title = anyRoutineBodyPart,
-                    icon = Icons.Filled.FitnessCenter,
-                    selected = selectedDay.bodyPart == anyRoutineBodyPart
-                ) {
-                    updateSelectedDay { it.copy(bodyPart = anyRoutineBodyPart) }
-                }
-                bodyPartOptions.forEach { muscle ->
-                    DeltsPillButton(
-                        title = muscle,
-                        icon = Icons.Filled.FitnessCenter,
-                        selected = selectedDay.bodyPart == muscle
-                    ) {
-                        updateSelectedDay { it.copy(bodyPart = muscle) }
-                    }
-                }
-            }
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            routineDays.forEachIndexed { index, day ->
+                RoutineDayRow(
+                    day = day,
+                    selected = selectedDayIndex == index,
+                    onClick = { selectedDayIndex = index }
+                )
 
-            LibrarySearchPill(search = search, onSearchChange = { search = it })
-
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                var expanded by rememberSaveable { mutableStateOf(false) }
-                Box(modifier = Modifier.weight(1f)) {
-                    Button(
-                        onClick = { expanded = true },
+                if (selectedDayIndex == index) {
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(18.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
-                            contentColor = MaterialTheme.colorScheme.onBackground
-                        )
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f))
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Icon(Icons.Filled.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Add Exercise", fontWeight = FontWeight.Bold)
-                    }
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.heightIn(max = 420.dp)) {
-                        matchingItems.take(80).forEach { item ->
-                            DropdownMenuItem(
-                                text = { Text(item.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
-                                onClick = {
-                                    addExercise(item)
-                                    expanded = false
+                        HorizontalChipRail {
+                            DeltsPillButton(
+                                title = anyRoutineBodyPart,
+                                icon = Icons.Filled.FitnessCenter,
+                                selected = selectedDay.bodyPart == anyRoutineBodyPart
+                            ) {
+                                updateSelectedDay { it.copy(bodyPart = anyRoutineBodyPart) }
+                            }
+                            bodyPartOptions.forEach { muscle ->
+                                DeltsPillButton(
+                                    title = muscle,
+                                    icon = Icons.Filled.FitnessCenter,
+                                    selected = selectedDay.bodyPart == muscle
+                                ) {
+                                    updateSelectedDay { it.copy(bodyPart = muscle) }
                                 }
-                            )
+                            }
+                        }
+
+                        LibrarySearchPill(search = search, onSearchChange = { search = it })
+
+                        var expanded by rememberSaveable { mutableStateOf(false) }
+                        Box {
+                            Button(
+                                onClick = { expanded = true },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp),
+                                shape = RoundedCornerShape(18.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
+                                    contentColor = MaterialTheme.colorScheme.onBackground
+                                )
+                            ) {
+                                Icon(Icons.Filled.Add, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Add Workout", fontWeight = FontWeight.Bold)
+                            }
+                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.heightIn(max = 420.dp)) {
+                                matchingItems.take(80).forEach { item ->
+                                    DropdownMenuItem(
+                                        text = { Text(item.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                                        onClick = {
+                                            addExercise(item)
+                                            expanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        if (selectedDay.exercises.isEmpty()) {
+                            EmptyRoutineCard()
+                        } else {
+                            selectedDay.exercises.forEach { exercise ->
+                                RoutineExerciseRow(
+                                    exercise = exercise,
+                                    onSetsChange = { sets -> updateExercise(exercise.id) { it.copy(sets = sets) } },
+                                    onRepsChange = { reps -> updateExercise(exercise.id) { it.copy(reps = reps) } },
+                                    onRemove = { removeExercise(exercise.id) }
+                                )
+                            }
                         }
                     }
                 }
-                Button(
-                    onClick = { matchingItems.randomOrNull()?.let(::addExercise) },
-                    modifier = Modifier.size(52.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
-                        contentColor = DeltsSecondaryAccent
-                    )
-                ) {
-                    Icon(Icons.Filled.FlashOn, contentDescription = null)
-                }
-            }
-        }
-
-        StartSection(
-            title = "Plan",
-            subtitle = "${selectedDay.exercises.sumOf { it.sets.coerceAtLeast(1) }} total ${if (selectedDay.exercises.sumOf { it.sets.coerceAtLeast(1) } == 1) "set" else "sets"}"
-        ) {
-            if (selectedDay.exercises.isEmpty()) {
-                EmptyRoutineCard()
-            } else {
-                selectedDay.exercises.forEach { exercise ->
-                    RoutineExerciseRow(
-                        exercise = exercise,
-                        onSetsChange = { sets -> updateExercise(exercise.id) { it.copy(sets = sets) } },
-                        onRepsChange = { reps -> updateExercise(exercise.id) { it.copy(reps = reps) } },
-                        onRemove = { removeExercise(exercise.id) }
-                    )
-                }
-            }
-        }
-
-        StartSection(
-            title = "Random Start",
-            subtitle = "${matchingItems.size} matching dataset ${if (matchingItems.size == 1) "exercise" else "exercises"}"
-        ) {
-            Button(
-                onClick = {
-                    matchingItems.randomOrNull()?.let { item ->
-                        activeSession = ActiveWorkoutSession.from(
-                            title = item.name,
-                            bodyPart = item.primaryMuscles.firstOrNull() ?: anyRoutineBodyPart,
-                            exercises = listOf(RoutineExercise.from(item)),
-                            startedAtMs = System.currentTimeMillis()
-                        )
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(18.dp),
-                enabled = matchingItems.isNotEmpty(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
-                    contentColor = MaterialTheme.colorScheme.onBackground
-                )
-            ) {
-                Icon(Icons.Filled.FlashOn, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Start Random Exercise", fontWeight = FontWeight.Bold)
             }
         }
 
@@ -456,7 +424,59 @@ private fun StartScreen(
         ) {
             Icon(Icons.Filled.PlayArrow, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text(if (selectedDay.exercises.isEmpty()) "Add Exercise To Start" else "Start ${selectedDay.name}", fontWeight = FontWeight.Bold)
+            Text(if (selectedDay.exercises.isEmpty()) "Add Workout To Start" else "Start ${selectedDay.name}", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun PlannerOverview(day: RoutineDay) {
+    val setCount = day.exercises.sumOf { it.sets.coerceAtLeast(1) }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(15.dp)
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(
+                    text = "WORKOUT PLANNER",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = DeltsAccent
+                )
+                Text(
+                    text = day.name,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    text = day.exercises.firstOrNull()?.name ?: "Build the day from dataset workouts",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(DeltsAccent.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Filled.CalendarToday, contentDescription = null, tint = DeltsAccent)
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            OverviewMiniMetric("Workouts", day.exercises.size.toString(), Modifier.weight(1f))
+            OverviewMiniMetric("Sets", setCount.toString(), Modifier.weight(1f))
+            OverviewMiniMetric("Body", day.bodyPart, Modifier.weight(1f))
         }
     }
 }
@@ -517,7 +537,7 @@ private fun EmptyRoutineCard() {
     ) {
         Icon(Icons.Filled.CalendarToday, contentDescription = null, tint = DeltsAccent, modifier = Modifier.size(28.dp))
         Text(
-            text = "Add a dataset exercise to this day.",
+            text = "Add a dataset workout to this day.",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -1000,12 +1020,69 @@ private fun ProgressScreen(
     measurementSystem: MeasurementSystem,
     snapshots: List<MetricSnapshot>,
     workouts: List<WorkoutHistoryRecord>,
+    onSnapshotsChange: (List<MetricSnapshot>) -> Unit,
+    onProgressProfileChange: (Double, Double) -> Unit,
     padding: PaddingValues
 ) {
     var selectedRange by rememberSaveable { mutableStateOf(ProgressRange.Month) }
+    var activeMetricDialog by rememberSaveable { mutableStateOf<MetricDialogType?>(null) }
+    var editingSnapshotId by rememberSaveable { mutableStateOf<String?>(null) }
     val filteredSnapshots = remember(selectedRange, snapshots) { selectedRange.filterSnapshots(snapshots).sortedBy { it.dateMs } }
     val filteredWorkouts = remember(selectedRange, workouts) { selectedRange.filterWorkouts(workouts) }
     val usesImperial = measurementSystem == MeasurementSystem.Imperial
+    val editingSnapshot = snapshots.firstOrNull { it.id == editingSnapshotId }
+
+    fun displayWeight(kg: Double): Double = if (usesImperial) kg * 2.2046226218 else kg
+
+    fun weightKgFromDisplay(value: Double): Double = if (usesImperial) value / 2.2046226218 else value
+
+    fun saveMetricSnapshot(snapshot: MetricSnapshot) {
+        onSnapshotsChange(upsertMetricSnapshot(snapshots, snapshot))
+    }
+
+    fun logWeight(displayValue: Double) {
+        val weightKg = weightKgFromDisplay(displayValue)
+        saveMetricSnapshot(MetricSnapshot(dateMs = System.currentTimeMillis(), weightKg = weightKg, bodyFat = profile.currentBodyFat))
+        onProgressProfileChange(weightKg, profile.currentBodyFat)
+    }
+
+    fun logBodyFat(bodyFat: Double) {
+        saveMetricSnapshot(MetricSnapshot(dateMs = System.currentTimeMillis(), weightKg = profile.weightKg, bodyFat = bodyFat))
+        onProgressProfileChange(profile.weightKg, bodyFat)
+    }
+
+    fun updateMetric(snapshot: MetricSnapshot) {
+        onSnapshotsChange(updateMetricSnapshot(snapshots, snapshot))
+        if (snapshots.maxByOrNull { it.dateMs }?.id == snapshot.id || snapshot.dateMs >= (snapshots.maxOfOrNull { it.dateMs } ?: 0L)) {
+            onProgressProfileChange(snapshot.weightKg, snapshot.bodyFat)
+        }
+    }
+
+    activeMetricDialog?.let { dialogType ->
+        MetricValueDialog(
+            title = if (dialogType == MetricDialogType.Weight) "Log Weight" else "Log Body Fat",
+            valueTitle = if (dialogType == MetricDialogType.Weight) "Weight" else "Body fat",
+            initialValue = if (dialogType == MetricDialogType.Weight) displayWeight(profile.weightKg) else profile.currentBodyFat,
+            unit = if (dialogType == MetricDialogType.Weight) measurementSystem.weightUnit else "%",
+            onDismiss = { activeMetricDialog = null },
+            onSave = { value ->
+                if (dialogType == MetricDialogType.Weight) logWeight(value) else logBodyFat(value)
+                activeMetricDialog = null
+            }
+        )
+    }
+
+    editingSnapshot?.let { snapshot ->
+        MetricEditDialog(
+            snapshot = snapshot,
+            measurementSystem = measurementSystem,
+            onDismiss = { editingSnapshotId = null },
+            onSave = { updated ->
+                updateMetric(updated)
+                editingSnapshotId = null
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -1016,6 +1093,20 @@ private fun ProgressScreen(
             .padding(top = 12.dp, bottom = 118.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
+        ProgressOverview(
+            range = selectedRange,
+            workoutCount = filteredWorkouts.size,
+            latestWeightKg = filteredSnapshots.lastOrNull()?.weightKg,
+            latestBodyFat = filteredSnapshots.lastOrNull()?.bodyFat,
+            metricCount = filteredSnapshots.size,
+            measurementSystem = measurementSystem
+        )
+
+        MetricActionRow(
+            onLogWeight = { activeMetricDialog = MetricDialogType.Weight },
+            onLogBodyFat = { activeMetricDialog = MetricDialogType.BodyFat }
+        )
+
         HorizontalChipRail {
             ProgressRange.entries.forEach { range ->
                 DeltsPillButton(
@@ -1042,8 +1133,16 @@ private fun ProgressScreen(
             values = filteredSnapshots.map { it.bodyFat }
         )
 
+        MetricHistorySection(
+            snapshots = filteredSnapshots.sortedByDescending { it.dateMs },
+            measurementSystem = measurementSystem,
+            onEdit = { editingSnapshotId = it.id },
+            onDelete = { snapshot ->
+                onSnapshotsChange(deleteMetricSnapshot(snapshots, snapshot.id))
+            }
+        )
+
         StartSection(
-            index = "01",
             title = "Workout History",
             subtitle = "${profile.displayName} - ${selectedRange.title}"
         ) {
@@ -1066,6 +1165,308 @@ private fun ProgressScreen(
             }
         }
     }
+}
+
+@Composable
+private fun ProgressOverview(
+    range: ProgressRange,
+    workoutCount: Int,
+    latestWeightKg: Double?,
+    latestBodyFat: Double?,
+    metricCount: Int,
+    measurementSystem: MeasurementSystem
+) {
+    val latestWeightText = latestWeightKg?.let {
+        val value = if (measurementSystem == MeasurementSystem.Imperial) it * 2.2046226218 else it
+        String.format(Locale.US, "%.1f %s", value, measurementSystem.weightUnit)
+    } ?: "--"
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(15.dp)
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(
+                    text = "PROGRESS",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = DeltsAccent
+                )
+                Text(
+                    text = range.title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    text = "$workoutCount ${if (workoutCount == 1) "workout" else "workouts"} tracked in this range",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(DeltsAccent.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Filled.History, contentDescription = null, tint = DeltsAccent)
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            OverviewMiniMetric("Weight", latestWeightText, Modifier.weight(1f))
+            OverviewMiniMetric("Body fat", latestBodyFat?.let { String.format(Locale.US, "%.1f%%", it) } ?: "--", Modifier.weight(1f))
+            OverviewMiniMetric("Logs", metricCount.toString(), Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun OverviewMiniMetric(title: String, value: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.Black.copy(alpha = 0.08f))
+            .height(58.dp)
+            .padding(horizontal = 12.dp),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun MetricActionRow(onLogWeight: () -> Unit, onLogBodyFat: () -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+        MetricActionButton(
+            title = "Log Weight",
+            icon = Icons.Filled.FitnessCenter,
+            modifier = Modifier.weight(1f),
+            onClick = onLogWeight
+        )
+        MetricActionButton(
+            title = "Log Body Fat",
+            icon = Icons.Filled.Favorite,
+            modifier = Modifier.weight(1f),
+            onClick = onLogBodyFat
+        )
+    }
+}
+
+@Composable
+private fun MetricActionButton(title: String, icon: ImageVector, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(52.dp),
+        shape = RoundedCornerShape(17.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
+            contentColor = MaterialTheme.colorScheme.onBackground
+        )
+    ) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(19.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(title, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+@Composable
+private fun MetricHistorySection(
+    snapshots: List<MetricSnapshot>,
+    measurementSystem: MeasurementSystem,
+    onEdit: (MetricSnapshot) -> Unit,
+    onDelete: (MetricSnapshot) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Text(
+            text = "Metric History",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        if (snapshots.isEmpty()) {
+            Text(
+                text = "No weight or body fat logs in this range.",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f))
+                    .padding(16.dp)
+            )
+        } else {
+            snapshots.forEach { snapshot ->
+                MetricHistoryCard(
+                    snapshot = snapshot,
+                    measurementSystem = measurementSystem,
+                    onEdit = { onEdit(snapshot) },
+                    onDelete = { onDelete(snapshot) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetricHistoryCard(
+    snapshot: MetricSnapshot,
+    measurementSystem: MeasurementSystem,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val weightDisplay = if (measurementSystem == MeasurementSystem.Imperial) snapshot.weightKg * 2.2046226218 else snapshot.weightKg
+    val weightUnit = measurementSystem.weightUnit
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.26f))
+            .padding(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Text(
+                text = metricDateFormatter.format(Date(snapshot.dateMs)),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MetricHistoryPill("Weight", String.format(Locale.US, "%.1f %s", weightDisplay, weightUnit))
+                MetricHistoryPill("Body fat", String.format(Locale.US, "%.1f%%", snapshot.bodyFat))
+            }
+        }
+        TextButton(onClick = onEdit) {
+            Text("Edit", fontWeight = FontWeight.Bold)
+        }
+        TextButton(onClick = onDelete) {
+            Text("Delete", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+        }
+    }
+}
+
+@Composable
+private fun MetricHistoryPill(title: String, value: String) {
+    Text(
+        text = "$title $value",
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Bold,
+        color = DeltsSecondaryAccent,
+        modifier = Modifier
+            .clip(RoundedCornerShape(13.dp))
+            .background(DeltsSecondaryAccent.copy(alpha = 0.10f))
+            .padding(horizontal = 8.dp, vertical = 5.dp)
+    )
+}
+
+@Composable
+private fun MetricValueDialog(
+    title: String,
+    valueTitle: String,
+    initialValue: Double,
+    unit: String,
+    onDismiss: () -> Unit,
+    onSave: (Double) -> Unit
+) {
+    var rawValue by rememberSaveable(title) { mutableStateOf(String.format(Locale.US, "%.1f", initialValue)) }
+    val parsedValue = rawValue.replace(',', '.').toDoubleOrNull()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title, fontWeight = FontWeight.ExtraBold) },
+        text = {
+            OutlinedTextField(
+                value = rawValue,
+                onValueChange = { rawValue = it },
+                label = { Text("$valueTitle ($unit)") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+            )
+        },
+        confirmButton = {
+            TextButton(enabled = parsedValue != null, onClick = { parsedValue?.let(onSave) }) {
+                Text("Save", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+private fun MetricEditDialog(
+    snapshot: MetricSnapshot,
+    measurementSystem: MeasurementSystem,
+    onDismiss: () -> Unit,
+    onSave: (MetricSnapshot) -> Unit
+) {
+    val displayWeight = if (measurementSystem == MeasurementSystem.Imperial) snapshot.weightKg * 2.2046226218 else snapshot.weightKg
+    var weightRaw by rememberSaveable(snapshot.id) { mutableStateOf(String.format(Locale.US, "%.1f", displayWeight)) }
+    var bodyFatRaw by rememberSaveable(snapshot.id) { mutableStateOf(String.format(Locale.US, "%.1f", snapshot.bodyFat)) }
+    val parsedWeight = weightRaw.replace(',', '.').toDoubleOrNull()
+    val parsedBodyFat = bodyFatRaw.replace(',', '.').toDoubleOrNull()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Metric", fontWeight = FontWeight.ExtraBold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = weightRaw,
+                    onValueChange = { weightRaw = it },
+                    label = { Text("Weight (${measurementSystem.weightUnit})") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                )
+                OutlinedTextField(
+                    value = bodyFatRaw,
+                    onValueChange = { bodyFatRaw = it },
+                    label = { Text("Body fat (%)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = parsedWeight != null && parsedBodyFat != null, onClick = {
+                val weightKg = if (measurementSystem == MeasurementSystem.Imperial) parsedWeight!! / 2.2046226218 else parsedWeight!!
+                onSave(snapshot.copy(weightKg = weightKg, bodyFat = parsedBodyFat!!))
+            }) {
+                Text("Save", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
@@ -3274,6 +3675,14 @@ private fun SharedPreferences.loadMetricSnapshots(): List<MetricSnapshot> {
     }.getOrElse { emptyList() }
 }
 
+private fun SharedPreferences.saveMetricSnapshots(snapshots: List<MetricSnapshot>) {
+    val array = JSONArray()
+    snapshots.sortedBy { it.dateMs }.forEach { snapshot ->
+        array.put(snapshot.toJSON())
+    }
+    edit().putString("metric_snapshots_v1", array.toString()).apply()
+}
+
 private fun SharedPreferences.recordMetricSnapshot(profile: AndroidProfile): List<MetricSnapshot> {
     val todayStartMs = java.util.Calendar.getInstance().apply {
         set(java.util.Calendar.HOUR_OF_DAY, 0)
@@ -3289,19 +3698,48 @@ private fun SharedPreferences.recordMetricSnapshot(profile: AndroidProfile): Lis
     } else {
         snapshots.add(MetricSnapshot(dateMs = now, weightKg = profile.weightKg, bodyFat = profile.currentBodyFat))
     }
-    val array = JSONArray()
-    snapshots.forEach { snapshot ->
-        array.put(
-            JSONObject()
-                .put("id", snapshot.id)
-                .put("dateMs", snapshot.dateMs)
-                .put("weightKg", snapshot.weightKg)
-                .put("bodyFat", snapshot.bodyFat)
-        )
-    }
-    edit().putString("metric_snapshots_v1", array.toString()).apply()
-    return snapshots
+    saveMetricSnapshots(snapshots)
+    return snapshots.sortedBy { it.dateMs }
 }
+
+private fun MetricSnapshot.toJSON(): JSONObject =
+    JSONObject()
+        .put("id", id)
+        .put("dateMs", dateMs)
+        .put("weightKg", weightKg)
+        .put("bodyFat", bodyFat)
+
+private fun upsertMetricSnapshot(snapshots: List<MetricSnapshot>, snapshot: MetricSnapshot): List<MetricSnapshot> {
+    val dayStart = dayStartMs(snapshot.dateMs)
+    val dayEnd = dayStart + 24L * 60L * 60L * 1000L
+    val mutable = snapshots.toMutableList()
+    val index = mutable.indexOfFirst { it.dateMs in dayStart until dayEnd }
+    if (index >= 0) {
+        mutable[index] = mutable[index].copy(
+            dateMs = snapshot.dateMs,
+            weightKg = snapshot.weightKg,
+            bodyFat = snapshot.bodyFat
+        )
+    } else {
+        mutable.add(snapshot)
+    }
+    return mutable.sortedBy { it.dateMs }
+}
+
+private fun updateMetricSnapshot(snapshots: List<MetricSnapshot>, snapshot: MetricSnapshot): List<MetricSnapshot> =
+    snapshots.map { if (it.id == snapshot.id) snapshot else it }.sortedBy { it.dateMs }
+
+private fun deleteMetricSnapshot(snapshots: List<MetricSnapshot>, id: String): List<MetricSnapshot> =
+    snapshots.filterNot { it.id == id }.sortedBy { it.dateMs }
+
+private fun dayStartMs(dateMs: Long): Long =
+    java.util.Calendar.getInstance().apply {
+        timeInMillis = dateMs
+        set(java.util.Calendar.HOUR_OF_DAY, 0)
+        set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0)
+        set(java.util.Calendar.MILLISECOND, 0)
+    }.timeInMillis
 
 private fun SharedPreferences.loadProfile(): AndroidProfile {
     val mainGoal = getString("profile_goal", "Muscle Gain").orEmpty()
@@ -3416,7 +3854,15 @@ private enum class DeltsTab(val title: String, val icon: ImageVector) {
 
 private enum class MeasurementSystem(val title: String) {
     Metric("Metric"),
-    Imperial("Imperial")
+    Imperial("Imperial");
+
+    val weightUnit: String
+        get() = if (this == Metric) "kg" else "lb"
+}
+
+private enum class MetricDialogType {
+    Weight,
+    BodyFat
 }
 
 private enum class LibrarySort(val title: String) {
