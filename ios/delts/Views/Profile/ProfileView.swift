@@ -180,6 +180,7 @@ private struct ProfileEditorView: View {
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
     @AppStorage("apple_health_enabled") private var appleHealthEnabled = false
+    @AppStorage("profile_goal_weight_kg") private var goalWeightKG = 0.0
     @State private var primaryAPIKey = LocalGeminiKeyStore.apiKey ?? ""
     @State private var fallbackAPIKey = LocalGeminiKeyStore.fallbackAPIKey ?? ""
     @State private var hasSavedPrimaryAPIKey = LocalGeminiKeyStore.apiKey != nil
@@ -265,6 +266,13 @@ private struct ProfileEditorView: View {
                     systemImage: "scalemass",
                     system: measurementSystem,
                     kilograms: weightBinding
+                )
+                ProfileDivider()
+                ProfileWeightPickerRow(
+                    title: "Goal weight",
+                    systemImage: "target",
+                    system: measurementSystem,
+                    kilograms: goalWeightBinding
                 )
                 ProfileDivider()
                 ProfilePercentPickerRow(
@@ -705,6 +713,14 @@ private struct ProfileEditorView: View {
 
     private var weightBinding: Binding<Double> {
         doubleBinding(\.currentWeightKG)
+    }
+
+    private var goalWeightBinding: Binding<Double> {
+        Binding {
+            goalWeightKG > 0 ? goalWeightKG : profile.currentWeightKG
+        } set: { newValue in
+            goalWeightKG = newValue
+        }
     }
 
     private var currentBodyFatBinding: Binding<Double> {

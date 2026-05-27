@@ -1106,7 +1106,7 @@ private fun ProgressScreen(
             unit = if (usesImperial) "lb" else "kg",
             values = weightPoints,
             currentValue = if (usesImperial) profile.weightKg * 2.2046226218 else profile.weightKg,
-            goalValue = null,
+            goalValue = if (usesImperial) profile.goalWeightKg * 2.2046226218 else profile.goalWeightKg,
             averageLabel = selectedRange.title,
             averageChange = averageMetricChange(weightChangePoints, selectedRange)
         )
@@ -1613,6 +1613,13 @@ private fun ProfileScreen(
                 measurementSystem = measurementSystem,
                 kilograms = profile.weightKg
             ) { updateProfile(profile.copy(weightKg = it)) }
+            ProfileRowDivider()
+            WeightMeasurementCompactRow(
+                title = "Goal weight",
+                icon = Icons.Filled.Flag,
+                measurementSystem = measurementSystem,
+                kilograms = profile.goalWeightKg
+            ) { updateProfile(profile.copy(goalWeightKg = it)) }
             ProfileRowDivider()
             PercentMeasurementCompactRow(
                 title = "Current body fat",
@@ -3098,6 +3105,8 @@ private fun HeightMeasurementCompactRow(
 
 @Composable
 private fun WeightMeasurementCompactRow(
+    title: String = "Weight",
+    icon: ImageVector = Icons.Filled.FitnessCenter,
     measurementSystem: MeasurementSystem,
     kilograms: Double,
     onChange: (Double) -> Unit
@@ -3108,8 +3117,8 @@ private fun WeightMeasurementCompactRow(
     val parts = splitDecimal(displayValue, range)
 
     CompactMeasurementRow(
-        title = "Weight",
-        icon = Icons.Filled.FitnessCenter,
+        title = title,
+        icon = icon,
         valueText = "${formatOneDecimal(combineDecimal(parts.whole, parts.decimal))} $unit"
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -3709,12 +3718,14 @@ private fun SharedPreferences.loadProfile(): AndroidProfile {
     }
     val selectedGoals = getStringSet("profile_goals", defaultGoals) ?: defaultGoals
     val storedDatasetLevel = getString("profile_experience", "Intermediate").orEmpty()
+    val weightKg = getDoubleCompat("profile_weight_kg", getDoubleCompat("profile_weight", 75.0))
 
     return AndroidProfile(
         name = getString("profile_name", "Athlete").orEmpty(),
         age = getInt("profile_age", 24),
         heightCm = getDoubleCompat("profile_height_cm", 178.0),
-        weightKg = getDoubleCompat("profile_weight_kg", getDoubleCompat("profile_weight", 75.0)),
+        weightKg = weightKg,
+        goalWeightKg = getDoubleCompat("profile_goal_weight_kg", weightKg),
         currentBodyFat = getDoubleCompat("profile_bodyfat_current", 18.0),
         desiredBodyFat = getDoubleCompat("profile_bodyfat_desired", 12.0),
         experience = if (storedDatasetLevel == "Advanced") "Expert" else storedDatasetLevel,
@@ -3738,6 +3749,7 @@ private fun SharedPreferences.saveProfile(profile: AndroidProfile) {
         .putInt("profile_age", profile.age)
         .putString("profile_height_cm", formatOneDecimal(profile.heightCm))
         .putString("profile_weight_kg", formatOneDecimal(profile.weightKg))
+        .putString("profile_goal_weight_kg", formatOneDecimal(profile.goalWeightKg))
         .putInt("profile_weight", profile.weightKg.roundToInt())
         .putString("profile_bodyfat_current", formatOneDecimal(profile.currentBodyFat))
         .putString("profile_bodyfat_desired", formatOneDecimal(profile.desiredBodyFat))
@@ -3838,6 +3850,7 @@ private data class AndroidProfile(
     val age: Int,
     val heightCm: Double,
     val weightKg: Double,
+    val goalWeightKg: Double,
     val currentBodyFat: Double,
     val desiredBodyFat: Double,
     val experience: String,
@@ -4511,6 +4524,7 @@ private fun DeltsAppPreview() {
                     age = 24,
                     heightCm = 178.0,
                     weightKg = 75.0,
+                    goalWeightKg = 75.0,
                     currentBodyFat = 18.0,
                     desiredBodyFat = 12.0,
                     experience = "Intermediate",

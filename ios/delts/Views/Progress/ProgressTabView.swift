@@ -8,6 +8,7 @@ struct ProgressTabView: View {
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
     @AppStorage("profile_measurement_system") private var measurementSystemRaw = "metric"
     @AppStorage("apple_health_enabled") private var appleHealthEnabled = false
+    @AppStorage("profile_goal_weight_kg") private var goalWeightKG = 0.0
     @State private var selectedRange: ProgressRange = .month
     @State private var snapshots: [ProgressMetricSnapshot] = ProgressMetricStore.load()
     @State private var isLoggingWeight = false
@@ -170,7 +171,7 @@ struct ProgressTabView: View {
                 unit: usesImperialUnits ? "lb" : "kg",
                 values: filteredWeightPoints,
                 currentValue: profiles.first.map { displayWeight($0.currentWeightKG) } ?? filteredWeightPoints.last?.value,
-                goalValue: nil,
+                goalValue: effectiveGoalWeightKG.map(displayWeight),
                 averagePeriodTitle: selectedRange.title,
                 averagePeriodDays: selectedRange.averagePeriodDays
             )
@@ -252,6 +253,13 @@ struct ProgressTabView: View {
 
     private var latestBodyFat: Double? {
         snapshots.sorted { $0.date < $1.date }.last(where: { $0.bodyFat != nil })?.bodyFat
+    }
+
+    private var effectiveGoalWeightKG: Double? {
+        if goalWeightKG > 0 {
+            return goalWeightKG
+        }
+        return profiles.first?.currentWeightKG ?? latestWeightKg
     }
 
     private func displayWeight(_ kg: Double) -> Double {
