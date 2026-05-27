@@ -835,6 +835,9 @@ private struct DetailMetricGrid: View {
             HStack(spacing: 8) {
                 DetailMetric(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill")
                 DetailMetric(title: "Category", value: item.category, systemImage: "tag")
+            }
+
+            HStack(spacing: 8) {
                 DetailMetric(title: "Force", value: item.force, systemImage: "arrow.left.arrow.right")
                 DetailMetric(title: "Mechanic", value: item.mechanic, systemImage: "gearshape")
             }

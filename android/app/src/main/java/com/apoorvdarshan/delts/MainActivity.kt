@@ -1659,6 +1659,9 @@ private fun ExerciseDetailMetricGrid(
                 icon = Icons.Filled.List,
                 modifier = Modifier.weight(1f)
             )
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
             ExerciseDetailMetric(
                 title = "Force",
                 value = item.force,
