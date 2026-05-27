@@ -61,9 +61,12 @@ struct HomeView: View {
     private var startOverview: some View {
         HStack(alignment: .center, spacing: 12) {
             Text("Workout Planner")
-                .font(.caption.weight(.heavy))
+                .font(.system(size: 26, weight: .heavy, design: .rounded))
                 .textCase(.uppercase)
                 .foregroundStyle(Color.deltsAccent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .frame(height: 48, alignment: .center)
 
             Spacer(minLength: 8)
 

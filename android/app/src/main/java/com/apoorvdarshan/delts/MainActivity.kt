@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -440,10 +441,15 @@ private fun PlannerOverview() {
     ) {
         Text(
             text = "WORKOUT PLANNER",
-            style = MaterialTheme.typography.labelLarge,
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.ExtraBold,
             color = DeltsAccent,
-            modifier = Modifier.weight(1f)
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .weight(1f)
+                .height(48.dp)
+                .wrapContentHeight(Alignment.CenterVertically)
         )
         Box(
             modifier = Modifier
