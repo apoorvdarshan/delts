@@ -320,9 +320,7 @@ private struct WorkoutSplitMuscleGroup: Identifiable, Hashable {
     static func groups(for split: WorkoutSplit) -> [WorkoutSplitMuscleGroup] {
         switch split {
         case .fullBody:
-            return [
-                group("Full Body", allMuscles)
-            ]
+            return []
         case .upperLower:
             return [
                 group("Upper", ["Biceps", "Chest", "Forearms", "Lats", "Middle Back", "Neck", "Shoulders", "Traps", "Triceps"]),
@@ -375,11 +373,6 @@ private struct WorkoutSplitMuscleGroup: Identifiable, Hashable {
             return []
         }
     }
-
-    private static let allMuscles: Set<String> = [
-        "Abdominals", "Abductors", "Adductors", "Biceps", "Calves", "Chest", "Forearms", "Glutes", "Hamstrings",
-        "Lats", "Lower Back", "Middle Back", "Neck", "Quadriceps", "Shoulders", "Traps", "Triceps"
-    ]
 
     private static func group(_ title: String, _ muscles: Set<String>) -> WorkoutSplitMuscleGroup {
         WorkoutSplitMuscleGroup(title: title, muscles: muscles)

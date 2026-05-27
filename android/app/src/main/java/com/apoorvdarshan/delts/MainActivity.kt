@@ -4526,16 +4526,9 @@ private val workoutSplitOptions = listOf(
 
 private data class WorkoutSplitMuscleGroup(val title: String, val muscles: Set<String>)
 
-private val datasetMuscles = setOf(
-    "Abdominals", "Abductors", "Adductors", "Biceps", "Calves", "Chest", "Forearms", "Glutes", "Hamstrings",
-    "Lats", "Lower Back", "Middle Back", "Neck", "Quadriceps", "Shoulders", "Traps", "Triceps"
-)
-
 private fun splitMuscleGroupsFor(split: String): List<WorkoutSplitMuscleGroup> =
     when (split) {
-        "Full Body" -> listOf(
-            WorkoutSplitMuscleGroup("Full Body", datasetMuscles)
-        )
+        "Full Body" -> emptyList()
         "Upper Lower" -> listOf(
             WorkoutSplitMuscleGroup("Upper", setOf("Biceps", "Chest", "Forearms", "Lats", "Middle Back", "Neck", "Shoulders", "Traps", "Triceps")),
             WorkoutSplitMuscleGroup("Lower", setOf("Abductors", "Adductors", "Calves", "Glutes", "Hamstrings", "Lower Back", "Quadriceps")),
