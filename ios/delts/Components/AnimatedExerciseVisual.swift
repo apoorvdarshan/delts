@@ -116,7 +116,6 @@ private struct ExerciseImageView: View {
                             .opacity(index == frameIndex ? 1 : 0)
                     }
                 }
-                .animation(.easeInOut(duration: 0.18), value: frameIndex)
             } else {
                 Color.deltsPanel.opacity(0.18)
             }
@@ -130,7 +129,7 @@ private struct ExerciseImageView: View {
             guard frames.count > 1, !reduceMotion else { return }
 
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 1_050_000_000)
+                try? await Task.sleep(nanoseconds: 850_000_000)
                 guard !Task.isCancelled else { return }
                 frameIndex = (frameIndex + 1) % frames.count
             }
