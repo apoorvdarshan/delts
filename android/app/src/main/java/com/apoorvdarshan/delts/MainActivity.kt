@@ -302,32 +302,22 @@ private fun StartScreen(
             .padding(top = 12.dp, bottom = 118.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        ScreenHeader(
-            eyebrow = "DELTS",
-            title = "Weekly Routine",
-            subtitle = "${selectedDay.name} - ${selectedDay.bodyPart} - ${selectedDay.exercises.size} ${if (selectedDay.exercises.size == 1) "exercise" else "exercises"}"
-        )
-
         StartSection(
-            index = "01",
             title = "Week",
             subtitle = profile.displayName
         ) {
-            HorizontalChipRail {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 routineDays.forEachIndexed { index, day ->
-                    DeltsPillButton(
-                        title = "${day.shortName} ${day.exercises.size}",
-                        icon = Icons.Filled.CalendarToday,
-                        selected = selectedDayIndex == index
-                    ) {
-                        selectedDayIndex = index
-                    }
+                    RoutineDayRow(
+                        day = day,
+                        selected = selectedDayIndex == index,
+                        onClick = { selectedDayIndex = index }
+                    )
                 }
             }
         }
 
         StartSection(
-            index = "02",
             title = "Routine",
             subtitle = selectedDay.name
         ) {
@@ -397,7 +387,6 @@ private fun StartScreen(
         }
 
         StartSection(
-            index = "03",
             title = "Plan",
             subtitle = "${selectedDay.exercises.sumOf { it.sets.coerceAtLeast(1) }} total ${if (selectedDay.exercises.sumOf { it.sets.coerceAtLeast(1) } == 1) "set" else "sets"}"
         ) {
@@ -416,7 +405,6 @@ private fun StartScreen(
         }
 
         StartSection(
-            index = "04",
             title = "Random Start",
             subtitle = "${matchingItems.size} matching dataset ${if (matchingItems.size == 1) "exercise" else "exercises"}"
         ) {
@@ -470,6 +458,49 @@ private fun StartScreen(
             Spacer(modifier = Modifier.width(8.dp))
             Text(if (selectedDay.exercises.isEmpty()) "Add Exercise To Start" else "Start ${selectedDay.name}", fontWeight = FontWeight.Bold)
         }
+    }
+}
+
+@Composable
+private fun RoutineDayRow(day: RoutineDay, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(if (selected) DeltsAccent else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = day.shortName,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.ExtraBold,
+            color = if (selected) DeltsOnAccent else MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.width(46.dp)
+        )
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = day.bodyPart,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = if (selected) DeltsOnAccent else MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "${day.exercises.size} ${if (day.exercises.size == 1) "workout" else "workouts"}",
+                style = MaterialTheme.typography.labelLarge,
+                color = if (selected) DeltsOnAccent.copy(alpha = 0.72f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
+            )
+        }
+        Icon(
+            imageVector = if (selected) Icons.Filled.Check else Icons.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = if (selected) DeltsOnAccent else MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -614,12 +645,6 @@ private fun ActiveRoutineScreen(
             .padding(top = 12.dp, bottom = 118.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        ScreenHeader(
-            eyebrow = "ACTIVE",
-            title = session.title,
-            subtitle = "Elapsed ${elapsedDisplay(((nowMs - session.startedAtMs) / 1000).toInt())}"
-        )
-
         session.exercises.forEach { exercise ->
             Column(
                 modifier = Modifier
@@ -991,12 +1016,6 @@ private fun ProgressScreen(
             .padding(top = 12.dp, bottom = 118.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        ScreenHeader(
-            eyebrow = "DELTS",
-            title = "Progress",
-            subtitle = "${filteredWorkouts.size} ${if (filteredWorkouts.size == 1) "workout" else "workouts"} in ${selectedRange.title.lowercase(Locale.US)}"
-        )
-
         HorizontalChipRail {
             ProgressRange.entries.forEach { range ->
                 DeltsPillButton(
@@ -1507,36 +1526,6 @@ private fun ProfileScreen(
 }
 
 @Composable
-private fun ScreenHeader(
-    eyebrow: String,
-    title: String,
-    subtitle: String,
-    compact: Boolean = false
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-        Text(
-            text = eyebrow,
-            style = MaterialTheme.typography.labelLarge,
-            color = DeltsAccent
-        )
-        Text(
-            text = title,
-            style = if (compact) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.ExtraBold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-}
-
-@Composable
 private fun DatasetStartHero(
     item: ExerciseItem?,
     imagePaths: List<String>,
@@ -1716,14 +1705,16 @@ private fun ExerciseVisual(
 }
 
 @Composable
-private fun StartSection(index: String, title: String, subtitle: String, content: @Composable ColumnScope.() -> Unit) {
+private fun StartSection(index: String? = null, title: String, subtitle: String, content: @Composable ColumnScope.() -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
-            Text(
-                text = index,
-                style = MaterialTheme.typography.labelLarge,
-                color = DeltsAccent
-            )
+            if (index != null) {
+                Text(
+                    text = index,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = DeltsAccent
+                )
+            }
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = title,

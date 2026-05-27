@@ -31,7 +31,6 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
-                    startHeader
                     weekRail
                     routineEditor
                     plannedExercises
@@ -57,62 +56,48 @@ struct HomeView: View {
         }
     }
 
-    private var startHeader: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("delts")
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(Color.deltsAccent)
-                .textCase(.uppercase)
-
-            Text("Weekly Routine")
-                .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                .foregroundStyle(Color.deltsCharcoal)
-
-            Text("\(selectedDay.name) - \(selectedDay.bodyPart) - \(selectedDay.exercises.count) exercise\(selectedDay.exercises.count == 1 ? "" : "s")")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.deltsMutedText)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
     private var weekRail: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                ForEach(routineDays.indices, id: \.self) { index in
-                    let day = routineDays[index]
-                    Button {
-                        selectedDayIndex = index
-                    } label: {
-                        VStack(alignment: .leading, spacing: 7) {
-                            Text(day.shortName)
-                                .font(.headline.weight(.bold))
+        VStack(spacing: 10) {
+            ForEach(routineDays.indices, id: \.self) { index in
+                let day = routineDays[index]
+                Button {
+                    selectedDayIndex = index
+                } label: {
+                    HStack(spacing: 12) {
+                        Text(day.shortName)
+                            .font(.headline.weight(.bold))
+                            .frame(width: 44, alignment: .leading)
+
+                        VStack(alignment: .leading, spacing: 3) {
                             Text(day.bodyPart)
-                                .font(.caption.weight(.semibold))
+                                .font(.subheadline.weight(.bold))
                                 .lineLimit(1)
-                            Text("\(day.exercises.count) planned")
-                                .font(.caption2.weight(.semibold))
+                            Text("\(day.exercises.count) workout\(day.exercises.count == 1 ? "" : "s")")
+                                .font(.caption.weight(.semibold))
                                 .foregroundStyle(index == selectedDayIndex ? Color.deltsOnAccent.opacity(0.72) : Color.deltsMutedText)
                         }
-                        .foregroundStyle(index == selectedDayIndex ? Color.deltsOnAccent : Color.deltsCharcoal)
-                        .frame(width: 108, alignment: .leading)
-                        .padding(14)
-                        .background(index == selectedDayIndex ? Color.deltsAccent : Color.deltsPanel.opacity(0.25), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .stroke(Color.deltsHairline.opacity(index == selectedDayIndex ? 0.22 : 0.34), lineWidth: 0.5)
-                        }
+
+                        Spacer(minLength: 8)
+
+                        Image(systemName: index == selectedDayIndex ? "checkmark.circle.fill" : "chevron.right")
+                            .font(.headline.weight(.bold))
                     }
-                    .deltsPressable()
+                    .foregroundStyle(index == selectedDayIndex ? Color.deltsOnAccent : Color.deltsCharcoal)
+                    .padding(.horizontal, 14)
+                    .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+                    .background(index == selectedDayIndex ? Color.deltsAccent : Color.deltsPanel.opacity(0.25), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(Color.deltsHairline.opacity(index == selectedDayIndex ? 0.22 : 0.34), lineWidth: 0.5)
+                    }
                 }
+                .deltsPressable()
             }
-            .padding(.horizontal, 1)
         }
     }
 
     private var routineEditor: some View {
-        StartSection(index: "01", title: "Routine", subtitle: "\(selectedDay.name) body part and dataset exercises.") {
+        StartSection(title: "Routine", subtitle: "\(selectedDay.name) body part and dataset exercises.") {
             VStack(alignment: .leading, spacing: 16) {
                 StartHorizontalRail {
                     StartOptionButton(
@@ -191,11 +176,11 @@ struct HomeView: View {
     @ViewBuilder
     private var plannedExercises: some View {
         if selectedDay.exercises.isEmpty {
-            StartSection(index: "02", title: "Plan", subtitle: "No exercises set for \(selectedDay.name).") {
+            StartSection(title: "Plan", subtitle: "No exercises set for \(selectedDay.name).") {
                 EmptyRoutineCard()
             }
         } else {
-            StartSection(index: "02", title: "Plan", subtitle: "\(selectedDay.exercises.count) exercise\(selectedDay.exercises.count == 1 ? "" : "s") ready.") {
+            StartSection(title: "Plan", subtitle: "\(selectedDay.exercises.count) exercise\(selectedDay.exercises.count == 1 ? "" : "s") ready.") {
                 VStack(alignment: .leading, spacing: 14) {
                     ForEach(selectedDay.exercises) { exercise in
                         PlannedExerciseRow(
@@ -217,7 +202,7 @@ struct HomeView: View {
     }
 
     private var quickStart: some View {
-        StartSection(index: "03", title: "Random Start", subtitle: "\(matchingExercises.count) matching dataset exercise\(matchingExercises.count == 1 ? "" : "s").") {
+        StartSection(title: "Random Start", subtitle: "\(matchingExercises.count) matching dataset exercise\(matchingExercises.count == 1 ? "" : "s").") {
             Button {
                 if let item = matchingExercises.randomElement() {
                     activePlan = makePlan(
@@ -507,13 +492,11 @@ private struct PlannedExerciseRow: View {
 }
 
 private struct StartSection<Content: View>: View {
-    let index: String
     let title: String
     let subtitle: String
     let content: Content
 
-    init(index: String, title: String, subtitle: String, @ViewBuilder content: () -> Content) {
-        self.index = index
+    init(title: String, subtitle: String, @ViewBuilder content: () -> Content) {
         self.title = title
         self.subtitle = subtitle
         self.content = content()
@@ -521,20 +504,14 @@ private struct StartSection<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(index)
-                    .font(.caption.monospacedDigit().weight(.bold))
-                    .foregroundStyle(Color.deltsAccent)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(Color.deltsCharcoal)
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(Color.deltsMutedText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.deltsMutedText)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             content

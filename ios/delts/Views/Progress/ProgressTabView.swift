@@ -20,7 +20,6 @@ struct ProgressTabView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
-                    header
                     rangePicker
                     metricGraphs
                     workoutHistory
@@ -41,24 +40,6 @@ struct ProgressTabView: View {
                 recordCurrentSnapshot()
             }
         }
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("delts")
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(Color.deltsAccent)
-                .textCase(.uppercase)
-
-            Text("Progress")
-                .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                .foregroundStyle(Color.deltsCharcoal)
-
-            Text("\(filteredWorkouts.count) workout\(filteredWorkouts.count == 1 ? "" : "s") in \(selectedRange.title.lowercased())")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.deltsMutedText)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var rangePicker: some View {
