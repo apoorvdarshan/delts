@@ -200,6 +200,7 @@ private fun DeltsAndroidApp(settings: SharedPreferences) {
                     padding = padding
                 )
                 DeltsTab.Workouts -> WorkoutsScreen(
+                    profile = profile,
                     exerciseLibrary = exerciseLibrary,
                     padding = padding
                 )
@@ -779,9 +780,11 @@ private fun ActiveSetRow(
 
 @Composable
 private fun WorkoutsScreen(
+    profile: AndroidProfile,
     exerciseLibrary: List<ExerciseItem>,
     padding: PaddingValues
 ) {
+    var selectedSplitGroupTitle by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedLevel by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedRawEquipment by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedPrimaryMuscle by rememberSaveable { mutableStateOf<String?>(null) }
@@ -808,9 +811,18 @@ private fun WorkoutsScreen(
             )
             .map { it.key }
     }
+    val splitMuscleGroups = remember(profile.workoutSplit) { splitMuscleGroupsFor(profile.workoutSplit) }
+    val selectedSplitGroup = remember(selectedSplitGroupTitle, splitMuscleGroups) {
+        splitMuscleGroups.firstOrNull { it.title == selectedSplitGroupTitle }
+    }
+
+    LaunchedEffect(profile.workoutSplit) {
+        selectedSplitGroupTitle = null
+    }
 
     val hasActiveFilters =
-        selectedLevel != null ||
+        selectedSplitGroup != null ||
+            selectedLevel != null ||
             selectedRawEquipment != null ||
             selectedPrimaryMuscle != null ||
             selectedSecondaryMuscle != null ||
@@ -821,6 +833,7 @@ private fun WorkoutsScreen(
             search.isNotBlank()
 
     fun resetLibraryFilters() {
+        selectedSplitGroupTitle = null
         selectedLevel = null
         selectedRawEquipment = null
         selectedPrimaryMuscle = null
@@ -850,6 +863,7 @@ private fun WorkoutsScreen(
     val filteredExercises = remember(
         selectedLevel,
         selectedRawEquipment,
+        selectedSplitGroup,
         selectedPrimaryMuscle,
         selectedSecondaryMuscle,
         selectedForce,
@@ -862,8 +876,9 @@ private fun WorkoutsScreen(
         val query = search.trim().lowercase(Locale.US)
         exerciseLibrary
             .filter { item ->
-                (selectedLevel == null || item.level == selectedLevel) &&
+                    (selectedLevel == null || item.level == selectedLevel) &&
                     (selectedRawEquipment == null || item.rawEquipment == selectedRawEquipment) &&
+                    (selectedSplitGroup?.let { group -> item.primaryMuscles.any { group.muscles.contains(it) } } ?: true) &&
                     (selectedPrimaryMuscle?.let { item.primaryMuscles.contains(it) } ?: true) &&
                     (selectedSecondaryMuscle?.let { item.secondaryMuscles.contains(it) } ?: true) &&
                     (selectedForce == null || item.force == selectedForce) &&
@@ -891,6 +906,19 @@ private fun WorkoutsScreen(
                 )
 
                 HorizontalChipRail {
+                    if (splitMuscleGroups.isNotEmpty()) {
+                        LibraryFilterMenu(
+                            title = profile.workoutSplit,
+                            value = selectedSplitGroup?.title ?: "All",
+                            icon = Icons.Filled.Home,
+                            active = selectedSplitGroup != null,
+                            options = splitMuscleGroups.map { it.title },
+                            selectedOption = selectedSplitGroupTitle,
+                            allTitle = "All ${profile.workoutSplit}"
+                        ) {
+                            selectedSplitGroupTitle = it
+                        }
+                    }
                     LibraryFilterMenu(
                         title = "Primary",
                         value = selectedPrimaryMuscle ?: "All",
@@ -4495,6 +4523,63 @@ private val workoutSplitOptions = listOf(
     "Hybrid Split",
     "Custom"
 )
+
+private data class WorkoutSplitMuscleGroup(val title: String, val muscles: Set<String>)
+
+private val datasetMuscles = setOf(
+    "Abdominals", "Abductors", "Adductors", "Biceps", "Calves", "Chest", "Forearms", "Glutes", "Hamstrings",
+    "Lats", "Lower Back", "Middle Back", "Neck", "Quadriceps", "Shoulders", "Traps", "Triceps"
+)
+
+private fun splitMuscleGroupsFor(split: String): List<WorkoutSplitMuscleGroup> =
+    when (split) {
+        "Full Body" -> listOf(
+            WorkoutSplitMuscleGroup("Full Body", datasetMuscles)
+        )
+        "Upper Lower" -> listOf(
+            WorkoutSplitMuscleGroup("Upper", setOf("Biceps", "Chest", "Forearms", "Lats", "Middle Back", "Neck", "Shoulders", "Traps", "Triceps")),
+            WorkoutSplitMuscleGroup("Lower", setOf("Abductors", "Adductors", "Calves", "Glutes", "Hamstrings", "Lower Back", "Quadriceps")),
+            WorkoutSplitMuscleGroup("Core", setOf("Abdominals"))
+        )
+        "Push Pull Legs" -> listOf(
+            WorkoutSplitMuscleGroup("Push", setOf("Chest", "Shoulders", "Triceps")),
+            WorkoutSplitMuscleGroup("Pull", setOf("Biceps", "Forearms", "Lats", "Middle Back", "Traps", "Neck")),
+            WorkoutSplitMuscleGroup("Legs", setOf("Abductors", "Adductors", "Calves", "Glutes", "Hamstrings", "Lower Back", "Quadriceps")),
+            WorkoutSplitMuscleGroup("Core", setOf("Abdominals"))
+        )
+        "Bro Split" -> listOf(
+            WorkoutSplitMuscleGroup("Chest", setOf("Chest")),
+            WorkoutSplitMuscleGroup("Back", setOf("Lats", "Middle Back", "Lower Back", "Traps")),
+            WorkoutSplitMuscleGroup("Shoulders", setOf("Shoulders", "Traps")),
+            WorkoutSplitMuscleGroup("Arms", setOf("Biceps", "Triceps", "Forearms")),
+            WorkoutSplitMuscleGroup("Legs", setOf("Abductors", "Adductors", "Calves", "Glutes", "Hamstrings", "Quadriceps")),
+            WorkoutSplitMuscleGroup("Core", setOf("Abdominals"))
+        )
+        "Arnold Split" -> listOf(
+            WorkoutSplitMuscleGroup("Chest + Back", setOf("Chest", "Lats", "Middle Back", "Lower Back", "Traps")),
+            WorkoutSplitMuscleGroup("Shoulders + Arms", setOf("Shoulders", "Biceps", "Triceps", "Forearms", "Neck")),
+            WorkoutSplitMuscleGroup("Legs", setOf("Abductors", "Adductors", "Calves", "Glutes", "Hamstrings", "Quadriceps")),
+            WorkoutSplitMuscleGroup("Core", setOf("Abdominals"))
+        )
+        "Push Pull" -> listOf(
+            WorkoutSplitMuscleGroup("Push", setOf("Chest", "Shoulders", "Triceps", "Quadriceps", "Calves")),
+            WorkoutSplitMuscleGroup("Pull", setOf("Biceps", "Forearms", "Lats", "Middle Back", "Traps", "Glutes", "Hamstrings", "Lower Back")),
+            WorkoutSplitMuscleGroup("Accessory/Core", setOf("Abdominals", "Abductors", "Adductors", "Neck"))
+        )
+        "Antagonist Split" -> listOf(
+            WorkoutSplitMuscleGroup("Chest + Back", setOf("Chest", "Lats", "Middle Back", "Lower Back", "Traps")),
+            WorkoutSplitMuscleGroup("Biceps + Triceps", setOf("Biceps", "Triceps", "Forearms")),
+            WorkoutSplitMuscleGroup("Quads + Hamstrings/Glutes", setOf("Quadriceps", "Hamstrings", "Glutes")),
+            WorkoutSplitMuscleGroup("Shoulders + Lats/Traps", setOf("Shoulders", "Lats", "Traps")),
+            WorkoutSplitMuscleGroup("Core/Accessory", setOf("Abdominals", "Abductors", "Adductors", "Calves", "Neck"))
+        )
+        "Hybrid Split" -> listOf(
+            WorkoutSplitMuscleGroup("Strength/Compound", setOf("Chest", "Lats", "Middle Back", "Lower Back", "Glutes", "Hamstrings", "Quadriceps", "Shoulders", "Traps")),
+            WorkoutSplitMuscleGroup("Accessory/Hypertrophy", setOf("Biceps", "Triceps", "Forearms", "Calves", "Abductors", "Adductors", "Abdominals", "Neck"))
+        )
+        else -> emptyList()
+    }
+
 private const val otherIssueOption = "Other"
 private val issueOptions = listOf(
     DeltsOption("Low motivation", "Consistency risk.", Icons.Filled.Warning),

@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 struct WorkoutsView: View {
@@ -13,7 +14,9 @@ struct WorkoutsView: View {
 }
 
 private struct ExerciseLibraryBrowserView: View {
+    @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
     @State private var searchText = ""
+    @State private var selectedSplitGroupTitle: String?
     @State private var selectedLevel: String?
     @State private var selectedRawEquipment: String?
     @State private var selectedPrimaryMuscle: String?
@@ -25,8 +28,20 @@ private struct ExerciseLibraryBrowserView: View {
 
     private let service = ExerciseLibraryService.shared
 
+    private var selectedWorkoutSplit: WorkoutSplit {
+        profiles.first?.workoutSplit ?? .fullBody
+    }
+
+    private var splitGroups: [WorkoutSplitMuscleGroup] {
+        WorkoutSplitMuscleGroup.groups(for: selectedWorkoutSplit)
+    }
+
+    private var selectedSplitGroup: WorkoutSplitMuscleGroup? {
+        splitGroups.first { $0.title == selectedSplitGroupTitle }
+    }
+
     private var items: [ExerciseLibraryItem] {
-        service.filtered(
+        let filtered = service.filtered(
             level: selectedLevel,
             rawEquipment: selectedRawEquipment,
             primaryMuscle: selectedPrimaryMuscle,
@@ -37,10 +52,15 @@ private struct ExerciseLibraryBrowserView: View {
             sort: selectedSort,
             searchText: searchText
         )
+        guard let selectedSplitGroup else { return filtered }
+        return filtered.filter { item in
+            item.primaryMuscles.contains { selectedSplitGroup.muscles.contains($0) }
+        }
     }
 
     private var hasActiveFilters: Bool {
         !searchText.isEmpty ||
+            selectedSplitGroup != nil ||
             selectedLevel != nil ||
             selectedRawEquipment != nil ||
             selectedPrimaryMuscle != nil ||
@@ -103,6 +123,9 @@ private struct ExerciseLibraryBrowserView: View {
         }
         .deltsScreen()
         .contentMargins(.bottom, 104, for: .scrollContent)
+        .onChange(of: selectedWorkoutSplit) {
+            selectedSplitGroupTitle = nil
+        }
     }
 
     private var filters: some View {
@@ -111,6 +134,23 @@ private struct ExerciseLibraryBrowserView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 9) {
+                    if !splitGroups.isEmpty {
+                        filterMenuPill(
+                            title: selectedWorkoutSplit.title,
+                            value: selectedSplitGroup?.title ?? "All",
+                            systemImage: "square.grid.2x2"
+                        ) {
+                            menuChoice("All \(selectedWorkoutSplit.title)", isSelected: selectedSplitGroup == nil) {
+                                selectedSplitGroupTitle = nil
+                            }
+                            ForEach(splitGroups) { group in
+                                menuChoice(group.title, isSelected: selectedSplitGroupTitle == group.title) {
+                                    selectedSplitGroupTitle = group.title
+                                }
+                            }
+                        }
+                    }
+
                     filterMenuPill(
                         title: "Primary",
                         value: selectedPrimaryMuscle ?? "All",
@@ -235,6 +275,7 @@ private struct ExerciseLibraryBrowserView: View {
 
     private func resetFilters() {
         searchText = ""
+        selectedSplitGroupTitle = nil
         selectedLevel = nil
         selectedRawEquipment = nil
         selectedPrimaryMuscle = nil
@@ -267,6 +308,81 @@ private struct ExerciseLibraryBrowserView: View {
                 Text(title)
             }
         }
+    }
+}
+
+private struct WorkoutSplitMuscleGroup: Identifiable, Hashable {
+    let title: String
+    let muscles: Set<String>
+
+    var id: String { title }
+
+    static func groups(for split: WorkoutSplit) -> [WorkoutSplitMuscleGroup] {
+        switch split {
+        case .fullBody:
+            return [
+                group("Full Body", allMuscles)
+            ]
+        case .upperLower:
+            return [
+                group("Upper", ["Biceps", "Chest", "Forearms", "Lats", "Middle Back", "Neck", "Shoulders", "Traps", "Triceps"]),
+                group("Lower", ["Abductors", "Adductors", "Calves", "Glutes", "Hamstrings", "Lower Back", "Quadriceps"]),
+                group("Core", ["Abdominals"])
+            ]
+        case .pushPullLegs:
+            return [
+                group("Push", ["Chest", "Shoulders", "Triceps"]),
+                group("Pull", ["Biceps", "Forearms", "Lats", "Middle Back", "Traps", "Neck"]),
+                group("Legs", ["Abductors", "Adductors", "Calves", "Glutes", "Hamstrings", "Lower Back", "Quadriceps"]),
+                group("Core", ["Abdominals"])
+            ]
+        case .broSplit:
+            return [
+                group("Chest", ["Chest"]),
+                group("Back", ["Lats", "Middle Back", "Lower Back", "Traps"]),
+                group("Shoulders", ["Shoulders", "Traps"]),
+                group("Arms", ["Biceps", "Triceps", "Forearms"]),
+                group("Legs", ["Abductors", "Adductors", "Calves", "Glutes", "Hamstrings", "Quadriceps"]),
+                group("Core", ["Abdominals"])
+            ]
+        case .arnoldSplit:
+            return [
+                group("Chest + Back", ["Chest", "Lats", "Middle Back", "Lower Back", "Traps"]),
+                group("Shoulders + Arms", ["Shoulders", "Biceps", "Triceps", "Forearms", "Neck"]),
+                group("Legs", ["Abductors", "Adductors", "Calves", "Glutes", "Hamstrings", "Quadriceps"]),
+                group("Core", ["Abdominals"])
+            ]
+        case .pushPull:
+            return [
+                group("Push", ["Chest", "Shoulders", "Triceps", "Quadriceps", "Calves"]),
+                group("Pull", ["Biceps", "Forearms", "Lats", "Middle Back", "Traps", "Glutes", "Hamstrings", "Lower Back"]),
+                group("Accessory/Core", ["Abdominals", "Abductors", "Adductors", "Neck"])
+            ]
+        case .antagonistSplit:
+            return [
+                group("Chest + Back", ["Chest", "Lats", "Middle Back", "Lower Back", "Traps"]),
+                group("Biceps + Triceps", ["Biceps", "Triceps", "Forearms"]),
+                group("Quads + Hamstrings/Glutes", ["Quadriceps", "Hamstrings", "Glutes"]),
+                group("Shoulders + Lats/Traps", ["Shoulders", "Lats", "Traps"]),
+                group("Core/Accessory", ["Abdominals", "Abductors", "Adductors", "Calves", "Neck"])
+            ]
+        case .hybridSplit:
+            return [
+                group("Strength/Compound", ["Chest", "Lats", "Middle Back", "Lower Back", "Glutes", "Hamstrings", "Quadriceps", "Shoulders", "Traps"]),
+                group("Accessory/Hypertrophy", ["Biceps", "Triceps", "Forearms", "Calves", "Abductors", "Adductors", "Abdominals", "Neck"])
+            ]
+        case .custom:
+            return []
+        }
+    }
+
+    private static let allMuscles: Set<String> = [
+        "Abdominals", "Abductors", "Adductors", "Biceps", "Calves", "Chest", "Forearms", "Glutes", "Hamstrings",
+        "Lats", "Lower Back", "Middle Back", "Neck", "Quadriceps", "Shoulders", "Traps", "Triceps"
+    ]
+
+    private static func group(_ title: String, _ muscles: Set<String>) -> WorkoutSplitMuscleGroup {
+        WorkoutSplitMuscleGroup(title: title, muscles: muscles)
     }
 }
 
