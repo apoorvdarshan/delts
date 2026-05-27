@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import UIKit
 
 struct ProfileView: View {
     @Environment(\.modelContext) private var modelContext
@@ -212,6 +213,7 @@ private struct ProfileEditorView: View {
         .scrollDismissesKeyboard(.interactively)
         .tint(Color.deltsAccent)
         .toolbar(.hidden, for: .navigationBar)
+        .background(ProfileKeyboardDismissTapInstaller())
     }
 
     private var identitySection: some View {
@@ -864,6 +866,80 @@ private struct ProfileLoadingView: View {
         }
         .deltsScreen()
         .contentMargins(.bottom, 110, for: .scrollContent)
+    }
+}
+
+private struct ProfileKeyboardDismissTapInstaller: UIViewRepresentable {
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: .zero)
+        view.isUserInteractionEnabled = false
+        DispatchQueue.main.async {
+            context.coordinator.installIfNeeded(from: view)
+        }
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        DispatchQueue.main.async {
+            context.coordinator.installIfNeeded(from: uiView)
+        }
+    }
+
+    static func dismantleUIView(_ uiView: UIView, coordinator: Coordinator) {
+        coordinator.uninstall()
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        private weak var window: UIWindow?
+        private weak var recognizer: UITapGestureRecognizer?
+
+        func installIfNeeded(from view: UIView) {
+            guard let window = view.window, self.window !== window else {
+                return
+            }
+
+            uninstall()
+
+            let recognizer = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+            recognizer.cancelsTouchesInView = false
+            recognizer.delegate = self
+            window.addGestureRecognizer(recognizer)
+
+            self.window = window
+            self.recognizer = recognizer
+        }
+
+        func uninstall() {
+            if let recognizer, let window {
+                window.removeGestureRecognizer(recognizer)
+            }
+            recognizer = nil
+            window = nil
+        }
+
+        @objc private func dismissKeyboard() {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            !touch.view.isKeyboardTextInput
+        }
+    }
+}
+
+private extension UIView? {
+    var isKeyboardTextInput: Bool {
+        guard let view = self else {
+            return false
+        }
+        if view is UITextField || view is UITextView {
+            return true
+        }
+        return view.superview.isKeyboardTextInput
     }
 }
 

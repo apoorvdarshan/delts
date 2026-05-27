@@ -11,6 +11,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -85,12 +87,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -632,6 +638,7 @@ private fun ProfileScreen(
     var hasSavedKey by remember { mutableStateOf(keyStore.hasKey()) }
     var fallbackApiKey by remember { mutableStateOf(fallbackKeyStore.load()) }
     var hasSavedFallbackKey by remember { mutableStateOf(fallbackKeyStore.hasKey()) }
+    val focusManager = LocalFocusManager.current
     val datasetLevels = remember(exerciseLibrary) { exerciseLibrary.map { it.level }.distinctSortedLevels() }
     val selectedDatasetLevel = remember(profile.experience, datasetLevels) {
         when {
@@ -646,6 +653,7 @@ private fun ProfileScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .clearFocusOnTap(focusManager)
             .padding(padding)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
@@ -1232,6 +1240,14 @@ private fun HorizontalChipRail(content: @Composable RowScope.() -> Unit) {
         content = content
     )
 }
+
+private fun Modifier.clearFocusOnTap(focusManager: FocusManager): Modifier =
+    pointerInput(focusManager) {
+        awaitEachGesture {
+            awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            focusManager.clearFocus()
+        }
+    }
 
 @Composable
 private fun LibrarySearchPill(
