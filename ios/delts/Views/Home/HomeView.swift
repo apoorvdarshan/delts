@@ -16,10 +16,6 @@ struct HomeView: View {
         WeeklyRoutineStore.todayIndex()
     }
 
-    private var selectedSetCount: Int {
-        selectedDay.exercises.reduce(0) { $0 + max($1.sets, 1) }
-    }
-
     private var matchingExercises: [ExerciseLibraryItem] {
         let search = exerciseSearch.trimmingCharacters(in: .whitespacesAndNewlines)
         return service.filtered(
@@ -63,44 +59,21 @@ struct HomeView: View {
     }
 
     private var startOverview: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Workout Planner")
-                        .font(.caption.weight(.heavy))
-                        .textCase(.uppercase)
-                        .foregroundStyle(Color.deltsAccent)
-                    Text(selectedDay.name)
-                        .font(.title2.weight(.heavy))
-                        .foregroundStyle(Color.deltsCharcoal)
-                    Text(selectedDay.exercises.first?.name ?? "Build the day from dataset workouts")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.deltsMutedText)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
-                }
+        HStack(alignment: .center, spacing: 12) {
+            Text("Workout Planner")
+                .font(.caption.weight(.heavy))
+                .textCase(.uppercase)
+                .foregroundStyle(Color.deltsAccent)
 
-                Spacer(minLength: 8)
+            Spacer(minLength: 8)
 
-                Image(systemName: "calendar.badge.clock")
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(Color.deltsAccent)
-                    .frame(width: 48, height: 48)
-                    .background(Color.deltsAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            }
-
-            HStack(spacing: 10) {
-                PlannerOverviewMetric(title: "Workouts", value: "\(selectedDay.exercises.count)")
-                PlannerOverviewMetric(title: "Sets", value: "\(selectedSetCount)")
-                PlannerOverviewMetric(title: "Body", value: selectedDay.bodyPart)
-            }
+            Image(systemName: "calendar.badge.clock")
+                .font(.title2.weight(.bold))
+                .foregroundStyle(Color.deltsAccent)
+                .frame(width: 48, height: 48)
+                .background(Color.deltsAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .padding(16)
-        .background(Color.deltsPanel.opacity(0.24), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
-        }
+        .padding(.horizontal, 2)
     }
 
     private var weekRail: some View {
@@ -552,27 +525,5 @@ private struct StartHorizontalRail<Content: View>: View {
             }
             .padding(.horizontal, 1)
         }
-    }
-}
-
-private struct PlannerOverviewMetric: View {
-    let title: String
-    let value: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(Color.deltsMutedText)
-            Text(value)
-                .font(.subheadline.weight(.heavy))
-                .foregroundStyle(Color.deltsCharcoal)
-                .lineLimit(1)
-                .minimumScaleFactor(0.68)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
-        .frame(height: 58)
-        .background(Color.black.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }

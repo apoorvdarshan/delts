@@ -316,7 +316,7 @@ private fun StartScreen(
             .padding(top = 12.dp, bottom = 118.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        PlannerOverview(day = selectedDay)
+        PlannerOverview()
 
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             routineDays.forEachIndexed { index, day ->
@@ -430,53 +430,29 @@ private fun StartScreen(
 }
 
 @Composable
-private fun PlannerOverview(day: RoutineDay) {
-    val setCount = day.exercises.sumOf { it.sets.coerceAtLeast(1) }
-    Column(
+private fun PlannerOverview() {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(15.dp)
+            .padding(horizontal = 2.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text(
-                    text = "WORKOUT PLANNER",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = DeltsAccent
-                )
-                Text(
-                    text = day.name,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = day.exercises.firstOrNull()?.name ?: "Build the day from dataset workouts",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(DeltsAccent.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Filled.CalendarToday, contentDescription = null, tint = DeltsAccent)
-            }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OverviewMiniMetric("Workouts", day.exercises.size.toString(), Modifier.weight(1f))
-            OverviewMiniMetric("Sets", setCount.toString(), Modifier.weight(1f))
-            OverviewMiniMetric("Body", day.bodyPart, Modifier.weight(1f))
+        Text(
+            text = "WORKOUT PLANNER",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.ExtraBold,
+            color = DeltsAccent,
+            modifier = Modifier.weight(1f)
+        )
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(DeltsAccent.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Filled.CalendarToday, contentDescription = null, tint = DeltsAccent)
         }
     }
 }
@@ -1155,34 +1131,6 @@ private fun ProgressScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun OverviewMiniMetric(title: String, value: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.Black.copy(alpha = 0.08f))
-            .height(58.dp)
-            .padding(horizontal = 12.dp),
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.ExtraBold,
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
     }
 }
 
