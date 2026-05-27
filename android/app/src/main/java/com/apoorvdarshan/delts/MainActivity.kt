@@ -1644,72 +1644,55 @@ private fun ExerciseDetailMetricGrid(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        ExerciseDetailMetricRow(
-            leftTitle = "Level",
-            leftValue = item.level,
-            leftIcon = Icons.Filled.FlashOn,
-            rightTitle = "Category",
-            rightValue = item.category,
-            rightIcon = Icons.Filled.List
-        )
-        HorizontalDivider(color = DividerDefaults.color.copy(alpha = 0.34f))
-        ExerciseDetailMetricRow(
-            leftTitle = "Force",
-            leftValue = item.force,
-            leftIcon = Icons.Filled.Flag,
-            rightTitle = "Mechanic",
-            rightValue = item.mechanic,
-            rightIcon = Icons.Filled.Build
-        )
-        HorizontalDivider(color = DividerDefaults.color.copy(alpha = 0.34f))
-        ExerciseDetailMetricRow(
-            leftTitle = "Primary",
-            leftValue = item.primaryMusclesTitle(),
-            leftIcon = Icons.Filled.FitnessCenter,
-            rightTitle = "Secondary",
-            rightValue = item.secondaryMusclesTitle(),
-            rightIcon = Icons.Filled.FitnessCenter
-        )
-        HorizontalDivider(color = DividerDefaults.color.copy(alpha = 0.34f))
-        ExerciseDetailMetric(
-            title = "Equipment",
-            value = item.rawEquipment,
-            icon = Icons.Filled.FitnessCenter,
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+            ExerciseDetailMetric(
+                title = "Level",
+                value = item.level,
+                icon = Icons.Filled.FlashOn,
+                modifier = Modifier.weight(1f)
+            )
+            ExerciseDetailMetric(
+                title = "Category",
+                value = item.category,
+                icon = Icons.Filled.List,
+                modifier = Modifier.weight(1f)
+            )
+            ExerciseDetailMetric(
+                title = "Force",
+                value = item.force,
+                icon = Icons.Filled.Flag,
+                modifier = Modifier.weight(1f)
+            )
+            ExerciseDetailMetric(
+                title = "Mechanic",
+                value = item.mechanic,
+                icon = Icons.Filled.Build,
+                modifier = Modifier.weight(1f)
+            )
+        }
 
-@Composable
-private fun ExerciseDetailMetricRow(
-    leftTitle: String,
-    leftValue: String,
-    leftIcon: ImageVector,
-    rightTitle: String,
-    rightValue: String,
-    rightIcon: ImageVector
-) {
-    Row(horizontalArrangement = Arrangement.spacedBy(0.dp), verticalAlignment = Alignment.Top) {
-        ExerciseDetailMetric(
-            title = leftTitle,
-            value = leftValue,
-            icon = leftIcon,
-            modifier = Modifier.weight(1f)
-        )
-        Box(
-            modifier = Modifier
-                .width(1.dp)
-                .height(56.dp)
-                .background(DividerDefaults.color.copy(alpha = 0.34f))
-        )
-        ExerciseDetailMetric(
-            title = rightTitle,
-            value = rightValue,
-            icon = rightIcon,
-            modifier = Modifier.weight(1f)
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+            ExerciseDetailMetric(
+                title = "Primary",
+                value = item.primaryMusclesTitle(),
+                icon = Icons.Filled.FitnessCenter,
+                modifier = Modifier.weight(1f)
+            )
+            ExerciseDetailMetric(
+                title = "Secondary",
+                value = item.secondaryMusclesTitle(),
+                icon = Icons.Filled.FitnessCenter,
+                modifier = Modifier.weight(1f)
+            )
+            ExerciseDetailMetric(
+                title = "Equipment",
+                value = item.rawEquipment,
+                icon = Icons.Filled.FitnessCenter,
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 }
 
@@ -1721,27 +1704,35 @@ private fun ExerciseDetailMetric(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.padding(horizontal = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp)
+        modifier = modifier
+            .heightIn(min = 64.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f))
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = DeltsAccent,
-            modifier = Modifier.size(28.dp)
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = DeltsAccent,
+                modifier = Modifier.size(14.dp)
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
         Text(
             text = value,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Text(
-            text = title,
             style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
         )
     }
 }

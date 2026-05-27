@@ -831,53 +831,21 @@ private struct DetailMetricGrid: View {
     let item: ExerciseLibraryItem
 
     var body: some View {
-        VStack(spacing: 14) {
-            DetailMetricRow(
-                left: DetailMetricContent(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill"),
-                right: DetailMetricContent(title: "Category", value: item.category, systemImage: "tag")
-            )
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                DetailMetric(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill")
+                DetailMetric(title: "Category", value: item.category, systemImage: "tag")
+                DetailMetric(title: "Force", value: item.force, systemImage: "arrow.left.arrow.right")
+                DetailMetric(title: "Mechanic", value: item.mechanic, systemImage: "gearshape")
+            }
 
-            Divider()
-                .overlay(Color.deltsHairline.opacity(0.34))
-
-            DetailMetricRow(
-                left: DetailMetricContent(title: "Force", value: item.force, systemImage: "arrow.left.arrow.right"),
-                right: DetailMetricContent(title: "Mechanic", value: item.mechanic, systemImage: "gearshape")
-            )
-
-            Divider()
-                .overlay(Color.deltsHairline.opacity(0.34))
-
-            DetailMetricRow(
-                left: DetailMetricContent(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope"),
-                right: DetailMetricContent(title: "Secondary", value: item.secondaryMusclesTitle, systemImage: "scope")
-            )
-
-            Divider()
-                .overlay(Color.deltsHairline.opacity(0.34))
-
-            DetailMetric(title: "Equipment", value: item.rawEquipment, systemImage: "dumbbell.fill")
+            HStack(spacing: 8) {
+                DetailMetric(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope")
+                DetailMetric(title: "Secondary", value: item.secondaryMusclesTitle, systemImage: "scope")
+                DetailMetric(title: "Equipment", value: item.rawEquipment, systemImage: "dumbbell.fill")
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-private struct DetailMetricContent {
-    let title: String
-    let value: String
-    let systemImage: String
-}
-
-private struct DetailMetricRow: View {
-    let left: DetailMetricContent
-    let right: DetailMetricContent
-
-    var body: some View {
-        HStack(spacing: 0) {
-            DetailMetric(title: left.title, value: left.value, systemImage: left.systemImage)
-            Divider().frame(height: 48).overlay(Color.deltsHairline.opacity(0.34))
-            DetailMetric(title: right.title, value: right.value, systemImage: right.systemImage)
-        }
     }
 }
 
@@ -887,25 +855,32 @@ private struct DetailMetric: View {
     let systemImage: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Image(systemName: systemImage)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(Color.deltsAccent)
-                .frame(width: 28, height: 28)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 4) {
+                Image(systemName: systemImage)
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+
+                Text(title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(1)
+            }
 
             Text(value)
-                .font(.subheadline.weight(.semibold))
+                .font(.caption.weight(.bold))
                 .foregroundStyle(Color.deltsCharcoal)
+                .minimumScaleFactor(0.76)
                 .fixedSize(horizontal: false, vertical: true)
-                .minimumScaleFactor(0.72)
-
-            Text(title)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(Color.deltsMutedText)
-                .lineLimit(1)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 10)
+        .frame(maxWidth: .infinity, minHeight: 58, alignment: .topLeading)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
+        .background(Color.deltsPanel.opacity(0.16), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.22), lineWidth: 0.5)
+        }
     }
 }
 
