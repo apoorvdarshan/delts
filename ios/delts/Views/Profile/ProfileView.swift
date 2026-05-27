@@ -293,12 +293,19 @@ private struct ProfileEditorView: View {
         ) {
             ProfileRowStack {
                 ProfileFieldRow(title: "Health access", systemImage: "heart.text.square") {
-                    Button {
-                        Task { await enableAppleHealth() }
-                    } label: {
-                        ProfileMenuValueLabel(text: appleHealthEnabled ? "Sync now" : "Enable")
+                    Toggle("", isOn: appleHealthBinding)
+                        .labelsHidden()
+                }
+                if appleHealthEnabled {
+                    ProfileDivider()
+                    ProfileFieldRow(title: "Sync history", systemImage: "arrow.triangle.2.circlepath") {
+                        Button {
+                            Task { await enableAppleHealth() }
+                        } label: {
+                            ProfileMenuValueLabel(text: "Sync now")
+                        }
+                        .deltsPressable()
                     }
-                    .deltsPressable()
                 }
                 if !appleHealthMessage.isEmpty {
                     ProfileDivider()
@@ -309,6 +316,19 @@ private struct ProfileEditorView: View {
                             .multilineTextAlignment(.trailing)
                     }
                 }
+            }
+        }
+    }
+
+    private var appleHealthBinding: Binding<Bool> {
+        Binding {
+            appleHealthEnabled
+        } set: { isEnabled in
+            if isEnabled {
+                Task { await enableAppleHealth() }
+            } else {
+                appleHealthEnabled = false
+                appleHealthMessage = "Disabled."
             }
         }
     }
