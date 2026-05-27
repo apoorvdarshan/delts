@@ -1095,15 +1095,29 @@ private fun ProgressScreen(
         val weightPoints = filteredSnapshots.map { snapshot ->
             if (usesImperial) snapshot.weightKg * 2.2046226218 else snapshot.weightKg
         }
+        val weightChangePoints = filteredSnapshots.map { snapshot ->
+            snapshot.dateMs to if (usesImperial) snapshot.weightKg * 2.2046226218 else snapshot.weightKg
+        }
+        val bodyFatChangePoints = filteredSnapshots.map { snapshot ->
+            snapshot.dateMs to snapshot.bodyFat
+        }
         ProgressMetricCard(
             title = "Body Weight",
             unit = if (usesImperial) "lb" else "kg",
-            values = weightPoints
+            values = weightPoints,
+            currentValue = if (usesImperial) profile.weightKg * 2.2046226218 else profile.weightKg,
+            goalValue = null,
+            averageLabel = selectedRange.title,
+            averageChange = averageMetricChange(weightChangePoints, selectedRange)
         )
         ProgressMetricCard(
             title = "Body Fat",
             unit = "%",
-            values = filteredSnapshots.map { it.bodyFat }
+            values = filteredSnapshots.map { it.bodyFat },
+            currentValue = profile.currentBodyFat,
+            goalValue = profile.desiredBodyFat,
+            averageLabel = selectedRange.title,
+            averageChange = averageMetricChange(bodyFatChangePoints, selectedRange)
         )
 
         MetricHistorySection(
@@ -1353,7 +1367,15 @@ private fun MetricEditDialog(
 }
 
 @Composable
-private fun ProgressMetricCard(title: String, unit: String, values: List<Double>) {
+private fun ProgressMetricCard(
+    title: String,
+    unit: String,
+    values: List<Double>,
+    currentValue: Double?,
+    goalValue: Double?,
+    averageLabel: String,
+    averageChange: Double?
+) {
     val latest = values.lastOrNull()
     val minValue = values.minOrNull() ?: 0.0
     val maxValue = values.maxOrNull() ?: 1.0
@@ -1391,6 +1413,12 @@ private fun ProgressMetricCard(title: String, unit: String, values: List<Double>
             }
         }
 
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            MetricStatTile("Current", currentValue?.let { formatMetricValue(it, unit) } ?: "--", Modifier.weight(1f))
+            MetricStatTile("Goal", goalValue?.let { formatMetricValue(it, unit) } ?: "--", Modifier.weight(1f))
+            MetricStatTile("Avg Δ / $averageLabel", averageChange?.let { formatSignedMetricValue(it, unit) } ?: "--", Modifier.weight(1f))
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1411,6 +1439,52 @@ private fun ProgressMetricCard(title: String, unit: String, values: List<Double>
             }
         }
     }
+}
+
+@Composable
+private fun MetricStatTile(title: String, value: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f))
+            .height(48.dp)
+            .padding(horizontal = 10.dp),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+private fun averageMetricChange(points: List<Pair<Long, Double>>, range: ProgressRange): Double? {
+    val first = points.firstOrNull() ?: return null
+    val last = points.lastOrNull() ?: return null
+    if (first.first == last.first) return null
+    val elapsedMs = (last.first - first.first).coerceAtLeast(1L).toDouble()
+    val periodMs = range.averagePeriodMs?.toDouble() ?: elapsedMs
+    return (last.second - first.second) / elapsedMs * periodMs
+}
+
+private fun formatMetricValue(value: Double, unit: String): String =
+    if (unit == "%") String.format(Locale.US, "%.1f%%", value) else String.format(Locale.US, "%.1f %s", value, unit)
+
+private fun formatSignedMetricValue(value: Double, unit: String): String {
+    val sign = if (value > 0.0) "+" else ""
+    return sign + formatMetricValue(value, unit)
 }
 
 @Composable
@@ -3996,6 +4070,9 @@ private enum class ProgressRange(val title: String, private val durationMs: Long
     All("All", null);
 
     private fun startMs(): Long? = durationMs?.let { System.currentTimeMillis() - it }
+
+    val averagePeriodMs: Long?
+        get() = durationMs
 
     fun filterSnapshots(snapshots: List<MetricSnapshot>): List<MetricSnapshot> {
         val start = startMs() ?: return snapshots

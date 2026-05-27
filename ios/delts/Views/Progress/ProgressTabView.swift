@@ -24,6 +24,20 @@ struct ProgressTabView: View {
         selectedRange.filter(workouts)
     }
 
+    private var filteredWeightPoints: [ProgressMetricPoint] {
+        filteredSnapshots.compactMap { snapshot in
+            guard let weightKg = snapshot.weightKg else { return nil }
+            return ProgressMetricPoint(date: snapshot.date, value: usesImperialUnits ? weightKg * 2.2046226218 : weightKg)
+        }
+    }
+
+    private var filteredBodyFatPoints: [ProgressMetricPoint] {
+        filteredSnapshots.compactMap { snapshot in
+            guard let bodyFat = snapshot.bodyFat else { return nil }
+            return ProgressMetricPoint(date: snapshot.date, value: bodyFat)
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -154,19 +168,21 @@ struct ProgressTabView: View {
             ProgressMetricCard(
                 title: "Body Weight",
                 unit: usesImperialUnits ? "lb" : "kg",
-                values: filteredSnapshots.compactMap { snapshot in
-                    guard let weightKg = snapshot.weightKg else { return nil }
-                    return ProgressMetricPoint(date: snapshot.date, value: usesImperialUnits ? weightKg * 2.2046226218 : weightKg)
-                }
+                values: filteredWeightPoints,
+                currentValue: profiles.first.map { displayWeight($0.currentWeightKG) } ?? filteredWeightPoints.last?.value,
+                goalValue: nil,
+                averagePeriodTitle: selectedRange.title,
+                averagePeriodDays: selectedRange.averagePeriodDays
             )
 
             ProgressMetricCard(
                 title: "Body Fat",
                 unit: "%",
-                values: filteredSnapshots.compactMap { snapshot in
-                    guard let bodyFat = snapshot.bodyFat else { return nil }
-                    return ProgressMetricPoint(date: snapshot.date, value: bodyFat)
-                }
+                values: filteredBodyFatPoints,
+                currentValue: profiles.first?.currentBodyFatPercentage ?? filteredBodyFatPoints.last?.value,
+                goalValue: profiles.first?.desiredBodyFatPercentage,
+                averagePeriodTitle: selectedRange.title,
+                averagePeriodDays: selectedRange.averagePeriodDays
             )
         }
     }
@@ -252,37 +268,43 @@ struct ProgressTabView: View {
 
     private func logWeight(displayValue: Double) {
         let weightKg = weightKg(fromDisplayValue: displayValue)
-        snapshots = ProgressMetricStore.record(weightKg: weightKg, bodyFat: nil, in: snapshots)
+        let date = Date()
+        snapshots = ProgressMetricStore.record(weightKg: weightKg, bodyFat: nil, date: date, in: snapshots)
+        let snapshotID = snapshotID(for: date)
         updateProfile(weightKg: weightKg, bodyFat: nil)
         if appleHealthEnabled {
             Task {
-                try? await healthKit.saveWeight(kg: weightKg)
+                try? await healthKit.saveWeight(kg: weightKg, date: date, snapshotID: snapshotID)
             }
         }
     }
 
     private func logBodyFat(_ bodyFat: Double) {
-        snapshots = ProgressMetricStore.record(weightKg: nil, bodyFat: bodyFat, in: snapshots)
+        let date = Date()
+        snapshots = ProgressMetricStore.record(weightKg: nil, bodyFat: bodyFat, date: date, in: snapshots)
+        let snapshotID = snapshotID(for: date)
         updateProfile(weightKg: nil, bodyFat: bodyFat)
         if appleHealthEnabled {
             Task {
-                try? await healthKit.saveBodyFat(percent: bodyFat)
+                try? await healthKit.saveBodyFat(percent: bodyFat, date: date, snapshotID: snapshotID)
             }
         }
     }
 
     private func updateSnapshot(_ updated: ProgressMetricSnapshot) {
+        let previous = snapshots.first { $0.id == updated.id } ?? updated
         snapshots = ProgressMetricStore.update(updated, in: snapshots)
         if isLatestSnapshot(updated) {
             updateProfile(weightKg: updated.weightKg, bodyFat: updated.bodyFat)
         }
         if appleHealthEnabled {
             Task {
+                _ = try? await healthKit.deleteSnapshot(previous)
                 if let weightKg = updated.weightKg {
-                    try? await healthKit.saveWeight(kg: weightKg, date: updated.date)
+                    try? await healthKit.saveWeight(kg: weightKg, date: updated.date, snapshotID: updated.id)
                 }
                 if let bodyFat = updated.bodyFat {
-                    try? await healthKit.saveBodyFat(percent: bodyFat, date: updated.date)
+                    try? await healthKit.saveBodyFat(percent: bodyFat, date: updated.date, snapshotID: updated.id)
                 }
             }
         }
@@ -290,6 +312,15 @@ struct ProgressTabView: View {
 
     private func deleteSnapshot(_ snapshot: ProgressMetricSnapshot) {
         snapshots = ProgressMetricStore.delete(snapshot.id, from: snapshots)
+        guard appleHealthEnabled else { return }
+        Task {
+            do {
+                let count = try await healthKit.deleteSnapshot(snapshot)
+                healthSyncMessage = count > 0 ? "Deleted from Apple Health." : "Deleted locally. No Apple Health sample matched."
+            } catch {
+                healthSyncMessage = error.localizedDescription
+            }
+        }
     }
 
     private func updateProfile(weightKg: Double?, bodyFat: Double?) {
@@ -307,6 +338,10 @@ struct ProgressTabView: View {
     private func isLatestSnapshot(_ snapshot: ProgressMetricSnapshot) -> Bool {
         guard let latest = snapshots.max(by: { $0.date < $1.date }) else { return true }
         return latest.id == snapshot.id || snapshot.date >= latest.date
+    }
+
+    private func snapshotID(for date: Date) -> UUID? {
+        snapshots.first { Calendar.current.isDate($0.date, inSameDayAs: date) }?.id
     }
 
     private func syncHealthKit() async {
@@ -366,6 +401,17 @@ private enum ProgressRange: String, CaseIterable, Identifiable {
     func filter(_ workouts: [CompletedWorkout]) -> [CompletedWorkout] {
         guard let startDate else { return workouts }
         return workouts.filter { $0.date >= startDate }
+    }
+
+    var averagePeriodDays: Double? {
+        switch self {
+        case .week: return 7
+        case .month: return 31
+        case .threeMonths: return 93
+        case .sixMonths: return 186
+        case .year: return 366
+        case .all: return nil
+        }
     }
 }
 
@@ -474,9 +520,23 @@ private struct ProgressMetricCard: View {
     let title: String
     let unit: String
     let values: [ProgressMetricPoint]
+    let currentValue: Double?
+    let goalValue: Double?
+    let averagePeriodTitle: String
+    let averagePeriodDays: Double?
 
     private var latestValue: Double? {
         values.last?.value
+    }
+
+    private var averageChangeValue: Double? {
+        guard let first = values.first,
+              let last = values.last,
+              first.date != last.date
+        else { return nil }
+        let elapsedDays = max(last.date.timeIntervalSince(first.date) / 86_400, 1)
+        let periodDays = averagePeriodDays ?? elapsedDays
+        return (last.value - first.value) / elapsedDays * periodDays
     }
 
     var body: some View {
@@ -500,6 +560,12 @@ private struct ProgressMetricCard: View {
                 }
             }
 
+            HStack(spacing: 8) {
+                MetricStatTile(title: "Current", value: currentValue.map(formatted) ?? "--")
+                MetricStatTile(title: "Goal", value: goalValue.map(formatted) ?? "--")
+                MetricStatTile(title: "Avg Δ / \(averagePeriodTitle)", value: averageChangeValue.map(formattedSigned) ?? "--")
+            }
+
             MetricLineGraph(points: values.map(\.value))
                 .frame(height: 150)
         }
@@ -516,6 +582,38 @@ private struct ProgressMetricCard: View {
             return String(format: "%.1f%%", value)
         }
         return String(format: "%.1f %@", value, unit)
+    }
+
+    private func formattedSigned(_ value: Double) -> String {
+        let sign = value > 0 ? "+" : ""
+        if unit == "%" {
+            return "\(sign)\(String(format: "%.1f%%", value))"
+        }
+        return "\(sign)\(String(format: "%.1f %@", value, unit))"
+    }
+}
+
+private struct MetricStatTile: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(value)
+                .font(.caption.monospacedDigit().weight(.heavy))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+                .minimumScaleFactor(0.64)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .frame(height: 48)
+        .background(Color.deltsPanel.opacity(0.20), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 
