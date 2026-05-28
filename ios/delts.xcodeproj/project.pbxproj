@@ -275,8 +275,8 @@
 				DEVELOPMENT_TEAM = 23RV7FYH36;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = DELTS;
-				INFOPLIST_KEY_CFBundleName = DELTS;
+				INFOPLIST_KEY_CFBundleDisplayName = Delts;
+				INFOPLIST_KEY_CFBundleName = Delts;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "DELTS reads body weight and body fat history to show progress charts.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "DELTS writes body weight and body fat logs you enter.";
@@ -319,8 +319,8 @@
 				DEVELOPMENT_TEAM = 23RV7FYH36;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = DELTS;
-				INFOPLIST_KEY_CFBundleName = DELTS;
+				INFOPLIST_KEY_CFBundleDisplayName = Delts;
+				INFOPLIST_KEY_CFBundleName = Delts;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "DELTS reads body weight and body fat history to show progress charts.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "DELTS writes body weight and body fat logs you enter.";
