@@ -1706,7 +1706,7 @@ private fun ProfileScreen(
             }
             ProfileRowDivider()
             CompactMultiSelectRow(
-                title = "Primary muscles",
+                title = "Target muscles",
                 icon = Icons.Filled.FitnessCenter,
                 items = datasetPrimaryMuscles,
                 selected = profile.bodyFocus,

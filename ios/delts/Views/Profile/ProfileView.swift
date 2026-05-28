@@ -369,7 +369,7 @@ private struct ProfileEditorView: View {
                 }
                 ProfileDivider()
                 ProfileMultiSelectMenuRow(
-                    title: "Primary muscles",
+                    title: "Target muscles",
                     systemImage: "scope",
                     options: exerciseLibraryService.availablePrimaryMuscles,
                     selection: datasetPrimaryMusclesBinding,
