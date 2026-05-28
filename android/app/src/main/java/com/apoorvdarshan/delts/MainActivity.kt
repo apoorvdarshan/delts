@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,6 +33,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -100,6 +102,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -1618,6 +1621,16 @@ private fun ProfileScreen(
                 onValueChange = { updateProfile(profile.copy(name = it)) }
             )
             ProfileRowDivider()
+            CompactDropdownRow(
+                title = "Gender",
+                icon = Icons.Filled.Person,
+                value = profile.gender,
+                options = genderOptions,
+                selectedOption = profile.gender
+            ) { selected ->
+                updateProfile(profile.copy(gender = selected))
+            }
+            ProfileRowDivider()
             CompactAgeRow(age = profile.age) {
                 updateProfile(profile.copy(age = it))
             }
@@ -1705,14 +1718,14 @@ private fun ProfileScreen(
                 )
             }
             ProfileRowDivider()
-            CompactMultiSelectRow(
-                title = "Target muscles",
-                icon = Icons.Filled.FitnessCenter,
-                items = datasetPrimaryMuscles,
+            TargetMuscleSelectorRow(
                 selected = profile.bodyFocus,
-            ) { item ->
-                updateProfile(profile.copy(bodyFocus = toggleInSet(profile.bodyFocus, item)))
-            }
+                allowedValues = datasetPrimaryMuscles,
+                gender = profile.gender,
+                onSelectionChange = { nextSelection ->
+                    updateProfile(profile.copy(bodyFocus = nextSelection))
+                }
+            )
             ProfileRowDivider()
             CompactMultiSelectRow(
                 title = "Issues",
@@ -2861,6 +2874,264 @@ private fun CompactDropdownRow(
 }
 
 @Composable
+private fun TargetMuscleSelectorRow(
+    selected: Set<String>,
+    allowedValues: List<String>,
+    gender: String,
+    onSelectionChange: (Set<String>) -> Unit
+) {
+    var showDialog by rememberSaveable { mutableStateOf(false) }
+    val normalizedSelection = remember(selected, allowedValues) {
+        normalizeTargetMuscleSelection(selected, allowedValues)
+    }
+    val selectedGroups = remember(normalizedSelection, allowedValues) {
+        selectedTargetMuscleGroups(normalizedSelection, allowedValues)
+    }
+    val summary = remember(normalizedSelection, allowedValues) {
+        targetMuscleSummary(normalizedSelection, allowedValues)
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        ProfileSettingRow(
+            title = "Target muscles",
+            icon = Icons.Filled.FitnessCenter,
+            modifier = Modifier.clickable { showDialog = true }
+        ) {
+            CompactValueLabel(value = summary)
+        }
+
+        if (selectedGroups.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .padding(start = 52.dp, end = 8.dp, bottom = 10.dp)
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                selectedGroups.forEach { group ->
+                    TargetMuscleChip(title = group.title)
+                }
+            }
+        }
+    }
+
+    if (showDialog) {
+        TargetMuscleSelectionDialog(
+            selected = normalizedSelection,
+            allowedValues = allowedValues,
+            gender = gender,
+            onSelectionChange = onSelectionChange,
+            onDismiss = { showDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun TargetMuscleSelectionDialog(
+    selected: Set<String>,
+    allowedValues: List<String>,
+    gender: String,
+    onSelectionChange: (Set<String>) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val groups = remember(allowedValues) { targetMuscleGroupsFor(allowedValues) }
+    val selectedGroups = remember(selected, allowedValues) {
+        selectedTargetMuscleGroups(selected, allowedValues)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Target muscles",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(
+                    text = "Swipe grouped body areas. Choices save the real dataset muscles shown on each card.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(horizontal = 2.dp)
+                ) {
+                    items(groups) { group ->
+                        val groupMuscles = group.muscles.filter { allowedValues.contains(it) }.toSet()
+                        TargetMuscleCard(
+                            group = group,
+                            gender = gender,
+                            isSelected = selected.containsAll(groupMuscles),
+                            onToggle = {
+                                onSelectionChange(toggleTargetMuscleGroup(selected, group, allowedValues))
+                            }
+                        )
+                    }
+                }
+
+                if (selectedGroups.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        selectedGroups.forEach { group ->
+                            TargetMuscleChip(title = group.title)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Done", fontWeight = FontWeight.Bold)
+            }
+        }
+    )
+}
+
+@Composable
+private fun TargetMuscleCard(
+    group: TargetMuscleGroup,
+    gender: String,
+    isSelected: Boolean,
+    onToggle: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .width(264.dp)
+            .height(320.dp)
+            .clickable(onClick = onToggle),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isSelected) 0.40f else 0.24f)
+        ),
+        border = BorderStroke(
+            width = if (isSelected) 1.2.dp else 0.6.dp,
+            color = if (isSelected) DeltsAccent.copy(alpha = 0.62f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.22f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(126.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.44f))
+            ) {
+                TargetMuscleAssetImage(
+                    imageRes = group.imageRes(gender),
+                    modifier = Modifier.matchParentSize()
+                )
+
+                if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(10.dp)
+                            .size(30.dp)
+                            .clip(CircleShape)
+                            .background(DeltsAccent),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = DeltsOnAccent,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            Text(
+                text = group.title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Text(
+                text = group.detail,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(7.dp)
+            ) {
+                group.muscles.forEach { muscle ->
+                    TargetMuscleChip(title = muscle)
+                }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Button(
+                onClick = onToggle,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isSelected) MaterialTheme.colorScheme.surfaceVariant else DeltsAccent,
+                    contentColor = if (isSelected) MaterialTheme.colorScheme.onBackground else DeltsOnAccent
+                )
+            ) {
+                Text(if (isSelected) "Remove" else "Select", fontWeight = FontWeight.ExtraBold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TargetMuscleAssetImage(
+    @DrawableRes imageRes: Int,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.52f))) {
+        Image(
+            painter = painterResource(id = imageRes),
+            contentDescription = null,
+            modifier = Modifier.matchParentSize(),
+            contentScale = ContentScale.Crop
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.34f))
+                    )
+                )
+        )
+    }
+}
+
+@Composable
+private fun TargetMuscleChip(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.Bold,
+        color = DeltsAccent,
+        maxLines = 1,
+        modifier = Modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(DeltsAccent.copy(alpha = 0.12f))
+            .padding(horizontal = 9.dp, vertical = 6.dp)
+    )
+}
+
+@Composable
 private fun CompactMultiSelectRow(
     title: String,
     icon: ImageVector,
@@ -3750,6 +4021,7 @@ private fun SharedPreferences.loadProfile(): AndroidProfile {
 
     return AndroidProfile(
         name = getString("profile_name", "Athlete").orEmpty(),
+        gender = getString("profile_gender", "Male").orEmpty().ifBlank { "Male" },
         age = getInt("profile_age", 24),
         heightCm = getDoubleCompat("profile_height_cm", 178.0),
         weightKg = weightKg,
@@ -3766,7 +4038,7 @@ private fun SharedPreferences.loadProfile(): AndroidProfile {
         customWorkoutSplit = getString("profile_custom_workout_split", "").orEmpty(),
         duration = getInt("profile_duration", 60),
         availableEquipment = getStringSet("profile_equipment", setOf("Dumbbells", "Bench", "Cable Machine")) ?: emptySet(),
-        bodyFocus = getStringSet("profile_focus", setOf("Chest", "Shoulders", "Back")) ?: emptySet(),
+        bodyFocus = normalizeTargetMuscleSelection(getStringSet("profile_focus", setOf("Chest", "Shoulders", "Back")) ?: emptySet()),
         issues = getStringSet("profile_issues", emptySet()) ?: emptySet()
     )
 }
@@ -3774,6 +4046,7 @@ private fun SharedPreferences.loadProfile(): AndroidProfile {
 private fun SharedPreferences.saveProfile(profile: AndroidProfile) {
     edit()
         .putString("profile_name", profile.name)
+        .putString("profile_gender", profile.gender)
         .putInt("profile_age", profile.age)
         .putString("profile_height_cm", formatOneDecimal(profile.heightCm))
         .putString("profile_weight_kg", formatOneDecimal(profile.weightKg))
@@ -3791,7 +4064,7 @@ private fun SharedPreferences.saveProfile(profile: AndroidProfile) {
         .putString("profile_custom_workout_split", profile.customWorkoutSplit)
         .putInt("profile_duration", profile.duration)
         .putStringSet("profile_equipment", profile.availableEquipment)
-        .putStringSet("profile_focus", profile.bodyFocus)
+        .putStringSet("profile_focus", normalizeTargetMuscleSelection(profile.bodyFocus))
         .putStringSet("profile_issues", profile.issues)
         .apply()
 }
@@ -3875,6 +4148,7 @@ private enum class LibrarySort(val title: String) {
 
 private data class AndroidProfile(
     val name: String,
+    val gender: String,
     val age: Int,
     val heightCm: Double,
     val weightKg: Double,
@@ -4510,6 +4784,7 @@ private fun defaultModelForProvider(provider: String): String =
     aiModelsByProvider[provider]?.firstOrNull() ?: customAIModel
 
 private const val otherGoalOption = "Other"
+private val genderOptions = listOf("Male", "Female", "Non-binary", "Prefer not to say")
 private val profileGoalOptions = listOf("Muscle Gain", "Fat Loss", "Strength", "Beginner Form", otherGoalOption)
 private val frequencyOptions = (1..7).map { "$it days/week" }
 private val workoutSplitOptions = listOf(
@@ -4523,6 +4798,145 @@ private val workoutSplitOptions = listOf(
     "Hybrid Split",
     "Custom"
 )
+
+private data class TargetMuscleGroup(
+    val id: String,
+    val title: String,
+    val detail: String,
+    val muscles: Set<String>,
+    val isComposite: Boolean,
+    val maleImageRes: Int,
+    val femaleImageRes: Int
+) {
+    @DrawableRes
+    fun imageRes(gender: String): Int =
+        if (gender == "Female") femaleImageRes else maleImageRes
+}
+
+private object TargetMuscleImageSources {
+    val maleChest = R.drawable.target_male_chest
+    val maleBack = R.drawable.target_male_back
+    val maleShoulders = R.drawable.target_male_shoulders
+    val maleArms = R.drawable.target_male_arms
+    val maleCore = R.drawable.target_male_core
+    val maleLegs = R.drawable.target_male_legs
+    val femaleChest = R.drawable.target_female_chest
+    val femaleBack = R.drawable.target_female_back
+    val femaleShoulders = R.drawable.target_female_shoulders
+    val femaleArms = R.drawable.target_female_arms
+    val femaleCore = R.drawable.target_female_core
+    val femaleLegs = R.drawable.target_female_legs
+}
+
+private val targetMuscleGroups = listOf(
+    TargetMuscleGroup("chest", "Chest", "Pecs", setOf("Chest"), false, TargetMuscleImageSources.maleChest, TargetMuscleImageSources.femaleChest),
+    TargetMuscleGroup("back", "Back", "Lats, middle back, lower back, traps", setOf("Lats", "Middle Back", "Lower Back", "Traps"), true, TargetMuscleImageSources.maleBack, TargetMuscleImageSources.femaleBack),
+    TargetMuscleGroup("shoulders", "Shoulders", "Delts and traps", setOf("Shoulders", "Traps"), true, TargetMuscleImageSources.maleShoulders, TargetMuscleImageSources.femaleShoulders),
+    TargetMuscleGroup("arms", "Arms", "Biceps, triceps, forearms", setOf("Biceps", "Triceps", "Forearms"), true, TargetMuscleImageSources.maleArms, TargetMuscleImageSources.femaleArms),
+    TargetMuscleGroup("core", "Abs / Core", "Abdominals", setOf("Abdominals"), false, TargetMuscleImageSources.maleCore, TargetMuscleImageSources.femaleCore),
+    TargetMuscleGroup("legs", "Legs", "Quads, hamstrings, glutes, calves, hips", setOf("Quadriceps", "Hamstrings", "Glutes", "Calves", "Abductors", "Adductors"), true, TargetMuscleImageSources.maleLegs, TargetMuscleImageSources.femaleLegs),
+    TargetMuscleGroup("biceps", "Biceps", "Front upper arm", setOf("Biceps"), false, TargetMuscleImageSources.maleArms, TargetMuscleImageSources.femaleArms),
+    TargetMuscleGroup("triceps", "Triceps", "Back upper arm", setOf("Triceps"), false, TargetMuscleImageSources.maleArms, TargetMuscleImageSources.femaleArms),
+    TargetMuscleGroup("forearms", "Forearms", "Grip and lower arm", setOf("Forearms"), false, TargetMuscleImageSources.maleArms, TargetMuscleImageSources.femaleArms),
+    TargetMuscleGroup("lats", "Lats", "Width-focused back", setOf("Lats"), false, TargetMuscleImageSources.maleBack, TargetMuscleImageSources.femaleBack),
+    TargetMuscleGroup("middle-back", "Middle Back", "Rows and upper-back thickness", setOf("Middle Back"), false, TargetMuscleImageSources.maleBack, TargetMuscleImageSources.femaleBack),
+    TargetMuscleGroup("lower-back", "Lower Back", "Spinal erectors", setOf("Lower Back"), false, TargetMuscleImageSources.maleBack, TargetMuscleImageSources.femaleBack),
+    TargetMuscleGroup("traps", "Traps", "Upper back and neck line", setOf("Traps"), false, TargetMuscleImageSources.maleShoulders, TargetMuscleImageSources.femaleShoulders),
+    TargetMuscleGroup("quads", "Quads", "Quadriceps", setOf("Quadriceps"), false, TargetMuscleImageSources.maleLegs, TargetMuscleImageSources.femaleLegs),
+    TargetMuscleGroup("hamstrings", "Hamstrings", "Posterior thigh", setOf("Hamstrings"), false, TargetMuscleImageSources.maleLegs, TargetMuscleImageSources.femaleLegs),
+    TargetMuscleGroup("glutes", "Glutes", "Hips and glutes", setOf("Glutes"), false, TargetMuscleImageSources.maleLegs, TargetMuscleImageSources.femaleLegs),
+    TargetMuscleGroup("calves", "Calves", "Lower leg", setOf("Calves"), false, TargetMuscleImageSources.maleLegs, TargetMuscleImageSources.femaleLegs),
+    TargetMuscleGroup("hips", "Hips", "Abductors, adductors", setOf("Abductors", "Adductors"), true, TargetMuscleImageSources.maleLegs, TargetMuscleImageSources.femaleLegs),
+    TargetMuscleGroup("neck", "Neck", "Neck", setOf("Neck"), false, TargetMuscleImageSources.maleShoulders, TargetMuscleImageSources.femaleShoulders)
+)
+
+private val datasetPrimaryMuscleNames = listOf(
+    "Abdominals",
+    "Abductors",
+    "Adductors",
+    "Biceps",
+    "Calves",
+    "Chest",
+    "Forearms",
+    "Glutes",
+    "Hamstrings",
+    "Lats",
+    "Lower Back",
+    "Middle Back",
+    "Neck",
+    "Quadriceps",
+    "Shoulders",
+    "Traps",
+    "Triceps"
+)
+
+private fun targetMuscleGroupsFor(allowedValues: List<String>): List<TargetMuscleGroup> {
+    val allowed = allowedValues.toSet()
+    return targetMuscleGroups.filter { group -> group.muscles.any { allowed.contains(it) } }
+}
+
+private fun normalizeTargetMuscleSelection(selection: Set<String>, allowedValues: List<String> = datasetPrimaryMuscleNames): Set<String> {
+    val allowed = allowedValues.toSet()
+    return selection.flatMap { value ->
+        when {
+            allowed.contains(value) -> listOf(value)
+            else -> targetMuscleGroups
+                .firstOrNull { it.title.equals(value, ignoreCase = true) || it.id.equals(value, ignoreCase = true) }
+                ?.muscles
+                .orEmpty()
+        }
+    }
+        .filter { allowed.contains(it) }
+        .toSet()
+}
+
+private fun toggleTargetMuscleGroup(
+    selection: Set<String>,
+    group: TargetMuscleGroup,
+    allowedValues: List<String>
+): Set<String> {
+    val normalizedSelection = normalizeTargetMuscleSelection(selection, allowedValues)
+    val groupMuscles = group.muscles.filter { allowedValues.contains(it) }.toSet()
+    if (groupMuscles.isEmpty()) return normalizedSelection
+
+    return if (normalizedSelection.containsAll(groupMuscles)) {
+        val protectedMuscles = targetMuscleGroupsFor(allowedValues)
+            .filter { it.id != group.id }
+            .filter { normalizedSelection.containsAll(it.muscles.filter { muscle -> allowedValues.contains(muscle) }) }
+            .flatMap { it.muscles }
+            .toSet()
+
+        normalizedSelection - (groupMuscles - protectedMuscles)
+    } else {
+        normalizedSelection + groupMuscles
+    }
+}
+
+private fun selectedTargetMuscleGroups(selection: Set<String>, allowedValues: List<String>): List<TargetMuscleGroup> {
+    val normalizedSelection = normalizeTargetMuscleSelection(selection, allowedValues)
+    if (normalizedSelection.isEmpty()) return emptyList()
+
+    val fullySelected = targetMuscleGroupsFor(allowedValues).filter { group ->
+        normalizedSelection.containsAll(group.muscles.filter { allowedValues.contains(it) })
+    }
+    val compositeCoverage = fullySelected
+        .filter { it.isComposite }
+        .flatMap { it.muscles }
+        .toSet()
+
+    return fullySelected.filter { group ->
+        group.isComposite || !compositeCoverage.containsAll(group.muscles)
+    }
+}
+
+private fun targetMuscleSummary(selection: Set<String>, allowedValues: List<String>): String {
+    val titles = selectedTargetMuscleGroups(selection, allowedValues).map { it.title }
+    return when {
+        titles.isEmpty() -> "None"
+        titles.size <= 2 -> titles.joinToString(", ")
+        else -> "${titles.size} selected"
+    }
+}
 
 private data class WorkoutSplitMuscleGroup(val title: String, val muscles: Set<String>)
 
@@ -4609,6 +5023,7 @@ private fun DeltsAppPreview() {
             StartScreen(
                 profile = AndroidProfile(
                     name = "Athlete",
+                    gender = "Male",
                     age = 24,
                     heightCm = 178.0,
                     weightKg = 75.0,

@@ -186,6 +186,7 @@ private struct ProfileEditorView: View {
     @State private var hasSavedPrimaryAPIKey = LocalGeminiKeyStore.apiKey != nil
     @State private var hasSavedFallbackAPIKey = LocalGeminiKeyStore.fallbackAPIKey != nil
     @State private var appleHealthMessage = ""
+    @State private var isSelectingTargetMuscles = false
     @StateObject private var healthKit = HealthKitProgressService()
 
     private let exerciseLibraryService = ExerciseLibraryService.shared
@@ -219,6 +220,15 @@ private struct ProfileEditorView: View {
         .tint(Color.deltsAccent)
         .toolbar(.hidden, for: .navigationBar)
         .background(ProfileKeyboardDismissTapInstaller())
+        .sheet(isPresented: $isSelectingTargetMuscles) {
+            ProfileTargetMuscleSelectionSheet(
+                selection: datasetPrimaryMusclesBinding,
+                allowedValues: exerciseLibraryService.availablePrimaryMuscles,
+                gender: profile.gender
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
     }
 
     private var identitySection: some View {
@@ -368,12 +378,10 @@ private struct ProfileEditorView: View {
                     ProfileTextAreaRow(title: "Extra goals", systemImage: "text.alignleft", text: extraGoalsBinding)
                 }
                 ProfileDivider()
-                ProfileMultiSelectMenuRow(
-                    title: "Target muscles",
-                    systemImage: "scope",
-                    options: exerciseLibraryService.availablePrimaryMuscles,
+                ProfileTargetMuscleSelectorRow(
                     selection: datasetPrimaryMusclesBinding,
-                    label: { $0 }
+                    allowedValues: exerciseLibraryService.availablePrimaryMuscles,
+                    isPresented: $isSelectingTargetMuscles
                 )
                 ProfileDivider()
                 ProfileMultiSelectMenuRow(
@@ -784,9 +792,17 @@ private struct ProfileEditorView: View {
 
     private var datasetPrimaryMusclesBinding: Binding<Set<String>> {
         Binding {
-            datasetStoredSet(datasetPrimaryMusclesRaw, allowedValues: exerciseLibraryService.availablePrimaryMuscles)
+            let rawSelection = Set(datasetPrimaryMusclesRaw.split(separator: "|").map(String.init))
+            return ProfileTargetMuscleGroup.normalized(rawSelection, allowedValues: exerciseLibraryService.availablePrimaryMuscles)
         } set: { newValue in
-            datasetPrimaryMusclesRaw = datasetStoredString(newValue, allowedValues: exerciseLibraryService.availablePrimaryMuscles)
+            let normalizedSelection = ProfileTargetMuscleGroup.normalized(
+                newValue,
+                allowedValues: exerciseLibraryService.availablePrimaryMuscles
+            )
+            datasetPrimaryMusclesRaw = datasetStoredString(
+                normalizedSelection,
+                allowedValues: exerciseLibraryService.availablePrimaryMuscles
+            )
         }
     }
 
@@ -1898,6 +1914,525 @@ private struct ProfileMultiSelectMenuRow<Option: Hashable>: View {
                 ProfileMenuValueLabel(text: summary)
             }
             .deltsPressable()
+        }
+    }
+}
+
+private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
+    let id: String
+    let title: String
+    let detail: String
+    let systemImage: String
+    let muscles: [String]
+    let isComposite: Bool
+
+    var muscleSet: Set<String> {
+        Set(muscles)
+    }
+
+    func availableMuscles(allowedValues: [String]) -> [String] {
+        muscles.filter { allowedValues.contains($0) }
+    }
+
+    func imageName(gender: String) -> String {
+        let isFemale = gender == "Female"
+        switch id {
+        case "chest":
+            return isFemale ? TargetMuscleImageSources.femaleChest : TargetMuscleImageSources.maleChest
+        case "back", "lats", "middle-back", "lower-back":
+            return isFemale ? TargetMuscleImageSources.femaleBack : TargetMuscleImageSources.maleBack
+        case "shoulders", "traps", "neck":
+            return isFemale ? TargetMuscleImageSources.femaleShoulders : TargetMuscleImageSources.maleShoulders
+        case "arms", "biceps", "triceps", "forearms":
+            return isFemale ? TargetMuscleImageSources.femaleArms : TargetMuscleImageSources.maleArms
+        case "core":
+            return isFemale ? TargetMuscleImageSources.femaleCore : TargetMuscleImageSources.maleCore
+        default:
+            return isFemale ? TargetMuscleImageSources.femaleLegs : TargetMuscleImageSources.maleLegs
+        }
+    }
+
+    static let all: [ProfileTargetMuscleGroup] = [
+        ProfileTargetMuscleGroup(
+            id: "chest",
+            title: "Chest",
+            detail: "Pecs",
+            systemImage: "figure.strengthtraining.traditional",
+            muscles: ["Chest"],
+            isComposite: false
+        ),
+        ProfileTargetMuscleGroup(
+            id: "back",
+            title: "Back",
+            detail: "Lats, middle back, lower back, traps",
+            systemImage: "figure.pullup",
+            muscles: ["Lats", "Middle Back", "Lower Back", "Traps"],
+            isComposite: true
+        ),
+        ProfileTargetMuscleGroup(
+            id: "shoulders",
+            title: "Shoulders",
+            detail: "Delts and traps",
+            systemImage: "figure.strengthtraining.functional",
+            muscles: ["Shoulders", "Traps"],
+            isComposite: true
+        ),
+        ProfileTargetMuscleGroup(
+            id: "arms",
+            title: "Arms",
+            detail: "Biceps, triceps, forearms",
+            systemImage: "figure.arms.open",
+            muscles: ["Biceps", "Triceps", "Forearms"],
+            isComposite: true
+        ),
+        ProfileTargetMuscleGroup(
+            id: "core",
+            title: "Abs / Core",
+            detail: "Abdominals",
+            systemImage: "figure.core.training",
+            muscles: ["Abdominals"],
+            isComposite: false
+        ),
+        ProfileTargetMuscleGroup(
+            id: "legs",
+            title: "Legs",
+            detail: "Quads, hamstrings, glutes, calves, hips",
+            systemImage: "figure.run",
+            muscles: ["Quadriceps", "Hamstrings", "Glutes", "Calves", "Abductors", "Adductors"],
+            isComposite: true
+        ),
+        ProfileTargetMuscleGroup(
+            id: "biceps",
+            title: "Biceps",
+            detail: "Front upper arm",
+            systemImage: "dumbbell.fill",
+            muscles: ["Biceps"],
+            isComposite: false
+        ),
+        ProfileTargetMuscleGroup(
+            id: "triceps",
+            title: "Triceps",
+            detail: "Back upper arm",
+            systemImage: "dumbbell.fill",
+            muscles: ["Triceps"],
+            isComposite: false
+        ),
+        ProfileTargetMuscleGroup(
+            id: "forearms",
+            title: "Forearms",
+            detail: "Grip and lower arm",
+            systemImage: "dumbbell.fill",
+            muscles: ["Forearms"],
+            isComposite: false
+        ),
+        ProfileTargetMuscleGroup(
+            id: "lats",
+            title: "Lats",
+            detail: "Width-focused back",
+            systemImage: "figure.pullup",
+            muscles: ["Lats"],
+            isComposite: false
+        ),
+        ProfileTargetMuscleGroup(
+            id: "middle-back",
+            title: "Middle Back",
+            detail: "Rows and upper-back thickness",
+            systemImage: "figure.pullup",
+            muscles: ["Middle Back"],
+            isComposite: false
+        ),
+        ProfileTargetMuscleGroup(
+            id: "lower-back",
+            title: "Lower Back",
+            detail: "Spinal erectors",
+            systemImage: "figure.flexibility",
+            muscles: ["Lower Back"],
+            isComposite: false
+        ),
+        ProfileTargetMuscleGroup(
+            id: "traps",
+            title: "Traps",
+            detail: "Upper back and neck line",
+            systemImage: "figure.strengthtraining.functional",
+            muscles: ["Traps"],
+            isComposite: false
+        ),
+        ProfileTargetMuscleGroup(
+            id: "quads",
+            title: "Quads",
+            detail: "Quadriceps",
+            systemImage: "figure.run",
+            muscles: ["Quadriceps"],
+            isComposite: false
+        ),
+        ProfileTargetMuscleGroup(
+            id: "hamstrings",
+            title: "Hamstrings",
+            detail: "Posterior thigh",
+            systemImage: "figure.run",
+            muscles: ["Hamstrings"],
+            isComposite: false
+        ),
+        ProfileTargetMuscleGroup(
+            id: "glutes",
+            title: "Glutes",
+            detail: "Hips and glutes",
+            systemImage: "figure.run",
+            muscles: ["Glutes"],
+            isComposite: false
+        ),
+        ProfileTargetMuscleGroup(
+            id: "calves",
+            title: "Calves",
+            detail: "Lower leg",
+            systemImage: "figure.run",
+            muscles: ["Calves"],
+            isComposite: false
+        ),
+        ProfileTargetMuscleGroup(
+            id: "hips",
+            title: "Hips",
+            detail: "Abductors, adductors",
+            systemImage: "figure.walk",
+            muscles: ["Abductors", "Adductors"],
+            isComposite: true
+        ),
+        ProfileTargetMuscleGroup(
+            id: "neck",
+            title: "Neck",
+            detail: "Neck",
+            systemImage: "figure.stand",
+            muscles: ["Neck"],
+            isComposite: false
+        )
+    ]
+
+    static func groups(allowedValues: [String]) -> [ProfileTargetMuscleGroup] {
+        all.filter { !$0.availableMuscles(allowedValues: allowedValues).isEmpty }
+    }
+
+    static func normalized(_ values: Set<String>, allowedValues: [String]) -> Set<String> {
+        let allowedSet = Set(allowedValues)
+        var normalizedValues = Set<String>()
+
+        for value in values {
+            if allowedSet.contains(value) {
+                normalizedValues.insert(value)
+                continue
+            }
+
+            if let group = all.first(where: {
+                $0.title.caseInsensitiveCompare(value) == .orderedSame ||
+                $0.id.caseInsensitiveCompare(value) == .orderedSame
+            }) {
+                normalizedValues.formUnion(group.availableMuscles(allowedValues: allowedValues))
+            }
+        }
+
+        return normalizedValues
+    }
+
+    static func toggled(
+        selection: Set<String>,
+        group: ProfileTargetMuscleGroup,
+        allowedValues: [String]
+    ) -> Set<String> {
+        let normalizedSelection = normalized(selection, allowedValues: allowedValues)
+        let groupMuscles = Set(group.availableMuscles(allowedValues: allowedValues))
+        guard !groupMuscles.isEmpty else { return normalizedSelection }
+
+        if groupMuscles.isSubset(of: normalizedSelection) {
+            let protectedMuscles = Set(groups(allowedValues: allowedValues)
+                .filter { $0.id != group.id }
+                .filter { Set($0.availableMuscles(allowedValues: allowedValues)).isSubset(of: normalizedSelection) }
+                .flatMap { $0.availableMuscles(allowedValues: allowedValues) })
+
+            return normalizedSelection.subtracting(groupMuscles.subtracting(protectedMuscles))
+        }
+
+        return normalizedSelection.union(groupMuscles)
+    }
+
+    static func selectedGroups(selection: Set<String>, allowedValues: [String]) -> [ProfileTargetMuscleGroup] {
+        let normalizedSelection = normalized(selection, allowedValues: allowedValues)
+        guard !normalizedSelection.isEmpty else { return [] }
+
+        let availableGroups = groups(allowedValues: allowedValues)
+        let fullySelected = availableGroups.filter {
+            Set($0.availableMuscles(allowedValues: allowedValues)).isSubset(of: normalizedSelection)
+        }
+        let compositeCoverage = Set(fullySelected
+            .filter(\.isComposite)
+            .flatMap { $0.availableMuscles(allowedValues: allowedValues) })
+
+        return fullySelected.filter { group in
+            if group.isComposite {
+                return true
+            }
+            return !Set(group.availableMuscles(allowedValues: allowedValues)).isSubset(of: compositeCoverage)
+        }
+    }
+
+    static func summary(selection: Set<String>, allowedValues: [String]) -> String {
+        let titles = selectedGroups(selection: selection, allowedValues: allowedValues).map(\.title)
+        if titles.isEmpty {
+            return "None"
+        }
+        if titles.count <= 2 {
+            return titles.joined(separator: ", ")
+        }
+        return "\(titles.count) selected"
+    }
+}
+
+private enum TargetMuscleImageSources {
+    static let maleChest = "target_male_chest"
+    static let maleBack = "target_male_back"
+    static let maleShoulders = "target_male_shoulders"
+    static let maleArms = "target_male_arms"
+    static let maleCore = "target_male_core"
+    static let maleLegs = "target_male_legs"
+    static let femaleChest = "target_female_chest"
+    static let femaleBack = "target_female_back"
+    static let femaleShoulders = "target_female_shoulders"
+    static let femaleArms = "target_female_arms"
+    static let femaleCore = "target_female_core"
+    static let femaleLegs = "target_female_legs"
+}
+
+private struct ProfileTargetMuscleSelectorRow: View {
+    @Binding var selection: Set<String>
+    let allowedValues: [String]
+    @Binding var isPresented: Bool
+
+    private var selectedGroups: [ProfileTargetMuscleGroup] {
+        ProfileTargetMuscleGroup.selectedGroups(selection: selection, allowedValues: allowedValues)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                isPresented = true
+            } label: {
+                ProfileFieldRow(title: "Target muscles", systemImage: "scope") {
+                    ProfileMenuValueLabel(
+                        text: ProfileTargetMuscleGroup.summary(
+                            selection: selection,
+                            allowedValues: allowedValues
+                        )
+                    )
+                }
+            }
+            .buttonStyle(.plain)
+            .deltsPressable()
+
+            if !selectedGroups.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(selectedGroups) { group in
+                            ProfileTargetMuscleChip(title: group.title)
+                        }
+                    }
+                    .padding(.leading, 48)
+                    .padding(.trailing, 6)
+                    .padding(.bottom, 10)
+                }
+            }
+        }
+    }
+}
+
+private struct ProfileTargetMuscleChip: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.caption.weight(.bold))
+            .foregroundStyle(Color.deltsAccent)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.deltsAccent.opacity(0.12), in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(Color.deltsAccent.opacity(0.22), lineWidth: 0.5)
+            }
+    }
+}
+
+private struct ProfileTargetMuscleSelectionSheet: View {
+    @Binding var selection: Set<String>
+    let allowedValues: [String]
+    let gender: String
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedPage = 0
+
+    private var groups: [ProfileTargetMuscleGroup] {
+        ProfileTargetMuscleGroup.groups(allowedValues: allowedValues)
+    }
+
+    private var selectedGroups: [ProfileTargetMuscleGroup] {
+        ProfileTargetMuscleGroup.selectedGroups(selection: selection, allowedValues: allowedValues)
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 18) {
+                Text("Swipe through grouped body areas. Each choice saves the real dataset muscles shown on the card.")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 4)
+
+                TabView(selection: $selectedPage) {
+                    ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
+                        ProfileTargetMuscleCard(
+                            group: group,
+                            gender: gender,
+                            isSelected: Set(group.availableMuscles(allowedValues: allowedValues)).isSubset(of: selection),
+                            toggle: {
+                                selection = ProfileTargetMuscleGroup.toggled(
+                                    selection: selection,
+                                    group: group,
+                                    allowedValues: allowedValues
+                                )
+                            }
+                        )
+                        .padding(.horizontal, 20)
+                        .tag(index)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .always))
+                .frame(height: 392)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Selected")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Color.deltsMutedText)
+
+                    if selectedGroups.isEmpty {
+                        Text("None")
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(Color.deltsCharcoal)
+                    } else {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(selectedGroups) { group in
+                                    ProfileTargetMuscleChip(title: group.title)
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+
+                Spacer(minLength: 0)
+            }
+            .background(Color.deltsBackground.ignoresSafeArea())
+            .navigationTitle("Target muscles")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.body.weight(.bold))
+                }
+            }
+        }
+    }
+}
+
+private struct ProfileTargetMuscleCard: View {
+    let group: ProfileTargetMuscleGroup
+    let gender: String
+    let isSelected: Bool
+    let toggle: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            ZStack(alignment: .topTrailing) {
+                ProfileTargetMuscleAssetImage(
+                    imageName: group.imageName(gender: gender)
+                )
+                .frame(height: 150)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(Color.deltsAccent)
+                        .padding(12)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(group.title)
+                    .font(.largeTitle.weight(.heavy))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.74)
+
+                Text(group.detail)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 7) {
+                    ForEach(group.muscles, id: \.self) { muscle in
+                        ProfileTargetMuscleChip(title: muscle)
+                    }
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            Button(action: toggle) {
+                Text(isSelected ? "Remove" : "Select")
+                    .font(.headline.weight(.heavy))
+                    .foregroundStyle(isSelected ? Color.deltsCharcoal : Color.deltsOnAccent)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(isSelected ? Color.deltsPanel.opacity(0.44) : Color.deltsAccent, in: Capsule())
+                    .overlay {
+                        Capsule()
+                            .stroke(isSelected ? Color.deltsHairline.opacity(0.34) : Color.clear, lineWidth: 0.5)
+                    }
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color.deltsPanel.opacity(isSelected ? 0.32 : 0.18), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(isSelected ? Color.deltsAccent.opacity(0.46) : Color.deltsHairline.opacity(0.24), lineWidth: 1)
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .onTapGesture(perform: toggle)
+    }
+}
+
+private struct ProfileTargetMuscleAssetImage: View {
+    let imageName: String
+
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .fill(Color.deltsPanel.opacity(0.42))
+
+            Image(imageName)
+                .resizable()
+                .scaledToFill()
+                .overlay {
+                    LinearGradient(
+                        colors: [.clear, Color.black.opacity(0.42)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
         }
     }
 }
