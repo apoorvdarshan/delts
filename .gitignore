@@ -7,6 +7,7 @@ xcuserdata/
 # and set GEMINI_API_KEY there. Never commit real API keys.
 ios/Secrets.xcconfig
 ios/**/Secrets.xcconfig
+ios/**/Secrets.plist
 
 # Local downloaded dataset/media samples for manual inspection.
 downloads/
