@@ -19,16 +19,6 @@ enum GeminiWorkoutError: LocalizedError {
 }
 
 final class GeminiWorkoutService {
-    private var modelName: String {
-        let selectedModel = UserDefaults.standard.string(forKey: "profile_ai_model") ?? "gemini-1.5-flash"
-        if selectedModel == "Custom model" {
-            let customModel = UserDefaults.standard.string(forKey: "profile_ai_custom_model")?
-                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            return customModel.isEmpty ? "gemini-1.5-flash" : customModel
-        }
-        return selectedModel
-    }
-
     func generateWorkout(
         profile: UserProfile,
         muscleGroup: MuscleGroup,
@@ -40,7 +30,7 @@ final class GeminiWorkoutService {
             throw GeminiWorkoutError.missingAPIKey
         }
 
-        var components = URLComponents(string: "https://generativelanguage.googleapis.com/v1beta/models/\(modelName):generateContent")
+        var components = URLComponents(string: "https://generativelanguage.googleapis.com/v1beta/models/\(GeminiConfig.modelName):generateContent")
         components?.queryItems = [URLQueryItem(name: "key", value: apiKey)]
 
         guard let url = components?.url else {

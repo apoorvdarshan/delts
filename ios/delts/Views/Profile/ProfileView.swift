@@ -39,42 +39,17 @@ private enum MeasurementSystem: String, CaseIterable, Hashable {
     }
 }
 
-private enum AIProviderCatalog {
-    static let providerName = "Gemini"
-    static let customModel = "Custom model"
-
-    private static let geminiModels = [
-        "gemini-3.5-flash",
-        "gemini-3.1-pro",
-        "gemini-3-flash",
-        "gemini-2.5-pro",
-        "gemini-2.5-flash"
-    ]
-
-    static var modelOptions: [String] {
-        geminiModels + [customModel]
-    }
-
-    static var defaultModel: String {
-        geminiModels.first ?? customModel
-    }
-}
-
 private struct ProfileEditorView: View {
     @Bindable var profile: UserProfile
     @AppStorage("profile_measurement_system") private var measurementSystemRaw = MeasurementSystem.metric.rawValue
     @AppStorage("profile_custom_workout_split") private var customWorkoutSplit = ""
     @AppStorage("profile_selected_goals") private var selectedGoalRawValues = ""
     @AppStorage("profile_extra_issues") private var extraIssues = ""
-    @AppStorage("profile_ai_model") private var aiModel = AIProviderCatalog.defaultModel
-    @AppStorage("profile_ai_custom_model") private var aiCustomModel = ""
     @AppStorage("profile_dataset_level") private var datasetLevelRaw = ""
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
     @AppStorage("apple_health_enabled") private var appleHealthEnabled = false
     @AppStorage("profile_goal_weight_kg") private var goalWeightKG = 0.0
-    @State private var primaryAPIKey = LocalGeminiKeyStore.apiKey ?? ""
-    @State private var hasSavedPrimaryAPIKey = LocalGeminiKeyStore.apiKey != nil
     @State private var isSelectingTargetMuscles = false
     @StateObject private var healthKit = HealthKitProgressService()
 
@@ -93,7 +68,6 @@ private struct ProfileEditorView: View {
             VStack(alignment: .leading, spacing: 18) {
                 identitySection
                 goalSection
-                aiSettingsSection
                 scheduleSection
                 strengthSection
             }
@@ -256,48 +230,6 @@ private struct ProfileEditorView: View {
         }
     }
 
-    private var aiSettingsSection: some View {
-        ProfileSection(
-            title: "AI Settings",
-            subtitle: "Gemini model and local key.",
-            systemImage: "key.fill",
-            badge: hasSavedPrimaryAPIKey ? "Ready" : nil
-        ) {
-            ProfileRowStack {
-                ProfileValueRow(
-                    title: "Provider",
-                    systemImage: "server.rack",
-                    value: AIProviderCatalog.providerName
-                )
-                ProfileDivider()
-                ProfileMenuPicker(
-                    title: "Model",
-                    systemImage: "cpu",
-                    selection: aiModelBinding,
-                    options: AIProviderCatalog.modelOptions,
-                    label: { $0 }
-                )
-                if aiModel == AIProviderCatalog.customModel {
-                    ProfileDivider()
-                    ProfileTextInputRow(
-                        title: "Model name",
-                        systemImage: "text.cursor",
-                        text: aiCustomModelBinding,
-                        isTechnical: true
-                    )
-                }
-                ProfileDivider()
-                ProfileAPIKeyRow(
-                    title: "API key",
-                    apiKey: $primaryAPIKey,
-                    hasSavedKey: hasSavedPrimaryAPIKey,
-                    save: savePrimaryAPIKey,
-                    clear: clearPrimaryAPIKey
-                )
-            }
-        }
-    }
-
     private var scheduleSection: some View {
         ProfileSection(
             title: "Workout Setup",
@@ -395,22 +327,6 @@ private struct ProfileEditorView: View {
             appleHealthEnabled = true
         } catch {
             appleHealthEnabled = false
-        }
-    }
-
-    private var aiModelBinding: Binding<String> {
-        Binding {
-            AIProviderCatalog.modelOptions.contains(aiModel) ? aiModel : AIProviderCatalog.defaultModel
-        } set: { newValue in
-            aiModel = newValue
-        }
-    }
-
-    private var aiCustomModelBinding: Binding<String> {
-        Binding {
-            aiCustomModel
-        } set: { newValue in
-            aiCustomModel = newValue
         }
     }
 
@@ -657,17 +573,6 @@ private struct ProfileEditorView: View {
         }
     }
 
-    private func savePrimaryAPIKey() {
-        LocalGeminiKeyStore.save(primaryAPIKey)
-        primaryAPIKey = LocalGeminiKeyStore.apiKey ?? ""
-        hasSavedPrimaryAPIKey = LocalGeminiKeyStore.apiKey != nil
-    }
-
-    private func clearPrimaryAPIKey() {
-        LocalGeminiKeyStore.clear()
-        primaryAPIKey = ""
-        hasSavedPrimaryAPIKey = false
-    }
 }
 
 private struct ProfileLoadingView: View {
@@ -962,24 +867,6 @@ private struct ProfileControlBlock<Content: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.vertical, 12)
-    }
-}
-
-private struct ProfileValueRow: View {
-    let title: String
-    let systemImage: String
-    let value: String
-
-    var body: some View {
-        ProfileFieldRow(title: title, systemImage: systemImage) {
-            Text(value)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(Color.deltsMutedText)
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-                .multilineTextAlignment(.trailing)
-                .frame(minWidth: 72, maxWidth: 178, minHeight: 38, alignment: .trailing)
-        }
     }
 }
 
@@ -1662,53 +1549,6 @@ private struct ProfileSegmentedPicker<Option: Hashable>: View {
                 ProfileMenuValueLabel(text: label(selection))
             }
             .deltsPressable()
-        }
-    }
-}
-
-private struct ProfileAPIKeyRow: View {
-    let title: String
-    @Binding var apiKey: String
-    let hasSavedKey: Bool
-    let save: () -> Void
-    let clear: () -> Void
-    @FocusState private var isFocused: Bool
-
-    var body: some View {
-        ProfileFieldRow(
-            title: title,
-            systemImage: hasSavedKey ? "checkmark.seal.fill" : "key.fill",
-            tint: hasSavedKey ? .deltsAccent : .deltsSecondaryAccent
-        ) {
-            HStack(spacing: 8) {
-                SecureField(hasSavedKey ? "Saved" : "Paste key", text: $apiKey)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .textContentType(.password)
-                    .focused($isFocused)
-                    .submitLabel(.done)
-                    .onSubmit(save)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .multilineTextAlignment(.trailing)
-                    .lineLimit(1)
-                    .frame(minWidth: 112)
-
-                Button(action: save) {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 15, weight: .bold))
-                        .frame(width: 32, height: 32)
-                }
-                .accessibilityLabel("Save API key")
-
-                Button(action: clear) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 15, weight: .bold))
-                        .frame(width: 32, height: 32)
-                }
-                .accessibilityLabel("Clear API key")
-            }
-            .foregroundStyle(Color.deltsMutedText)
         }
     }
 }
