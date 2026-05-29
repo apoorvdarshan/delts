@@ -185,7 +185,6 @@ private struct ProfileEditorView: View {
     @State private var fallbackAPIKey = LocalGeminiKeyStore.fallbackAPIKey ?? ""
     @State private var hasSavedPrimaryAPIKey = LocalGeminiKeyStore.apiKey != nil
     @State private var hasSavedFallbackAPIKey = LocalGeminiKeyStore.fallbackAPIKey != nil
-    @State private var appleHealthMessage = ""
     @State private var isSelectingTargetMuscles = false
     @StateObject private var healthKit = HealthKitProgressService()
 
@@ -204,7 +203,6 @@ private struct ProfileEditorView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 identitySection
-                appleHealthSection
                 goalSection
                 aiSettingsSection
                 scheduleSection
@@ -296,41 +294,10 @@ private struct ProfileEditorView: View {
                     value: desiredBodyFatBinding,
                     range: 3...45
                 )
-            }
-        }
-    }
-
-    private var appleHealthSection: some View {
-        ProfileSection(
-            title: "Apple Health",
-            subtitle: "Read previous weight/body fat history and write new logs.",
-            systemImage: "heart.text.square",
-            badge: appleHealthEnabled ? "Enabled" : nil
-        ) {
-            ProfileRowStack {
-                ProfileFieldRow(title: "Health access", systemImage: "heart.text.square") {
+                ProfileDivider()
+                ProfileFieldRow(title: "Apple Health", systemImage: "heart.text.square") {
                     Toggle("", isOn: appleHealthBinding)
                         .labelsHidden()
-                }
-                if appleHealthEnabled {
-                    ProfileDivider()
-                    ProfileFieldRow(title: "Sync history", systemImage: "arrow.triangle.2.circlepath") {
-                        Button {
-                            Task { await enableAppleHealth() }
-                        } label: {
-                            ProfileMenuValueLabel(text: "Sync now")
-                        }
-                        .deltsPressable()
-                    }
-                }
-                if !appleHealthMessage.isEmpty {
-                    ProfileDivider()
-                    ProfileFieldRow(title: "Status", systemImage: "checkmark.circle") {
-                        Text(appleHealthMessage)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.deltsMutedText)
-                            .multilineTextAlignment(.trailing)
-                    }
                 }
             }
         }
@@ -344,7 +311,6 @@ private struct ProfileEditorView: View {
                 Task { await enableAppleHealth() }
             } else {
                 appleHealthEnabled = false
-                appleHealthMessage = "Disabled."
             }
         }
     }
@@ -599,10 +565,8 @@ private struct ProfileEditorView: View {
             let current = ProgressMetricStore.load()
             _ = ProgressMetricStore.merge(imported, into: current)
             appleHealthEnabled = true
-            appleHealthMessage = imported.isEmpty ? "Connected. No previous samples found." : "Imported \(imported.count) metric day\(imported.count == 1 ? "" : "s")."
         } catch {
             appleHealthEnabled = false
-            appleHealthMessage = error.localizedDescription
         }
     }
 
