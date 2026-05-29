@@ -6,7 +6,7 @@ Target muscle selector photos are bundled from Wikimedia Commons-hosted royalty-
 - `target_male_back`: CC0, [World Gym workout (Unsplash)](https://commons.wikimedia.org/wiki/File:World_Gym_workout_(Unsplash).jpg)
 - `target_male_shoulders`: Public domain, [US Army 53402 "Natural Freak" pumps up NTC](https://commons.wikimedia.org/wiki/File:US_Army_53402_%22Natural_Freak%22_pumps_up_NTC.jpg)
 - `target_male_arms`: Public domain, [Bodybuilder John Quinlan On Stage 1998](https://commons.wikimedia.org/wiki/File:Bodybuilder_John_Quinlan_On_Stage_1998.jpg)
-- `target_male_core`: Public domain, [Arnold Schwarzenegger 1974](https://commons.wikimedia.org/wiki/File:Arnold_Schwarzenegger_1974.jpg)
+- `target_male_core`: Public domain, [Male rectus abdominis muscles](https://commons.wikimedia.org/wiki/File:Male_rectus_abdominis_muscles.jpg)
 - `target_male_legs`: Public domain, [HORACIO PATRONE 2 lugar TORNEO MR BUENOS AIRES 1970](https://commons.wikimedia.org/wiki/File:HORACIO_PATRONE_2_%C2%BA_lugar_TORNEO_MR_BUENOS_AIRES_1970_Categoria_NOVICIOS_AFCA_ARGENTINA.jpg)
 - `target_female_chest`: CC0, [Fitness training women M2 1](https://commons.wikimedia.org/wiki/File:Fitness_training_women_M2_(babaea_maryam_Tehran_2018)_1.jpg)
 - `target_female_back`: CC0, [Fitness training women M2 2](https://commons.wikimedia.org/wiki/File:Fitness_training_women_M2_(babaea_maryam_Tehran_2018)_2.jpg)

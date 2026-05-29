@@ -220,14 +220,12 @@ private struct ProfileEditorView: View {
         .tint(Color.deltsAccent)
         .toolbar(.hidden, for: .navigationBar)
         .background(ProfileKeyboardDismissTapInstaller())
-        .sheet(isPresented: $isSelectingTargetMuscles) {
+        .fullScreenCover(isPresented: $isSelectingTargetMuscles) {
             ProfileTargetMuscleSelectionSheet(
                 selection: datasetPrimaryMusclesBinding,
                 allowedValues: exerciseLibraryService.availablePrimaryMuscles,
                 gender: profile.gender
             )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
         }
     }
 
@@ -1954,7 +1952,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         }
     }
 
-    static let all: [ProfileTargetMuscleGroup] = [
+    nonisolated static let all: [ProfileTargetMuscleGroup] = [
         ProfileTargetMuscleGroup(
             id: "chest",
             title: "Chest",
@@ -1974,10 +1972,10 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "shoulders",
             title: "Shoulders",
-            detail: "Delts and traps",
+            detail: "Delts",
             systemImage: "figure.strengthtraining.functional",
-            muscles: ["Shoulders", "Traps"],
-            isComposite: true
+            muscles: ["Shoulders"],
+            isComposite: false
         ),
         ProfileTargetMuscleGroup(
             id: "arms",
@@ -2113,6 +2111,10 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         all.filter { !$0.availableMuscles(allowedValues: allowedValues).isEmpty }
     }
 
+    nonisolated static func group(id: String) -> ProfileTargetMuscleGroup? {
+        all.first { $0.id == id }
+    }
+
     static func normalized(_ values: Set<String>, allowedValues: [String]) -> Set<String> {
         let allowedSet = Set(allowedValues)
         var normalizedValues = Set<String>()
@@ -2184,6 +2186,62 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
             return titles.joined(separator: ", ")
         }
         return "\(titles.count) selected"
+    }
+}
+
+private struct ProfileTargetMuscleSection: Identifiable {
+    let id: String
+    let title: String
+    let detail: String
+    let groupIDs: [String]
+
+    func groups(allowedValues: [String]) -> [ProfileTargetMuscleGroup] {
+        groupIDs
+            .compactMap(ProfileTargetMuscleGroup.group(id:))
+            .filter { !$0.availableMuscles(allowedValues: allowedValues).isEmpty }
+    }
+
+    static let all: [ProfileTargetMuscleSection] = [
+        ProfileTargetMuscleSection(
+            id: "upper",
+            title: "Upper Body",
+            detail: "Chest and shoulders.",
+            groupIDs: ["chest", "shoulders"]
+        ),
+        ProfileTargetMuscleSection(
+            id: "back",
+            title: "Back",
+            detail: "Choose the exact back area.",
+            groupIDs: ["lats", "middle-back", "lower-back", "traps"]
+        ),
+        ProfileTargetMuscleSection(
+            id: "arms",
+            title: "Arms",
+            detail: "Biceps, triceps, and forearms are separate.",
+            groupIDs: ["biceps", "triceps", "forearms"]
+        ),
+        ProfileTargetMuscleSection(
+            id: "core",
+            title: "Core",
+            detail: "Abdominal work.",
+            groupIDs: ["core"]
+        ),
+        ProfileTargetMuscleSection(
+            id: "legs",
+            title: "Legs",
+            detail: "Quads, posterior chain, calves, and hips.",
+            groupIDs: ["quads", "hamstrings", "glutes", "calves", "hips"]
+        ),
+        ProfileTargetMuscleSection(
+            id: "neck",
+            title: "Neck",
+            detail: "Optional neck focus.",
+            groupIDs: ["neck"]
+        )
+    ]
+
+    static func sections(allowedValues: [String]) -> [ProfileTargetMuscleSection] {
+        all.filter { !$0.groups(allowedValues: allowedValues).isEmpty }
     }
 }
 
@@ -2266,10 +2324,9 @@ private struct ProfileTargetMuscleSelectionSheet: View {
     let allowedValues: [String]
     let gender: String
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedPage = 0
 
-    private var groups: [ProfileTargetMuscleGroup] {
-        ProfileTargetMuscleGroup.groups(allowedValues: allowedValues)
+    private var sections: [ProfileTargetMuscleSection] {
+        ProfileTargetMuscleSection.sections(allowedValues: allowedValues)
     }
 
     private var selectedGroups: [ProfileTargetMuscleGroup] {
@@ -2278,56 +2335,69 @@ private struct ProfileTargetMuscleSelectionSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("Swipe through grouped body areas. Each choice saves the real dataset muscles shown on the card.")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 4)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("TARGET MUSCLES")
+                            .font(.caption.weight(.heavy))
+                            .foregroundStyle(Color.deltsAccent)
 
-                TabView(selection: $selectedPage) {
-                    ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
-                        ProfileTargetMuscleCard(
-                            group: group,
-                            gender: gender,
-                            isSelected: Set(group.availableMuscles(allowedValues: allowedValues)).isSubset(of: selection),
-                            toggle: {
-                                selection = ProfileTargetMuscleGroup.toggled(
-                                    selection: selection,
-                                    group: group,
-                                    allowedValues: allowedValues
-                                )
-                            }
-                        )
-                        .padding(.horizontal, 20)
-                        .tag(index)
-                    }
-                }
-                .tabViewStyle(.page(indexDisplayMode: .always))
-                .frame(height: 392)
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Selected")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(Color.deltsMutedText)
-
-                    if selectedGroups.isEmpty {
-                        Text("None")
-                            .font(.title3.weight(.bold))
+                        Text("Pick exact focus areas")
+                            .font(.largeTitle.weight(.heavy))
                             .foregroundStyle(Color.deltsCharcoal)
-                    } else {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(selectedGroups) { group in
-                                    ProfileTargetMuscleChip(title: group.title)
+                            .lineLimit(2)
+
+                        Text("Cards use the selected sex for visuals. Stored values stay as dataset muscle names.")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.deltsMutedText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    ProfileTargetMuscleSelectedRail(selectedGroups: selectedGroups)
+
+                    ForEach(sections) { section in
+                        let sectionGroups = section.groups(allowedValues: allowedValues)
+                        VStack(alignment: .leading, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(section.title)
+                                    .font(.title2.weight(.heavy))
+                                    .foregroundStyle(Color.deltsCharcoal)
+
+                                Text(section.detail)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Color.deltsMutedText)
+                            }
+
+                            LazyVGrid(
+                                columns: [
+                                    GridItem(.flexible(), spacing: 12),
+                                    GridItem(.flexible(), spacing: 12)
+                                ],
+                                alignment: .leading,
+                                spacing: 12
+                            ) {
+                                ForEach(sectionGroups) { group in
+                                    let groupMuscles = Set(group.availableMuscles(allowedValues: allowedValues))
+                                    ProfileTargetMuscleCard(
+                                        group: group,
+                                        gender: gender,
+                                        isSelected: groupMuscles.isSubset(of: selection),
+                                        toggle: {
+                                            selection = ProfileTargetMuscleGroup.toggled(
+                                                selection: selection,
+                                                group: group,
+                                                allowedValues: allowedValues
+                                            )
+                                        }
+                                    )
                                 }
                             }
                         }
                     }
                 }
                 .padding(.horizontal, 20)
-
-                Spacer(minLength: 0)
+                .padding(.top, 16)
+                .padding(.bottom, 32)
             }
             .background(Color.deltsBackground.ignoresSafeArea())
             .navigationTitle("Target muscles")
@@ -2338,6 +2408,39 @@ private struct ProfileTargetMuscleSelectionSheet: View {
                         dismiss()
                     }
                     .font(.body.weight(.bold))
+                }
+            }
+        }
+    }
+}
+
+private struct ProfileTargetMuscleSelectedRail: View {
+    let selectedGroups: [ProfileTargetMuscleGroup]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Selected")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(Color.deltsMutedText)
+
+            if selectedGroups.isEmpty {
+                Text("None")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                    .padding(.horizontal, 14)
+                    .background(Color.deltsPanel.opacity(0.16), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
+                    }
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(selectedGroups) { group in
+                            ProfileTargetMuscleChip(title: group.title)
+                        }
+                    }
                 }
             }
         }
@@ -2356,26 +2459,26 @@ private struct ProfileTargetMuscleCard: View {
                 ProfileTargetMuscleAssetImage(
                     imageName: group.imageName(gender: gender)
                 )
-                .frame(height: 150)
-                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .frame(height: 106)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 28, weight: .bold))
                         .foregroundStyle(Color.deltsAccent)
-                        .padding(12)
+                        .padding(9)
                 }
             }
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(group.title)
-                    .font(.largeTitle.weight(.heavy))
+                    .font(.title3.weight(.heavy))
                     .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.74)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
 
                 Text(group.detail)
-                    .font(.headline.weight(.semibold))
+                    .font(.caption.weight(.bold))
                     .foregroundStyle(Color.deltsMutedText)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -2393,10 +2496,10 @@ private struct ProfileTargetMuscleCard: View {
 
             Button(action: toggle) {
                 Text(isSelected ? "Remove" : "Select")
-                    .font(.headline.weight(.heavy))
+                    .font(.subheadline.weight(.heavy))
                     .foregroundStyle(isSelected ? Color.deltsCharcoal : Color.deltsOnAccent)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 48)
+                    .frame(height: 40)
                     .background(isSelected ? Color.deltsPanel.opacity(0.44) : Color.deltsAccent, in: Capsule())
                     .overlay {
                         Capsule()
@@ -2405,14 +2508,14 @@ private struct ProfileTargetMuscleCard: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color.deltsPanel.opacity(isSelected ? 0.32 : 0.18), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 272, alignment: .topLeading)
+        .background(Color.deltsPanel.opacity(isSelected ? 0.32 : 0.18), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(isSelected ? Color.deltsAccent.opacity(0.46) : Color.deltsHairline.opacity(0.24), lineWidth: 1)
         }
-        .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .onTapGesture(perform: toggle)
     }
 }

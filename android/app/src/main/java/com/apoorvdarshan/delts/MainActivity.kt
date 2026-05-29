@@ -33,7 +33,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -110,6 +109,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.apoorvdarshan.delts.ui.theme.DeltsAccent
 import com.apoorvdarshan.delts.ui.theme.DeltsOnAccent
 import com.apoorvdarshan.delts.ui.theme.DeltsSecondaryAccent
@@ -2933,63 +2934,164 @@ private fun TargetMuscleSelectionDialog(
     onSelectionChange: (Set<String>) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val groups = remember(allowedValues) { targetMuscleGroupsFor(allowedValues) }
     val selectedGroups = remember(selected, allowedValues) {
         selectedTargetMuscleGroups(selected, allowedValues)
     }
+    val sections = remember(allowedValues) { targetMuscleSectionsFor(allowedValues) }
 
-    AlertDialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Target muscles",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text(
-                    text = "Swipe grouped body areas. Choices save the real dataset muscles shown on each card.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(horizontal = 2.dp)
-                ) {
-                    items(groups) { group ->
-                        val groupMuscles = group.muscles.filter { allowedValues.contains(it) }.toSet()
-                        TargetMuscleCard(
-                            group = group,
-                            gender = gender,
-                            isSelected = selected.containsAll(groupMuscles),
-                            onToggle = {
-                                onSelectionChange(toggleTargetMuscleGroup(selected, group, allowedValues))
-                            }
-                        )
-                    }
-                }
-
-                if (selectedGroups.isNotEmpty()) {
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 20.dp, top = 26.dp, end = 20.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                item {
                     Row(
-                        modifier = Modifier.horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        selectedGroups.forEach { group ->
-                            TargetMuscleChip(title = group.title)
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Text(
+                                text = "TARGET MUSCLES",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = DeltsAccent
+                            )
+                            Text(
+                                text = "Pick exact focus areas",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                text = "Cards use the selected sex for visuals. Stored values stay as dataset muscle names.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Button(
+                            onClick = onDismiss,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = DeltsAccent
+                            )
+                        ) {
+                            Text("Done", fontWeight = FontWeight.ExtraBold)
                         }
                     }
                 }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done", fontWeight = FontWeight.Bold)
+
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = "Selected",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        if (selectedGroups.isEmpty()) {
+                            Text(
+                                text = "None",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f))
+                                    .padding(horizontal = 14.dp, vertical = 13.dp)
+                            )
+                        } else {
+                            Row(
+                                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                selectedGroups.forEach { group ->
+                                    TargetMuscleChip(title = group.title)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                sections.forEach { section ->
+                    item {
+                        TargetMuscleSectionBlock(
+                            section = section,
+                            allowedValues = allowedValues,
+                            gender = gender,
+                            selected = selected,
+                            onSelectionChange = onSelectionChange
+                        )
+                    }
+                }
             }
         }
-    )
+    }
+}
+
+@Composable
+private fun TargetMuscleSectionBlock(
+    section: TargetMuscleSection,
+    allowedValues: List<String>,
+    gender: String,
+    selected: Set<String>,
+    onSelectionChange: (Set<String>) -> Unit
+) {
+    val groups = section.groups(allowedValues)
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = section.title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Text(
+                text = section.detail,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        groups.chunked(2).forEach { rowGroups ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                rowGroups.forEach { group ->
+                    val groupMuscles = group.muscles.filter { allowedValues.contains(it) }.toSet()
+                    TargetMuscleCard(
+                        group = group,
+                        gender = gender,
+                        isSelected = selected.containsAll(groupMuscles),
+                        onToggle = {
+                            onSelectionChange(toggleTargetMuscleGroup(selected, group, allowedValues))
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                if (rowGroups.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -2997,14 +3099,14 @@ private fun TargetMuscleCard(
     group: TargetMuscleGroup,
     gender: String,
     isSelected: Boolean,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier
-            .width(264.dp)
-            .height(320.dp)
+        modifier = modifier
+            .height(266.dp)
             .clickable(onClick = onToggle),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isSelected) 0.40f else 0.24f)
         ),
@@ -3020,8 +3122,8 @@ private fun TargetMuscleCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(126.dp)
-                    .clip(RoundedCornerShape(18.dp))
+                    .height(102.dp)
+                    .clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.44f))
             ) {
                 TargetMuscleAssetImage(
@@ -3051,16 +3153,16 @@ private fun TargetMuscleCard(
 
             Text(
                 text = group.title,
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
 
             Text(
                 text = group.detail,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
@@ -3086,7 +3188,11 @@ private fun TargetMuscleCard(
                     contentColor = if (isSelected) MaterialTheme.colorScheme.onBackground else DeltsOnAccent
                 )
             ) {
-                Text(if (isSelected) "Remove" else "Select", fontWeight = FontWeight.ExtraBold)
+                Text(
+                    if (isSelected) "Remove" else "Select",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.ExtraBold
+                )
             }
         }
     }
@@ -4816,6 +4922,20 @@ private data class TargetMuscleGroup(
         if (gender == "Female") femaleImageRes else maleImageRes
 }
 
+private data class TargetMuscleSection(
+    val id: String,
+    val title: String,
+    val detail: String,
+    val groupIds: List<String>
+) {
+    fun groups(allowedValues: List<String>): List<TargetMuscleGroup> {
+        val allowed = allowedValues.toSet()
+        return groupIds
+            .mapNotNull { id -> targetMuscleGroups.firstOrNull { it.id == id } }
+            .filter { group -> group.muscles.any { allowed.contains(it) } }
+    }
+}
+
 private object TargetMuscleImageSources {
     val maleChest = R.drawable.target_male_chest
     val maleBack = R.drawable.target_male_back
@@ -4834,7 +4954,7 @@ private object TargetMuscleImageSources {
 private val targetMuscleGroups = listOf(
     TargetMuscleGroup("chest", "Chest", "Pecs", setOf("Chest"), false, TargetMuscleImageSources.maleChest, TargetMuscleImageSources.femaleChest),
     TargetMuscleGroup("back", "Back", "Lats, middle back, lower back, traps", setOf("Lats", "Middle Back", "Lower Back", "Traps"), true, TargetMuscleImageSources.maleBack, TargetMuscleImageSources.femaleBack),
-    TargetMuscleGroup("shoulders", "Shoulders", "Delts and traps", setOf("Shoulders", "Traps"), true, TargetMuscleImageSources.maleShoulders, TargetMuscleImageSources.femaleShoulders),
+    TargetMuscleGroup("shoulders", "Shoulders", "Delts", setOf("Shoulders"), false, TargetMuscleImageSources.maleShoulders, TargetMuscleImageSources.femaleShoulders),
     TargetMuscleGroup("arms", "Arms", "Biceps, triceps, forearms", setOf("Biceps", "Triceps", "Forearms"), true, TargetMuscleImageSources.maleArms, TargetMuscleImageSources.femaleArms),
     TargetMuscleGroup("core", "Abs / Core", "Abdominals", setOf("Abdominals"), false, TargetMuscleImageSources.maleCore, TargetMuscleImageSources.femaleCore),
     TargetMuscleGroup("legs", "Legs", "Quads, hamstrings, glutes, calves, hips", setOf("Quadriceps", "Hamstrings", "Glutes", "Calves", "Abductors", "Adductors"), true, TargetMuscleImageSources.maleLegs, TargetMuscleImageSources.femaleLegs),
@@ -4851,6 +4971,15 @@ private val targetMuscleGroups = listOf(
     TargetMuscleGroup("calves", "Calves", "Lower leg", setOf("Calves"), false, TargetMuscleImageSources.maleLegs, TargetMuscleImageSources.femaleLegs),
     TargetMuscleGroup("hips", "Hips", "Abductors, adductors", setOf("Abductors", "Adductors"), true, TargetMuscleImageSources.maleLegs, TargetMuscleImageSources.femaleLegs),
     TargetMuscleGroup("neck", "Neck", "Neck", setOf("Neck"), false, TargetMuscleImageSources.maleShoulders, TargetMuscleImageSources.femaleShoulders)
+)
+
+private val targetMuscleSections = listOf(
+    TargetMuscleSection("upper", "Upper Body", "Chest and shoulders.", listOf("chest", "shoulders")),
+    TargetMuscleSection("back", "Back", "Choose the exact back area.", listOf("lats", "middle-back", "lower-back", "traps")),
+    TargetMuscleSection("arms", "Arms", "Biceps, triceps, and forearms are separate.", listOf("biceps", "triceps", "forearms")),
+    TargetMuscleSection("core", "Core", "Abdominal work.", listOf("core")),
+    TargetMuscleSection("legs", "Legs", "Quads, posterior chain, calves, and hips.", listOf("quads", "hamstrings", "glutes", "calves", "hips")),
+    TargetMuscleSection("neck", "Neck", "Optional neck focus.", listOf("neck"))
 )
 
 private val datasetPrimaryMuscleNames = listOf(
@@ -4877,6 +5006,9 @@ private fun targetMuscleGroupsFor(allowedValues: List<String>): List<TargetMuscl
     val allowed = allowedValues.toSet()
     return targetMuscleGroups.filter { group -> group.muscles.any { allowed.contains(it) } }
 }
+
+private fun targetMuscleSectionsFor(allowedValues: List<String>): List<TargetMuscleSection> =
+    targetMuscleSections.filter { it.groups(allowedValues).isNotEmpty() }
 
 private fun normalizeTargetMuscleSelection(selection: Set<String>, allowedValues: List<String> = datasetPrimaryMuscleNames): Set<String> {
     val allowed = allowedValues.toSet()
