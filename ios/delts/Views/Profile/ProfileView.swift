@@ -1291,11 +1291,25 @@ private struct ProfileDoneAccessoryTextField: UIViewRepresentable {
 
         func makeAccessoryToolbar() -> UIToolbar {
             let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
+            let doneItem = UIBarButtonItem(title: "Done", style: .plain, target: self, action: #selector(doneTapped))
+            doneItem.setTitleTextAttributes(
+                [
+                    .font: UIFont.boldSystemFont(ofSize: 17),
+                    .foregroundColor: UIColor(Color.deltsAccent)
+                ],
+                for: .normal
+            )
+            doneItem.setTitleTextAttributes(
+                [
+                    .font: UIFont.boldSystemFont(ofSize: 17),
+                    .foregroundColor: UIColor(Color.deltsAccent).withAlphaComponent(0.45)
+                ],
+                for: .disabled
+            )
             toolbar.items = [
                 UIBarButtonItem(systemItem: .flexibleSpace),
-                UIBarButtonItem(title: "Done", style: .done, target: self, action: #selector(doneTapped))
+                doneItem
             ]
-            toolbar.tintColor = UIColor(Color.deltsAccent)
             toolbar.sizeToFit()
             return toolbar
         }
