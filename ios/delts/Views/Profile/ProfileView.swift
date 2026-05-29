@@ -234,7 +234,7 @@ private struct ProfileEditorView: View {
             systemImage: "person.text.rectangle"
         ) {
             ProfileRowStack {
-                ProfileTextInputRow(title: "Name", systemImage: "person.fill", text: nameBinding)
+                ProfileTextInputRow(title: "Name", systemImage: "person.fill", text: nameBinding, showsKeyboardDone: true)
                 ProfileDivider()
                 ProfileMenuPicker(
                     title: "Sex",
@@ -1206,6 +1206,7 @@ private struct ProfileTextInputRow: View {
     let systemImage: String
     @Binding var text: String
     var isTechnical = false
+    var showsKeyboardDone = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
@@ -1217,7 +1218,22 @@ private struct ProfileTextInputRow: View {
                 .frame(minWidth: dynamicTypeSize.isAccessibilitySize ? 0 : 120)
                 .textInputAutocapitalization(isTechnical ? .never : .words)
                 .autocorrectionDisabled(isTechnical)
+                .submitLabel(.done)
+                .onSubmit(dismissKeyboard)
+                .toolbar {
+                    if showsKeyboardDone {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button("Done", action: dismissKeyboard)
+                                .font(.body.weight(.bold))
+                        }
+                    }
+                }
         }
+    }
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 
