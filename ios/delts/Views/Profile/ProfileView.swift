@@ -190,7 +190,7 @@ private struct ProfileEditorView: View {
     @StateObject private var healthKit = HealthKitProgressService()
 
     private let exerciseLibraryService = ExerciseLibraryService.shared
-    private let genderOptions = ["Male", "Female", "Non-binary", "Prefer not to say"]
+    private let sexOptions = ["Male", "Female"]
     private let ageRange = 0...120
     private let frequencyOptions = Array(1...7)
     private let durationRange = 1...300
@@ -241,10 +241,10 @@ private struct ProfileEditorView: View {
                 ProfileTextInputRow(title: "Name", systemImage: "person.fill", text: nameBinding)
                 ProfileDivider()
                 ProfileMenuPicker(
-                    title: "Gender",
+                    title: "Sex",
                     systemImage: "person.2",
                     selection: genderBinding,
-                    options: genderOptions,
+                    options: sexOptions,
                     label: { $0 }
                 )
                 ProfileDivider()
@@ -678,10 +678,12 @@ private struct ProfileEditorView: View {
 
     private var genderBinding: Binding<String> {
         Binding {
-            profile.gender
+            sexOptions.contains(profile.gender) ? profile.gender : "Male"
         } set: { newValue in
-            profile.gender = newValue
-            profile.updatedAt = Date()
+            if sexOptions.contains(newValue) {
+                profile.gender = newValue
+                profile.updatedAt = Date()
+            }
         }
     }
 

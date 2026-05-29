@@ -1622,10 +1622,10 @@ private fun ProfileScreen(
             )
             ProfileRowDivider()
             CompactDropdownRow(
-                title = "Gender",
+                title = "Sex",
                 icon = Icons.Filled.Person,
                 value = profile.gender,
-                options = genderOptions,
+                options = sexOptions,
                 selectedOption = profile.gender
             ) { selected ->
                 updateProfile(profile.copy(gender = selected))
@@ -4021,7 +4021,7 @@ private fun SharedPreferences.loadProfile(): AndroidProfile {
 
     return AndroidProfile(
         name = getString("profile_name", "Athlete").orEmpty(),
-        gender = getString("profile_gender", "Male").orEmpty().ifBlank { "Male" },
+        gender = normalizeSex(getString("profile_gender", "Male").orEmpty()),
         age = getInt("profile_age", 24),
         heightCm = getDoubleCompat("profile_height_cm", 178.0),
         weightKg = weightKg,
@@ -4046,7 +4046,7 @@ private fun SharedPreferences.loadProfile(): AndroidProfile {
 private fun SharedPreferences.saveProfile(profile: AndroidProfile) {
     edit()
         .putString("profile_name", profile.name)
-        .putString("profile_gender", profile.gender)
+        .putString("profile_gender", normalizeSex(profile.gender))
         .putInt("profile_age", profile.age)
         .putString("profile_height_cm", formatOneDecimal(profile.heightCm))
         .putString("profile_weight_kg", formatOneDecimal(profile.weightKg))
@@ -4784,7 +4784,10 @@ private fun defaultModelForProvider(provider: String): String =
     aiModelsByProvider[provider]?.firstOrNull() ?: customAIModel
 
 private const val otherGoalOption = "Other"
-private val genderOptions = listOf("Male", "Female", "Non-binary", "Prefer not to say")
+private val sexOptions = listOf("Male", "Female")
+
+private fun normalizeSex(value: String): String =
+    value.takeIf { sexOptions.contains(it) } ?: "Male"
 private val profileGoalOptions = listOf("Muscle Gain", "Fat Loss", "Strength", "Beginner Form", otherGoalOption)
 private val frequencyOptions = (1..7).map { "$it days/week" }
 private val workoutSplitOptions = listOf(
