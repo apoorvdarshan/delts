@@ -1211,29 +1211,107 @@ private struct ProfileTextInputRow: View {
 
     var body: some View {
         ProfileFieldRow(title: title, systemImage: systemImage) {
-            TextField(title, text: $text)
-                .textFieldStyle(.plain)
-                .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
-                .foregroundStyle(Color.deltsCharcoal)
+            if showsKeyboardDone {
+                ProfileDoneAccessoryTextField(
+                    title: title,
+                    text: $text,
+                    isTechnical: isTechnical,
+                    textAlignment: dynamicTypeSize.isAccessibilitySize ? .left : .right
+                )
                 .frame(minWidth: dynamicTypeSize.isAccessibilitySize ? 0 : 120)
-                .textInputAutocapitalization(isTechnical ? .never : .words)
-                .autocorrectionDisabled(isTechnical)
-                .submitLabel(.done)
-                .onSubmit(dismissKeyboard)
-                .toolbar {
-                    if showsKeyboardDone {
-                        ToolbarItemGroup(placement: .keyboard) {
-                            Spacer()
-                            Button("Done", action: dismissKeyboard)
-                                .font(.body.weight(.bold))
-                        }
-                    }
-                }
+                .frame(height: 28)
+            } else {
+                TextField(title, text: $text)
+                    .textFieldStyle(.plain)
+                    .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .frame(minWidth: dynamicTypeSize.isAccessibilitySize ? 0 : 120)
+                    .textInputAutocapitalization(isTechnical ? .never : .words)
+                    .autocorrectionDisabled(isTechnical)
+                    .submitLabel(.done)
+                    .onSubmit(dismissKeyboard)
+            }
         }
     }
 
     private func dismissKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
+private struct ProfileDoneAccessoryTextField: UIViewRepresentable {
+    let title: String
+    @Binding var text: String
+    let isTechnical: Bool
+    let textAlignment: NSTextAlignment
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func makeUIView(context: Context) -> UITextField {
+        let textField = UITextField(frame: .zero)
+        textField.borderStyle = .none
+        textField.clearButtonMode = .never
+        textField.delegate = context.coordinator
+        textField.addTarget(context.coordinator, action: #selector(Coordinator.textDidChange(_:)), for: .editingChanged)
+        textField.inputAccessoryView = context.coordinator.makeAccessoryToolbar()
+        applyConfiguration(to: textField, context: context)
+        return textField
+    }
+
+    func updateUIView(_ textField: UITextField, context: Context) {
+        context.coordinator.parent = self
+        if textField.text != text {
+            textField.text = text
+        }
+        applyConfiguration(to: textField, context: context)
+    }
+
+    private func applyConfiguration(to textField: UITextField, context: Context) {
+        textField.placeholder = title
+        textField.textAlignment = textAlignment
+        textField.textColor = UIColor(Color.deltsCharcoal)
+        textField.tintColor = UIColor(Color.deltsAccent)
+        textField.font = .preferredFont(forTextStyle: .body)
+        textField.adjustsFontForContentSizeCategory = true
+        textField.autocapitalizationType = isTechnical ? .none : .words
+        textField.autocorrectionType = isTechnical ? .no : .default
+        textField.returnKeyType = .done
+        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: ProfileDoneAccessoryTextField
+
+        init(_ parent: ProfileDoneAccessoryTextField) {
+            self.parent = parent
+        }
+
+        func makeAccessoryToolbar() -> UIToolbar {
+            let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
+            toolbar.items = [
+                UIBarButtonItem(systemItem: .flexibleSpace),
+                UIBarButtonItem(title: "Done", style: .done, target: self, action: #selector(doneTapped))
+            ]
+            toolbar.tintColor = UIColor(Color.deltsAccent)
+            toolbar.sizeToFit()
+            return toolbar
+        }
+
+        @objc func textDidChange(_ sender: UITextField) {
+            parent.text = sender.text ?? ""
+        }
+
+        @objc private func doneTapped() {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
+
+        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            textField.resignFirstResponder()
+            return true
+        }
     }
 }
 
