@@ -1936,14 +1936,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
 
     func imageName(gender: String) -> String {
         let prefix = gender == "Female" ? "target_female" : "target_male"
-        switch id {
-        case "middle-back":
-            return "\(prefix)_middle_back"
-        case "lower-back":
-            return "\(prefix)_lower_back"
-        default:
-            return "\(prefix)_\(id)"
-        }
+        return "\(prefix)_\(id)"
     }
 
     nonisolated static let all: [ProfileTargetMuscleGroup] = [
@@ -1956,14 +1949,6 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
             isComposite: false
         ),
         ProfileTargetMuscleGroup(
-            id: "back",
-            title: "Back",
-            detail: "Lats, middle back, lower back, traps",
-            systemImage: "figure.pullup",
-            muscles: ["Lats", "Middle Back", "Lower Back", "Traps"],
-            isComposite: true
-        ),
-        ProfileTargetMuscleGroup(
             id: "shoulders",
             title: "Shoulders",
             detail: "Delts",
@@ -1972,28 +1957,12 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
             isComposite: false
         ),
         ProfileTargetMuscleGroup(
-            id: "arms",
-            title: "Arms",
-            detail: "Biceps, triceps, forearms",
-            systemImage: "figure.arms.open",
-            muscles: ["Biceps", "Triceps", "Forearms"],
-            isComposite: true
-        ),
-        ProfileTargetMuscleGroup(
-            id: "core",
-            title: "Abs / Core",
+            id: "abdominals",
+            title: "Abdominals",
             detail: "Abdominals",
             systemImage: "figure.core.training",
             muscles: ["Abdominals"],
             isComposite: false
-        ),
-        ProfileTargetMuscleGroup(
-            id: "legs",
-            title: "Legs",
-            detail: "Quads, hamstrings, glutes, calves, hips",
-            systemImage: "figure.run",
-            muscles: ["Quadriceps", "Hamstrings", "Glutes", "Calves", "Abductors", "Adductors"],
-            isComposite: true
         ),
         ProfileTargetMuscleGroup(
             id: "biceps",
@@ -2028,7 +1997,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
             isComposite: false
         ),
         ProfileTargetMuscleGroup(
-            id: "middle-back",
+            id: "middle_back",
             title: "Middle Back",
             detail: "Rows and upper-back thickness",
             systemImage: "figure.pullup",
@@ -2036,7 +2005,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
             isComposite: false
         ),
         ProfileTargetMuscleGroup(
-            id: "lower-back",
+            id: "lower_back",
             title: "Lower Back",
             detail: "Spinal erectors",
             systemImage: "figure.flexibility",
@@ -2052,8 +2021,8 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
             isComposite: false
         ),
         ProfileTargetMuscleGroup(
-            id: "quads",
-            title: "Quads",
+            id: "quadriceps",
+            title: "Quadriceps",
             detail: "Quadriceps",
             systemImage: "figure.run",
             muscles: ["Quadriceps"],
@@ -2084,12 +2053,20 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
             isComposite: false
         ),
         ProfileTargetMuscleGroup(
-            id: "hips",
-            title: "Hips",
-            detail: "Abductors, adductors",
+            id: "abductors",
+            title: "Abductors",
+            detail: "Outer hip",
             systemImage: "figure.walk",
-            muscles: ["Abductors", "Adductors"],
-            isComposite: true
+            muscles: ["Abductors"],
+            isComposite: false
+        ),
+        ProfileTargetMuscleGroup(
+            id: "adductors",
+            title: "Adductors",
+            detail: "Inner thigh",
+            systemImage: "figure.walk",
+            muscles: ["Adductors"],
+            isComposite: false
         ),
         ProfileTargetMuscleGroup(
             id: "neck",
@@ -2124,11 +2101,26 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
                 $0.id.caseInsensitiveCompare(value) == .orderedSame
             }) {
                 normalizedValues.formUnion(group.availableMuscles(allowedValues: allowedValues))
+                continue
+            }
+
+            if let legacyMuscles = legacyAliases[value.lowercased()] {
+                normalizedValues.formUnion(legacyMuscles.filter { allowedSet.contains($0) })
             }
         }
 
         return normalizedValues
     }
+
+    nonisolated private static let legacyAliases: [String: [String]] = [
+        "core": ["Abdominals"],
+        "abs / core": ["Abdominals"],
+        "quads": ["Quadriceps"],
+        "hips": ["Abductors", "Adductors"],
+        "arms": ["Biceps", "Triceps", "Forearms"],
+        "back": ["Lats", "Middle Back", "Lower Back", "Traps"],
+        "legs": ["Quadriceps", "Hamstrings", "Glutes", "Calves", "Abductors", "Adductors"]
+    ]
 
     static func toggled(
         selection: Set<String>,
@@ -2206,7 +2198,7 @@ private struct ProfileTargetMuscleSection: Identifiable {
             id: "back",
             title: "Back",
             detail: "Choose the exact back area.",
-            groupIDs: ["lats", "middle-back", "lower-back", "traps"]
+            groupIDs: ["lats", "middle_back", "lower_back", "traps"]
         ),
         ProfileTargetMuscleSection(
             id: "arms",
@@ -2218,13 +2210,13 @@ private struct ProfileTargetMuscleSection: Identifiable {
             id: "core",
             title: "Core",
             detail: "Abdominal work.",
-            groupIDs: ["core"]
+            groupIDs: ["abdominals"]
         ),
         ProfileTargetMuscleSection(
             id: "legs",
-            title: "Legs",
-            detail: "Quads, posterior chain, calves, and hips.",
-            groupIDs: ["quads", "hamstrings", "glutes", "calves", "hips"]
+            title: "Legs / Hips",
+            detail: "Every primary lower-body target stays separate.",
+            groupIDs: ["quadriceps", "hamstrings", "glutes", "calves", "abductors", "adductors"]
         ),
         ProfileTargetMuscleSection(
             id: "neck",
