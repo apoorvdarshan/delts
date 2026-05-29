@@ -4,14 +4,9 @@ import Security
 enum LocalGeminiKeyStore {
     private static let service = "com.apoorvdarshan.delts.gemini"
     private static let account = "gemini-api-key"
-    private static let fallbackAccount = "ai-fallback-api-key"
 
     static var apiKey: String? {
         apiKey(for: account)
-    }
-
-    static var fallbackAPIKey: String? {
-        apiKey(for: fallbackAccount)
     }
 
     @discardableResult
@@ -20,18 +15,8 @@ enum LocalGeminiKeyStore {
     }
 
     @discardableResult
-    static func saveFallback(_ apiKey: String) -> Bool {
-        save(apiKey, for: fallbackAccount)
-    }
-
-    @discardableResult
     static func clear() -> Bool {
         clear(for: account)
-    }
-
-    @discardableResult
-    static func clearFallback() -> Bool {
-        clear(for: fallbackAccount)
     }
 
     private static func apiKey(for account: String) -> String? {

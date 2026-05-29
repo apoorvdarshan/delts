@@ -40,124 +40,23 @@ private enum MeasurementSystem: String, CaseIterable, Hashable {
 }
 
 private enum AIProviderCatalog {
-    static let customProvider = "Custom"
+    static let providerName = "Gemini"
     static let customModel = "Custom model"
 
-    static let providerNames = [
-        "Gemini",
-        "OpenAI",
-        "Anthropic Claude",
-        "xAI Grok",
-        "OpenRouter",
-        "Together AI",
-        "Groq",
-        "Hugging Face",
-        "Fireworks AI",
-        "DeepInfra",
-        "Mistral",
-        "Ollama",
-        customProvider
+    private static let geminiModels = [
+        "gemini-3.5-flash",
+        "gemini-3.1-pro",
+        "gemini-3-flash",
+        "gemini-2.5-pro",
+        "gemini-2.5-flash"
     ]
 
-    private static let modelsByProvider: [String: [String]] = [
-        "Gemini": [
-            "gemini-3.5-flash",
-            "gemini-3.1-pro",
-            "gemini-3-flash",
-            "gemini-2.5-pro",
-            "gemini-2.5-flash"
-        ],
-        "OpenAI": [
-            "gpt-5.5",
-            "gpt-5.4",
-            "gpt-5.4-mini",
-            "gpt-5.4-nano",
-            "gpt-5",
-            "gpt-5-mini",
-            "gpt-4.1"
-        ],
-        "Anthropic Claude": [
-            "claude-opus-4-7",
-            "claude-sonnet-4-6",
-            "claude-haiku-4-5-20251001",
-            "claude-opus-4-6",
-            "claude-sonnet-4-5"
-        ],
-        "xAI Grok": [
-            "grok-4.3",
-            "grok-4.3-latest",
-            "grok-build-0.1",
-            "grok-4"
-        ],
-        "OpenRouter": [
-            "openrouter/auto",
-            "google/gemini-2.5-pro",
-            "anthropic/claude-sonnet-4.5",
-            "openai/gpt-5",
-            "x-ai/grok-4"
-        ],
-        "Together AI": [
-            "moonshotai/Kimi-K2.5",
-            "zai-org/GLM-5.1",
-            "openai/gpt-oss-120b",
-            "deepseek-ai/DeepSeek-R1",
-            "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8"
-        ],
-        "Groq": [
-            "openai/gpt-oss-120b",
-            "openai/gpt-oss-20b",
-            "meta-llama/llama-4-maverick-17b-128e-instruct",
-            "meta-llama/llama-4-scout-17b-16e-instruct",
-            "llama-3.3-70b-versatile"
-        ],
-        "Hugging Face": [
-            "openai/gpt-oss-120b:fastest",
-            "Qwen/Qwen3-235B-A22B:fastest",
-            "deepseek-ai/DeepSeek-V3.1:fastest",
-            "meta-llama/Llama-4-Maverick-17B-128E-Instruct:fastest"
-        ],
-        "Fireworks AI": [
-            "accounts/fireworks/models/kimi-k2-instruct-0905",
-            "accounts/fireworks/models/deepseek-v3p1",
-            "accounts/fireworks/models/deepseek-r1",
-            "accounts/fireworks/models/qwen3-235b-a22b",
-            "accounts/fireworks/models/llama-v3p1-405b-instruct"
-        ],
-        "DeepInfra": [
-            "deepseek-ai/DeepSeek-V3.2",
-            "deepseek-ai/DeepSeek-R1",
-            "Qwen/Qwen3-235B-A22B-Instruct-2507",
-            "moonshotai/Kimi-K2-Instruct",
-            "openai/gpt-oss-120b"
-        ],
-        "Mistral": [
-            "mistral-large-latest",
-            "mistral-medium-latest",
-            "mistral-small-latest",
-            "codestral-latest",
-            "devstral-small-latest"
-        ],
-        "Ollama": [
-            "llama4",
-            "gemma3",
-            "qwen3",
-            "deepseek-r1",
-            "llama3.3",
-            "phi4"
-        ]
-    ]
-
-    static func models(for provider: String) -> [String] {
-        let baseModels = modelsByProvider[provider] ?? []
-        return baseModels + [customModel]
+    static var modelOptions: [String] {
+        geminiModels + [customModel]
     }
 
-    static func defaultModel(for provider: String) -> String {
-        modelsByProvider[provider]?.first ?? customModel
-    }
-
-    static func normalizedProvider(_ provider: String) -> String {
-        providerNames.contains(provider) ? provider : customProvider
+    static var defaultModel: String {
+        geminiModels.first ?? customModel
     }
 }
 
@@ -167,24 +66,15 @@ private struct ProfileEditorView: View {
     @AppStorage("profile_custom_workout_split") private var customWorkoutSplit = ""
     @AppStorage("profile_selected_goals") private var selectedGoalRawValues = ""
     @AppStorage("profile_extra_issues") private var extraIssues = ""
-    @AppStorage("profile_ai_provider") private var aiProvider = "Gemini"
-    @AppStorage("profile_ai_custom_provider") private var aiCustomProvider = ""
-    @AppStorage("profile_ai_model") private var aiModel = AIProviderCatalog.defaultModel(for: "Gemini")
+    @AppStorage("profile_ai_model") private var aiModel = AIProviderCatalog.defaultModel
     @AppStorage("profile_ai_custom_model") private var aiCustomModel = ""
-    @AppStorage("profile_ai_fallback_enabled") private var aiFallbackEnabled = false
-    @AppStorage("profile_ai_fallback_provider") private var aiFallbackProvider = "OpenRouter"
-    @AppStorage("profile_ai_fallback_custom_provider") private var aiFallbackCustomProvider = ""
-    @AppStorage("profile_ai_fallback_model") private var aiFallbackModel = AIProviderCatalog.defaultModel(for: "OpenRouter")
-    @AppStorage("profile_ai_fallback_custom_model") private var aiFallbackCustomModel = ""
     @AppStorage("profile_dataset_level") private var datasetLevelRaw = ""
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
     @AppStorage("apple_health_enabled") private var appleHealthEnabled = false
     @AppStorage("profile_goal_weight_kg") private var goalWeightKG = 0.0
     @State private var primaryAPIKey = LocalGeminiKeyStore.apiKey ?? ""
-    @State private var fallbackAPIKey = LocalGeminiKeyStore.fallbackAPIKey ?? ""
     @State private var hasSavedPrimaryAPIKey = LocalGeminiKeyStore.apiKey != nil
-    @State private var hasSavedFallbackAPIKey = LocalGeminiKeyStore.fallbackAPIKey != nil
     @State private var isSelectingTargetMuscles = false
     @StateObject private var healthKit = HealthKitProgressService()
 
@@ -193,7 +83,6 @@ private struct ProfileEditorView: View {
     private let ageRange = 0...120
     private let frequencyOptions = Array(1...7)
     private let durationRange = 1...300
-    private let aiProviderOptions = AIProviderCatalog.providerNames
     private let otherGoalTitle = "Other"
     private var profileGoalOptions: [String] {
         FitnessGoal.profileCases.map(\.title) + [otherGoalTitle]
@@ -370,33 +259,22 @@ private struct ProfileEditorView: View {
     private var aiSettingsSection: some View {
         ProfileSection(
             title: "AI Settings",
-            subtitle: "Provider, model, local key, and fallback.",
+            subtitle: "Gemini model and local key.",
             systemImage: "key.fill",
             badge: hasSavedPrimaryAPIKey ? "Ready" : nil
         ) {
             ProfileRowStack {
-                ProfileMenuPicker(
+                ProfileValueRow(
                     title: "Provider",
                     systemImage: "server.rack",
-                    selection: aiProviderBinding,
-                    options: aiProviderOptions,
-                    label: { $0 }
+                    value: AIProviderCatalog.providerName
                 )
-                if aiProvider == AIProviderCatalog.customProvider {
-                    ProfileDivider()
-                    ProfileTextInputRow(
-                        title: "Provider name",
-                        systemImage: "square.and.pencil",
-                        text: aiCustomProviderBinding,
-                        isTechnical: true
-                    )
-                }
                 ProfileDivider()
                 ProfileMenuPicker(
                     title: "Model",
                     systemImage: "cpu",
                     selection: aiModelBinding,
-                    options: AIProviderCatalog.models(for: aiProvider),
+                    options: AIProviderCatalog.modelOptions,
                     label: { $0 }
                 )
                 if aiModel == AIProviderCatalog.customModel {
@@ -416,56 +294,6 @@ private struct ProfileEditorView: View {
                     save: savePrimaryAPIKey,
                     clear: clearPrimaryAPIKey
                 )
-                ProfileDivider()
-                ProfileToggleRow(
-                    title: "Fallback",
-                    systemImage: "arrow.triangle.2.circlepath",
-                    isOn: $aiFallbackEnabled
-                )
-                if aiFallbackEnabled {
-                    ProfileDivider()
-                    ProfileMenuPicker(
-                        title: "Fallback provider",
-                        systemImage: "server.rack",
-                        selection: aiFallbackProviderBinding,
-                        options: aiProviderOptions,
-                        label: { $0 }
-                    )
-                    if aiFallbackProvider == AIProviderCatalog.customProvider {
-                        ProfileDivider()
-                        ProfileTextInputRow(
-                            title: "Fallback name",
-                            systemImage: "square.and.pencil",
-                            text: aiFallbackCustomProviderBinding,
-                            isTechnical: true
-                        )
-                    }
-                    ProfileDivider()
-                    ProfileMenuPicker(
-                        title: "Fallback model",
-                        systemImage: "cpu",
-                        selection: aiFallbackModelBinding,
-                        options: AIProviderCatalog.models(for: aiFallbackProvider),
-                        label: { $0 }
-                    )
-                    if aiFallbackModel == AIProviderCatalog.customModel {
-                        ProfileDivider()
-                        ProfileTextInputRow(
-                            title: "Fallback model name",
-                            systemImage: "text.cursor",
-                            text: aiFallbackCustomModelBinding,
-                            isTechnical: true
-                        )
-                    }
-                    ProfileDivider()
-                    ProfileAPIKeyRow(
-                        title: "Fallback key",
-                        apiKey: $fallbackAPIKey,
-                        hasSavedKey: hasSavedFallbackAPIKey,
-                        save: saveFallbackAPIKey,
-                        clear: clearFallbackAPIKey
-                    )
-                }
             }
         }
     }
@@ -570,27 +398,9 @@ private struct ProfileEditorView: View {
         }
     }
 
-    private var aiProviderBinding: Binding<String> {
-        Binding {
-            AIProviderCatalog.normalizedProvider(aiProvider)
-        } set: { newValue in
-            aiProvider = newValue
-            aiModel = AIProviderCatalog.defaultModel(for: newValue)
-        }
-    }
-
-    private var aiCustomProviderBinding: Binding<String> {
-        Binding {
-            aiCustomProvider
-        } set: { newValue in
-            aiCustomProvider = newValue
-        }
-    }
-
     private var aiModelBinding: Binding<String> {
         Binding {
-            let models = AIProviderCatalog.models(for: aiProvider)
-            return models.contains(aiModel) ? aiModel : AIProviderCatalog.defaultModel(for: aiProvider)
+            AIProviderCatalog.modelOptions.contains(aiModel) ? aiModel : AIProviderCatalog.defaultModel
         } set: { newValue in
             aiModel = newValue
         }
@@ -601,40 +411,6 @@ private struct ProfileEditorView: View {
             aiCustomModel
         } set: { newValue in
             aiCustomModel = newValue
-        }
-    }
-
-    private var aiFallbackProviderBinding: Binding<String> {
-        Binding {
-            AIProviderCatalog.normalizedProvider(aiFallbackProvider)
-        } set: { newValue in
-            aiFallbackProvider = newValue
-            aiFallbackModel = AIProviderCatalog.defaultModel(for: newValue)
-        }
-    }
-
-    private var aiFallbackCustomProviderBinding: Binding<String> {
-        Binding {
-            aiFallbackCustomProvider
-        } set: { newValue in
-            aiFallbackCustomProvider = newValue
-        }
-    }
-
-    private var aiFallbackModelBinding: Binding<String> {
-        Binding {
-            let models = AIProviderCatalog.models(for: aiFallbackProvider)
-            return models.contains(aiFallbackModel) ? aiFallbackModel : AIProviderCatalog.defaultModel(for: aiFallbackProvider)
-        } set: { newValue in
-            aiFallbackModel = newValue
-        }
-    }
-
-    private var aiFallbackCustomModelBinding: Binding<String> {
-        Binding {
-            aiFallbackCustomModel
-        } set: { newValue in
-            aiFallbackCustomModel = newValue
         }
     }
 
@@ -891,18 +667,6 @@ private struct ProfileEditorView: View {
         LocalGeminiKeyStore.clear()
         primaryAPIKey = ""
         hasSavedPrimaryAPIKey = false
-    }
-
-    private func saveFallbackAPIKey() {
-        LocalGeminiKeyStore.saveFallback(fallbackAPIKey)
-        fallbackAPIKey = LocalGeminiKeyStore.fallbackAPIKey ?? ""
-        hasSavedFallbackAPIKey = LocalGeminiKeyStore.fallbackAPIKey != nil
-    }
-
-    private func clearFallbackAPIKey() {
-        LocalGeminiKeyStore.clearFallback()
-        fallbackAPIKey = ""
-        hasSavedFallbackAPIKey = false
     }
 }
 
@@ -1198,6 +962,24 @@ private struct ProfileControlBlock<Content: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.vertical, 12)
+    }
+}
+
+private struct ProfileValueRow: View {
+    let title: String
+    let systemImage: String
+    let value: String
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            Text(value)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .multilineTextAlignment(.trailing)
+                .frame(minWidth: 72, maxWidth: 178, minHeight: 38, alignment: .trailing)
+        }
     }
 }
 
