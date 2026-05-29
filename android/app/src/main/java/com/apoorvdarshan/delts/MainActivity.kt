@@ -4943,12 +4943,38 @@ private object TargetMuscleImageSources {
     val maleArms = R.drawable.target_male_arms
     val maleCore = R.drawable.target_male_core
     val maleLegs = R.drawable.target_male_legs
+    val maleBiceps = R.drawable.target_male_biceps
+    val maleTriceps = R.drawable.target_male_triceps
+    val maleForearms = R.drawable.target_male_forearms
+    val maleLats = R.drawable.target_male_lats
+    val maleMiddleBack = R.drawable.target_male_middle_back
+    val maleLowerBack = R.drawable.target_male_lower_back
+    val maleTraps = R.drawable.target_male_traps
+    val maleQuads = R.drawable.target_male_quads
+    val maleHamstrings = R.drawable.target_male_hamstrings
+    val maleGlutes = R.drawable.target_male_glutes
+    val maleCalves = R.drawable.target_male_calves
+    val maleHips = R.drawable.target_male_hips
+    val maleNeck = R.drawable.target_male_neck
     val femaleChest = R.drawable.target_female_chest
     val femaleBack = R.drawable.target_female_back
     val femaleShoulders = R.drawable.target_female_shoulders
     val femaleArms = R.drawable.target_female_arms
     val femaleCore = R.drawable.target_female_core
     val femaleLegs = R.drawable.target_female_legs
+    val femaleBiceps = R.drawable.target_female_biceps
+    val femaleTriceps = R.drawable.target_female_triceps
+    val femaleForearms = R.drawable.target_female_forearms
+    val femaleLats = R.drawable.target_female_lats
+    val femaleMiddleBack = R.drawable.target_female_middle_back
+    val femaleLowerBack = R.drawable.target_female_lower_back
+    val femaleTraps = R.drawable.target_female_traps
+    val femaleQuads = R.drawable.target_female_quads
+    val femaleHamstrings = R.drawable.target_female_hamstrings
+    val femaleGlutes = R.drawable.target_female_glutes
+    val femaleCalves = R.drawable.target_female_calves
+    val femaleHips = R.drawable.target_female_hips
+    val femaleNeck = R.drawable.target_female_neck
 }
 
 private val targetMuscleGroups = listOf(
@@ -4958,19 +4984,19 @@ private val targetMuscleGroups = listOf(
     TargetMuscleGroup("arms", "Arms", "Biceps, triceps, forearms", setOf("Biceps", "Triceps", "Forearms"), true, TargetMuscleImageSources.maleArms, TargetMuscleImageSources.femaleArms),
     TargetMuscleGroup("core", "Abs / Core", "Abdominals", setOf("Abdominals"), false, TargetMuscleImageSources.maleCore, TargetMuscleImageSources.femaleCore),
     TargetMuscleGroup("legs", "Legs", "Quads, hamstrings, glutes, calves, hips", setOf("Quadriceps", "Hamstrings", "Glutes", "Calves", "Abductors", "Adductors"), true, TargetMuscleImageSources.maleLegs, TargetMuscleImageSources.femaleLegs),
-    TargetMuscleGroup("biceps", "Biceps", "Front upper arm", setOf("Biceps"), false, TargetMuscleImageSources.maleArms, TargetMuscleImageSources.femaleArms),
-    TargetMuscleGroup("triceps", "Triceps", "Back upper arm", setOf("Triceps"), false, TargetMuscleImageSources.maleArms, TargetMuscleImageSources.femaleArms),
-    TargetMuscleGroup("forearms", "Forearms", "Grip and lower arm", setOf("Forearms"), false, TargetMuscleImageSources.maleArms, TargetMuscleImageSources.femaleArms),
-    TargetMuscleGroup("lats", "Lats", "Width-focused back", setOf("Lats"), false, TargetMuscleImageSources.maleBack, TargetMuscleImageSources.femaleBack),
-    TargetMuscleGroup("middle-back", "Middle Back", "Rows and upper-back thickness", setOf("Middle Back"), false, TargetMuscleImageSources.maleBack, TargetMuscleImageSources.femaleBack),
-    TargetMuscleGroup("lower-back", "Lower Back", "Spinal erectors", setOf("Lower Back"), false, TargetMuscleImageSources.maleBack, TargetMuscleImageSources.femaleBack),
-    TargetMuscleGroup("traps", "Traps", "Upper back and neck line", setOf("Traps"), false, TargetMuscleImageSources.maleShoulders, TargetMuscleImageSources.femaleShoulders),
-    TargetMuscleGroup("quads", "Quads", "Quadriceps", setOf("Quadriceps"), false, TargetMuscleImageSources.maleLegs, TargetMuscleImageSources.femaleLegs),
-    TargetMuscleGroup("hamstrings", "Hamstrings", "Posterior thigh", setOf("Hamstrings"), false, TargetMuscleImageSources.maleLegs, TargetMuscleImageSources.femaleLegs),
-    TargetMuscleGroup("glutes", "Glutes", "Hips and glutes", setOf("Glutes"), false, TargetMuscleImageSources.maleLegs, TargetMuscleImageSources.femaleLegs),
-    TargetMuscleGroup("calves", "Calves", "Lower leg", setOf("Calves"), false, TargetMuscleImageSources.maleLegs, TargetMuscleImageSources.femaleLegs),
-    TargetMuscleGroup("hips", "Hips", "Abductors, adductors", setOf("Abductors", "Adductors"), true, TargetMuscleImageSources.maleLegs, TargetMuscleImageSources.femaleLegs),
-    TargetMuscleGroup("neck", "Neck", "Neck", setOf("Neck"), false, TargetMuscleImageSources.maleShoulders, TargetMuscleImageSources.femaleShoulders)
+    TargetMuscleGroup("biceps", "Biceps", "Front upper arm", setOf("Biceps"), false, TargetMuscleImageSources.maleBiceps, TargetMuscleImageSources.femaleBiceps),
+    TargetMuscleGroup("triceps", "Triceps", "Back upper arm", setOf("Triceps"), false, TargetMuscleImageSources.maleTriceps, TargetMuscleImageSources.femaleTriceps),
+    TargetMuscleGroup("forearms", "Forearms", "Grip and lower arm", setOf("Forearms"), false, TargetMuscleImageSources.maleForearms, TargetMuscleImageSources.femaleForearms),
+    TargetMuscleGroup("lats", "Lats", "Width-focused back", setOf("Lats"), false, TargetMuscleImageSources.maleLats, TargetMuscleImageSources.femaleLats),
+    TargetMuscleGroup("middle-back", "Middle Back", "Rows and upper-back thickness", setOf("Middle Back"), false, TargetMuscleImageSources.maleMiddleBack, TargetMuscleImageSources.femaleMiddleBack),
+    TargetMuscleGroup("lower-back", "Lower Back", "Spinal erectors", setOf("Lower Back"), false, TargetMuscleImageSources.maleLowerBack, TargetMuscleImageSources.femaleLowerBack),
+    TargetMuscleGroup("traps", "Traps", "Upper back and neck line", setOf("Traps"), false, TargetMuscleImageSources.maleTraps, TargetMuscleImageSources.femaleTraps),
+    TargetMuscleGroup("quads", "Quads", "Quadriceps", setOf("Quadriceps"), false, TargetMuscleImageSources.maleQuads, TargetMuscleImageSources.femaleQuads),
+    TargetMuscleGroup("hamstrings", "Hamstrings", "Posterior thigh", setOf("Hamstrings"), false, TargetMuscleImageSources.maleHamstrings, TargetMuscleImageSources.femaleHamstrings),
+    TargetMuscleGroup("glutes", "Glutes", "Hips and glutes", setOf("Glutes"), false, TargetMuscleImageSources.maleGlutes, TargetMuscleImageSources.femaleGlutes),
+    TargetMuscleGroup("calves", "Calves", "Lower leg", setOf("Calves"), false, TargetMuscleImageSources.maleCalves, TargetMuscleImageSources.femaleCalves),
+    TargetMuscleGroup("hips", "Hips", "Abductors, adductors", setOf("Abductors", "Adductors"), true, TargetMuscleImageSources.maleHips, TargetMuscleImageSources.femaleHips),
+    TargetMuscleGroup("neck", "Neck", "Neck", setOf("Neck"), false, TargetMuscleImageSources.maleNeck, TargetMuscleImageSources.femaleNeck)
 )
 
 private val targetMuscleSections = listOf(

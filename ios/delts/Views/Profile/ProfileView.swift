@@ -1935,20 +1935,14 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
     }
 
     func imageName(gender: String) -> String {
-        let isFemale = gender == "Female"
+        let prefix = gender == "Female" ? "target_female" : "target_male"
         switch id {
-        case "chest":
-            return isFemale ? TargetMuscleImageSources.femaleChest : TargetMuscleImageSources.maleChest
-        case "back", "lats", "middle-back", "lower-back":
-            return isFemale ? TargetMuscleImageSources.femaleBack : TargetMuscleImageSources.maleBack
-        case "shoulders", "traps", "neck":
-            return isFemale ? TargetMuscleImageSources.femaleShoulders : TargetMuscleImageSources.maleShoulders
-        case "arms", "biceps", "triceps", "forearms":
-            return isFemale ? TargetMuscleImageSources.femaleArms : TargetMuscleImageSources.maleArms
-        case "core":
-            return isFemale ? TargetMuscleImageSources.femaleCore : TargetMuscleImageSources.maleCore
+        case "middle-back":
+            return "\(prefix)_middle_back"
+        case "lower-back":
+            return "\(prefix)_lower_back"
         default:
-            return isFemale ? TargetMuscleImageSources.femaleLegs : TargetMuscleImageSources.maleLegs
+            return "\(prefix)_\(id)"
         }
     }
 
@@ -2243,21 +2237,6 @@ private struct ProfileTargetMuscleSection: Identifiable {
     static func sections(allowedValues: [String]) -> [ProfileTargetMuscleSection] {
         all.filter { !$0.groups(allowedValues: allowedValues).isEmpty }
     }
-}
-
-private enum TargetMuscleImageSources {
-    static let maleChest = "target_male_chest"
-    static let maleBack = "target_male_back"
-    static let maleShoulders = "target_male_shoulders"
-    static let maleArms = "target_male_arms"
-    static let maleCore = "target_male_core"
-    static let maleLegs = "target_male_legs"
-    static let femaleChest = "target_female_chest"
-    static let femaleBack = "target_female_back"
-    static let femaleShoulders = "target_female_shoulders"
-    static let femaleArms = "target_female_arms"
-    static let femaleCore = "target_female_core"
-    static let femaleLegs = "target_female_legs"
 }
 
 private struct ProfileTargetMuscleSelectorRow: View {

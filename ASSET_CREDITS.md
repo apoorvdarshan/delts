@@ -1,16 +1,11 @@
 # Asset Credits
 
-Target muscle selector photos are bundled from Wikimedia Commons-hosted royalty-free sources:
+Target muscle selector images are bundled as cropped derivatives from Wikimedia Commons-hosted royalty-free sources.
 
-- `target_male_chest`: Public domain, [US Navy 060318-N-9869B-074](https://commons.wikimedia.org/wiki/File:US_Navy_060318-N-9869B-074_Engineman_2nd_Class_Andrew_Frazier_flexes_his_muscles_during_the_GNC_-_NPC_World_Gym_Classic_San_Diego_Bodybuilding_%5E_Figure_Championships.jpg)
-- `target_male_back`: CC0, [World Gym workout (Unsplash)](https://commons.wikimedia.org/wiki/File:World_Gym_workout_(Unsplash).jpg)
-- `target_male_shoulders`: Public domain, [US Army 53402 "Natural Freak" pumps up NTC](https://commons.wikimedia.org/wiki/File:US_Army_53402_%22Natural_Freak%22_pumps_up_NTC.jpg)
-- `target_male_arms`: Public domain, [Bodybuilder John Quinlan On Stage 1998](https://commons.wikimedia.org/wiki/File:Bodybuilder_John_Quinlan_On_Stage_1998.jpg)
-- `target_male_core`: Public domain, [Male rectus abdominis muscles](https://commons.wikimedia.org/wiki/File:Male_rectus_abdominis_muscles.jpg)
-- `target_male_legs`: Public domain, [HORACIO PATRONE 2 lugar TORNEO MR BUENOS AIRES 1970](https://commons.wikimedia.org/wiki/File:HORACIO_PATRONE_2_%C2%BA_lugar_TORNEO_MR_BUENOS_AIRES_1970_Categoria_NOVICIOS_AFCA_ARGENTINA.jpg)
-- `target_female_chest`: CC0, [Fitness training women M2 1](https://commons.wikimedia.org/wiki/File:Fitness_training_women_M2_(babaea_maryam_Tehran_2018)_1.jpg)
-- `target_female_back`: CC0, [Fitness training women M2 2](https://commons.wikimedia.org/wiki/File:Fitness_training_women_M2_(babaea_maryam_Tehran_2018)_2.jpg)
-- `target_female_shoulders`: CC0, [Fitness training women M2 3](https://commons.wikimedia.org/wiki/File:Fitness_training_women_M2_(babaea_maryam_Tehran_2018)_3.jpg)
-- `target_female_arms`: CC0, [Fitness training women M2 4](https://commons.wikimedia.org/wiki/File:Fitness_training_women_M2_(babaea_maryam_Tehran_2018)_4.jpg)
-- `target_female_core`: CC0, [Fitness training women M2 5](https://commons.wikimedia.org/wiki/File:Fitness_training_women_M2_(babaea_maryam_Tehran_2018)_5.jpg)
-- `target_female_legs`: Public domain, [Join the club, Cherry Point weight lifters](https://commons.wikimedia.org/wiki/File:Join_the_club,_Cherry_Point_weight_lifters_have_goals_to_achieve_in_the_gym_130306-M-EY704-003.jpg)
+- Male front, chest, core, quads, calves, hips, and neck crops: CC0, [Nash Jocic Bodybuilding Competition 2](https://commons.wikimedia.org/wiki/File:Nash_Jocic_Bodybuilding_Competition_2.jpg)
+- Male back, lats, middle back, lower back, traps, biceps, and triceps crops: Public domain, [Shirtless man with back muscles - Nawid collection](https://commons.wikimedia.org/wiki/File:Shirtless_man_with_back_muscles_-_Nawid_collection.jpg)
+- Male arms, forearms, hamstrings, and glutes crops: CC BY 2.0, [Hulking out](https://commons.wikimedia.org/wiki/File:Hulking_out_(7452189324).jpg)
+- Female chest, shoulders, neck, biceps, and forearms crops: CC BY 2.0, [FBB Pectoralis muscle flex](https://commons.wikimedia.org/wiki/File:FBB_Pectoralis_muscle_flex.jpg)
+- Female back, lats, middle back, lower back, traps, arms, and triceps crops: CC BY 2.0, [BodybuildingWoman](https://commons.wikimedia.org/wiki/File:BodybuildingWoman.jpg)
+- Female core, quads, and hips crops: CC BY-SA 4.0, [Anna Kushkian IFBB 2026](https://commons.wikimedia.org/wiki/File:Anna_Kushkian_IFBB_2026.jpg)
+- Female legs, hamstrings, glutes, and calves crops: CC0, [Female bodybuilder 2016 Women bodybuilding](https://commons.wikimedia.org/wiki/File:Female_bodybuilder_2016_Women_bodybuilding.jpg)
