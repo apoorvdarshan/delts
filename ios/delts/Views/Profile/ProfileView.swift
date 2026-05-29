@@ -2300,52 +2300,34 @@ private struct ProfileTargetMuscleSelectionSheet: View {
         ProfileTargetMuscleSection.sections(allowedValues: allowedValues)
     }
 
-    private var selectedGroups: [ProfileTargetMuscleGroup] {
-        ProfileTargetMuscleGroup.selectedGroups(selection: selection, allowedValues: allowedValues)
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 18) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("TARGET MUSCLES")
                             .font(.caption.weight(.heavy))
                             .foregroundStyle(Color.deltsAccent)
 
-                        Text("Pick exact focus areas")
-                            .font(.largeTitle.weight(.heavy))
+                        Text("Pick body parts")
+                            .font(.title.weight(.heavy))
                             .foregroundStyle(Color.deltsCharcoal)
-                            .lineLimit(2)
-
-                        Text("Cards use the selected sex for visuals. Stored values stay as dataset muscle names.")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.deltsMutedText)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
-
-                    ProfileTargetMuscleSelectedRail(selectedGroups: selectedGroups)
 
                     ForEach(sections) { section in
                         let sectionGroups = section.groups(allowedValues: allowedValues)
-                        VStack(alignment: .leading, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(section.title)
-                                    .font(.title2.weight(.heavy))
-                                    .foregroundStyle(Color.deltsCharcoal)
-
-                                Text(section.detail)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(Color.deltsMutedText)
-                            }
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(section.title)
+                                .font(.title2.weight(.heavy))
+                                .foregroundStyle(Color.deltsCharcoal)
 
                             LazyVGrid(
                                 columns: [
-                                    GridItem(.flexible(), spacing: 12),
-                                    GridItem(.flexible(), spacing: 12)
+                                    GridItem(.flexible(), spacing: 10),
+                                    GridItem(.flexible(), spacing: 10)
                                 ],
                                 alignment: .leading,
-                                spacing: 12
+                                spacing: 10
                             ) {
                                 ForEach(sectionGroups) { group in
                                     let groupMuscles = Set(group.availableMuscles(allowedValues: allowedValues))
@@ -2367,7 +2349,7 @@ private struct ProfileTargetMuscleSelectionSheet: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 16)
+                .padding(.top, 12)
                 .padding(.bottom, 32)
             }
             .background(Color.deltsBackground.ignoresSafeArea())
@@ -2385,39 +2367,6 @@ private struct ProfileTargetMuscleSelectionSheet: View {
     }
 }
 
-private struct ProfileTargetMuscleSelectedRail: View {
-    let selectedGroups: [ProfileTargetMuscleGroup]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Selected")
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(Color.deltsMutedText)
-
-            if selectedGroups.isEmpty {
-                Text("None")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-                    .padding(.horizontal, 14)
-                    .background(Color.deltsPanel.opacity(0.16), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
-                    }
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(selectedGroups) { group in
-                            ProfileTargetMuscleChip(title: group.title)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 private struct ProfileTargetMuscleCard: View {
     let group: ProfileTargetMuscleGroup
     let gender: String
@@ -2425,69 +2374,60 @@ private struct ProfileTargetMuscleCard: View {
     let toggle: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            ZStack(alignment: .topTrailing) {
-                ProfileTargetMuscleAssetImage(
-                    imageName: group.imageName(gender: gender)
-                )
-                .frame(height: 106)
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        Button(action: toggle) {
+            VStack(alignment: .leading, spacing: 10) {
+                ZStack(alignment: .topTrailing) {
+                    ProfileTargetMuscleAssetImage(
+                        imageName: group.imageName(gender: gender)
+                    )
+                    .frame(height: 88)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(Color.deltsAccent)
-                        .padding(9)
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(group.title)
-                    .font(.title3.weight(.heavy))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.82)
-
-                Text(group.detail)
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
-                    ForEach(group.muscles, id: \.self) { muscle in
-                        ProfileTargetMuscleChip(title: muscle)
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 25, weight: .bold))
+                            .foregroundStyle(Color.deltsAccent)
+                            .padding(8)
                     }
                 }
-            }
 
-            Spacer(minLength: 0)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(group.title)
+                        .font(.headline.weight(.heavy))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.74)
 
-            Button(action: toggle) {
-                Text(isSelected ? "Remove" : "Select")
-                    .font(.subheadline.weight(.heavy))
-                    .foregroundStyle(isSelected ? Color.deltsCharcoal : Color.deltsOnAccent)
+                    Text(group.detail)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.74)
+                }
+
+                Spacer(minLength: 0)
+
+                Label(isSelected ? "Selected" : "Select", systemImage: isSelected ? "checkmark" : "plus")
+                    .font(.caption.weight(.heavy))
+                    .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsOnAccent)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 40)
-                    .background(isSelected ? Color.deltsPanel.opacity(0.44) : Color.deltsAccent, in: Capsule())
+                    .frame(height: 34)
+                    .background(isSelected ? Color.deltsAccent.opacity(0.13) : Color.deltsAccent, in: Capsule())
                     .overlay {
                         Capsule()
-                            .stroke(isSelected ? Color.deltsHairline.opacity(0.34) : Color.clear, lineWidth: 0.5)
+                            .stroke(isSelected ? Color.deltsAccent.opacity(0.34) : Color.clear, lineWidth: 0.5)
                     }
             }
-            .buttonStyle(.plain)
+            .padding(10)
+            .frame(maxWidth: .infinity, minHeight: 198, alignment: .topLeading)
+            .background(Color.deltsPanel.opacity(isSelected ? 0.34 : 0.18), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(isSelected ? Color.deltsAccent.opacity(0.62) : Color.deltsHairline.opacity(0.24), lineWidth: isSelected ? 1.5 : 1)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, minHeight: 272, alignment: .topLeading)
-        .background(Color.deltsPanel.opacity(isSelected ? 0.32 : 0.18), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(isSelected ? Color.deltsAccent.opacity(0.46) : Color.deltsHairline.opacity(0.24), lineWidth: 1)
-        }
-        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .onTapGesture(perform: toggle)
+        .buttonStyle(.plain)
     }
 }
 
