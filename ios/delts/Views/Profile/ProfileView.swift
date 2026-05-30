@@ -1355,11 +1355,7 @@ private struct ProfileBodyFatRange: Identifiable {
         ProfileBodyFatRange(id: "18_22", title: "18-22%", lowerBound: 18, upperBound: 22, storedValue: 20, summary: "Average"),
         ProfileBodyFatRange(id: "23_27", title: "23-27%", lowerBound: 23, upperBound: 27, storedValue: 25, summary: "Soft"),
         ProfileBodyFatRange(id: "28_32", title: "28-32%", lowerBound: 28, upperBound: 32, storedValue: 30, summary: "Fuller"),
-        ProfileBodyFatRange(id: "33_37", title: "33-37%", lowerBound: 33, upperBound: 37, storedValue: 35, summary: "High"),
-        ProfileBodyFatRange(id: "38_42", title: "38-42%", lowerBound: 38, upperBound: 42, storedValue: 40, summary: "Very high"),
-        ProfileBodyFatRange(id: "43_47", title: "43-47%", lowerBound: 43, upperBound: 47, storedValue: 45, summary: "Very high"),
-        ProfileBodyFatRange(id: "48_52", title: "48-52%", lowerBound: 48, upperBound: 52, storedValue: 50, summary: "Severe"),
-        ProfileBodyFatRange(id: "53_60", title: "53-60%", lowerBound: 53, upperBound: 60, storedValue: 56, summary: "Severe")
+        ProfileBodyFatRange(id: "33_plus", title: "33%+", lowerBound: 33, upperBound: nil, storedValue: 36, summary: "High")
     ]
 
     private static let femaleRanges: [ProfileBodyFatRange] = [
@@ -1370,12 +1366,7 @@ private struct ProfileBodyFatRange: Identifiable {
         ProfileBodyFatRange(id: "20_23", title: "20-23%", lowerBound: 20, upperBound: 23, storedValue: 22, summary: "Lean"),
         ProfileBodyFatRange(id: "24_27", title: "24-27%", lowerBound: 24, upperBound: 27, storedValue: 26, summary: "Fit"),
         ProfileBodyFatRange(id: "28_32", title: "28-32%", lowerBound: 28, upperBound: 32, storedValue: 30, summary: "Average"),
-        ProfileBodyFatRange(id: "33_37", title: "33-37%", lowerBound: 33, upperBound: 37, storedValue: 35, summary: "Soft"),
-        ProfileBodyFatRange(id: "38_42", title: "38-42%", lowerBound: 38, upperBound: 42, storedValue: 40, summary: "Fuller"),
-        ProfileBodyFatRange(id: "43_47", title: "43-47%", lowerBound: 43, upperBound: 47, storedValue: 45, summary: "High"),
-        ProfileBodyFatRange(id: "48_52", title: "48-52%", lowerBound: 48, upperBound: 52, storedValue: 50, summary: "Very high"),
-        ProfileBodyFatRange(id: "53_57", title: "53-57%", lowerBound: 53, upperBound: 57, storedValue: 55, summary: "Severe"),
-        ProfileBodyFatRange(id: "58_60", title: "58-60%", lowerBound: 58, upperBound: 60, storedValue: 59, summary: "Severe")
+        ProfileBodyFatRange(id: "33_plus", title: "33%+", lowerBound: 33, upperBound: nil, storedValue: 36, summary: "High")
     ]
 
     static func options(for sex: String) -> [ProfileBodyFatRange] {
