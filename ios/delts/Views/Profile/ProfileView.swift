@@ -1973,29 +1973,44 @@ private struct ProfileMultiSelectMenuRow<Option: Hashable>: View {
     }
 
     var body: some View {
-        ProfileFieldRow(title: title, systemImage: systemImage) {
-            Menu {
-                ForEach(options, id: \.self) { option in
-                    Button {
-                        var updatedSelection = selection
-                        if updatedSelection.contains(option) {
-                            updatedSelection.remove(option)
-                        } else {
-                            updatedSelection.insert(option)
-                        }
-                        selection = updatedSelection
-                    } label: {
-                        if selection.contains(option) {
-                            Label(label(option), systemImage: "checkmark")
-                        } else {
-                            Text(label(option))
+        VStack(alignment: .leading, spacing: 0) {
+            ProfileFieldRow(title: title, systemImage: systemImage) {
+                Menu {
+                    ForEach(options, id: \.self) { option in
+                        Button {
+                            var updatedSelection = selection
+                            if updatedSelection.contains(option) {
+                                updatedSelection.remove(option)
+                            } else {
+                                updatedSelection.insert(option)
+                            }
+                            selection = updatedSelection
+                        } label: {
+                            if selection.contains(option) {
+                                Label(label(option), systemImage: "checkmark")
+                            } else {
+                                Text(label(option))
+                            }
                         }
                     }
+                } label: {
+                    ProfileMenuValueLabel(text: summary)
                 }
-            } label: {
-                ProfileMenuValueLabel(text: summary)
+                .deltsPressable()
             }
-            .deltsPressable()
+
+            if !selectedTitles.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(selectedTitles, id: \.self) { title in
+                            ProfileTargetMuscleChip(title: title)
+                        }
+                    }
+                    .padding(.leading, 48)
+                    .padding(.trailing, 6)
+                    .padding(.bottom, 10)
+                }
+            }
         }
     }
 }
@@ -2086,15 +2101,12 @@ private struct ProfileEquipmentImagePickerSheet: View {
     @Binding var selection: Set<String>
     @Environment(\.dismiss) private var dismiss
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 16),
-        GridItem(.flexible(), spacing: 16)
-    ]
+    private let columns = [GridItem(.flexible())]
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 16) {
+                LazyVGrid(columns: columns, spacing: 14) {
                     ForEach(options) { option in
                         Button {
                             toggle(option.value)
