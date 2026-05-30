@@ -11,11 +11,12 @@ struct ProgressTabView: View {
     @AppStorage("profile_goal_weight_kg") private var goalWeightKG = 0.0
     @AppStorage("profile_current_body_fat_is_exact") private var currentBodyFatIsExact = false
     @AppStorage("profile_goal_body_fat_is_exact") private var goalBodyFatIsExact = false
+    @State private var selectedSection: ProgressSection = .graphs
     @State private var selectedRange: ProgressRange = .month
     @State private var snapshots: [ProgressMetricSnapshot] = ProgressMetricStore.load()
     @State private var isLoggingWeight = false
     @State private var isLoggingBodyFat = false
-    @State private var isShowingMetricHistory = false
+    @State private var editingSnapshot: ProgressMetricSnapshot?
     @StateObject private var healthKit = HealthKitProgressService()
 
     private var filteredSnapshots: [ProgressMetricSnapshot] {
@@ -44,11 +45,9 @@ struct ProgressTabView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
-                    metricActions
+                    sectionPicker
                     rangePicker
-                    metricGraphs
-                    metricHistoryButton
-                    workoutHistory
+                    selectedSectionContent
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
@@ -92,16 +91,38 @@ struct ProgressTabView: View {
                     logBodyFat(value)
                 }
             }
-            .sheet(isPresented: $isShowingMetricHistory) {
-                MetricHistorySheet(
-                    snapshots: filteredSnapshots.sorted { $0.date > $1.date },
-                    usesImperialUnits: usesImperialUnits,
-                    weightText: formattedWeight,
-                    bodyFatText: bodyFatText(for:),
-                    update: updateSnapshot,
-                    delete: deleteSnapshot
-                )
+            .sheet(item: $editingSnapshot) { snapshot in
+                MetricSnapshotEditSheet(
+                    snapshot: snapshot,
+                    usesImperialUnits: usesImperialUnits
+                ) { updated in
+                    updateSnapshot(updated)
+                }
             }
+        }
+    }
+
+    private var sectionPicker: some View {
+        Picker("Progress section", selection: $selectedSection) {
+            ForEach(ProgressSection.allCases) { section in
+                Text(section.title).tag(section)
+            }
+        }
+        .pickerStyle(.segmented)
+        .tint(Color.deltsAccent)
+    }
+
+    @ViewBuilder
+    private var selectedSectionContent: some View {
+        switch selectedSection {
+        case .graphs:
+            metricActions
+            metricGraphs
+        case .metrics:
+            metricActions
+            metricHistory
+        case .workouts:
+            workoutHistory
         }
     }
 
@@ -171,57 +192,43 @@ struct ProgressTabView: View {
     }
 
     @ViewBuilder
-    private var metricHistoryButton: some View {
-        Button {
-            isShowingMetricHistory = true
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(Color.deltsAccent)
-                    .frame(width: 38, height: 38)
-                    .background(Color.deltsAccent.opacity(0.12), in: Circle())
+    private var metricHistory: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            ProgressSectionHeader(
+                title: "Metric History",
+                subtitle: filteredSnapshots.isEmpty ? "No logs in \(selectedRange.title.lowercased())" : "\(filteredSnapshots.count) log\(filteredSnapshots.count == 1 ? "" : "s") in \(selectedRange.title.lowercased())",
+                systemImage: "clock.arrow.circlepath"
+            )
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Metric History")
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(Color.deltsCharcoal)
-                    Text(filteredSnapshots.isEmpty ? "No logs in \(selectedRange.title.lowercased())" : "\(filteredSnapshots.count) log\(filteredSnapshots.count == 1 ? "" : "s") in \(selectedRange.title.lowercased())")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.deltsMutedText)
+            if filteredSnapshots.isEmpty {
+                ProgressEmptyState(text: "No weight or body fat logs in this range.")
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(filteredSnapshots.sorted { $0.date > $1.date }) { snapshot in
+                        MetricHistoryRow(
+                            snapshot: snapshot,
+                            weightText: snapshot.weightKg.map { formattedWeight($0) } ?? "--",
+                            bodyFatText: bodyFatText(for: snapshot),
+                            edit: { editingSnapshot = snapshot },
+                            delete: { deleteSnapshot(snapshot) }
+                        )
+                    }
                 }
-
-                Spacer(minLength: 10)
-
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.heavy))
-                    .foregroundStyle(Color.deltsMutedText)
-            }
-            .padding(14)
-            .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
             }
         }
-        .buttonStyle(.plain)
-        .deltsPressable()
     }
 
     @ViewBuilder
     private var workoutHistory: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Workout History")
-                .font(.title3.weight(.bold))
-                .foregroundStyle(Color.deltsCharcoal)
+            ProgressSectionHeader(
+                title: "Workout History",
+                subtitle: filteredWorkouts.isEmpty ? "No sessions in \(selectedRange.title.lowercased())" : "\(filteredWorkouts.count) session\(filteredWorkouts.count == 1 ? "" : "s") in \(selectedRange.title.lowercased())",
+                systemImage: "figure.strengthtraining.traditional"
+            )
 
             if filteredWorkouts.isEmpty {
-                Text("No completed workouts in this range.")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.deltsPanel.opacity(0.24), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                ProgressEmptyState(text: "No completed workouts in this range.")
             } else {
                 VStack(spacing: 12) {
                     ForEach(filteredWorkouts) { workout in
@@ -398,6 +405,25 @@ struct ProgressTabView: View {
     }
 }
 
+private enum ProgressSection: String, CaseIterable, Identifiable {
+    case graphs
+    case metrics
+    case workouts
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .graphs:
+            return "Graphs"
+        case .metrics:
+            return "Metrics"
+        case .workouts:
+            return "Workouts"
+        }
+    }
+}
+
 private enum ProgressRange: String, CaseIterable, Identifiable {
     case week
     case month
@@ -567,6 +593,48 @@ private struct MetricActionButton: View {
                 }
         }
         .deltsPressable()
+    }
+}
+
+private struct ProgressSectionHeader: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 19, weight: .bold))
+                .foregroundStyle(Color.deltsAccent)
+                .frame(width: 38, height: 38)
+                .background(Color.deltsAccent.opacity(0.12), in: Circle())
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                Text(subtitle)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+private struct ProgressEmptyState: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.headline.weight(.semibold))
+            .foregroundStyle(Color.deltsMutedText)
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.deltsPanel.opacity(0.24), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 
@@ -771,69 +839,6 @@ private struct MetricHistoryPill: View {
             .padding(.horizontal, 8)
             .frame(height: 26)
             .background(Color.deltsSecondaryAccent.opacity(0.10), in: Capsule())
-    }
-}
-
-private struct MetricHistorySheet: View {
-    let snapshots: [ProgressMetricSnapshot]
-    let usesImperialUnits: Bool
-    let weightText: (Double) -> String
-    let bodyFatText: (ProgressMetricSnapshot) -> String
-    let update: (ProgressMetricSnapshot) -> Void
-    let delete: (ProgressMetricSnapshot) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var editingSnapshot: ProgressMetricSnapshot?
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 12) {
-                    if snapshots.isEmpty {
-                        Text("No weight or body fat logs in this range.")
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(Color.deltsMutedText)
-                            .padding(16)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.deltsPanel.opacity(0.24), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    } else {
-                        ForEach(snapshots) { snapshot in
-                            MetricHistoryRow(
-                                snapshot: snapshot,
-                                weightText: snapshot.weightKg.map(weightText) ?? "--",
-                                bodyFatText: bodyFatText(snapshot),
-                                edit: { editingSnapshot = snapshot },
-                                delete: { delete(snapshot) }
-                            )
-                        }
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 14)
-                .padding(.bottom, 28)
-            }
-            .deltsScreen()
-            .navigationTitle("Metric History")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .fontWeight(.bold)
-                }
-            }
-            .sheet(item: $editingSnapshot) { snapshot in
-                MetricSnapshotEditSheet(
-                    snapshot: snapshot,
-                    usesImperialUnits: usesImperialUnits
-                ) { updated in
-                    update(updated)
-                }
-            }
-        }
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
     }
 }
 
