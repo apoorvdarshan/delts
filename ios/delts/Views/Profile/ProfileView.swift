@@ -268,10 +268,11 @@ private struct ProfileEditorView: View {
                     unit: "min"
                 )
                 ProfileDivider()
-                ProfileMultiSelectMenuRow(
+                ProfileEquipmentImagePickerRow(
                     title: "Equipment",
                     systemImage: "dumbbell.fill",
                     options: exerciseLibraryService.availableRawEquipment,
+                    exercises: exerciseLibraryService.exercises,
                     selection: datasetRawEquipmentBinding,
                     label: { $0 }
                 )
@@ -1993,6 +1994,179 @@ private struct ProfileMultiSelectMenuRow<Option: Hashable>: View {
             }
             .deltsPressable()
         }
+    }
+}
+
+private struct ProfileEquipmentImagePickerRow: View {
+    let title: String
+    let systemImage: String
+    let options: [String]
+    let exercises: [ExerciseLibraryItem]
+    @Binding var selection: Set<String>
+    let label: (String) -> String
+    @State private var isPickerPresented = false
+
+    private var summary: String {
+        let selectedTitles = options.filter { selection.contains($0) }.map(label)
+        if selectedTitles.isEmpty {
+            return "None"
+        }
+        if selectedTitles.count <= 2 {
+            return selectedTitles.joined(separator: ", ")
+        }
+        return "\(selectedTitles.count) selected"
+    }
+
+    private var imageOptions: [ProfileEquipmentImageOption] {
+        options.map { option in
+            let matchingExercises = exercises.filter { $0.rawEquipment == option }
+            let representative = matchingExercises.first { !$0.imagePaths.isEmpty && $0.category != "Stretching" }
+                ?? matchingExercises.first { !$0.imagePaths.isEmpty }
+
+            return ProfileEquipmentImageOption(
+                value: option,
+                title: label(option),
+                count: matchingExercises.count,
+                imagePaths: representative?.imagePaths ?? []
+            )
+        }
+    }
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            Button {
+                isPickerPresented = true
+            } label: {
+                ProfileMenuValueLabel(text: summary)
+            }
+            .deltsPressable()
+            .sheet(isPresented: $isPickerPresented) {
+                ProfileEquipmentImagePickerSheet(
+                    title: title,
+                    options: imageOptions,
+                    selection: $selection
+                )
+            }
+        }
+    }
+}
+
+private struct ProfileEquipmentImageOption: Identifiable {
+    var id: String { value }
+    let value: String
+    let title: String
+    let count: Int
+    let imagePaths: [String]
+}
+
+private struct ProfileEquipmentImagePickerSheet: View {
+    let title: String
+    let options: [ProfileEquipmentImageOption]
+    @Binding var selection: Set<String>
+    @Environment(\.dismiss) private var dismiss
+
+    private let columns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 12) {
+                    ForEach(options) { option in
+                        Button {
+                            toggle(option.value)
+                        } label: {
+                            ProfileEquipmentImageTile(
+                                option: option,
+                                isSelected: selection.contains(option.value)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .deltsPressable()
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 28)
+            }
+            .background(DeltsBackground())
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func toggle(_ value: String) {
+        var updatedSelection = selection
+        if updatedSelection.contains(value) {
+            updatedSelection.remove(value)
+        } else {
+            updatedSelection.insert(value)
+        }
+        selection = updatedSelection
+    }
+}
+
+private struct ProfileEquipmentImageTile: View {
+    let option: ProfileEquipmentImageOption
+    let isSelected: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ZStack(alignment: .topTrailing) {
+                AnimatedExerciseVisual(
+                    imagePaths: option.imagePaths,
+                    height: 116,
+                    allowsDerivedImageLookup: false,
+                    fallbackSystemImage: "dumbbell.fill",
+                    fallbackTitle: option.title
+                )
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 23, weight: .bold))
+                        .foregroundStyle(Color.deltsAccent)
+                        .padding(8)
+                        .shadow(color: .black.opacity(0.35), radius: 6, x: 0, y: 2)
+                }
+            }
+
+            Text(option.title)
+                .font(.headline.weight(.heavy))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(2)
+                .minimumScaleFactor(0.78)
+
+            Text("\(option.count) exercises")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(1)
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 21, style: .continuous)
+                .fill(isSelected ? Color.deltsAccent.opacity(0.16) : Color.deltsPanel.opacity(0.24))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 21, style: .continuous)
+                .stroke(isSelected ? Color.deltsAccent.opacity(0.72) : Color.deltsHairline.opacity(0.32), lineWidth: 1)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(option.title), \(option.count) exercises")
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
     }
 }
 
