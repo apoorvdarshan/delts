@@ -102,13 +102,7 @@ private struct ProfileEditorView: View {
             ProfileRowStack {
                 ProfileTextInputRow(title: "Name", systemImage: "person.fill", text: nameBinding, showsKeyboardDone: true)
                 ProfileDivider()
-                ProfileMenuPicker(
-                    title: "Sex",
-                    systemImage: "person.2",
-                    selection: genderBinding,
-                    options: sexOptions,
-                    label: { $0 }
-                )
+                ProfileSexImagePicker(selection: genderBinding)
                 ProfileDivider()
                 ProfileIntegerPickerRow(
                     title: "Age",
@@ -1006,6 +1000,86 @@ private struct ProfileDoneAccessoryTextField: UIViewRepresentable {
             textField.resignFirstResponder()
             return true
         }
+    }
+}
+
+private struct ProfileSexImagePicker: View {
+    @Binding var selection: String
+
+    private let options: [ProfileSexImageOption] = [
+        ProfileSexImageOption(title: "Male", assetName: "bodyfat_male_10_13"),
+        ProfileSexImageOption(title: "Female", assetName: "bodyfat_female_18_22")
+    ]
+
+    var body: some View {
+        ProfileControlBlock(title: "Sex", systemImage: "person.2") {
+            HStack(spacing: 10) {
+                ForEach(options) { option in
+                    Button {
+                        selection = option.title
+                    } label: {
+                        ProfileSexImageTile(
+                            option: option,
+                            isSelected: selection == option.title
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .deltsPressable()
+                }
+            }
+        }
+    }
+}
+
+private struct ProfileSexImageOption: Identifiable {
+    var id: String { title }
+    let title: String
+    let assetName: String
+}
+
+private struct ProfileSexImageTile: View {
+    let option: ProfileSexImageOption
+    let isSelected: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ZStack(alignment: .topTrailing) {
+                Image(option.assetName)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 112)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 23, weight: .bold))
+                        .foregroundStyle(Color.deltsAccent)
+                        .padding(8)
+                        .shadow(color: .black.opacity(0.35), radius: 6, x: 0, y: 2)
+                }
+            }
+
+            Text(option.title)
+                .font(.headline.weight(.heavy))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 21, style: .continuous)
+                .fill(isSelected ? Color.deltsAccent.opacity(0.16) : Color.deltsPanel.opacity(0.24))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 21, style: .continuous)
+                .stroke(isSelected ? Color.deltsAccent.opacity(0.72) : Color.deltsHairline.opacity(0.32), lineWidth: 1)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(option.title)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
     }
 }
 
