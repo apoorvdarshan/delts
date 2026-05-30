@@ -256,7 +256,8 @@ private struct ProfileEditorView: View {
                     ProfileTextInputRow(
                         title: "Custom split",
                         systemImage: "text.line.first.and.arrowtriangle.forward",
-                        text: customWorkoutSplitBinding
+                        text: customWorkoutSplitBinding,
+                        showsKeyboardDone: true
                     )
                 }
                 ProfileDivider()
@@ -1004,6 +1005,101 @@ private struct ProfileDoneAccessoryTextField: UIViewRepresentable {
     }
 }
 
+private struct ProfileDoneAccessoryNumberField: UIViewRepresentable {
+    let title: String
+    @Binding var value: Double
+    let textAlignment: NSTextAlignment
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func makeUIView(context: Context) -> UITextField {
+        let textField = UITextField(frame: .zero)
+        textField.borderStyle = .none
+        textField.clearButtonMode = .never
+        textField.delegate = context.coordinator
+        textField.addTarget(context.coordinator, action: #selector(Coordinator.textDidChange(_:)), for: .editingChanged)
+        textField.inputAccessoryView = context.coordinator.makeAccessoryToolbar()
+        applyConfiguration(to: textField)
+        textField.text = profileFormatDecimal(value)
+        return textField
+    }
+
+    func updateUIView(_ textField: UITextField, context: Context) {
+        context.coordinator.parent = self
+        if !textField.isFirstResponder {
+            textField.text = profileFormatDecimal(value)
+        }
+        applyConfiguration(to: textField)
+    }
+
+    private func applyConfiguration(to textField: UITextField) {
+        textField.placeholder = title
+        textField.textAlignment = textAlignment
+        textField.textColor = UIColor(Color.deltsCharcoal)
+        textField.tintColor = UIColor(Color.deltsAccent)
+        textField.font = .monospacedDigitSystemFont(ofSize: UIFont.preferredFont(forTextStyle: .body).pointSize, weight: .regular)
+        textField.adjustsFontForContentSizeCategory = true
+        textField.keyboardType = .decimalPad
+        textField.returnKeyType = .done
+        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: ProfileDoneAccessoryNumberField
+
+        init(_ parent: ProfileDoneAccessoryNumberField) {
+            self.parent = parent
+        }
+
+        func makeAccessoryToolbar() -> UIToolbar {
+            let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
+            let doneItem = UIBarButtonItem(title: "Done", style: .plain, target: self, action: #selector(doneTapped))
+            doneItem.setTitleTextAttributes(
+                [
+                    .font: UIFont.boldSystemFont(ofSize: 17),
+                    .foregroundColor: UIColor(Color.deltsAccent)
+                ],
+                for: .normal
+            )
+            toolbar.items = [
+                UIBarButtonItem(systemItem: .flexibleSpace),
+                doneItem
+            ]
+            toolbar.sizeToFit()
+            return toolbar
+        }
+
+        @objc func textDidChange(_ sender: UITextField) {
+            let rawText = sender.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if rawText.isEmpty {
+                parent.value = 0
+                return
+            }
+
+            let normalizedText = rawText.replacingOccurrences(of: ",", with: ".")
+            if let parsedValue = Double(normalizedText) {
+                parent.value = parsedValue
+            }
+        }
+
+        @objc private func doneTapped() {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
+
+        func textFieldDidEndEditing(_ textField: UITextField) {
+            textField.text = profileFormatDecimal(parent.value)
+        }
+
+        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            textField.resignFirstResponder()
+            return true
+        }
+    }
+}
+
 private struct ProfileSexImagePicker: View {
     @Binding var selection: String
     @State private var isPickerPresented = false
@@ -1132,15 +1228,18 @@ private struct ProfileTextAreaRow: View {
     let title: String
     let systemImage: String
     @Binding var text: String
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         ProfileFieldRow(title: title, systemImage: systemImage) {
-            TextField(title, text: $text)
-                .textFieldStyle(.plain)
-                .foregroundStyle(Color.deltsCharcoal)
-                .multilineTextAlignment(.trailing)
-                .lineLimit(1)
-                .frame(minWidth: 130)
+            ProfileDoneAccessoryTextField(
+                title: title,
+                text: $text,
+                isTechnical: false,
+                textAlignment: dynamicTypeSize.isAccessibilitySize ? .left : .right
+            )
+            .frame(minWidth: dynamicTypeSize.isAccessibilitySize ? 0 : 130)
+            .frame(height: 28)
         }
     }
 }
@@ -1155,12 +1254,12 @@ private struct ProfileNumberInputRow: View {
     var body: some View {
         ProfileFieldRow(title: title, systemImage: systemImage) {
             HStack(alignment: .firstTextBaseline, spacing: 5) {
-                TextField(title, value: $value, format: .number.precision(.fractionLength(1)))
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
-                    .textFieldStyle(.plain)
-                    .font(.body.monospacedDigit())
-                    .foregroundStyle(Color.deltsCharcoal)
+                ProfileDoneAccessoryNumberField(
+                    title: title,
+                    value: $value,
+                    textAlignment: dynamicTypeSize.isAccessibilitySize ? .left : .right
+                )
+                .frame(height: 28)
 
                 Text(suffix)
                     .font(.body.weight(.semibold))
