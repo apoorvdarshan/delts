@@ -44,7 +44,6 @@ private struct ProfileEditorView: View {
     @Bindable var profile: UserProfile
     @AppStorage("profile_height_measurement_system") private var heightMeasurementSystemRaw = MeasurementSystem.metric.rawValue
     @AppStorage("profile_weight_measurement_system") private var weightMeasurementSystemRaw = MeasurementSystem.metric.rawValue
-    @AppStorage("profile_strength_measurement_system") private var strengthMeasurementSystemRaw = MeasurementSystem.metric.rawValue
     @AppStorage("profile_custom_workout_split") private var customWorkoutSplit = ""
     @AppStorage("profile_selected_goals") private var selectedGoalRawValues = ""
     @AppStorage("profile_extra_issues") private var extraIssues = ""
@@ -285,28 +284,28 @@ private struct ProfileEditorView: View {
                 ProfileNumberInputRow(
                     title: "Bench Press",
                     systemImage: "figure.strengthtraining.traditional",
-                    system: strengthMeasurementSystemBinding,
+                    system: weightMeasurementSystemBinding,
                     value: benchBinding
                 )
                 ProfileDivider()
                 ProfileNumberInputRow(
                     title: "Squat",
                     systemImage: "figure.strengthtraining.functional",
-                    system: strengthMeasurementSystemBinding,
+                    system: weightMeasurementSystemBinding,
                     value: squatBinding
                 )
                 ProfileDivider()
                 ProfileNumberInputRow(
                     title: "Deadlift",
                     systemImage: "figure.core.training",
-                    system: strengthMeasurementSystemBinding,
+                    system: weightMeasurementSystemBinding,
                     value: deadliftBinding
                 )
                 ProfileDivider()
                 ProfileNumberInputRow(
                     title: "Overhead Press",
                     systemImage: "arrow.up",
-                    system: strengthMeasurementSystemBinding,
+                    system: weightMeasurementSystemBinding,
                     value: overheadPressBinding
                 )
             }
@@ -357,10 +356,6 @@ private struct ProfileEditorView: View {
 
     private var weightMeasurementSystemBinding: Binding<MeasurementSystem> {
         measurementSystemBinding(for: $weightMeasurementSystemRaw)
-    }
-
-    private var strengthMeasurementSystemBinding: Binding<MeasurementSystem> {
-        measurementSystemBinding(for: $strengthMeasurementSystemRaw)
     }
 
     private func measurementSystemBinding(for rawValue: Binding<String>) -> Binding<MeasurementSystem> {
@@ -1813,6 +1808,7 @@ private struct ProfileMassWheelSheet: View {
                 }
                 .frame(height: 190)
             }
+            .padding(.top, 18)
             .padding(.horizontal, 20)
             .padding(.bottom, 18)
             .background(DeltsBackground())
@@ -1834,7 +1830,7 @@ private struct ProfileMassWheelSheet: View {
                 }
             }
         }
-        .presentationDetents([.height(390), .medium])
+        .presentationDetents([.height(420), .medium])
         .presentationDragIndicator(.visible)
     }
 
@@ -1936,6 +1932,7 @@ private struct ProfileHeightWheelSheet: View {
                     .frame(height: 190)
                 }
             }
+            .padding(.top, 18)
             .padding(.horizontal, 20)
             .padding(.bottom, 18)
             .background(DeltsBackground())
@@ -1957,7 +1954,7 @@ private struct ProfileHeightWheelSheet: View {
                 }
             }
         }
-        .presentationDetents([.height(390), .medium])
+        .presentationDetents([.height(420), .medium])
         .presentationDragIndicator(.visible)
     }
 
