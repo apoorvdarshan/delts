@@ -144,18 +144,18 @@ private struct ProfileEditorView: View {
                     kilograms: goalWeightBinding
                 )
                 ProfileDivider()
-                ProfilePercentPickerRow(
+                ProfileBodyFatRangePickerRow(
                     title: "Current body fat",
                     systemImage: "percent",
                     value: currentBodyFatBinding,
-                    range: 3...60
+                    sex: profile.gender
                 )
                 ProfileDivider()
-                ProfilePercentPickerRow(
-                    title: "Desired body fat",
+                ProfileBodyFatRangePickerRow(
+                    title: "Goal body fat",
                     systemImage: "scope",
                     value: desiredBodyFatBinding,
-                    range: 3...45
+                    sex: profile.gender
                 )
                 ProfileDivider()
                 ProfileFieldRow(title: "Apple Health", systemImage: "heart.text.square") {
@@ -1200,6 +1200,176 @@ private struct ProfilePercentPickerRow: View {
                 }
             }
         }
+    }
+}
+
+private struct ProfileBodyFatRangePickerRow: View {
+    let title: String
+    let systemImage: String
+    @Binding var value: Double
+    let sex: String
+    @State private var isPickerPresented = false
+
+    private var selectedRange: ProfileBodyFatRange {
+        ProfileBodyFatRange.matching(value)
+    }
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            Button {
+                isPickerPresented = true
+            } label: {
+                ProfileMenuValueLabel(text: selectedRange.title)
+            }
+            .deltsPressable()
+            .sheet(isPresented: $isPickerPresented) {
+                ProfileBodyFatRangeSheet(
+                    title: title,
+                    selection: $value,
+                    sex: sex
+                )
+            }
+        }
+    }
+}
+
+private struct ProfileBodyFatRangeSheet: View {
+    let title: String
+    @Binding var selection: Double
+    let sex: String
+    @Environment(\.dismiss) private var dismiss
+
+    private var selectedRange: ProfileBodyFatRange {
+        ProfileBodyFatRange.matching(selection)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    ForEach(ProfileBodyFatRange.all) { range in
+                        Button {
+                            selection = range.storedValue
+                            dismiss()
+                        } label: {
+                            ProfileBodyFatRangeCard(
+                                range: range,
+                                sex: sex,
+                                isSelected: range.id == selectedRange.id
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 14)
+                .padding(.bottom, 28)
+            }
+            .background(DeltsBackground())
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+private struct ProfileBodyFatRangeCard: View {
+    let range: ProfileBodyFatRange
+    let sex: String
+    let isSelected: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ZStack(alignment: .topTrailing) {
+                Image(range.assetName(for: sex))
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 158)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(Color.deltsAccent)
+                        .padding(10)
+                        .shadow(color: .black.opacity(0.35), radius: 8, x: 0, y: 2)
+                }
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(range.title)
+                    .font(.title2.weight(.heavy))
+                    .foregroundStyle(Color.deltsCharcoal)
+
+                Text(range.summary)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(isSelected ? Color.deltsAccent.opacity(0.18) : Color.deltsPanel.opacity(0.74))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(isSelected ? Color.deltsAccent.opacity(0.72) : Color.deltsMutedText.opacity(0.12), lineWidth: 1)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(range.title), \(range.summary)")
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
+    }
+}
+
+private struct ProfileBodyFatRange: Identifiable {
+    let id: String
+    let title: String
+    let lowerBound: Double
+    let upperBound: Double?
+    let storedValue: Double
+    let summary: String
+
+    static let all: [ProfileBodyFatRange] = [
+        ProfileBodyFatRange(id: "06_09", title: "6-9%", lowerBound: 6, upperBound: 9, storedValue: 8, summary: "Very lean"),
+        ProfileBodyFatRange(id: "10_13", title: "10-13%", lowerBound: 10, upperBound: 13, storedValue: 12, summary: "Lean"),
+        ProfileBodyFatRange(id: "14_17", title: "14-17%", lowerBound: 14, upperBound: 17, storedValue: 16, summary: "Fit"),
+        ProfileBodyFatRange(id: "18_22", title: "18-22%", lowerBound: 18, upperBound: 22, storedValue: 20, summary: "Average"),
+        ProfileBodyFatRange(id: "23_27", title: "23-27%", lowerBound: 23, upperBound: 27, storedValue: 25, summary: "Soft"),
+        ProfileBodyFatRange(id: "28_32", title: "28-32%", lowerBound: 28, upperBound: 32, storedValue: 30, summary: "Fuller"),
+        ProfileBodyFatRange(id: "33_plus", title: "33%+", lowerBound: 33, upperBound: nil, storedValue: 36, summary: "High")
+    ]
+
+    static func matching(_ value: Double) -> ProfileBodyFatRange {
+        let roundedValue = value.rounded()
+        if let exactRange = all.first(where: { range in
+            guard roundedValue >= range.lowerBound else {
+                return false
+            }
+            return roundedValue <= (range.upperBound ?? .greatestFiniteMagnitude)
+        }) {
+            return exactRange
+        }
+        return roundedValue < (all.first?.lowerBound ?? 0) ? all[0] : all[all.count - 1]
+    }
+
+    func assetName(for sex: String) -> String {
+        let normalizedSex = sex.localizedCaseInsensitiveContains("female") ? "female" : "male"
+        return "bodyfat_\(normalizedSex)_\(id)"
     }
 }
 
