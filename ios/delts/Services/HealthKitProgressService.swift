@@ -66,6 +66,7 @@ final class HealthKitProgressService: ObservableObject {
             if sample.startDate >= snapshot.date || snapshot.bodyFat == nil {
                 snapshot.date = sample.startDate
                 snapshot.bodyFat = sample.quantity.doubleValue(for: .percent()) * 100
+                snapshot.bodyFatIsExact = true
             }
             snapshotsByDay[day] = snapshot
         }

@@ -9,6 +9,8 @@ struct ProgressTabView: View {
     @AppStorage("profile_measurement_system") private var measurementSystemRaw = "metric"
     @AppStorage("apple_health_enabled") private var appleHealthEnabled = false
     @AppStorage("profile_goal_weight_kg") private var goalWeightKG = 0.0
+    @AppStorage("profile_current_body_fat_is_exact") private var currentBodyFatIsExact = false
+    @AppStorage("profile_goal_body_fat_is_exact") private var goalBodyFatIsExact = false
     @State private var selectedRange: ProgressRange = .month
     @State private var snapshots: [ProgressMetricSnapshot] = ProgressMetricStore.load()
     @State private var isLoggingWeight = false
@@ -34,7 +36,7 @@ struct ProgressTabView: View {
 
     private var filteredBodyFatPoints: [ProgressMetricPoint] {
         filteredSnapshots.compactMap { snapshot in
-            guard let bodyFat = snapshot.bodyFat else { return nil }
+            guard let bodyFat = snapshot.bodyFat, snapshot.bodyFatIsExact == true else { return nil }
             return ProgressMetricPoint(date: snapshot.date, value: bodyFat)
         }
     }
@@ -172,6 +174,7 @@ struct ProgressTabView: View {
                 values: filteredWeightPoints,
                 currentValue: profiles.first.map { displayWeight($0.currentWeightKG) } ?? filteredWeightPoints.last?.value,
                 goalValue: effectiveGoalWeightKG.map(displayWeight),
+                goalText: nil,
                 averagePeriodTitle: selectedRange.title,
                 averagePeriodDays: selectedRange.averagePeriodDays
             )
@@ -180,8 +183,9 @@ struct ProgressTabView: View {
                 title: "Body Fat",
                 unit: "%",
                 values: filteredBodyFatPoints,
-                currentValue: profiles.first?.currentBodyFatPercentage ?? filteredBodyFatPoints.last?.value,
-                goalValue: profiles.first?.desiredBodyFatPercentage,
+                currentValue: currentExactBodyFatValue,
+                goalValue: nil,
+                goalText: goalBodyFatText,
                 averagePeriodTitle: selectedRange.title,
                 averagePeriodDays: selectedRange.averagePeriodDays
             )
@@ -208,7 +212,7 @@ struct ProgressTabView: View {
                         MetricHistoryRow(
                             snapshot: snapshot,
                             weightText: snapshot.weightKg.map { formattedWeight($0) } ?? "--",
-                            bodyFatText: snapshot.bodyFat.map { String(format: "%.1f%%", $0) } ?? "--",
+                            bodyFatText: exactBodyFatText(for: snapshot),
                             edit: { editingSnapshot = snapshot },
                             delete: { deleteSnapshot(snapshot) }
                         )
@@ -244,7 +248,12 @@ struct ProgressTabView: View {
 
     private func recordCurrentSnapshot() {
         guard let profile = profiles.first else { return }
-        snapshots = ProgressMetricStore.record(weightKg: profile.currentWeightKG, bodyFat: profile.currentBodyFatPercentage, in: snapshots)
+        snapshots = ProgressMetricStore.record(
+            weightKg: profile.currentWeightKG,
+            bodyFat: currentBodyFatIsExact ? profile.currentBodyFatPercentage : nil,
+            bodyFatIsExact: currentBodyFatIsExact ? true : nil,
+            in: snapshots
+        )
     }
 
     private var latestWeightKg: Double? {
@@ -252,7 +261,27 @@ struct ProgressTabView: View {
     }
 
     private var latestBodyFat: Double? {
-        snapshots.sorted { $0.date < $1.date }.last(where: { $0.bodyFat != nil })?.bodyFat
+        snapshots.sorted { $0.date < $1.date }.last(where: { $0.bodyFat != nil && $0.bodyFatIsExact == true })?.bodyFat
+    }
+
+    private var currentExactBodyFatValue: Double? {
+        if currentBodyFatIsExact {
+            return profiles.first?.currentBodyFatPercentage
+        }
+        return filteredBodyFatPoints.last?.value
+    }
+
+    private var goalBodyFatText: String? {
+        guard let profile = profiles.first else { return nil }
+        if goalBodyFatIsExact {
+            return String(format: "%.1f%%", profile.desiredBodyFatPercentage)
+        }
+        return progressBodyFatRangeTitle(for: profile.desiredBodyFatPercentage)
+    }
+
+    private func exactBodyFatText(for snapshot: ProgressMetricSnapshot) -> String {
+        guard let bodyFat = snapshot.bodyFat, snapshot.bodyFatIsExact == true else { return "--" }
+        return String(format: "%.1f%%", bodyFat)
     }
 
     private var effectiveGoalWeightKG: Double? {
@@ -274,6 +303,26 @@ struct ProgressTabView: View {
         String(format: "%.1f %@", displayWeight(kg), usesImperialUnits ? "lb" : "kg")
     }
 
+    private func progressBodyFatRangeTitle(for value: Double) -> String {
+        let roundedValue = value.rounded()
+        switch roundedValue {
+        case ...9:
+            return "6-9%"
+        case 10...13:
+            return "10-13%"
+        case 14...17:
+            return "14-17%"
+        case 18...22:
+            return "18-22%"
+        case 23...27:
+            return "23-27%"
+        case 28...32:
+            return "28-32%"
+        default:
+            return "33%+"
+        }
+    }
+
     private func logWeight(displayValue: Double) {
         let weightKg = weightKg(fromDisplayValue: displayValue)
         let date = Date()
@@ -289,7 +338,7 @@ struct ProgressTabView: View {
 
     private func logBodyFat(_ bodyFat: Double) {
         let date = Date()
-        snapshots = ProgressMetricStore.record(weightKg: nil, bodyFat: bodyFat, date: date, in: snapshots)
+        snapshots = ProgressMetricStore.record(weightKg: nil, bodyFat: bodyFat, bodyFatIsExact: true, date: date, in: snapshots)
         let snapshotID = snapshotID(for: date)
         updateProfile(weightKg: nil, bodyFat: bodyFat)
         if appleHealthEnabled {
@@ -338,6 +387,7 @@ struct ProgressTabView: View {
         }
         if let bodyFat {
             profile.currentBodyFatPercentage = bodyFat
+            currentBodyFatIsExact = true
         }
         profile.updatedAt = Date()
         try? modelContext.save()
@@ -357,6 +407,9 @@ struct ProgressTabView: View {
             try await healthKit.requestAccess()
             let imported = try await healthKit.importAllSnapshots()
             snapshots = ProgressMetricStore.merge(imported, into: snapshots)
+            if let latestImportedBodyFat = snapshots.sorted(by: { $0.date < $1.date }).last(where: { $0.bodyFat != nil && $0.bodyFatIsExact == true })?.bodyFat {
+                updateProfile(weightKg: nil, bodyFat: latestImportedBodyFat)
+            }
             healthSyncMessage = imported.isEmpty ? "Apple Health connected. No previous weight/body fat samples found." : "Imported \(imported.count) Apple Health metric day\(imported.count == 1 ? "" : "s")."
         } catch {
             healthSyncMessage = error.localizedDescription
@@ -428,6 +481,7 @@ struct ProgressMetricSnapshot: Codable, Identifiable, Hashable {
     var date: Date
     var weightKg: Double?
     var bodyFat: Double?
+    var bodyFatIsExact: Bool?
 }
 
 enum ProgressMetricStore {
@@ -442,9 +496,23 @@ enum ProgressMetricStore {
         return snapshots.sorted { $0.date < $1.date }
     }
 
-    static func record(weightKg: Double?, bodyFat: Double?, date: Date = Date(), in current: [ProgressMetricSnapshot]) -> [ProgressMetricSnapshot] {
+    static func record(
+        weightKg: Double?,
+        bodyFat: Double?,
+        bodyFatIsExact: Bool? = nil,
+        date: Date = Date(),
+        in current: [ProgressMetricSnapshot]
+    ) -> [ProgressMetricSnapshot] {
         var snapshots = current
-        upsert(ProgressMetricSnapshot(date: date, weightKg: weightKg, bodyFat: bodyFat), into: &snapshots)
+        upsert(
+            ProgressMetricSnapshot(
+                date: date,
+                weightKg: weightKg,
+                bodyFat: bodyFat,
+                bodyFatIsExact: bodyFat == nil ? nil : (bodyFatIsExact ?? true)
+            ),
+            into: &snapshots
+        )
         save(snapshots)
         return snapshots.sorted { $0.date < $1.date }
     }
@@ -489,6 +557,7 @@ enum ProgressMetricStore {
             }
             if let bodyFat = snapshot.bodyFat {
                 snapshots[index].bodyFat = bodyFat
+                snapshots[index].bodyFatIsExact = snapshot.bodyFatIsExact ?? true
             }
         } else if snapshot.weightKg != nil || snapshot.bodyFat != nil {
             snapshots.append(snapshot)
@@ -530,6 +599,7 @@ private struct ProgressMetricCard: View {
     let values: [ProgressMetricPoint]
     let currentValue: Double?
     let goalValue: Double?
+    let goalText: String?
     let averagePeriodTitle: String
     let averagePeriodDays: Double?
 
@@ -570,7 +640,7 @@ private struct ProgressMetricCard: View {
 
             HStack(spacing: 8) {
                 MetricStatTile(title: "Current", value: currentValue.map(formatted) ?? "--")
-                MetricStatTile(title: "Goal", value: goalValue.map(formatted) ?? "--")
+                MetricStatTile(title: "Goal", value: goalText ?? goalValue.map(formatted) ?? "--")
                 MetricStatTile(title: "Avg Δ / \(averagePeriodTitle)", value: averageChangeValue.map(formattedSigned) ?? "--")
             }
 
@@ -835,6 +905,7 @@ private struct MetricSnapshotEditSheet: View {
                     var updated = snapshot
                     updated.weightKg = parsedWeightKg
                     updated.bodyFat = parsedBodyFat
+                    updated.bodyFatIsExact = parsedBodyFat == nil ? nil : true
                     save(updated)
                     dismiss()
                 }

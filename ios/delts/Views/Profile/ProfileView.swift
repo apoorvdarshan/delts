@@ -40,6 +40,7 @@ private enum MeasurementSystem: String, CaseIterable, Hashable {
 }
 
 private struct ProfileEditorView: View {
+    @Environment(\.modelContext) private var modelContext
     @Bindable var profile: UserProfile
     @AppStorage("profile_measurement_system") private var measurementSystemRaw = MeasurementSystem.metric.rawValue
     @AppStorage("profile_custom_workout_split") private var customWorkoutSplit = ""
@@ -50,6 +51,8 @@ private struct ProfileEditorView: View {
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
     @AppStorage("apple_health_enabled") private var appleHealthEnabled = false
     @AppStorage("profile_goal_weight_kg") private var goalWeightKG = 0.0
+    @AppStorage("profile_current_body_fat_is_exact") private var currentBodyFatIsExact = false
+    @AppStorage("profile_goal_body_fat_is_exact") private var goalBodyFatIsExact = false
     @State private var isSelectingTargetMuscles = false
     @StateObject private var healthKit = HealthKitProgressService()
 
@@ -148,6 +151,7 @@ private struct ProfileEditorView: View {
                     title: "Current body fat",
                     systemImage: "percent",
                     value: currentBodyFatBinding,
+                    isExact: $currentBodyFatIsExact,
                     sex: profile.gender
                 )
                 ProfileDivider()
@@ -155,6 +159,7 @@ private struct ProfileEditorView: View {
                     title: "Goal body fat",
                     systemImage: "scope",
                     value: desiredBodyFatBinding,
+                    isExact: $goalBodyFatIsExact,
                     sex: profile.gender
                 )
                 ProfileDivider()
@@ -323,7 +328,13 @@ private struct ProfileEditorView: View {
             try await healthKit.requestAccess()
             let imported = try await healthKit.importAllSnapshots()
             let current = ProgressMetricStore.load()
-            _ = ProgressMetricStore.merge(imported, into: current)
+            let merged = ProgressMetricStore.merge(imported, into: current)
+            if let latestBodyFat = merged.sorted(by: { $0.date < $1.date }).last(where: { $0.bodyFat != nil && $0.bodyFatIsExact == true })?.bodyFat {
+                profile.currentBodyFatPercentage = latestBodyFat
+                profile.updatedAt = Date()
+                currentBodyFatIsExact = true
+                try? modelContext.save()
+            }
             appleHealthEnabled = true
         } catch {
             appleHealthEnabled = false
@@ -1207,6 +1218,7 @@ private struct ProfileBodyFatRangePickerRow: View {
     let title: String
     let systemImage: String
     @Binding var value: Double
+    @Binding var isExact: Bool
     let sex: String
     @State private var isPickerPresented = false
 
@@ -1214,18 +1226,23 @@ private struct ProfileBodyFatRangePickerRow: View {
         ProfileBodyFatRange.matching(value, sex: sex)
     }
 
+    private var valueText: String {
+        isExact ? "\(profileFormatDecimal(value))%" : selectedRange.title
+    }
+
     var body: some View {
         ProfileFieldRow(title: title, systemImage: systemImage) {
             Button {
                 isPickerPresented = true
             } label: {
-                ProfileMenuValueLabel(text: selectedRange.title)
+                ProfileMenuValueLabel(text: valueText)
             }
             .deltsPressable()
             .sheet(isPresented: $isPickerPresented) {
                 ProfileBodyFatRangeSheet(
                     title: title,
                     selection: $value,
+                    isExact: $isExact,
                     sex: sex
                 )
             }
@@ -1236,6 +1253,7 @@ private struct ProfileBodyFatRangePickerRow: View {
 private struct ProfileBodyFatRangeSheet: View {
     let title: String
     @Binding var selection: Double
+    @Binding var isExact: Bool
     let sex: String
     @Environment(\.dismiss) private var dismiss
 
@@ -1251,15 +1269,22 @@ private struct ProfileBodyFatRangeSheet: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
+                    ProfileBodyFatExactSetter(initialValue: selection) { exactValue in
+                        selection = exactValue
+                        isExact = true
+                        dismiss()
+                    }
+
                     ForEach(ranges) { range in
                         Button {
                             selection = range.storedValue
+                            isExact = false
                             dismiss()
                         } label: {
                             ProfileBodyFatRangeCard(
                                 range: range,
                                 sex: sex,
-                                isSelected: range.id == selectedRange.id
+                                isSelected: !isExact && range.id == selectedRange.id
                             )
                         }
                         .buttonStyle(.plain)
@@ -1284,6 +1309,58 @@ private struct ProfileBodyFatRangeSheet: View {
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+    }
+}
+
+private struct ProfileBodyFatExactSetter: View {
+    let initialValue: Double
+    let save: (Double) -> Void
+
+    @State private var whole: Int
+    @State private var decimal: Int
+
+    init(initialValue: Double, save: @escaping (Double) -> Void) {
+        self.initialValue = initialValue
+        self.save = save
+        let parts = profileDecimalParts(for: initialValue, range: 0...60)
+        _whole = State(initialValue: parts.whole)
+        _decimal = State(initialValue: parts.decimal)
+    }
+
+    private var selectedValue: Double {
+        Double(whole) + (Double(decimal) / 10)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline) {
+                Label("Exact", systemImage: "number")
+                    .font(.headline.weight(.heavy))
+                    .foregroundStyle(Color.deltsCharcoal)
+
+                Spacer()
+
+                Text("\(profileFormatDecimal(selectedValue))%")
+                    .font(.title3.monospacedDigit().weight(.heavy))
+                    .foregroundStyle(Color.deltsAccent)
+            }
+
+            HStack(spacing: 10) {
+                ProfileWheelColumn(title: "Whole", selection: $whole, values: Array(0...60)) { "\($0)" }
+                ProfileWheelColumn(title: "Decimal", selection: $decimal, values: Array(0...9)) { ".\($0)" }
+            }
+            .frame(height: 138)
+
+            PrimaryButton(title: "Set exact", systemImage: "checkmark") {
+                save(selectedValue)
+            }
+        }
+        .padding(12)
+        .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.deltsAccent.opacity(0.28), lineWidth: 1)
+        }
     }
 }
 
