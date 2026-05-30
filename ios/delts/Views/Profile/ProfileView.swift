@@ -42,7 +42,9 @@ private enum MeasurementSystem: String, CaseIterable, Hashable {
 private struct ProfileEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var profile: UserProfile
-    @AppStorage("profile_measurement_system") private var measurementSystemRaw = MeasurementSystem.metric.rawValue
+    @AppStorage("profile_height_measurement_system") private var heightMeasurementSystemRaw = MeasurementSystem.metric.rawValue
+    @AppStorage("profile_weight_measurement_system") private var weightMeasurementSystemRaw = MeasurementSystem.metric.rawValue
+    @AppStorage("profile_strength_measurement_system") private var strengthMeasurementSystemRaw = MeasurementSystem.metric.rawValue
     @AppStorage("profile_custom_workout_split") private var customWorkoutSplit = ""
     @AppStorage("profile_selected_goals") private var selectedGoalRawValues = ""
     @AppStorage("profile_extra_issues") private var extraIssues = ""
@@ -112,32 +114,24 @@ private struct ProfileEditorView: View {
                     unit: "yr"
                 )
                 ProfileDivider()
-                ProfileSegmentedPicker(
-                    title: "Units",
-                    systemImage: "ruler",
-                    selection: measurementSystemBinding,
-                    options: MeasurementSystem.allCases,
-                    label: { $0.title }
-                )
-                ProfileDivider()
                 ProfileHeightPickerRow(
                     title: "Height",
                     systemImage: "ruler",
-                    system: measurementSystem,
+                    system: heightMeasurementSystemBinding,
                     centimeters: heightBinding
                 )
                 ProfileDivider()
                 ProfileWeightPickerRow(
                     title: "Weight",
                     systemImage: "scalemass",
-                    system: measurementSystem,
+                    system: weightMeasurementSystemBinding,
                     kilograms: weightBinding
                 )
                 ProfileDivider()
                 ProfileWeightPickerRow(
                     title: "Goal weight",
                     systemImage: "target",
-                    system: measurementSystem,
+                    system: weightMeasurementSystemBinding,
                     kilograms: goalWeightBinding
                 )
                 ProfileDivider()
@@ -291,28 +285,28 @@ private struct ProfileEditorView: View {
                 ProfileNumberInputRow(
                     title: "Bench Press",
                     systemImage: "figure.strengthtraining.traditional",
-                    suffix: "kg",
+                    system: strengthMeasurementSystemBinding,
                     value: benchBinding
                 )
                 ProfileDivider()
                 ProfileNumberInputRow(
                     title: "Squat",
                     systemImage: "figure.strengthtraining.functional",
-                    suffix: "kg",
+                    system: strengthMeasurementSystemBinding,
                     value: squatBinding
                 )
                 ProfileDivider()
                 ProfileNumberInputRow(
                     title: "Deadlift",
                     systemImage: "figure.core.training",
-                    suffix: "kg",
+                    system: strengthMeasurementSystemBinding,
                     value: deadliftBinding
                 )
                 ProfileDivider()
                 ProfileNumberInputRow(
                     title: "Overhead Press",
                     systemImage: "arrow.up",
-                    suffix: "kg",
+                    system: strengthMeasurementSystemBinding,
                     value: overheadPressBinding
                 )
             }
@@ -357,15 +351,23 @@ private struct ProfileEditorView: View {
         }
     }
 
-    private var measurementSystem: MeasurementSystem {
-        MeasurementSystem(rawValue: measurementSystemRaw) ?? .metric
+    private var heightMeasurementSystemBinding: Binding<MeasurementSystem> {
+        measurementSystemBinding(for: $heightMeasurementSystemRaw)
     }
 
-    private var measurementSystemBinding: Binding<MeasurementSystem> {
+    private var weightMeasurementSystemBinding: Binding<MeasurementSystem> {
+        measurementSystemBinding(for: $weightMeasurementSystemRaw)
+    }
+
+    private var strengthMeasurementSystemBinding: Binding<MeasurementSystem> {
+        measurementSystemBinding(for: $strengthMeasurementSystemRaw)
+    }
+
+    private func measurementSystemBinding(for rawValue: Binding<String>) -> Binding<MeasurementSystem> {
         Binding {
-            measurementSystem
+            MeasurementSystem(rawValue: rawValue.wrappedValue) ?? .metric
         } set: { newValue in
-            measurementSystemRaw = newValue.rawValue
+            rawValue.wrappedValue = newValue.rawValue
         }
     }
 
@@ -1005,101 +1007,6 @@ private struct ProfileDoneAccessoryTextField: UIViewRepresentable {
     }
 }
 
-private struct ProfileDoneAccessoryNumberField: UIViewRepresentable {
-    let title: String
-    @Binding var value: Double
-    let textAlignment: NSTextAlignment
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-
-    func makeUIView(context: Context) -> UITextField {
-        let textField = UITextField(frame: .zero)
-        textField.borderStyle = .none
-        textField.clearButtonMode = .never
-        textField.delegate = context.coordinator
-        textField.addTarget(context.coordinator, action: #selector(Coordinator.textDidChange(_:)), for: .editingChanged)
-        textField.inputAccessoryView = context.coordinator.makeAccessoryToolbar()
-        applyConfiguration(to: textField)
-        textField.text = profileFormatDecimal(value)
-        return textField
-    }
-
-    func updateUIView(_ textField: UITextField, context: Context) {
-        context.coordinator.parent = self
-        if !textField.isFirstResponder {
-            textField.text = profileFormatDecimal(value)
-        }
-        applyConfiguration(to: textField)
-    }
-
-    private func applyConfiguration(to textField: UITextField) {
-        textField.placeholder = title
-        textField.textAlignment = textAlignment
-        textField.textColor = UIColor(Color.deltsCharcoal)
-        textField.tintColor = UIColor(Color.deltsAccent)
-        textField.font = .monospacedDigitSystemFont(ofSize: UIFont.preferredFont(forTextStyle: .body).pointSize, weight: .regular)
-        textField.adjustsFontForContentSizeCategory = true
-        textField.keyboardType = .decimalPad
-        textField.returnKeyType = .done
-        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        textField.setContentHuggingPriority(.defaultLow, for: .horizontal)
-    }
-
-    final class Coordinator: NSObject, UITextFieldDelegate {
-        var parent: ProfileDoneAccessoryNumberField
-
-        init(_ parent: ProfileDoneAccessoryNumberField) {
-            self.parent = parent
-        }
-
-        func makeAccessoryToolbar() -> UIToolbar {
-            let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
-            let doneItem = UIBarButtonItem(title: "Done", style: .plain, target: self, action: #selector(doneTapped))
-            doneItem.setTitleTextAttributes(
-                [
-                    .font: UIFont.boldSystemFont(ofSize: 17),
-                    .foregroundColor: UIColor(Color.deltsAccent)
-                ],
-                for: .normal
-            )
-            toolbar.items = [
-                UIBarButtonItem(systemItem: .flexibleSpace),
-                doneItem
-            ]
-            toolbar.sizeToFit()
-            return toolbar
-        }
-
-        @objc func textDidChange(_ sender: UITextField) {
-            let rawText = sender.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            if rawText.isEmpty {
-                parent.value = 0
-                return
-            }
-
-            let normalizedText = rawText.replacingOccurrences(of: ",", with: ".")
-            if let parsedValue = Double(normalizedText) {
-                parent.value = parsedValue
-            }
-        }
-
-        @objc private func doneTapped() {
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-        }
-
-        func textFieldDidEndEditing(_ textField: UITextField) {
-            textField.text = profileFormatDecimal(parent.value)
-        }
-
-        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-            textField.resignFirstResponder()
-            return true
-        }
-    }
-}
-
 private struct ProfileSexImagePicker: View {
     @Binding var selection: String
     @State private var isPickerPresented = false
@@ -1247,25 +1154,43 @@ private struct ProfileTextAreaRow: View {
 private struct ProfileNumberInputRow: View {
     let title: String
     let systemImage: String
-    let suffix: String
+    @Binding var system: MeasurementSystem
     @Binding var value: Double
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @State private var isPickerPresented = false
+
+    private var displayValue: Double {
+        switch system {
+        case .metric:
+            return value
+        case .imperial:
+            return value * 2.2046226218
+        }
+    }
+
+    private var unit: String {
+        system == .metric ? "kg" : "lb"
+    }
 
     var body: some View {
         ProfileFieldRow(title: title, systemImage: systemImage) {
-            HStack(alignment: .firstTextBaseline, spacing: 5) {
-                ProfileDoneAccessoryNumberField(
-                    title: title,
-                    value: $value,
-                    textAlignment: dynamicTypeSize.isAccessibilitySize ? .left : .right
-                )
-                .frame(height: 28)
-
-                Text(suffix)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
+            Button {
+                isPickerPresented = true
+            } label: {
+                ProfileMenuValueLabel(text: "\(profileFormatDecimal(displayValue)) \(unit)")
             }
-            .frame(width: dynamicTypeSize.isAccessibilitySize ? nil : 128, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+            .deltsPressable()
+            .sheet(isPresented: $isPickerPresented) {
+                ProfileMassWheelSheet(
+                    title: title,
+                    initialKilograms: value,
+                    initialSystem: system,
+                    metricRange: 0...500,
+                    imperialRange: 0...1102
+                ) { newKilograms, newSystem in
+                    system = newSystem
+                    value = newKilograms
+                }
+            }
         }
     }
 }
@@ -1303,7 +1228,7 @@ private struct ProfileIntegerPickerRow: View {
 private struct ProfileHeightPickerRow: View {
     let title: String
     let systemImage: String
-    let system: MeasurementSystem
+    @Binding var system: MeasurementSystem
     @Binding var centimeters: Double
     @State private var isPickerPresented = false
 
@@ -1326,22 +1251,13 @@ private struct ProfileHeightPickerRow: View {
             }
             .deltsPressable()
             .sheet(isPresented: $isPickerPresented) {
-                switch system {
-                case .metric:
-                    ProfileDecimalWheelSheet(
-                        title: title,
-                        initialValue: centimeters,
-                        wholeRange: 120...230,
-                        unit: "cm"
-                    ) { newValue in
-                        centimeters = newValue
-                    }
-                case .imperial:
-                    ProfileImperialHeightWheelSheet(
-                        initialCentimeters: centimeters
-                    ) { newCentimeters in
-                        centimeters = newCentimeters
-                    }
+                ProfileHeightWheelSheet(
+                    title: title,
+                    initialCentimeters: centimeters,
+                    initialSystem: system
+                ) { newCentimeters, newSystem in
+                    system = newSystem
+                    centimeters = newCentimeters
                 }
             }
         }
@@ -1351,7 +1267,7 @@ private struct ProfileHeightPickerRow: View {
 private struct ProfileWeightPickerRow: View {
     let title: String
     let systemImage: String
-    let system: MeasurementSystem
+    @Binding var system: MeasurementSystem
     @Binding var kilograms: Double
     @State private var isPickerPresented = false
 
@@ -1368,10 +1284,6 @@ private struct ProfileWeightPickerRow: View {
         system == .metric ? "kg" : "lb"
     }
 
-    private var wholeRange: ClosedRange<Int> {
-        system == .metric ? 30...250 : 66...551
-    }
-
     private var displayText: String {
         "\(profileFormatDecimal(displayValue)) \(unit)"
     }
@@ -1385,18 +1297,15 @@ private struct ProfileWeightPickerRow: View {
             }
             .deltsPressable()
             .sheet(isPresented: $isPickerPresented) {
-                ProfileDecimalWheelSheet(
+                ProfileMassWheelSheet(
                     title: title,
-                    initialValue: displayValue,
-                    wholeRange: wholeRange,
-                    unit: unit
-                ) { newDisplayValue in
-                    switch system {
-                    case .metric:
-                        kilograms = newDisplayValue
-                    case .imperial:
-                        kilograms = newDisplayValue / 2.2046226218
-                    }
+                    initialKilograms: kilograms,
+                    initialSystem: system,
+                    metricRange: 30...250,
+                    imperialRange: 66...551
+                ) { newKilograms, newSystem in
+                    system = newSystem
+                    kilograms = newKilograms
                 }
             }
         }
@@ -1822,42 +1731,92 @@ private struct ProfileDecimalWheelSheet: View {
     }
 }
 
-private struct ProfileImperialHeightWheelSheet: View {
-    let onSave: (Double) -> Void
+private struct ProfileMassWheelSheet: View {
+    let title: String
+    let metricRange: ClosedRange<Int>
+    let imperialRange: ClosedRange<Int>
+    let onSave: (Double, MeasurementSystem) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var feet: Int
-    @State private var inches: Int
+    @State private var selectedSystem: MeasurementSystem
+    @State private var whole: Int
+    @State private var decimal: Int
 
-    init(initialCentimeters: Double, onSave: @escaping (Double) -> Void) {
-        let parts = profileImperialHeightParts(fromCentimeters: initialCentimeters)
+    init(
+        title: String,
+        initialKilograms: Double,
+        initialSystem: MeasurementSystem,
+        metricRange: ClosedRange<Int>,
+        imperialRange: ClosedRange<Int>,
+        onSave: @escaping (Double, MeasurementSystem) -> Void
+    ) {
+        let initialDisplayValue = initialSystem == .metric ? initialKilograms : initialKilograms * 2.2046226218
+        let parts = profileDecimalParts(for: initialDisplayValue, range: initialSystem == .metric ? metricRange : imperialRange)
+        self.title = title
+        self.metricRange = metricRange
+        self.imperialRange = imperialRange
         self.onSave = onSave
-        _feet = State(initialValue: parts.feet)
-        _inches = State(initialValue: parts.inches)
+        _selectedSystem = State(initialValue: initialSystem)
+        _whole = State(initialValue: parts.whole)
+        _decimal = State(initialValue: parts.decimal)
     }
 
-    private var selectedInches: Double {
-        Double((feet * 12) + inches)
+    private var unit: String {
+        selectedSystem == .metric ? "kg" : "lb"
+    }
+
+    private var wholeOptions: [Int] {
+        Array(selectedSystem == .metric ? metricRange : imperialRange)
+    }
+
+    private var selectedDisplayValue: Double {
+        Double(whole) + (Double(decimal) / 10)
+    }
+
+    private var selectedKilograms: Double {
+        selectedSystem == .metric ? selectedDisplayValue : selectedDisplayValue / 2.2046226218
+    }
+
+    private var systemBinding: Binding<MeasurementSystem> {
+        Binding {
+            selectedSystem
+        } set: { newSystem in
+            let kilograms = selectedKilograms
+            selectedSystem = newSystem
+            setDisplayValue(newSystem == .metric ? kilograms : kilograms * 2.2046226218)
+        }
     }
 
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 18) {
-                Text("\(feet) ft \(inches) in")
+                Picker("Unit", selection: systemBinding) {
+                    ForEach(MeasurementSystem.allCases, id: \.self) { system in
+                        Text(system.title).tag(system)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Text("\(profileFormatDecimal(selectedDisplayValue)) \(unit)")
                     .font(.title2.monospacedDigit().weight(.bold))
                     .foregroundStyle(Color.deltsCharcoal)
                     .frame(maxWidth: .infinity, alignment: .center)
 
-                HStack(spacing: 8) {
-                    ProfileWheelColumn(title: "Feet", selection: $feet, values: Array(3...8)) { "\($0)" }
-                    ProfileWheelColumn(title: "Inches", selection: $inches, values: Array(0...11)) { "\($0)" }
+                HStack(spacing: 10) {
+                    ProfileWheelColumn(title: "Whole", selection: $whole, values: wholeOptions) { "\($0)" }
+                    ProfileWheelColumn(title: "Decimal", selection: $decimal, values: Array(0...9)) { ".\($0)" }
+
+                    Text(unit)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .frame(width: 48)
                 }
                 .frame(height: 190)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 18)
             .background(DeltsBackground())
-            .navigationTitle("Height")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -1868,15 +1827,147 @@ private struct ProfileImperialHeightWheelSheet: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
-                        onSave(selectedInches * 2.54)
+                        onSave(selectedKilograms, selectedSystem)
                         dismiss()
                     }
                     .fontWeight(.bold)
                 }
             }
         }
-        .presentationDetents([.height(340), .medium])
+        .presentationDetents([.height(390), .medium])
         .presentationDragIndicator(.visible)
+    }
+
+    private func setDisplayValue(_ value: Double) {
+        let range = selectedSystem == .metric ? metricRange : imperialRange
+        let parts = profileDecimalParts(for: value, range: range)
+        whole = parts.whole
+        decimal = parts.decimal
+    }
+}
+
+private struct ProfileHeightWheelSheet: View {
+    let title: String
+    let onSave: (Double, MeasurementSystem) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedSystem: MeasurementSystem
+    @State private var centimetersWhole: Int
+    @State private var centimetersDecimal: Int
+    @State private var feet: Int
+    @State private var inches: Int
+
+    init(
+        title: String,
+        initialCentimeters: Double,
+        initialSystem: MeasurementSystem,
+        onSave: @escaping (Double, MeasurementSystem) -> Void
+    ) {
+        let metricParts = profileDecimalParts(for: initialCentimeters, range: 120...230)
+        let imperialParts = profileImperialHeightParts(fromCentimeters: initialCentimeters)
+        self.title = title
+        self.onSave = onSave
+        _selectedSystem = State(initialValue: initialSystem)
+        _centimetersWhole = State(initialValue: metricParts.whole)
+        _centimetersDecimal = State(initialValue: metricParts.decimal)
+        _feet = State(initialValue: imperialParts.feet)
+        _inches = State(initialValue: imperialParts.inches)
+    }
+
+    private var selectedCentimeters: Double {
+        switch selectedSystem {
+        case .metric:
+            return Double(centimetersWhole) + (Double(centimetersDecimal) / 10)
+        case .imperial:
+            return Double((feet * 12) + inches) * 2.54
+        }
+    }
+
+    private var displayText: String {
+        switch selectedSystem {
+        case .metric:
+            return "\(profileFormatDecimal(selectedCentimeters)) cm"
+        case .imperial:
+            return "\(feet) ft \(inches) in"
+        }
+    }
+
+    private var systemBinding: Binding<MeasurementSystem> {
+        Binding {
+            selectedSystem
+        } set: { newSystem in
+            let currentCentimeters = selectedCentimeters
+            selectedSystem = newSystem
+            setCentimeters(currentCentimeters)
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 18) {
+                Picker("Unit", selection: systemBinding) {
+                    ForEach(MeasurementSystem.allCases, id: \.self) { system in
+                        Text(system.title).tag(system)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Text(displayText)
+                    .font(.title2.monospacedDigit().weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .frame(maxWidth: .infinity, alignment: .center)
+
+                if selectedSystem == .metric {
+                    HStack(spacing: 10) {
+                        ProfileWheelColumn(title: "Whole", selection: $centimetersWhole, values: Array(120...230)) { "\($0)" }
+                        ProfileWheelColumn(title: "Decimal", selection: $centimetersDecimal, values: Array(0...9)) { ".\($0)" }
+
+                        Text("cm")
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(Color.deltsMutedText)
+                            .frame(width: 48)
+                    }
+                    .frame(height: 190)
+                } else {
+                    HStack(spacing: 8) {
+                        ProfileWheelColumn(title: "Feet", selection: $feet, values: Array(3...8)) { "\($0)" }
+                        ProfileWheelColumn(title: "Inches", selection: $inches, values: Array(0...11)) { "\($0)" }
+                    }
+                    .frame(height: 190)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 18)
+            .background(DeltsBackground())
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        onSave(selectedCentimeters, selectedSystem)
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                }
+            }
+        }
+        .presentationDetents([.height(390), .medium])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func setCentimeters(_ centimeters: Double) {
+        let metricParts = profileDecimalParts(for: centimeters, range: 120...230)
+        let imperialParts = profileImperialHeightParts(fromCentimeters: centimeters)
+        centimetersWhole = metricParts.whole
+        centimetersDecimal = metricParts.decimal
+        feet = imperialParts.feet
+        inches = imperialParts.inches
     }
 }
 

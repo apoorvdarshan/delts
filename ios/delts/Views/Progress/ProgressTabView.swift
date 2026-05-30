@@ -6,7 +6,7 @@ struct ProgressTabView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \CompletedWorkout.date, order: .reverse) private var workouts: [CompletedWorkout]
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
-    @AppStorage("profile_measurement_system") private var measurementSystemRaw = "metric"
+    @AppStorage("profile_weight_measurement_system") private var measurementSystemRaw = "metric"
     @AppStorage("apple_health_enabled") private var appleHealthEnabled = false
     @AppStorage("profile_goal_weight_kg") private var goalWeightKG = 0.0
     @AppStorage("profile_current_body_fat_is_exact") private var currentBodyFatIsExact = false
@@ -15,8 +15,7 @@ struct ProgressTabView: View {
     @State private var snapshots: [ProgressMetricSnapshot] = ProgressMetricStore.load()
     @State private var isLoggingWeight = false
     @State private var isLoggingBodyFat = false
-    @State private var editingSnapshot: ProgressMetricSnapshot?
-    @State private var healthSyncMessage = ""
+    @State private var isShowingMetricHistory = false
     @StateObject private var healthKit = HealthKitProgressService()
 
     private var filteredSnapshots: [ProgressMetricSnapshot] {
@@ -48,7 +47,7 @@ struct ProgressTabView: View {
                     metricActions
                     rangePicker
                     metricGraphs
-                    metricHistory
+                    metricHistoryButton
                     workoutHistory
                 }
                 .padding(.horizontal, 20)
@@ -93,13 +92,15 @@ struct ProgressTabView: View {
                     logBodyFat(value)
                 }
             }
-            .sheet(item: $editingSnapshot) { snapshot in
-                MetricSnapshotEditSheet(
-                    snapshot: snapshot,
-                    usesImperialUnits: usesImperialUnits
-                ) { updated in
-                    updateSnapshot(updated)
-                }
+            .sheet(isPresented: $isShowingMetricHistory) {
+                MetricHistorySheet(
+                    snapshots: filteredSnapshots.sorted { $0.date > $1.date },
+                    usesImperialUnits: usesImperialUnits,
+                    weightText: formattedWeight,
+                    bodyFatText: bodyFatText(for:),
+                    update: updateSnapshot,
+                    delete: deleteSnapshot
+                )
             }
         }
     }
@@ -115,29 +116,6 @@ struct ProgressTabView: View {
                 }
             }
 
-            if appleHealthEnabled {
-                Button {
-                    Task { await syncHealthKit() }
-                } label: {
-                    Label("Sync Apple Health history", systemImage: "heart.text.square")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(Color.deltsCharcoal)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 46)
-                        .background(Color.deltsPanel.opacity(0.24), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
-                        }
-                }
-                .deltsPressable()
-            }
-
-            if !healthSyncMessage.isEmpty {
-                Text(healthSyncMessage)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
-            }
         }
     }
 
@@ -193,33 +171,41 @@ struct ProgressTabView: View {
     }
 
     @ViewBuilder
-    private var metricHistory: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Metric History")
-                .font(.title3.weight(.bold))
-                .foregroundStyle(Color.deltsCharcoal)
+    private var metricHistoryButton: some View {
+        Button {
+            isShowingMetricHistory = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 19, weight: .bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .frame(width: 38, height: 38)
+                    .background(Color.deltsAccent.opacity(0.12), in: Circle())
 
-            if filteredSnapshots.isEmpty {
-                Text("No weight or body fat logs in this range.")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.deltsPanel.opacity(0.24), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            } else {
-                VStack(spacing: 12) {
-                    ForEach(filteredSnapshots.sorted { $0.date > $1.date }) { snapshot in
-                        MetricHistoryRow(
-                            snapshot: snapshot,
-                            weightText: snapshot.weightKg.map { formattedWeight($0) } ?? "--",
-                            bodyFatText: bodyFatText(for: snapshot),
-                            edit: { editingSnapshot = snapshot },
-                            delete: { deleteSnapshot(snapshot) }
-                        )
-                    }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Metric History")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                    Text(filteredSnapshots.isEmpty ? "No logs in \(selectedRange.title.lowercased())" : "\(filteredSnapshots.count) log\(filteredSnapshots.count == 1 ? "" : "s") in \(selectedRange.title.lowercased())")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
                 }
+
+                Spacer(minLength: 10)
+
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.heavy))
+                    .foregroundStyle(Color.deltsMutedText)
+            }
+            .padding(14)
+            .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
             }
         }
+        .buttonStyle(.plain)
+        .deltsPressable()
     }
 
     @ViewBuilder
@@ -368,12 +354,7 @@ struct ProgressTabView: View {
         snapshots = ProgressMetricStore.delete(snapshot.id, from: snapshots)
         guard appleHealthEnabled else { return }
         Task {
-            do {
-                let count = try await healthKit.deleteSnapshot(snapshot)
-                healthSyncMessage = count > 0 ? "Deleted from Apple Health." : "Deleted locally. No Apple Health sample matched."
-            } catch {
-                healthSyncMessage = error.localizedDescription
-            }
+            _ = try? await healthKit.deleteSnapshot(snapshot)
         }
     }
 
@@ -407,9 +388,8 @@ struct ProgressTabView: View {
             if let latestImportedBodyFat = snapshots.sorted(by: { $0.date < $1.date }).last(where: { $0.bodyFat != nil && $0.bodyFatIsExact == true })?.bodyFat {
                 updateProfile(weightKg: nil, bodyFat: latestImportedBodyFat)
             }
-            healthSyncMessage = imported.isEmpty ? "Apple Health connected. No previous weight/body fat samples found." : "Imported \(imported.count) Apple Health metric day\(imported.count == 1 ? "" : "s")."
         } catch {
-            healthSyncMessage = error.localizedDescription
+            return
         }
     }
 
@@ -791,6 +771,69 @@ private struct MetricHistoryPill: View {
             .padding(.horizontal, 8)
             .frame(height: 26)
             .background(Color.deltsSecondaryAccent.opacity(0.10), in: Capsule())
+    }
+}
+
+private struct MetricHistorySheet: View {
+    let snapshots: [ProgressMetricSnapshot]
+    let usesImperialUnits: Bool
+    let weightText: (Double) -> String
+    let bodyFatText: (ProgressMetricSnapshot) -> String
+    let update: (ProgressMetricSnapshot) -> Void
+    let delete: (ProgressMetricSnapshot) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var editingSnapshot: ProgressMetricSnapshot?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    if snapshots.isEmpty {
+                        Text("No weight or body fat logs in this range.")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(Color.deltsMutedText)
+                            .padding(16)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.deltsPanel.opacity(0.24), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    } else {
+                        ForEach(snapshots) { snapshot in
+                            MetricHistoryRow(
+                                snapshot: snapshot,
+                                weightText: snapshot.weightKg.map(weightText) ?? "--",
+                                bodyFatText: bodyFatText(snapshot),
+                                edit: { editingSnapshot = snapshot },
+                                delete: { delete(snapshot) }
+                            )
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 14)
+                .padding(.bottom, 28)
+            }
+            .deltsScreen()
+            .navigationTitle("Metric History")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                }
+            }
+            .sheet(item: $editingSnapshot) { snapshot in
+                MetricSnapshotEditSheet(
+                    snapshot: snapshot,
+                    usesImperialUnits: usesImperialUnits
+                ) { updated in
+                    update(updated)
+                }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
     }
 }
 
