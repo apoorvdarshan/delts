@@ -1211,7 +1211,7 @@ private struct ProfileBodyFatRangePickerRow: View {
     @State private var isPickerPresented = false
 
     private var selectedRange: ProfileBodyFatRange {
-        ProfileBodyFatRange.matching(value)
+        ProfileBodyFatRange.matching(value, sex: sex)
     }
 
     var body: some View {
@@ -1240,14 +1240,18 @@ private struct ProfileBodyFatRangeSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private var selectedRange: ProfileBodyFatRange {
-        ProfileBodyFatRange.matching(selection)
+        ProfileBodyFatRange.matching(selection, sex: sex)
+    }
+
+    private var ranges: [ProfileBodyFatRange] {
+        ProfileBodyFatRange.options(for: sex)
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    ForEach(ProfileBodyFatRange.all) { range in
+                    ForEach(ranges) { range in
                         Button {
                             selection = range.storedValue
                             dismiss()
@@ -1344,19 +1348,41 @@ private struct ProfileBodyFatRange: Identifiable {
     let storedValue: Double
     let summary: String
 
-    static let all: [ProfileBodyFatRange] = [
+    private static let maleRanges: [ProfileBodyFatRange] = [
         ProfileBodyFatRange(id: "06_09", title: "6-9%", lowerBound: 6, upperBound: 9, storedValue: 8, summary: "Very lean"),
         ProfileBodyFatRange(id: "10_13", title: "10-13%", lowerBound: 10, upperBound: 13, storedValue: 12, summary: "Lean"),
         ProfileBodyFatRange(id: "14_17", title: "14-17%", lowerBound: 14, upperBound: 17, storedValue: 16, summary: "Fit"),
         ProfileBodyFatRange(id: "18_22", title: "18-22%", lowerBound: 18, upperBound: 22, storedValue: 20, summary: "Average"),
         ProfileBodyFatRange(id: "23_27", title: "23-27%", lowerBound: 23, upperBound: 27, storedValue: 25, summary: "Soft"),
         ProfileBodyFatRange(id: "28_32", title: "28-32%", lowerBound: 28, upperBound: 32, storedValue: 30, summary: "Fuller"),
-        ProfileBodyFatRange(id: "33_plus", title: "33%+", lowerBound: 33, upperBound: nil, storedValue: 36, summary: "High")
+        ProfileBodyFatRange(id: "33_37", title: "33-37%", lowerBound: 33, upperBound: 37, storedValue: 35, summary: "High"),
+        ProfileBodyFatRange(id: "38_42", title: "38-42%", lowerBound: 38, upperBound: 42, storedValue: 40, summary: "Very high"),
+        ProfileBodyFatRange(id: "43_47", title: "43-47%", lowerBound: 43, upperBound: 47, storedValue: 45, summary: "Very high"),
+        ProfileBodyFatRange(id: "48_52", title: "48-52%", lowerBound: 48, upperBound: 52, storedValue: 50, summary: "Severe"),
+        ProfileBodyFatRange(id: "53_60", title: "53-60%", lowerBound: 53, upperBound: 60, storedValue: 56, summary: "Severe")
     ]
 
-    static func matching(_ value: Double) -> ProfileBodyFatRange {
+    private static let femaleRanges: [ProfileBodyFatRange] = [
+        ProfileBodyFatRange(id: "16_19", title: "16-19%", lowerBound: 16, upperBound: 19, storedValue: 18, summary: "Very lean"),
+        ProfileBodyFatRange(id: "20_23", title: "20-23%", lowerBound: 20, upperBound: 23, storedValue: 22, summary: "Lean"),
+        ProfileBodyFatRange(id: "24_27", title: "24-27%", lowerBound: 24, upperBound: 27, storedValue: 26, summary: "Fit"),
+        ProfileBodyFatRange(id: "28_32", title: "28-32%", lowerBound: 28, upperBound: 32, storedValue: 30, summary: "Average"),
+        ProfileBodyFatRange(id: "33_37", title: "33-37%", lowerBound: 33, upperBound: 37, storedValue: 35, summary: "Soft"),
+        ProfileBodyFatRange(id: "38_42", title: "38-42%", lowerBound: 38, upperBound: 42, storedValue: 40, summary: "Fuller"),
+        ProfileBodyFatRange(id: "43_47", title: "43-47%", lowerBound: 43, upperBound: 47, storedValue: 45, summary: "High"),
+        ProfileBodyFatRange(id: "48_52", title: "48-52%", lowerBound: 48, upperBound: 52, storedValue: 50, summary: "Very high"),
+        ProfileBodyFatRange(id: "53_57", title: "53-57%", lowerBound: 53, upperBound: 57, storedValue: 55, summary: "Severe"),
+        ProfileBodyFatRange(id: "58_60", title: "58-60%", lowerBound: 58, upperBound: 60, storedValue: 59, summary: "Severe")
+    ]
+
+    static func options(for sex: String) -> [ProfileBodyFatRange] {
+        sex.localizedCaseInsensitiveContains("female") ? femaleRanges : maleRanges
+    }
+
+    static func matching(_ value: Double, sex: String) -> ProfileBodyFatRange {
+        let ranges = options(for: sex)
         let roundedValue = value.rounded()
-        if let exactRange = all.first(where: { range in
+        if let exactRange = ranges.first(where: { range in
             guard roundedValue >= range.lowerBound else {
                 return false
             }
@@ -1364,7 +1390,7 @@ private struct ProfileBodyFatRange: Identifiable {
         }) {
             return exactRange
         }
-        return roundedValue < (all.first?.lowerBound ?? 0) ? all[0] : all[all.count - 1]
+        return roundedValue < (ranges.first?.lowerBound ?? 0) ? ranges[0] : ranges[ranges.count - 1]
     }
 
     func assetName(for sex: String) -> String {
