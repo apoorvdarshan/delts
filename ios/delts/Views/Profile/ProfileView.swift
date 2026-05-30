@@ -2200,12 +2200,15 @@ private struct ProfileEquipmentImagePickerSheet: View {
     @Binding var selection: Set<String>
     @Environment(\.dismiss) private var dismiss
 
-    private let columns = [GridItem(.flexible())]
+    private let columns = [
+        GridItem(.flexible(), spacing: 18),
+        GridItem(.flexible(), spacing: 18)
+    ]
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 14) {
+                LazyVGrid(columns: columns, spacing: 18) {
                     ForEach(options) { option in
                         Button {
                             toggle(option.value)
@@ -2219,7 +2222,7 @@ private struct ProfileEquipmentImagePickerSheet: View {
                         .deltsPressable()
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 18)
                 .padding(.top, 16)
                 .padding(.bottom, 28)
             }
@@ -2260,7 +2263,7 @@ private struct ProfileEquipmentImageTile: View {
             ZStack(alignment: .topTrailing) {
                 AnimatedExerciseVisual(
                     imagePaths: option.imagePaths,
-                    height: 116,
+                    height: 96,
                     allowsDerivedImageLookup: false,
                     fallbackSystemImage: "dumbbell.fill",
                     fallbackTitle: option.title
@@ -2276,27 +2279,30 @@ private struct ProfileEquipmentImageTile: View {
             }
 
             Text(option.title)
-                .font(.headline.weight(.heavy))
+                .font(.subheadline.weight(.heavy))
                 .foregroundStyle(Color.deltsCharcoal)
                 .lineLimit(2)
-                .minimumScaleFactor(0.78)
+                .minimumScaleFactor(0.70)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .clipped()
 
             Text("\(option.count) exercises")
-                .font(.caption.weight(.bold))
+                .font(.caption2.weight(.bold))
                 .foregroundStyle(Color.deltsMutedText)
                 .lineLimit(1)
-                .minimumScaleFactor(0.80)
+                .minimumScaleFactor(0.70)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .clipped()
         }
-        .padding(8)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(7)
+        .frame(maxWidth: .infinity, minHeight: 172, alignment: .topLeading)
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .background(
-            RoundedRectangle(cornerRadius: 21, style: .continuous)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(isSelected ? Color.deltsAccent.opacity(0.16) : Color.deltsPanel.opacity(0.24))
         )
         .overlay {
-            RoundedRectangle(cornerRadius: 21, style: .continuous)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(isSelected ? Color.deltsAccent.opacity(0.72) : Color.deltsHairline.opacity(0.32), lineWidth: 1)
         }
         .accessibilityElement(children: .ignore)
