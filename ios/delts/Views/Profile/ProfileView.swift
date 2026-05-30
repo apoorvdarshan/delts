@@ -1005,6 +1005,7 @@ private struct ProfileDoneAccessoryTextField: UIViewRepresentable {
 
 private struct ProfileSexImagePicker: View {
     @Binding var selection: String
+    @State private var isPickerPresented = false
 
     private let options: [ProfileSexImageOption] = [
         ProfileSexImageOption(title: "Male", assetName: "bodyfat_male_10_13"),
@@ -1012,22 +1013,65 @@ private struct ProfileSexImagePicker: View {
     ]
 
     var body: some View {
-        ProfileControlBlock(title: "Sex", systemImage: "person.2") {
-            HStack(spacing: 10) {
-                ForEach(options) { option in
-                    Button {
-                        selection = option.title
-                    } label: {
-                        ProfileSexImageTile(
-                            option: option,
-                            isSelected: selection == option.title
-                        )
+        ProfileFieldRow(title: "Sex", systemImage: "person.2") {
+            Button {
+                isPickerPresented = true
+            } label: {
+                ProfileMenuValueLabel(text: selection)
+            }
+            .deltsPressable()
+            .sheet(isPresented: $isPickerPresented) {
+                ProfileSexImagePickerSheet(
+                    selection: $selection,
+                    options: options
+                )
+            }
+        }
+    }
+}
+
+private struct ProfileSexImagePickerSheet: View {
+    @Binding var selection: String
+    let options: [ProfileSexImageOption]
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                HStack(spacing: 10) {
+                    ForEach(options) { option in
+                        Button {
+                            selection = option.title
+                            dismiss()
+                        } label: {
+                            ProfileSexImageTile(
+                                option: option,
+                                isSelected: selection == option.title
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .deltsPressable()
                     }
-                    .buttonStyle(.plain)
-                    .deltsPressable()
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 28)
+            }
+            .background(DeltsBackground())
+            .navigationTitle("Sex")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
                 }
             }
         }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
 }
 
