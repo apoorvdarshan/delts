@@ -1959,7 +1959,6 @@ private struct ProfileMultiSelectMenuRow<Option: Hashable>: View {
     let label: (Option) -> String
 
     private var summary: String {
-        let selectedTitles = options.filter { selection.contains($0) }.map(label)
         if selectedTitles.isEmpty {
             return "None"
         }
@@ -1967,6 +1966,10 @@ private struct ProfileMultiSelectMenuRow<Option: Hashable>: View {
             return selectedTitles.joined(separator: ", ")
         }
         return "\(selectedTitles.count) selected"
+    }
+
+    private var selectedTitles: [String] {
+        options.filter { selection.contains($0) }.map(label)
     }
 
     var body: some View {
@@ -2007,7 +2010,6 @@ private struct ProfileEquipmentImagePickerRow: View {
     @State private var isPickerPresented = false
 
     private var summary: String {
-        let selectedTitles = options.filter { selection.contains($0) }.map(label)
         if selectedTitles.isEmpty {
             return "None"
         }
@@ -2015,6 +2017,10 @@ private struct ProfileEquipmentImagePickerRow: View {
             return selectedTitles.joined(separator: ", ")
         }
         return "\(selectedTitles.count) selected"
+    }
+
+    private var selectedTitles: [String] {
+        options.filter { selection.contains($0) }.map(label)
     }
 
     private var imageOptions: [ProfileEquipmentImageOption] {
@@ -2033,19 +2039,34 @@ private struct ProfileEquipmentImagePickerRow: View {
     }
 
     var body: some View {
-        ProfileFieldRow(title: title, systemImage: systemImage) {
-            Button {
-                isPickerPresented = true
-            } label: {
-                ProfileMenuValueLabel(text: summary)
+        VStack(alignment: .leading, spacing: 0) {
+            ProfileFieldRow(title: title, systemImage: systemImage) {
+                Button {
+                    isPickerPresented = true
+                } label: {
+                    ProfileMenuValueLabel(text: summary)
+                }
+                .deltsPressable()
+                .sheet(isPresented: $isPickerPresented) {
+                    ProfileEquipmentImagePickerSheet(
+                        title: title,
+                        options: imageOptions,
+                        selection: $selection
+                    )
+                }
             }
-            .deltsPressable()
-            .sheet(isPresented: $isPickerPresented) {
-                ProfileEquipmentImagePickerSheet(
-                    title: title,
-                    options: imageOptions,
-                    selection: $selection
-                )
+
+            if !selectedTitles.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(selectedTitles, id: \.self) { title in
+                            ProfileTargetMuscleChip(title: title)
+                        }
+                    }
+                    .padding(.leading, 48)
+                    .padding(.trailing, 6)
+                    .padding(.bottom, 10)
+                }
             }
         }
     }
@@ -2066,14 +2087,14 @@ private struct ProfileEquipmentImagePickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
+        GridItem(.flexible(), spacing: 16),
+        GridItem(.flexible(), spacing: 16)
     ]
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 12) {
+                LazyVGrid(columns: columns, spacing: 16) {
                     ForEach(options) { option in
                         Button {
                             toggle(option.value)
@@ -2148,11 +2169,14 @@ private struct ProfileEquipmentImageTile: View {
                 .foregroundStyle(Color.deltsCharcoal)
                 .lineLimit(2)
                 .minimumScaleFactor(0.78)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             Text("\(option.count) exercises")
                 .font(.caption.weight(.bold))
                 .foregroundStyle(Color.deltsMutedText)
                 .lineLimit(1)
+                .minimumScaleFactor(0.80)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(8)
         .frame(maxWidth: .infinity, alignment: .leading)
