@@ -8,7 +8,7 @@ struct HomeView: View {
     @State private var exerciseSearch = ""
     @State private var isWorkoutPickerPresented = false
     @State private var workoutPickerContext = WorkoutPickerContext.all
-    @State private var workoutPickerSource = WorkoutPickerSource.dataset
+    @AppStorage("delts.workoutPickerSource") private var workoutPickerSourceRaw = WorkoutPickerSource.dataset.rawValue
     @AppStorage("delts.savedExerciseIDs") private var savedExerciseIDsRaw = ""
 
     private let service = ExerciseLibraryService.shared
@@ -43,6 +43,17 @@ struct HomeView: View {
 
     private var savedExerciseIDs: Set<String> {
         Set(savedExerciseIDsRaw.split(separator: "|").map(String.init))
+    }
+
+    private var workoutPickerSource: WorkoutPickerSource {
+        WorkoutPickerSource(rawValue: workoutPickerSourceRaw) ?? .dataset
+    }
+
+    private var workoutPickerSourceBinding: Binding<WorkoutPickerSource> {
+        Binding(
+            get: { workoutPickerSource },
+            set: { workoutPickerSourceRaw = $0.rawValue }
+        )
     }
 
     private var matchingExercises: [ExerciseLibraryItem] {
@@ -140,6 +151,10 @@ struct HomeView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Color.deltsBackground)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                dismissKeyboard()
+            }
             .animation(.snappy, value: selectedDate)
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
@@ -166,7 +181,7 @@ struct HomeView: View {
             .sheet(isPresented: $isWorkoutPickerPresented) {
                 WorkoutPickerSheet(
                     searchText: $exerciseSearch,
-                    source: $workoutPickerSource,
+                    source: workoutPickerSourceBinding,
                     pickerTitle: workoutPickerContext.title,
                     exercises: matchingExercises,
                     selectedExerciseIDs: selectedExerciseIDs,
@@ -202,7 +217,6 @@ struct HomeView: View {
 
     private func openWorkoutPicker(_ context: WorkoutPickerContext) {
         workoutPickerContext = context
-        workoutPickerSource = .dataset
         exerciseSearch = ""
         isWorkoutPickerPresented = true
     }
@@ -246,5 +260,9 @@ struct HomeView: View {
             dayPlans[selectedDateKey] = plan
         }
         WorkoutDayPlanStore.save(dayPlans)
+    }
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
