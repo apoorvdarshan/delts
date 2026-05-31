@@ -16,7 +16,7 @@ struct ProgressTabView: View {
     @State private var snapshots: [ProgressMetricSnapshot] = ProgressMetricStore.load()
     @State private var isLoggingWeight = false
     @State private var isLoggingBodyFat = false
-    @State private var editingSnapshot: ProgressMetricSnapshot?
+    @State private var isShowingBodyLogs = false
     @StateObject private var healthKit = HealthKitProgressService()
 
     private var filteredSnapshots: [ProgressMetricSnapshot] {
@@ -91,13 +91,15 @@ struct ProgressTabView: View {
                     logBodyFat(value)
                 }
             }
-            .sheet(item: $editingSnapshot) { snapshot in
-                MetricSnapshotEditSheet(
-                    snapshot: snapshot,
-                    usesImperialUnits: usesImperialUnits
-                ) { updated in
-                    updateSnapshot(updated)
-                }
+            .sheet(isPresented: $isShowingBodyLogs) {
+                BodyLogSheet(
+                    snapshots: filteredSnapshots.sorted { $0.date > $1.date },
+                    usesImperialUnits: usesImperialUnits,
+                    weightText: formattedWeight,
+                    bodyFatText: bodyFatText(for:),
+                    update: updateSnapshot,
+                    delete: deleteSnapshot
+                )
             }
         }
     }
@@ -118,7 +120,7 @@ struct ProgressTabView: View {
         case .body:
             metricActions
             metricGraphs
-            metricHistory
+            bodyLogButton
         case .history:
             workoutHistory
         }
@@ -201,31 +203,43 @@ struct ProgressTabView: View {
         }
     }
 
-    @ViewBuilder
-    private var metricHistory: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            ProgressSectionHeader(
-                title: "Body Log",
-                subtitle: filteredSnapshots.isEmpty ? "No logs in \(selectedRange.title.lowercased())" : "\(filteredSnapshots.count) log\(filteredSnapshots.count == 1 ? "" : "s") in \(selectedRange.title.lowercased())",
-                systemImage: "clock.arrow.circlepath"
-            )
+    private var bodyLogButton: some View {
+        Button {
+            isShowingBodyLogs = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 19, weight: .bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .frame(width: 38, height: 38)
+                    .background(Color.deltsAccent.opacity(0.12), in: Circle())
 
-            if filteredSnapshots.isEmpty {
-                ProgressEmptyState(text: "No weight or body fat logs in this range.")
-            } else {
-                VStack(spacing: 12) {
-                    ForEach(filteredSnapshots.sorted { $0.date > $1.date }) { snapshot in
-                        MetricHistoryRow(
-                            snapshot: snapshot,
-                            weightText: snapshot.weightKg.map { formattedWeight($0) } ?? "--",
-                            bodyFatText: bodyFatText(for: snapshot),
-                            edit: { editingSnapshot = snapshot },
-                            delete: { deleteSnapshot(snapshot) }
-                        )
-                    }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Body Logs")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                    Text(filteredSnapshots.isEmpty ? "No logs in \(selectedRange.title.lowercased())" : "\(filteredSnapshots.count) log\(filteredSnapshots.count == 1 ? "" : "s") in \(selectedRange.title.lowercased())")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
                 }
+
+                Spacer(minLength: 10)
+
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.heavy))
+                    .foregroundStyle(Color.deltsMutedText)
+            }
+            .padding(14)
+            .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
             }
         }
+        .buttonStyle(.plain)
+        .deltsPressable()
     }
 
     @ViewBuilder
@@ -855,6 +869,64 @@ private struct MetricHistoryPill: View {
             .padding(.horizontal, 8)
             .frame(height: 26)
             .background(Color.deltsSecondaryAccent.opacity(0.10), in: Capsule())
+    }
+}
+
+private struct BodyLogSheet: View {
+    let snapshots: [ProgressMetricSnapshot]
+    let usesImperialUnits: Bool
+    let weightText: (Double) -> String
+    let bodyFatText: (ProgressMetricSnapshot) -> String
+    let update: (ProgressMetricSnapshot) -> Void
+    let delete: (ProgressMetricSnapshot) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var editingSnapshot: ProgressMetricSnapshot?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    if snapshots.isEmpty {
+                        ProgressEmptyState(text: "No weight or body fat logs in this range.")
+                    } else {
+                        ForEach(snapshots) { snapshot in
+                            MetricHistoryRow(
+                                snapshot: snapshot,
+                                weightText: snapshot.weightKg.map(weightText) ?? "--",
+                                bodyFatText: bodyFatText(snapshot),
+                                edit: { editingSnapshot = snapshot },
+                                delete: { delete(snapshot) }
+                            )
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 14)
+                .padding(.bottom, 28)
+            }
+            .deltsScreen()
+            .navigationTitle("Body Logs")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                }
+            }
+            .sheet(item: $editingSnapshot) { snapshot in
+                MetricSnapshotEditSheet(
+                    snapshot: snapshot,
+                    usesImperialUnits: usesImperialUnits
+                ) { updated in
+                    update(updated)
+                }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
     }
 }
 
