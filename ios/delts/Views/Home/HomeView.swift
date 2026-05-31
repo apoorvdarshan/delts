@@ -1,6 +1,9 @@
+import SwiftData
 import SwiftUI
 
 struct HomeView: View {
+    @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
+    @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @State private var routineDays: [WeeklyRoutineDay] = WeeklyRoutineStore.load()
     @State private var selectedDayIndex = WeeklyRoutineStore.todayIndex()
     @State private var exerciseSearch = ""
@@ -16,12 +19,33 @@ struct HomeView: View {
         WeeklyRoutineStore.todayIndex()
     }
 
+    private var selectedWorkoutSplit: WorkoutSplit {
+        profiles.first?.workoutSplit ?? .pushPullLegs
+    }
+
+    private var splitGroups: [WorkoutSplitMuscleGroup] {
+        WorkoutSplitMuscleGroup.groups(for: selectedWorkoutSplit)
+    }
+
+    private var selectedDaySplitGroups: [WorkoutSplitMuscleGroup] {
+        splitGroups(for: selectedDay, index: selectedDayIndex)
+    }
+
+    private var selectedDayTargetMuscles: [String] {
+        targetMuscles(for: selectedDay, index: selectedDayIndex)
+    }
+
+    private var selectedDayTitle: String {
+        planTitle(for: selectedDay, index: selectedDayIndex)
+    }
+
     private var matchingExercises: [ExerciseLibraryItem] {
         let search = exerciseSearch.trimmingCharacters(in: .whitespacesAndNewlines)
-        return service.filtered(
+        let targetMuscles = Set(selectedDayTargetMuscles)
+        let filtered = service.filtered(
             level: nil,
             rawEquipment: nil,
-            primaryMuscle: selectedDay.bodyPart == WeeklyRoutineStore.anyBodyPart ? nil : selectedDay.bodyPart,
+            primaryMuscle: nil,
             secondaryMuscle: nil,
             force: nil,
             mechanic: nil,
@@ -29,6 +53,10 @@ struct HomeView: View {
             sort: .name,
             searchText: search
         )
+        guard !targetMuscles.isEmpty else { return filtered }
+        return filtered.filter { item in
+            item.primaryMuscles.contains { targetMuscles.contains($0) }
+        }
     }
 
     var body: some View {
@@ -83,6 +111,8 @@ struct HomeView: View {
         VStack(spacing: 10) {
             ForEach(routineDays.indices, id: \.self) { index in
                 let day = routineDays[index]
+                let planTitle = planTitle(for: day, index: index)
+                let targetMuscles = targetMuscles(for: day, index: index)
                 Button {
                     selectedDayIndex = index
                 } label: {
@@ -93,7 +123,7 @@ struct HomeView: View {
 
                         VStack(alignment: .leading, spacing: 3) {
                             HStack(spacing: 7) {
-                                Text(day.bodyPart)
+                                Text(planTitle)
                                     .font(.subheadline.weight(.bold))
                                     .lineLimit(1)
                                 if index == todayIndex {
@@ -103,12 +133,14 @@ struct HomeView: View {
                                         .foregroundStyle(index == selectedDayIndex ? Color.deltsAccent : Color.deltsAccent)
                                         .padding(.horizontal, 7)
                                         .frame(height: 20)
-                                        .background(Color.deltsAccent.opacity(0.12), in: Capsule())
+                                    .background(Color.deltsAccent.opacity(0.12), in: Capsule())
                                 }
                             }
-                            Text("\(day.exercises.count) workout\(day.exercises.count == 1 ? "" : "s")")
+                            Text("\(targetMuscles.prefix(4).joined(separator: ", "))\(targetMuscles.count > 4 ? " +" : "") - \(day.exercises.count) workout\(day.exercises.count == 1 ? "" : "s")")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(Color.deltsMutedText)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.74)
                         }
 
                         Spacer(minLength: 8)
@@ -138,28 +170,27 @@ struct HomeView: View {
 
     private var selectedDayEditor: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Body Part")
-                .font(.caption.weight(.heavy))
-                .textCase(.uppercase)
-                .foregroundStyle(Color.deltsMutedText)
+            VStack(alignment: .leading, spacing: 9) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(selectedWorkoutSplit.title)
+                        .font(.caption.weight(.heavy))
+                        .textCase(.uppercase)
+                        .foregroundStyle(Color.deltsMutedText)
 
-            StartHorizontalRail {
-                StartOptionButton(
-                    title: WeeklyRoutineStore.anyBodyPart,
-                    systemImage: "scope",
-                    isSelected: selectedDay.bodyPart == WeeklyRoutineStore.anyBodyPart
-                ) {
-                    updateSelectedDay { $0.bodyPart = WeeklyRoutineStore.anyBodyPart }
+                    Spacer()
+
+                    Text(selectedDayTitle)
+                        .font(.caption.monospacedDigit().weight(.heavy))
+                        .foregroundStyle(Color.deltsAccent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
                 }
 
-                ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
-                    StartOptionButton(
-                        title: muscle,
-                        systemImage: "scope",
-                        isSelected: selectedDay.bodyPart == muscle
-                    ) {
-                        updateSelectedDay { $0.bodyPart = muscle }
-                    }
+                if splitGroups.isEmpty {
+                    primaryMuscleSelector
+                } else {
+                    splitGroupSelector
+                    selectedMuscleSummary
                 }
             }
 
@@ -223,6 +254,58 @@ struct HomeView: View {
         }
     }
 
+    private var splitGroupSelector: some View {
+        StartHorizontalRail {
+            ForEach(splitGroups) { group in
+                StartOptionButton(
+                    title: group.title,
+                    systemImage: "square.grid.2x2",
+                    isSelected: selectedDaySplitGroups.contains(group)
+                ) {
+                    toggleSplitGroup(group)
+                }
+            }
+        }
+    }
+
+    private var primaryMuscleSelector: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Text("Primary Targets")
+                .font(.caption.weight(.heavy))
+                .textCase(.uppercase)
+                .foregroundStyle(Color.deltsMutedText)
+
+            StartHorizontalRail {
+                ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
+                    StartOptionButton(
+                        title: muscle,
+                        systemImage: "scope",
+                        isSelected: selectedDayTargetMuscles.contains(muscle)
+                    ) {
+                        toggleTargetMuscle(muscle)
+                    }
+                }
+            }
+        }
+    }
+
+    private var selectedMuscleSummary: some View {
+        StartHorizontalRail {
+            ForEach(selectedDayTargetMuscles, id: \.self) { muscle in
+                Text(muscle)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .padding(.horizontal, 10)
+                    .frame(height: 30)
+                    .background(Color.deltsAccent.opacity(0.12), in: Capsule())
+                    .overlay {
+                        Capsule()
+                            .stroke(Color.deltsAccent.opacity(0.24), lineWidth: 0.5)
+                    }
+            }
+        }
+    }
+
     private var startBar: some View {
         VStack(spacing: 8) {
             PrimaryButton(
@@ -231,9 +314,9 @@ struct HomeView: View {
             ) {
                 guard !selectedDay.exercises.isEmpty else { return }
                 activePlan = makePlan(
-                    title: "\(selectedDay.name) \(selectedDay.bodyPart)",
+                    title: "\(selectedDay.name) \(selectedDayTitle)",
                     summary: "\(selectedDay.name) routine",
-                    bodyPart: selectedDay.bodyPart,
+                    bodyPart: selectedDayTargetMuscles.first ?? selectedDay.bodyPart,
                     exercises: selectedDay.exercises
                 )
             }
@@ -248,6 +331,106 @@ struct HomeView: View {
         .padding(.top, 10)
         .padding(.bottom, 6)
         .deltsBottomActionBackground()
+    }
+
+    private var profilePrimaryMuscles: [String] {
+        let allowed = Set(service.availablePrimaryMuscles)
+        return datasetPrimaryMusclesRaw
+            .split(separator: "|")
+            .map(String.init)
+            .filter { allowed.contains($0) }
+    }
+
+    private func splitGroups(for day: WeeklyRoutineDay, index: Int) -> [WorkoutSplitMuscleGroup] {
+        guard !splitGroups.isEmpty else { return [] }
+        let validTitles = Set(splitGroups.map(\.title))
+        let storedTitles = day.selectedSplitGroups.filter { validTitles.contains($0) }
+        let titles = storedTitles.isEmpty ? defaultSplitGroupTitles(for: index) : storedTitles
+        return titles.compactMap { title in
+            splitGroups.first { $0.title == title }
+        }
+    }
+
+    private func targetMuscles(for day: WeeklyRoutineDay, index: Int) -> [String] {
+        let allowed = Set(service.availablePrimaryMuscles)
+        let groups = splitGroups(for: day, index: index)
+        if groups.isEmpty {
+            let storedMuscles = day.selectedMuscles.filter { allowed.contains($0) }
+            if !storedMuscles.isEmpty {
+                return orderedMuscles(Set(storedMuscles))
+            }
+            if !profilePrimaryMuscles.isEmpty {
+                return orderedMuscles(Set(profilePrimaryMuscles))
+            }
+            if day.bodyPart != WeeklyRoutineStore.anyBodyPart, allowed.contains(day.bodyPart) {
+                return [day.bodyPart]
+            }
+            return []
+        }
+
+        return orderedMuscles(Set(groups.flatMap(\.muscles)))
+    }
+
+    private func planTitle(for day: WeeklyRoutineDay, index: Int) -> String {
+        let groups = splitGroups(for: day, index: index)
+        if !groups.isEmpty {
+            return groups.map(\.title).joined(separator: " + ")
+        }
+
+        let muscles = targetMuscles(for: day, index: index)
+        if muscles.isEmpty {
+            return "Primary Targets"
+        }
+        return muscles.prefix(3).joined(separator: " + ") + (muscles.count > 3 ? " +" : "")
+    }
+
+    private func defaultSplitGroupTitles(for index: Int) -> [String] {
+        guard !splitGroups.isEmpty else { return [] }
+        if index == 6, let coreGroup = splitGroups.first(where: { isCoreOrAccessory($0.title) }) {
+            return [coreGroup.title]
+        }
+
+        let trainingGroups = splitGroups.filter { !isCoreOrAccessory($0.title) }
+        let cycle = trainingGroups.isEmpty ? splitGroups : trainingGroups
+        guard !cycle.isEmpty else { return [] }
+        return [cycle[index % cycle.count].title]
+    }
+
+    private func isCoreOrAccessory(_ title: String) -> Bool {
+        let lowercasedTitle = title.lowercased()
+        return lowercasedTitle.contains("core") || lowercasedTitle.contains("accessory")
+    }
+
+    private func orderedMuscles(_ muscles: Set<String>) -> [String] {
+        service.availablePrimaryMuscles.filter { muscles.contains($0) }
+    }
+
+    private func toggleSplitGroup(_ group: WorkoutSplitMuscleGroup) {
+        updateSelectedDay { day in
+            var titles = Set(splitGroups(for: day, index: selectedDayIndex).map(\.title))
+            if titles.contains(group.title) {
+                titles.remove(group.title)
+            } else {
+                titles.insert(group.title)
+            }
+            day.selectedSplitGroups = splitGroups
+                .map(\.title)
+                .filter { titles.contains($0) }
+            day.bodyPart = planTitle(for: day, index: selectedDayIndex)
+        }
+    }
+
+    private func toggleTargetMuscle(_ muscle: String) {
+        updateSelectedDay { day in
+            var muscles = Set(targetMuscles(for: day, index: selectedDayIndex))
+            if muscles.contains(muscle) {
+                muscles.remove(muscle)
+            } else {
+                muscles.insert(muscle)
+            }
+            day.selectedMuscles = orderedMuscles(muscles)
+            day.bodyPart = day.selectedMuscles.first ?? WeeklyRoutineStore.anyBodyPart
+        }
     }
 
     private func addExercise(_ item: ExerciseLibraryItem) {
@@ -328,7 +511,38 @@ private struct WeeklyRoutineDay: Codable, Identifiable, Hashable {
     var name: String
     var shortName: String
     var bodyPart: String
+    var selectedSplitGroups: [String] = []
+    var selectedMuscles: [String] = []
     var exercises: [PlannedRoutineExercise] = []
+
+    init(
+        id: UUID = UUID(),
+        name: String,
+        shortName: String,
+        bodyPart: String,
+        selectedSplitGroups: [String] = [],
+        selectedMuscles: [String] = [],
+        exercises: [PlannedRoutineExercise] = []
+    ) {
+        self.id = id
+        self.name = name
+        self.shortName = shortName
+        self.bodyPart = bodyPart
+        self.selectedSplitGroups = selectedSplitGroups
+        self.selectedMuscles = selectedMuscles
+        self.exercises = exercises
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        name = try container.decode(String.self, forKey: .name)
+        shortName = try container.decode(String.self, forKey: .shortName)
+        bodyPart = try container.decode(String.self, forKey: .bodyPart)
+        selectedSplitGroups = try container.decodeIfPresent([String].self, forKey: .selectedSplitGroups) ?? []
+        selectedMuscles = try container.decodeIfPresent([String].self, forKey: .selectedMuscles) ?? []
+        exercises = try container.decodeIfPresent([PlannedRoutineExercise].self, forKey: .exercises) ?? []
+    }
 }
 
 private struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
