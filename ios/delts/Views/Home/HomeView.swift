@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
@@ -11,6 +12,7 @@ struct HomeView: View {
     @AppStorage("delts.workoutPickerSource") private var workoutPickerSourceRaw = WorkoutPickerSource.dataset.rawValue
     @AppStorage("delts.savedExerciseIDs") private var savedExerciseIDsRaw = ""
     @FocusState private var focusedRepsExerciseID: UUID?
+    @State private var keyboardHeight: CGFloat = 0
 
     private let service = ExerciseLibraryService.shared
 
@@ -198,6 +200,13 @@ struct HomeView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
             }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) { notification in
+                updateKeyboardHeight(from: notification)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                keyboardHeight = 0
+            }
+            .ignoresSafeArea(.keyboard, edges: .bottom)
             .overlay(alignment: .bottomTrailing) {
                 if focusedRepsExerciseID != nil {
                     Button("Done") {
@@ -207,7 +216,7 @@ struct HomeView: View {
                     .font(.headline.weight(.bold))
                     .foregroundStyle(Color.deltsAccent)
                     .padding(.trailing, 20)
-                    .padding(.bottom, 10)
+                    .padding(.bottom, max(keyboardHeight, 0) + 10)
                     .transition(.opacity)
                 }
             }
@@ -280,5 +289,11 @@ struct HomeView: View {
 
     private func dismissKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+
+    private func updateKeyboardHeight(from notification: Notification) {
+        guard let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+        let screenHeight = UIScreen.main.bounds.height
+        keyboardHeight = max(0, screenHeight - frame.minY)
     }
 }
