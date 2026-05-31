@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 struct WorkoutWeekStrip: View {
     @Binding var selectedDate: Date
@@ -225,6 +224,7 @@ struct EmptyRoutineRow: View {
 
 struct PlannedExerciseRow: View {
     let exercise: PlannedRoutineExercise
+    let focusedRepsExerciseID: FocusState<UUID?>.Binding
     let updateSets: (Int) -> Void
     let updateReps: (String) -> Void
     let remove: () -> Void
@@ -262,12 +262,12 @@ struct PlannedExerciseRow: View {
                         .foregroundStyle(Color.deltsCharcoal)
                 }
 
-                HomeDoneAccessoryTextField(
-                    title: "Reps",
-                    text: Binding(get: { exercise.reps }, set: updateReps),
-                    keyboardType: .numberPad,
-                    textAlignment: .center
-                )
+                TextField("Reps", text: Binding(get: { exercise.reps }, set: updateReps))
+                    .keyboardType(.numberPad)
+                    .textFieldStyle(.plain)
+                    .font(.subheadline.monospacedDigit().weight(.bold))
+                    .multilineTextAlignment(.center)
+                    .focused(focusedRepsExerciseID, equals: exercise.id)
                     .frame(width: 74, height: 38)
                     .background(Color.deltsPanel.opacity(0.34), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .overlay {
@@ -285,85 +285,6 @@ struct PlannedExerciseRow: View {
             }
         }
         .padding(.vertical, 6)
-    }
-}
-
-private struct HomeDoneAccessoryTextField: UIViewRepresentable {
-    let title: String
-    @Binding var text: String
-    let keyboardType: UIKeyboardType
-    let textAlignment: NSTextAlignment
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-
-    func makeUIView(context: Context) -> UITextField {
-        let textField = UITextField(frame: .zero)
-        textField.borderStyle = .none
-        textField.clearButtonMode = .never
-        textField.delegate = context.coordinator
-        textField.addTarget(context.coordinator, action: #selector(Coordinator.textDidChange(_:)), for: .editingChanged)
-        textField.inputAccessoryView = context.coordinator.makeAccessoryToolbar()
-        applyConfiguration(to: textField)
-        return textField
-    }
-
-    func updateUIView(_ textField: UITextField, context: Context) {
-        context.coordinator.parent = self
-        if textField.text != text {
-            textField.text = text
-        }
-        applyConfiguration(to: textField)
-    }
-
-    private func applyConfiguration(to textField: UITextField) {
-        textField.placeholder = title
-        textField.textAlignment = textAlignment
-        textField.textColor = UIColor(Color.deltsCharcoal)
-        textField.tintColor = UIColor(Color.deltsAccent)
-        textField.font = .monospacedDigitSystemFont(ofSize: 15, weight: .bold)
-        textField.keyboardType = keyboardType
-        textField.returnKeyType = .done
-    }
-
-    final class Coordinator: NSObject, UITextFieldDelegate {
-        var parent: HomeDoneAccessoryTextField
-
-        init(_ parent: HomeDoneAccessoryTextField) {
-            self.parent = parent
-        }
-
-        func makeAccessoryToolbar() -> UIToolbar {
-            let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
-            let doneItem = UIBarButtonItem(title: "Done", style: .plain, target: self, action: #selector(doneTapped))
-            doneItem.setTitleTextAttributes(
-                [
-                    .font: UIFont.boldSystemFont(ofSize: 17),
-                    .foregroundColor: UIColor(Color.deltsAccent)
-                ],
-                for: .normal
-            )
-            toolbar.items = [
-                UIBarButtonItem(systemItem: .flexibleSpace),
-                doneItem
-            ]
-            toolbar.sizeToFit()
-            return toolbar
-        }
-
-        @objc func textDidChange(_ sender: UITextField) {
-            parent.text = sender.text ?? ""
-        }
-
-        @objc private func doneTapped() {
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-        }
-
-        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-            textField.resignFirstResponder()
-            return true
-        }
     }
 }
 

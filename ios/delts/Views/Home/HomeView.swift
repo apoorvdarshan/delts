@@ -10,6 +10,7 @@ struct HomeView: View {
     @State private var workoutPickerContext = WorkoutPickerContext.all
     @AppStorage("delts.workoutPickerSource") private var workoutPickerSourceRaw = WorkoutPickerSource.dataset.rawValue
     @AppStorage("delts.savedExerciseIDs") private var savedExerciseIDsRaw = ""
+    @FocusState private var focusedRepsExerciseID: UUID?
 
     private let service = ExerciseLibraryService.shared
 
@@ -112,6 +113,7 @@ struct HomeView: View {
                         ForEach(selectedExercises) { exercise in
                             PlannedExerciseRow(
                                 exercise: exercise,
+                                focusedRepsExerciseID: $focusedRepsExerciseID,
                                 updateSets: { sets in
                                     updateExercise(exercise.id) { $0.sets = sets }
                                 },
@@ -153,6 +155,7 @@ struct HomeView: View {
             .background(Color.deltsBackground)
             .contentShape(Rectangle())
             .onTapGesture {
+                focusedRepsExerciseID = nil
                 dismissKeyboard()
             }
             .animation(.snappy, value: selectedDate)
@@ -194,6 +197,19 @@ struct HomeView: View {
                 )
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if focusedRepsExerciseID != nil {
+                    Button("Done") {
+                        focusedRepsExerciseID = nil
+                        dismissKeyboard()
+                    }
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 10)
+                    .transition(.opacity)
+                }
             }
         }
     }
