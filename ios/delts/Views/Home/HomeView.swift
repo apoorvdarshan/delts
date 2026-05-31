@@ -8,7 +8,6 @@ struct HomeView: View {
     @State private var exerciseSearch = ""
     @State private var isWorkoutPickerPresented = false
     @State private var workoutPickerContext = WorkoutPickerContext.all
-    @State private var activePlan: WorkoutPlan?
 
     private let service = ExerciseLibraryService.shared
 
@@ -144,9 +143,6 @@ struct HomeView: View {
                     .accessibilityLabel("Add workout")
                 }
             }
-            .safeAreaInset(edge: .bottom) {
-                startBar
-            }
             .sheet(isPresented: $isWorkoutPickerPresented) {
                 WorkoutPickerSheet(
                     searchText: $exerciseSearch,
@@ -162,40 +158,7 @@ struct HomeView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
             }
-            .sheet(item: $activePlan) { plan in
-                NavigationStack {
-                    ActiveWorkoutView(plan: plan)
-                }
-            }
         }
-    }
-
-    private var startBar: some View {
-        VStack(spacing: 8) {
-            PrimaryButton(
-                title: "Start \(selectedDateShortTitle)",
-                systemImage: "play.fill"
-            ) {
-                guard !selectedExercises.isEmpty else { return }
-
-                activePlan = HomeWorkoutPlanFactory.makePlan(
-                    title: "\(selectedDateShortTitle) Workout",
-                    summary: "\(selectedDateTitle) planned workout",
-                    bodyPart: selectedExercises.first?.primaryMuscles.first ?? "Full Body",
-                    exercises: selectedExercises
-                )
-            }
-            .disabled(selectedExercises.isEmpty)
-
-            Text("\(selectedExercises.count) workout\(selectedExercises.count == 1 ? "" : "s") - \(selectedSetCount) planned set\(selectedSetCount == 1 ? "" : "s")")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.deltsMutedText)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 6)
-        .deltsBottomActionBackground()
     }
 
     private var selectedDateTitle: String {
@@ -209,12 +172,6 @@ struct HomeView: View {
             return "Yesterday"
         }
         return selectedDate.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
-    }
-
-    private var selectedDateShortTitle: String {
-        Calendar.current.isDateInToday(selectedDate)
-            ? "Today"
-            : selectedDate.formatted(.dateTime.weekday(.abbreviated))
     }
 
     private func workoutCount(for date: Date) -> Int {
