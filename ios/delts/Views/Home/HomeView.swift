@@ -8,6 +8,8 @@ struct HomeView: View {
     @State private var exerciseSearch = ""
     @State private var isWorkoutPickerPresented = false
     @State private var workoutPickerContext = WorkoutPickerContext.all
+    @State private var workoutPickerSource = WorkoutPickerSource.dataset
+    @AppStorage("delts.savedExerciseIDs") private var savedExerciseIDsRaw = ""
 
     private let service = ExerciseLibraryService.shared
 
@@ -39,6 +41,10 @@ struct HomeView: View {
         }
     }
 
+    private var savedExerciseIDs: Set<String> {
+        Set(savedExerciseIDsRaw.split(separator: "|").map(String.init))
+    }
+
     private var matchingExercises: [ExerciseLibraryItem] {
         let filtered = service.filtered(
             level: nil,
@@ -51,9 +57,16 @@ struct HomeView: View {
             sort: .name,
             searchText: exerciseSearch
         )
-        guard !workoutPickerContext.muscles.isEmpty else { return filtered }
-        return filtered.filter { item in
-            item.primaryMuscles.contains { workoutPickerContext.muscles.contains($0) }
+        let splitFiltered: [ExerciseLibraryItem]
+        if workoutPickerContext.muscles.isEmpty {
+            splitFiltered = filtered
+        } else {
+            splitFiltered = filtered.filter { item in
+                item.primaryMuscles.contains { workoutPickerContext.muscles.contains($0) }
+            }
+        }
+        return splitFiltered.filter { item in
+            workoutPickerSource == .dataset || savedExerciseIDs.contains(item.id)
         }
     }
 
@@ -105,6 +118,13 @@ struct HomeView: View {
                                 } label: {
                                     Label("Delete", systemImage: "trash.fill")
                                 }
+
+                                Button {
+                                    toggleSavedExercise(exercise.itemID)
+                                } label: {
+                                    Label(savedExerciseIDs.contains(exercise.itemID) ? "Unsave" : "Save", systemImage: savedExerciseIDs.contains(exercise.itemID) ? "bookmark.slash.fill" : "bookmark.fill")
+                                }
+                                .tint(Color.deltsAccent)
                             }
                         }
                     }
@@ -146,11 +166,13 @@ struct HomeView: View {
             .sheet(isPresented: $isWorkoutPickerPresented) {
                 WorkoutPickerSheet(
                     searchText: $exerciseSearch,
-                    selectedDateTitle: selectedDateTitle,
+                    source: $workoutPickerSource,
                     pickerTitle: workoutPickerContext.title,
                     exercises: matchingExercises,
                     selectedExerciseIDs: selectedExerciseIDs,
+                    savedExerciseIDs: savedExerciseIDs,
                     onAdd: addExercise,
+                    onToggleSaved: toggleSavedExercise,
                     onDone: {
                         isWorkoutPickerPresented = false
                     }
@@ -180,6 +202,7 @@ struct HomeView: View {
 
     private func openWorkoutPicker(_ context: WorkoutPickerContext) {
         workoutPickerContext = context
+        workoutPickerSource = .dataset
         exerciseSearch = ""
         isWorkoutPickerPresented = true
     }
@@ -189,6 +212,16 @@ struct HomeView: View {
             guard !plan.exercises.contains(where: { $0.itemID == item.id }) else { return }
             plan.exercises.append(PlannedRoutineExercise(item: item))
         }
+    }
+
+    private func toggleSavedExercise(_ id: String) {
+        var ids = savedExerciseIDs
+        if ids.contains(id) {
+            ids.remove(id)
+        } else {
+            ids.insert(id)
+        }
+        savedExerciseIDsRaw = ids.sorted().joined(separator: "|")
     }
 
     private func removeExercise(_ id: UUID) {

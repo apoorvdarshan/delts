@@ -288,41 +288,32 @@ struct PlannedExerciseRow: View {
 
 struct WorkoutPickerSheet: View {
     @Binding var searchText: String
-    let selectedDateTitle: String
+    @Binding var source: WorkoutPickerSource
     let pickerTitle: String
     let exercises: [ExerciseLibraryItem]
     let selectedExerciseIDs: Set<String>
+    let savedExerciseIDs: Set<String>
     let onAdd: (ExerciseLibraryItem) -> Void
+    let onToggleSaved: (String) -> Void
     let onDone: () -> Void
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    HStack(spacing: 10) {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundStyle(Color.deltsMutedText)
-                        TextField("Search workouts", text: $searchText)
-                            .textFieldStyle(.plain)
+                    Picker("Source", selection: $source) {
+                        ForEach(WorkoutPickerSource.allCases) { source in
+                            Text(source.rawValue).tag(source)
+                        }
                     }
-                    .listRowBackground(Color.deltsPanel.opacity(0.24))
-                } header: {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(selectedDateTitle)
-                            .font(.caption.weight(.heavy))
-                            .textCase(.uppercase)
-                            .foregroundStyle(Color.deltsAccent)
-                        Text(pickerTitle)
-                            .font(.system(size: 30, weight: .heavy, design: .rounded))
-                            .foregroundStyle(Color.deltsCharcoal)
-                            .textCase(nil)
-                    }
-                    .padding(.bottom, 10)
+                    .pickerStyle(.segmented)
+                    .listRowInsets(EdgeInsets(top: 10, leading: 20, bottom: 8, trailing: 20))
+                    .listRowBackground(Color.clear)
                 }
 
                 Section {
                     if exercises.isEmpty {
-                        Text("No dataset workouts found.")
+                        Text(source == .saved ? "No saved workouts yet." : "No dataset workouts found.")
                             .foregroundStyle(Color.deltsMutedText)
                             .listRowBackground(Color.deltsPanel.opacity(0.22))
                     } else {
@@ -334,12 +325,21 @@ struct WorkoutPickerSheet: View {
                                 onAdd(item)
                             }
                             .listRowBackground(Color.deltsPanel.opacity(selectedExerciseIDs.contains(item.id) ? 0.28 : 0.18))
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button {
+                                    onToggleSaved(item.id)
+                                } label: {
+                                    Label(savedExerciseIDs.contains(item.id) ? "Unsave" : "Save", systemImage: savedExerciseIDs.contains(item.id) ? "bookmark.slash.fill" : "bookmark.fill")
+                                }
+                                .tint(Color.deltsAccent)
+                            }
                         }
                     }
                 }
             }
             .scrollContentBackground(.hidden)
             .background(Color.deltsBackground)
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search workouts")
             .navigationTitle("Add \(pickerTitle)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

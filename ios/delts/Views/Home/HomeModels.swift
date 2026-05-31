@@ -1,5 +1,12 @@
 import Foundation
 
+enum WorkoutPickerSource: String, CaseIterable, Identifiable {
+    case dataset = "Dataset"
+    case saved = "Saved"
+
+    var id: String { rawValue }
+}
+
 struct WorkoutPickerContext: Identifiable, Hashable {
     static let all = WorkoutPickerContext(title: "All Workouts", muscles: [])
 
