@@ -11,7 +11,7 @@ struct ProgressTabView: View {
     @AppStorage("profile_goal_weight_kg") private var goalWeightKG = 0.0
     @AppStorage("profile_current_body_fat_is_exact") private var currentBodyFatIsExact = false
     @AppStorage("profile_goal_body_fat_is_exact") private var goalBodyFatIsExact = false
-    @State private var selectedSection: ProgressSection = .graphs
+    @AppStorage("progress_selected_section") private var selectedSectionRaw = ProgressSection.body.rawValue
     @State private var selectedRange: ProgressRange = .month
     @State private var snapshots: [ProgressMetricSnapshot] = ProgressMetricStore.load()
     @State private var isLoggingWeight = false
@@ -103,7 +103,7 @@ struct ProgressTabView: View {
     }
 
     private var sectionPicker: some View {
-        Picker("Progress section", selection: $selectedSection) {
+        Picker("Progress section", selection: selectedSectionBinding) {
             ForEach(ProgressSection.allCases) { section in
                 Text(section.title).tag(section)
             }
@@ -115,14 +115,24 @@ struct ProgressTabView: View {
     @ViewBuilder
     private var selectedSectionContent: some View {
         switch selectedSection {
-        case .graphs:
+        case .body:
             metricActions
             metricGraphs
-        case .metrics:
-            metricActions
             metricHistory
-        case .workouts:
+        case .history:
             workoutHistory
+        }
+    }
+
+    private var selectedSection: ProgressSection {
+        ProgressSection(storedValue: selectedSectionRaw)
+    }
+
+    private var selectedSectionBinding: Binding<ProgressSection> {
+        Binding {
+            selectedSection
+        } set: { newValue in
+            selectedSectionRaw = newValue.rawValue
         }
     }
 
@@ -195,7 +205,7 @@ struct ProgressTabView: View {
     private var metricHistory: some View {
         VStack(alignment: .leading, spacing: 14) {
             ProgressSectionHeader(
-                title: "Metric History",
+                title: "Body Log",
                 subtitle: filteredSnapshots.isEmpty ? "No logs in \(selectedRange.title.lowercased())" : "\(filteredSnapshots.count) log\(filteredSnapshots.count == 1 ? "" : "s") in \(selectedRange.title.lowercased())",
                 systemImage: "clock.arrow.circlepath"
             )
@@ -406,20 +416,26 @@ struct ProgressTabView: View {
 }
 
 private enum ProgressSection: String, CaseIterable, Identifiable {
-    case graphs
-    case metrics
-    case workouts
+    case body
+    case history
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .graphs:
-            return "Graphs"
-        case .metrics:
-            return "Metrics"
-        case .workouts:
-            return "Workouts"
+        case .body:
+            return "Body"
+        case .history:
+            return "History"
+        }
+    }
+
+    init(storedValue: String) {
+        switch storedValue {
+        case Self.history.rawValue, "workouts":
+            self = .history
+        default:
+            self = .body
         }
     }
 }
