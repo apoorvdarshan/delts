@@ -6,6 +6,7 @@ struct HomeView: View {
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @State private var routineDays: [WeeklyRoutineDay] = WeeklyRoutineStore.load()
     @State private var selectedDayIndex = WeeklyRoutineStore.todayIndex()
+    @State private var expandedDayIndex: Int? = WeeklyRoutineStore.todayIndex()
     @State private var exerciseSearch = ""
     @State private var activePlan: WorkoutPlan?
 
@@ -114,7 +115,12 @@ struct HomeView: View {
                 let planTitle = planTitle(for: day, index: index)
                 let targetMuscles = targetMuscles(for: day, index: index)
                 Button {
-                    selectedDayIndex = index
+                    if selectedDayIndex == index, expandedDayIndex == index {
+                        expandedDayIndex = nil
+                    } else {
+                        selectedDayIndex = index
+                        expandedDayIndex = index
+                    }
                 } label: {
                     HStack(spacing: 12) {
                         Text(day.shortName)
@@ -145,7 +151,7 @@ struct HomeView: View {
 
                         Spacer(minLength: 8)
 
-                        Image(systemName: index == selectedDayIndex ? "checkmark.circle.fill" : "chevron.right")
+                        Image(systemName: index == selectedDayIndex ? (expandedDayIndex == index ? "chevron.up.circle.fill" : "checkmark.circle.fill") : "chevron.right")
                             .font(.headline.weight(.bold))
                             .foregroundStyle(index == selectedDayIndex ? Color.deltsAccent : Color.deltsMutedText)
                     }
@@ -160,7 +166,7 @@ struct HomeView: View {
                 }
                 .deltsPressable()
 
-                if index == selectedDayIndex {
+                if expandedDayIndex == index {
                     selectedDayEditor
                         .padding(.top, 2)
                 }
