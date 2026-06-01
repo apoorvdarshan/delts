@@ -16,14 +16,14 @@ struct WorkoutsView: View {
 private struct ExerciseLibraryBrowserView: View {
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
     @State private var searchText = ""
-    @State private var selectedSplitGroupTitle: String?
-    @State private var selectedLevel: String?
-    @State private var selectedRawEquipment: String?
-    @State private var selectedPrimaryMuscle: String?
-    @State private var selectedSecondaryMuscle: String?
-    @State private var selectedForce: String?
-    @State private var selectedMechanic: String?
-    @State private var selectedCategory: String?
+    @State private var selectedSplitGroupTitles: Set<String> = []
+    @State private var selectedLevels: Set<String> = []
+    @State private var selectedRawEquipment: Set<String> = []
+    @State private var selectedPrimaryMuscles: Set<String> = []
+    @State private var selectedSecondaryMuscles: Set<String> = []
+    @State private var selectedForces: Set<String> = []
+    @State private var selectedMechanics: Set<String> = []
+    @State private var selectedCategories: Set<String> = []
     @State private var selectedSort: ExerciseLibrarySort = .name
 
     private let service = ExerciseLibraryService.shared
@@ -51,40 +51,56 @@ private struct ExerciseLibraryBrowserView: View {
         }
     }
 
-    private var selectedSplitGroup: WorkoutSplitMuscleGroup? {
-        splitGroups.first { $0.title == selectedSplitGroupTitle }
+    private var selectedSplitGroups: [WorkoutSplitMuscleGroup] {
+        splitGroups.filter { selectedSplitGroupTitles.contains($0.title) }
     }
 
     private var items: [ExerciseLibraryItem] {
         let filtered = service.filtered(
-            level: selectedLevel,
+            levels: selectedLevels,
             rawEquipment: selectedRawEquipment,
-            primaryMuscle: selectedPrimaryMuscle,
-            secondaryMuscle: selectedSecondaryMuscle,
-            force: selectedForce,
-            mechanic: selectedMechanic,
-            category: selectedCategory,
+            primaryMuscles: selectedPrimaryMuscles,
+            secondaryMuscles: selectedSecondaryMuscles,
+            forces: selectedForces,
+            mechanics: selectedMechanics,
+            categories: selectedCategories,
             sort: selectedSort,
             searchText: searchText
         )
-        guard let selectedSplitGroup else { return filtered }
+        guard !selectedSplitGroups.isEmpty else { return filtered }
+        let selectedMuscles = Set(selectedSplitGroups.flatMap(\.muscles))
         return filtered.filter { item in
-            item.primaryMuscles.contains { selectedSplitGroup.muscles.contains($0) } ||
-                item.secondaryMuscles.contains { selectedSplitGroup.muscles.contains($0) }
+            item.primaryMuscles.contains { selectedMuscles.contains($0) } ||
+                item.secondaryMuscles.contains { selectedMuscles.contains($0) }
         }
     }
 
     private var hasActiveFilters: Bool {
         !searchText.isEmpty ||
-            selectedSplitGroup != nil ||
-            selectedLevel != nil ||
-            selectedRawEquipment != nil ||
-            selectedPrimaryMuscle != nil ||
-            selectedSecondaryMuscle != nil ||
-            selectedForce != nil ||
-            selectedMechanic != nil ||
-            selectedCategory != nil ||
+            !selectedSplitGroupTitles.isEmpty ||
+            !selectedLevels.isEmpty ||
+            !selectedRawEquipment.isEmpty ||
+            !selectedPrimaryMuscles.isEmpty ||
+            !selectedSecondaryMuscles.isEmpty ||
+            !selectedForces.isEmpty ||
+            !selectedMechanics.isEmpty ||
+            !selectedCategories.isEmpty ||
             selectedSort != .name
+    }
+
+    private var filterStateSnapshot: ExerciseFilterState {
+        ExerciseFilterState(
+            searchText: searchText,
+            splitGroups: selectedSplitGroupTitles,
+            levels: selectedLevels,
+            rawEquipment: selectedRawEquipment,
+            primaryMuscles: selectedPrimaryMuscles,
+            secondaryMuscles: selectedSecondaryMuscles,
+            forces: selectedForces,
+            mechanics: selectedMechanics,
+            categories: selectedCategories,
+            sort: selectedSort
+        )
     }
 
     var body: some View {
@@ -141,8 +157,14 @@ private struct ExerciseLibraryBrowserView: View {
         }
         .deltsScreen()
         .contentMargins(.bottom, 104, for: .scrollContent)
+        .onAppear {
+            applyFilterState(ExerciseFilterStateStore.load(key: ExerciseFilterStateStore.workoutsKey))
+        }
+        .onChange(of: filterStateSnapshot) { _, state in
+            ExerciseFilterStateStore.save(state, key: ExerciseFilterStateStore.workoutsKey)
+        }
         .onChange(of: selectedWorkoutSplit) {
-            selectedSplitGroupTitle = nil
+            selectedSplitGroupTitles.removeAll()
         }
     }
 
@@ -154,45 +176,45 @@ private struct ExerciseLibraryBrowserView: View {
                 HStack(spacing: 9) {
                     filterMenuPill(
                         title: splitFilterTitle,
-                        value: selectedSplitGroup?.title ?? "All",
+                        value: selectionTitle(selectedSplitGroupTitles),
                         systemImage: "square.grid.2x2"
                     ) {
-                        menuChoice("All \(splitFilterTitle)", isSelected: selectedSplitGroup == nil) {
-                            selectedSplitGroupTitle = nil
+                        menuChoice("All \(splitFilterTitle)", isSelected: selectedSplitGroupTitles.isEmpty) {
+                            selectedSplitGroupTitles.removeAll()
                         }
                         ForEach(splitGroups) { group in
-                            menuChoice(group.title, isSelected: selectedSplitGroupTitle == group.title) {
-                                selectedSplitGroupTitle = group.title
+                            menuChoice(group.title, isSelected: selectedSplitGroupTitles.contains(group.title)) {
+                                selectedSplitGroupTitles = toggledSelection(group.title, in: selectedSplitGroupTitles)
                             }
                         }
                     }
 
                     filterMenuPill(
                         title: "Primary",
-                        value: selectedPrimaryMuscle ?? "All",
+                        value: selectionTitle(selectedPrimaryMuscles),
                         systemImage: "scope"
                     ) {
-                        menuChoice("All Primary", isSelected: selectedPrimaryMuscle == nil) {
-                            selectedPrimaryMuscle = nil
+                        menuChoice("All Primary", isSelected: selectedPrimaryMuscles.isEmpty) {
+                            selectedPrimaryMuscles.removeAll()
                         }
                         ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
-                            menuChoice(muscle, isSelected: selectedPrimaryMuscle == muscle) {
-                                selectedPrimaryMuscle = muscle
+                            menuChoice(muscle, isSelected: selectedPrimaryMuscles.contains(muscle)) {
+                                selectedPrimaryMuscles = toggledSelection(muscle, in: selectedPrimaryMuscles)
                             }
                         }
                     }
 
                     filterMenuPill(
                         title: "Secondary",
-                        value: selectedSecondaryMuscle ?? "All",
+                        value: selectionTitle(selectedSecondaryMuscles),
                         systemImage: "scope"
                     ) {
-                        menuChoice("All Secondary", isSelected: selectedSecondaryMuscle == nil) {
-                            selectedSecondaryMuscle = nil
+                        menuChoice("All Secondary", isSelected: selectedSecondaryMuscles.isEmpty) {
+                            selectedSecondaryMuscles.removeAll()
                         }
                         ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
-                            menuChoice(muscle, isSelected: selectedSecondaryMuscle == muscle) {
-                                selectedSecondaryMuscle = muscle
+                            menuChoice(muscle, isSelected: selectedSecondaryMuscles.contains(muscle)) {
+                                selectedSecondaryMuscles = toggledSelection(muscle, in: selectedSecondaryMuscles)
                             }
                         }
                     }
@@ -202,46 +224,52 @@ private struct ExerciseLibraryBrowserView: View {
                         value: equipmentFilterTitle,
                         systemImage: "dumbbell.fill"
                     ) {
-                        menuChoice("All Equipment", isSelected: selectedRawEquipment == nil) {
-                            selectedRawEquipment = nil
+                        menuChoice("All Equipment", isSelected: selectedRawEquipment.isEmpty) {
+                            selectedRawEquipment.removeAll()
                         }
                         ForEach(service.availableRawEquipment, id: \.self) { equipment in
-                            menuChoice(equipment, isSelected: selectedRawEquipment == equipment) {
-                                selectedRawEquipment = equipment
+                            menuChoice(equipment, isSelected: selectedRawEquipment.contains(equipment)) {
+                                selectedRawEquipment = toggledSelection(equipment, in: selectedRawEquipment)
                             }
                         }
                     }
 
                     filterMenuPill(
                         title: "Level",
-                        value: selectedLevel ?? "All",
+                        value: selectionTitle(selectedLevels),
                         systemImage: "chart.bar.fill"
                     ) {
-                        menuChoice("All Levels", isSelected: selectedLevel == nil) { selectedLevel = nil }
+                        menuChoice("All Levels", isSelected: selectedLevels.isEmpty) { selectedLevels.removeAll() }
                         ForEach(service.availableLevels, id: \.self) { level in
-                            menuChoice(level, isSelected: selectedLevel == level) { selectedLevel = level }
+                            menuChoice(level, isSelected: selectedLevels.contains(level)) {
+                                selectedLevels = toggledSelection(level, in: selectedLevels)
+                            }
                         }
                     }
 
                     filterMenuPill(
                         title: "Force",
-                        value: selectedForce ?? "All",
+                        value: selectionTitle(selectedForces),
                         systemImage: "arrow.left.arrow.right"
                     ) {
-                        menuChoice("All Forces", isSelected: selectedForce == nil) { selectedForce = nil }
+                        menuChoice("All Forces", isSelected: selectedForces.isEmpty) { selectedForces.removeAll() }
                         ForEach(service.availableForces, id: \.self) { force in
-                            menuChoice(force, isSelected: selectedForce == force) { selectedForce = force }
+                            menuChoice(force, isSelected: selectedForces.contains(force)) {
+                                selectedForces = toggledSelection(force, in: selectedForces)
+                            }
                         }
                     }
 
                     filterMenuPill(
                         title: "Mechanic",
-                        value: selectedMechanic ?? "All",
+                        value: selectionTitle(selectedMechanics),
                         systemImage: "gearshape"
                     ) {
-                        menuChoice("All Mechanics", isSelected: selectedMechanic == nil) { selectedMechanic = nil }
+                        menuChoice("All Mechanics", isSelected: selectedMechanics.isEmpty) { selectedMechanics.removeAll() }
                         ForEach(service.availableMechanics, id: \.self) { mechanic in
-                            menuChoice(mechanic, isSelected: selectedMechanic == mechanic) { selectedMechanic = mechanic }
+                            menuChoice(mechanic, isSelected: selectedMechanics.contains(mechanic)) {
+                                selectedMechanics = toggledSelection(mechanic, in: selectedMechanics)
+                            }
                         }
                     }
 
@@ -250,10 +278,10 @@ private struct ExerciseLibraryBrowserView: View {
                         value: categoryFilterTitle,
                         systemImage: "tag"
                     ) {
-                        menuChoice("All Categories", isSelected: selectedCategory == nil) { selectedCategory = nil }
+                        menuChoice("All Categories", isSelected: selectedCategories.isEmpty) { selectedCategories.removeAll() }
                         ForEach(service.availableCategoryCounts) { categoryCount in
-                            menuChoice(categoryMenuTitle(categoryCount), isSelected: selectedCategory == categoryCount.category) {
-                                selectedCategory = categoryCount.category
+                            menuChoice(categoryMenuTitle(categoryCount), isSelected: selectedCategories.contains(categoryCount.category)) {
+                                selectedCategories = toggledSelection(categoryCount.category, in: selectedCategories)
                             }
                         }
                     }
@@ -265,14 +293,11 @@ private struct ExerciseLibraryBrowserView: View {
     }
 
     private var equipmentFilterTitle: String {
-        if let selectedRawEquipment {
-            return selectedRawEquipment
-        }
-        return "All"
+        selectionTitle(selectedRawEquipment)
     }
 
     private var categoryFilterTitle: String {
-        selectedCategory ?? "All"
+        selectionTitle(selectedCategories)
     }
 
     private func categoryMenuTitle(_ categoryCount: ExerciseCategoryCount) -> String {
@@ -281,15 +306,44 @@ private struct ExerciseLibraryBrowserView: View {
 
     private func resetFilters() {
         searchText = ""
-        selectedSplitGroupTitle = nil
-        selectedLevel = nil
-        selectedRawEquipment = nil
-        selectedPrimaryMuscle = nil
-        selectedSecondaryMuscle = nil
-        selectedForce = nil
-        selectedMechanic = nil
-        selectedCategory = nil
+        selectedSplitGroupTitles.removeAll()
+        selectedLevels.removeAll()
+        selectedRawEquipment.removeAll()
+        selectedPrimaryMuscles.removeAll()
+        selectedSecondaryMuscles.removeAll()
+        selectedForces.removeAll()
+        selectedMechanics.removeAll()
+        selectedCategories.removeAll()
         selectedSort = .name
+    }
+
+    private func applyFilterState(_ state: ExerciseFilterState) {
+        searchText = state.searchText
+        selectedSplitGroupTitles = state.splitGroups
+        selectedLevels = state.levels
+        selectedRawEquipment = state.rawEquipment
+        selectedPrimaryMuscles = state.primaryMuscles
+        selectedSecondaryMuscles = state.secondaryMuscles
+        selectedForces = state.forces
+        selectedMechanics = state.mechanics
+        selectedCategories = state.categories
+        selectedSort = state.sort
+    }
+
+    private func selectionTitle(_ selection: Set<String>) -> String {
+        if selection.isEmpty { return "All" }
+        if selection.count == 1 { return selection.first ?? "All" }
+        return "\(selection.count) selected"
+    }
+
+    private func toggledSelection(_ value: String, in selection: Set<String>) -> Set<String> {
+        var next = selection
+        if next.contains(value) {
+            next.remove(value)
+        } else {
+            next.insert(value)
+        }
+        return next
     }
 
     private func filterMenuPill<Content: View>(

@@ -67,16 +67,40 @@ struct ExerciseLibraryService {
         sort: ExerciseLibrarySort,
         searchText: String
     ) -> [ExerciseLibraryItem] {
+        filtered(
+            levels: Set([level].compactMap(\.self)),
+            rawEquipment: Set([rawEquipment].compactMap(\.self)),
+            primaryMuscles: Set([primaryMuscle].compactMap(\.self)),
+            secondaryMuscles: Set([secondaryMuscle].compactMap(\.self)),
+            forces: Set([force].compactMap(\.self)),
+            mechanics: Set([mechanic].compactMap(\.self)),
+            categories: Set([category].compactMap(\.self)),
+            sort: sort,
+            searchText: searchText
+        )
+    }
+
+    func filtered(
+        levels: Set<String>,
+        rawEquipment: Set<String>,
+        primaryMuscles: Set<String>,
+        secondaryMuscles: Set<String>,
+        forces: Set<String>,
+        mechanics: Set<String>,
+        categories: Set<String>,
+        sort: ExerciseLibrarySort,
+        searchText: String
+    ) -> [ExerciseLibraryItem] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
         let filteredItems = exercises.filter { item in
-            let matchesLevel = level == nil || item.rawLevel == level
-            let matchesRawEquipment = rawEquipment == nil || item.rawEquipment == rawEquipment
-            let matchesPrimaryMuscle = primaryMuscle == nil || item.primaryMuscles.contains(primaryMuscle ?? "")
-            let matchesSecondaryMuscle = secondaryMuscle == nil || item.secondaryMuscles.contains(secondaryMuscle ?? "")
-            let matchesForce = force == nil || item.force == force
-            let matchesMechanic = mechanic == nil || item.mechanic == mechanic
-            let matchesCategory = category == nil || item.category == category
+            let matchesLevel = levels.isEmpty || levels.contains(item.rawLevel)
+            let matchesRawEquipment = rawEquipment.isEmpty || rawEquipment.contains(item.rawEquipment)
+            let matchesPrimaryMuscle = primaryMuscles.isEmpty || item.primaryMuscles.contains { primaryMuscles.contains($0) }
+            let matchesSecondaryMuscle = secondaryMuscles.isEmpty || item.secondaryMuscles.contains { secondaryMuscles.contains($0) }
+            let matchesForce = forces.isEmpty || forces.contains(item.force)
+            let matchesMechanic = mechanics.isEmpty || mechanics.contains(item.mechanic)
+            let matchesCategory = categories.isEmpty || categories.contains(item.category)
             let matchesSearch = query.isEmpty || item.searchableText.contains(query)
 
             return matchesLevel &&

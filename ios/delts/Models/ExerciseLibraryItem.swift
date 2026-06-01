@@ -98,7 +98,7 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
     }
 }
 
-enum ExerciseLibrarySort: String, CaseIterable, Identifiable, Hashable {
+enum ExerciseLibrarySort: String, CaseIterable, Identifiable, Codable, Hashable {
     case name = "Name"
     case level = "Level"
     case primaryMuscles = "Primary"

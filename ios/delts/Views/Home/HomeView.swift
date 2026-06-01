@@ -9,13 +9,13 @@ struct HomeView: View {
     @State private var exerciseSearch = ""
     @State private var isWorkoutPickerPresented = false
     @State private var workoutPickerContext = WorkoutPickerContext.all
-    @State private var pickerSelectedLevel: String?
-    @State private var pickerSelectedRawEquipment: String?
-    @State private var pickerSelectedPrimaryMuscle: String?
-    @State private var pickerSelectedSecondaryMuscle: String?
-    @State private var pickerSelectedForce: String?
-    @State private var pickerSelectedMechanic: String?
-    @State private var pickerSelectedCategory: String?
+    @State private var pickerSelectedLevels: Set<String> = []
+    @State private var pickerSelectedRawEquipment: Set<String> = []
+    @State private var pickerSelectedPrimaryMuscles: Set<String> = []
+    @State private var pickerSelectedSecondaryMuscles: Set<String> = []
+    @State private var pickerSelectedForces: Set<String> = []
+    @State private var pickerSelectedMechanics: Set<String> = []
+    @State private var pickerSelectedCategories: Set<String> = []
     @State private var pickerSelectedSort: ExerciseLibrarySort = .name
     @AppStorage("delts.workoutPickerSource") private var workoutPickerSourceRaw = WorkoutPickerSource.dataset.rawValue
     @AppStorage("delts.savedExerciseIDs") private var savedExerciseIDsRaw = ""
@@ -68,6 +68,14 @@ struct HomeView: View {
         WorkoutPickerSource(rawValue: workoutPickerSourceRaw) ?? .dataset
     }
 
+    private var isSavedWorkoutPickerContext: Bool {
+        workoutPickerContext.id == WorkoutPickerContext.saved.id
+    }
+
+    private var activeWorkoutPickerSource: WorkoutPickerSource {
+        isSavedWorkoutPickerContext ? .saved : workoutPickerSource
+    }
+
     private var workoutPickerSourceBinding: Binding<WorkoutPickerSource> {
         Binding(
             get: { workoutPickerSource },
@@ -75,15 +83,33 @@ struct HomeView: View {
         )
     }
 
+    private var workoutPickerFilterKey: String {
+        ExerciseFilterStateStore.startPickerKey(for: workoutPickerContext.id)
+    }
+
+    private var workoutPickerFilterState: ExerciseFilterState {
+        ExerciseFilterState(
+            searchText: exerciseSearch,
+            levels: pickerSelectedLevels,
+            rawEquipment: pickerSelectedRawEquipment,
+            primaryMuscles: pickerSelectedPrimaryMuscles,
+            secondaryMuscles: pickerSelectedSecondaryMuscles,
+            forces: pickerSelectedForces,
+            mechanics: pickerSelectedMechanics,
+            categories: pickerSelectedCategories,
+            sort: pickerSelectedSort
+        )
+    }
+
     private var matchingExercises: [ExerciseLibraryItem] {
         let filtered = service.filtered(
-            level: pickerSelectedLevel,
+            levels: pickerSelectedLevels,
             rawEquipment: pickerSelectedRawEquipment,
-            primaryMuscle: pickerSelectedPrimaryMuscle,
-            secondaryMuscle: pickerSelectedSecondaryMuscle,
-            force: pickerSelectedForce,
-            mechanic: pickerSelectedMechanic,
-            category: pickerSelectedCategory,
+            primaryMuscles: pickerSelectedPrimaryMuscles,
+            secondaryMuscles: pickerSelectedSecondaryMuscles,
+            forces: pickerSelectedForces,
+            mechanics: pickerSelectedMechanics,
+            categories: pickerSelectedCategories,
             sort: pickerSelectedSort,
             searchText: exerciseSearch
         )
@@ -97,7 +123,7 @@ struct HomeView: View {
             }
         }
         return splitFiltered.filter { item in
-            workoutPickerSource == .dataset || savedExerciseIDs.contains(item.id)
+            activeWorkoutPickerSource == .dataset || savedExerciseIDs.contains(item.id)
         }
     }
 
@@ -216,15 +242,16 @@ struct HomeView: View {
                 WorkoutPickerSheet(
                     searchText: $exerciseSearch,
                     source: workoutPickerSourceBinding,
-                    selectedLevel: $pickerSelectedLevel,
+                    selectedLevels: $pickerSelectedLevels,
                     selectedRawEquipment: $pickerSelectedRawEquipment,
-                    selectedPrimaryMuscle: $pickerSelectedPrimaryMuscle,
-                    selectedSecondaryMuscle: $pickerSelectedSecondaryMuscle,
-                    selectedForce: $pickerSelectedForce,
-                    selectedMechanic: $pickerSelectedMechanic,
-                    selectedCategory: $pickerSelectedCategory,
+                    selectedPrimaryMuscles: $pickerSelectedPrimaryMuscles,
+                    selectedSecondaryMuscles: $pickerSelectedSecondaryMuscles,
+                    selectedForces: $pickerSelectedForces,
+                    selectedMechanics: $pickerSelectedMechanics,
+                    selectedCategories: $pickerSelectedCategories,
                     selectedSort: $pickerSelectedSort,
                     pickerTitle: workoutPickerContext.title,
+                    showsSourcePicker: !isSavedWorkoutPickerContext,
                     exercises: matchingExercises,
                     selectedExerciseIDs: selectedExerciseIDs,
                     savedExerciseIDs: savedExerciseIDs,
@@ -236,6 +263,10 @@ struct HomeView: View {
                 )
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+            }
+            .onChange(of: workoutPickerFilterState) { _, state in
+                guard isWorkoutPickerPresented else { return }
+                ExerciseFilterStateStore.save(state, key: workoutPickerFilterKey)
             }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) { notification in
                 updateKeyboardHeight(from: notification)
@@ -301,13 +332,11 @@ struct HomeView: View {
 
     private func openWorkoutPicker(_ context: WorkoutPickerContext) {
         workoutPickerContext = context
-        exerciseSearch = ""
-        resetWorkoutPickerFilters()
+        applyWorkoutPickerFilterState(ExerciseFilterStateStore.load(key: ExerciseFilterStateStore.startPickerKey(for: context.id)))
         isWorkoutPickerPresented = true
     }
 
     private func openSavedWorkoutPicker() {
-        workoutPickerSourceRaw = WorkoutPickerSource.saved.rawValue
         openWorkoutPicker(.saved)
     }
 
@@ -332,14 +361,19 @@ struct HomeView: View {
     }
 
     private func resetWorkoutPickerFilters() {
-        pickerSelectedLevel = nil
-        pickerSelectedRawEquipment = nil
-        pickerSelectedPrimaryMuscle = nil
-        pickerSelectedSecondaryMuscle = nil
-        pickerSelectedForce = nil
-        pickerSelectedMechanic = nil
-        pickerSelectedCategory = nil
-        pickerSelectedSort = .name
+        applyWorkoutPickerFilterState(ExerciseFilterState())
+    }
+
+    private func applyWorkoutPickerFilterState(_ state: ExerciseFilterState) {
+        exerciseSearch = state.searchText
+        pickerSelectedLevels = state.levels
+        pickerSelectedRawEquipment = state.rawEquipment
+        pickerSelectedPrimaryMuscles = state.primaryMuscles
+        pickerSelectedSecondaryMuscles = state.secondaryMuscles
+        pickerSelectedForces = state.forces
+        pickerSelectedMechanics = state.mechanics
+        pickerSelectedCategories = state.categories
+        pickerSelectedSort = state.sort
     }
 
     private func removeExercise(_ id: UUID) {

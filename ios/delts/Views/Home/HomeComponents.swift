@@ -418,15 +418,16 @@ private struct RepsSelectionTextField: View {
 struct WorkoutPickerSheet: View {
     @Binding var searchText: String
     @Binding var source: WorkoutPickerSource
-    @Binding var selectedLevel: String?
-    @Binding var selectedRawEquipment: String?
-    @Binding var selectedPrimaryMuscle: String?
-    @Binding var selectedSecondaryMuscle: String?
-    @Binding var selectedForce: String?
-    @Binding var selectedMechanic: String?
-    @Binding var selectedCategory: String?
+    @Binding var selectedLevels: Set<String>
+    @Binding var selectedRawEquipment: Set<String>
+    @Binding var selectedPrimaryMuscles: Set<String>
+    @Binding var selectedSecondaryMuscles: Set<String>
+    @Binding var selectedForces: Set<String>
+    @Binding var selectedMechanics: Set<String>
+    @Binding var selectedCategories: Set<String>
     @Binding var selectedSort: ExerciseLibrarySort
     let pickerTitle: String
+    let showsSourcePicker: Bool
     let exercises: [ExerciseLibraryItem]
     let selectedExerciseIDs: Set<String>
     let savedExerciseIDs: Set<String>
@@ -440,15 +441,17 @@ struct WorkoutPickerSheet: View {
         NavigationStack {
             List {
                 Section {
-                    Picker("Source", selection: $source) {
-                        ForEach(WorkoutPickerSource.allCases) { source in
-                            Text(source.rawValue).tag(source)
+                    if showsSourcePicker {
+                        Picker("Source", selection: $source) {
+                            ForEach(WorkoutPickerSource.allCases) { source in
+                                Text(source.rawValue).tag(source)
+                            }
                         }
+                        .pickerStyle(.segmented)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 4, trailing: 20))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                     }
-                    .pickerStyle(.segmented)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 4, trailing: 20))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
 
                     workoutFilterStrip
                         .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 6, trailing: 20))
@@ -463,7 +466,7 @@ struct WorkoutPickerSheet: View {
 
                 Section {
                     if exercises.isEmpty {
-                        Text(source == .saved ? "No saved workouts yet." : "No dataset workouts found.")
+                        Text(!showsSourcePicker || source == .saved ? "No saved workouts yet." : "No dataset workouts found.")
                             .foregroundStyle(Color.deltsMutedText)
                             .listRowBackground(Color.deltsPanel.opacity(0.22))
                     } else {
@@ -511,13 +514,13 @@ struct WorkoutPickerSheet: View {
 
     private var hasActiveFilters: Bool {
         !searchText.isEmpty ||
-            selectedLevel != nil ||
-            selectedRawEquipment != nil ||
-            selectedPrimaryMuscle != nil ||
-            selectedSecondaryMuscle != nil ||
-            selectedForce != nil ||
-            selectedMechanic != nil ||
-            selectedCategory != nil ||
+            !selectedLevels.isEmpty ||
+            !selectedRawEquipment.isEmpty ||
+            !selectedPrimaryMuscles.isEmpty ||
+            !selectedSecondaryMuscles.isEmpty ||
+            !selectedForces.isEmpty ||
+            !selectedMechanics.isEmpty ||
+            !selectedCategories.isEmpty ||
             selectedSort != .name
     }
 
@@ -573,105 +576,105 @@ struct WorkoutPickerSheet: View {
             HStack(spacing: 9) {
                 filterMenuPill(
                     title: "Primary",
-                    value: selectedPrimaryMuscle ?? "All",
+                    value: selectionTitle(selectedPrimaryMuscles),
                     systemImage: "scope"
                 ) {
-                    menuChoice("All Primary", isSelected: selectedPrimaryMuscle == nil) {
-                        selectedPrimaryMuscle = nil
+                    menuChoice("All Primary", isSelected: selectedPrimaryMuscles.isEmpty) {
+                        selectedPrimaryMuscles.removeAll()
                     }
                     ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
-                        menuChoice(muscle, isSelected: selectedPrimaryMuscle == muscle) {
-                            selectedPrimaryMuscle = muscle
+                        menuChoice(muscle, isSelected: selectedPrimaryMuscles.contains(muscle)) {
+                            selectedPrimaryMuscles = toggledSelection(muscle, in: selectedPrimaryMuscles)
                         }
                     }
                 }
 
                 filterMenuPill(
                     title: "Secondary",
-                    value: selectedSecondaryMuscle ?? "All",
+                    value: selectionTitle(selectedSecondaryMuscles),
                     systemImage: "scope"
                 ) {
-                    menuChoice("All Secondary", isSelected: selectedSecondaryMuscle == nil) {
-                        selectedSecondaryMuscle = nil
+                    menuChoice("All Secondary", isSelected: selectedSecondaryMuscles.isEmpty) {
+                        selectedSecondaryMuscles.removeAll()
                     }
                     ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
-                        menuChoice(muscle, isSelected: selectedSecondaryMuscle == muscle) {
-                            selectedSecondaryMuscle = muscle
+                        menuChoice(muscle, isSelected: selectedSecondaryMuscles.contains(muscle)) {
+                            selectedSecondaryMuscles = toggledSelection(muscle, in: selectedSecondaryMuscles)
                         }
                     }
                 }
 
                 filterMenuPill(
                     title: "Equipment",
-                    value: selectedRawEquipment ?? "All",
+                    value: selectionTitle(selectedRawEquipment),
                     systemImage: "dumbbell.fill"
                 ) {
-                    menuChoice("All Equipment", isSelected: selectedRawEquipment == nil) {
-                        selectedRawEquipment = nil
+                    menuChoice("All Equipment", isSelected: selectedRawEquipment.isEmpty) {
+                        selectedRawEquipment.removeAll()
                     }
                     ForEach(service.availableRawEquipment, id: \.self) { equipment in
-                        menuChoice(equipment, isSelected: selectedRawEquipment == equipment) {
-                            selectedRawEquipment = equipment
+                        menuChoice(equipment, isSelected: selectedRawEquipment.contains(equipment)) {
+                            selectedRawEquipment = toggledSelection(equipment, in: selectedRawEquipment)
                         }
                     }
                 }
 
                 filterMenuPill(
                     title: "Level",
-                    value: selectedLevel ?? "All",
+                    value: selectionTitle(selectedLevels),
                     systemImage: "chart.bar.fill"
                 ) {
-                    menuChoice("All Levels", isSelected: selectedLevel == nil) {
-                        selectedLevel = nil
+                    menuChoice("All Levels", isSelected: selectedLevels.isEmpty) {
+                        selectedLevels.removeAll()
                     }
                     ForEach(service.availableLevels, id: \.self) { level in
-                        menuChoice(level, isSelected: selectedLevel == level) {
-                            selectedLevel = level
+                        menuChoice(level, isSelected: selectedLevels.contains(level)) {
+                            selectedLevels = toggledSelection(level, in: selectedLevels)
                         }
                     }
                 }
 
                 filterMenuPill(
                     title: "Force",
-                    value: selectedForce ?? "All",
+                    value: selectionTitle(selectedForces),
                     systemImage: "arrow.left.arrow.right"
                 ) {
-                    menuChoice("All Forces", isSelected: selectedForce == nil) {
-                        selectedForce = nil
+                    menuChoice("All Forces", isSelected: selectedForces.isEmpty) {
+                        selectedForces.removeAll()
                     }
                     ForEach(service.availableForces, id: \.self) { force in
-                        menuChoice(force, isSelected: selectedForce == force) {
-                            selectedForce = force
+                        menuChoice(force, isSelected: selectedForces.contains(force)) {
+                            selectedForces = toggledSelection(force, in: selectedForces)
                         }
                     }
                 }
 
                 filterMenuPill(
                     title: "Mechanic",
-                    value: selectedMechanic ?? "All",
+                    value: selectionTitle(selectedMechanics),
                     systemImage: "gearshape"
                 ) {
-                    menuChoice("All Mechanics", isSelected: selectedMechanic == nil) {
-                        selectedMechanic = nil
+                    menuChoice("All Mechanics", isSelected: selectedMechanics.isEmpty) {
+                        selectedMechanics.removeAll()
                     }
                     ForEach(service.availableMechanics, id: \.self) { mechanic in
-                        menuChoice(mechanic, isSelected: selectedMechanic == mechanic) {
-                            selectedMechanic = mechanic
+                        menuChoice(mechanic, isSelected: selectedMechanics.contains(mechanic)) {
+                            selectedMechanics = toggledSelection(mechanic, in: selectedMechanics)
                         }
                     }
                 }
 
                 filterMenuPill(
                     title: "Category",
-                    value: selectedCategory ?? "All",
+                    value: selectionTitle(selectedCategories),
                     systemImage: "tag"
                 ) {
-                    menuChoice("All Categories", isSelected: selectedCategory == nil) {
-                        selectedCategory = nil
+                    menuChoice("All Categories", isSelected: selectedCategories.isEmpty) {
+                        selectedCategories.removeAll()
                     }
                     ForEach(service.availableCategoryCounts) { categoryCount in
-                        menuChoice(categoryCount.category, isSelected: selectedCategory == categoryCount.category) {
-                            selectedCategory = categoryCount.category
+                        menuChoice(categoryCount.category, isSelected: selectedCategories.contains(categoryCount.category)) {
+                            selectedCategories = toggledSelection(categoryCount.category, in: selectedCategories)
                         }
                     }
                 }
@@ -682,14 +685,30 @@ struct WorkoutPickerSheet: View {
 
     private func resetFilters() {
         searchText = ""
-        selectedLevel = nil
-        selectedRawEquipment = nil
-        selectedPrimaryMuscle = nil
-        selectedSecondaryMuscle = nil
-        selectedForce = nil
-        selectedMechanic = nil
-        selectedCategory = nil
+        selectedLevels.removeAll()
+        selectedRawEquipment.removeAll()
+        selectedPrimaryMuscles.removeAll()
+        selectedSecondaryMuscles.removeAll()
+        selectedForces.removeAll()
+        selectedMechanics.removeAll()
+        selectedCategories.removeAll()
         selectedSort = .name
+    }
+
+    private func selectionTitle(_ selection: Set<String>) -> String {
+        if selection.isEmpty { return "All" }
+        if selection.count == 1 { return selection.first ?? "All" }
+        return "\(selection.count) selected"
+    }
+
+    private func toggledSelection(_ value: String, in selection: Set<String>) -> Set<String> {
+        var next = selection
+        if next.contains(value) {
+            next.remove(value)
+        } else {
+            next.insert(value)
+        }
+        return next
     }
 
     private func filterMenuPill<Content: View>(
