@@ -224,6 +224,13 @@ struct HomeView: View {
                             }
                             .font(.headline.weight(.bold))
                             .foregroundStyle(Color.deltsAccent)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 10)
+                            .background(Color.deltsPanel.opacity(0.72), in: Capsule())
+                            .overlay {
+                                Capsule()
+                                    .stroke(Color.deltsHairline.opacity(0.72), lineWidth: 0.8)
+                            }
                         }
                         .padding(.horizontal, 20)
                         .padding(.bottom, 8)
