@@ -76,6 +76,14 @@ struct HomeView: View {
         isSavedWorkoutPickerContext ? .saved : workoutPickerSource
     }
 
+    private var usesBodyPartPickerContexts: Bool {
+        selectedWorkoutSplit == .fullBody || selectedWorkoutSplit == .custom
+    }
+
+    private var hidesWorkoutPickerPrimaryFilter: Bool {
+        usesBodyPartPickerContexts && !workoutPickerContext.muscles.isEmpty
+    }
+
     private var workoutPickerSourceBinding: Binding<WorkoutPickerSource> {
         Binding(
             get: { workoutPickerSource },
@@ -252,6 +260,8 @@ struct HomeView: View {
                     selectedSort: $pickerSelectedSort,
                     pickerTitle: workoutPickerContext.title,
                     showsSourcePicker: !isSavedWorkoutPickerContext,
+                    primaryFilterMuscles: workoutPickerContext.muscles,
+                    hidesPrimaryFilter: hidesWorkoutPickerPrimaryFilter,
                     exercises: matchingExercises,
                     selectedExerciseIDs: selectedExerciseIDs,
                     savedExerciseIDs: savedExerciseIDs,
@@ -374,6 +384,20 @@ struct HomeView: View {
         pickerSelectedMechanics = state.mechanics
         pickerSelectedCategories = state.categories
         pickerSelectedSort = state.sort
+        normalizeWorkoutPickerPrimaryFilter()
+    }
+
+    private func normalizeWorkoutPickerPrimaryFilter() {
+        if hidesWorkoutPickerPrimaryFilter {
+            pickerSelectedPrimaryMuscles.removeAll()
+            return
+        }
+
+        let validOptions = workoutPickerContext.muscles.isEmpty
+            ? Set(service.availablePrimaryMuscles)
+            : Set(service.availablePrimaryMuscles.filter { workoutPickerContext.muscles.contains($0) })
+        guard !validOptions.isEmpty else { return }
+        pickerSelectedPrimaryMuscles = pickerSelectedPrimaryMuscles.intersection(validOptions)
     }
 
     private func removeExercise(_ id: UUID) {

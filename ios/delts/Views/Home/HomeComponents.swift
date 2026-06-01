@@ -415,6 +415,18 @@ private struct RepsSelectionTextField: View {
     }
 }
 
+private enum WorkoutPickerFilterSheet: String, Identifiable {
+    case primary
+    case secondary
+    case equipment
+    case level
+    case force
+    case mechanic
+    case category
+
+    var id: String { rawValue }
+}
+
 struct WorkoutPickerSheet: View {
     @Binding var searchText: String
     @Binding var source: WorkoutPickerSource
@@ -428,6 +440,8 @@ struct WorkoutPickerSheet: View {
     @Binding var selectedSort: ExerciseLibrarySort
     let pickerTitle: String
     let showsSourcePicker: Bool
+    let primaryFilterMuscles: Set<String>
+    let hidesPrimaryFilter: Bool
     let exercises: [ExerciseLibraryItem]
     let selectedExerciseIDs: Set<String>
     let savedExerciseIDs: Set<String>
@@ -436,6 +450,12 @@ struct WorkoutPickerSheet: View {
     let onDone: () -> Void
 
     private let service = ExerciseLibraryService.shared
+    @State private var activeFilterSheet: WorkoutPickerFilterSheet?
+
+    private var primaryFilterOptions: [String] {
+        guard !primaryFilterMuscles.isEmpty else { return service.availablePrimaryMuscles }
+        return service.availablePrimaryMuscles.filter { primaryFilterMuscles.contains($0) }
+    }
 
     var body: some View {
         NavigationStack {
@@ -510,6 +530,20 @@ struct WorkoutPickerSheet: View {
                 }
             }
         }
+        .sheet(item: $activeFilterSheet) { filter in
+            filterSelectionSheet(for: filter)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .onAppear {
+            normalizePrimaryFilterSelection()
+        }
+        .onChange(of: primaryFilterMuscles) {
+            normalizePrimaryFilterSelection()
+        }
+        .onChange(of: hidesPrimaryFilter) {
+            normalizePrimaryFilterSelection()
+        }
     }
 
     private var hasActiveFilters: Bool {
@@ -574,110 +608,56 @@ struct WorkoutPickerSheet: View {
     private var workoutFilterStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 9) {
-                filterMenuPill(
-                    title: "Primary",
-                    value: selectionTitle(selectedPrimaryMuscles),
-                    systemImage: "scope"
-                ) {
-                    menuChoice("All Primary", isSelected: selectedPrimaryMuscles.isEmpty) {
-                        selectedPrimaryMuscles.removeAll()
-                    }
-                    ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
-                        menuChoice(muscle, isSelected: selectedPrimaryMuscles.contains(muscle)) {
-                            selectedPrimaryMuscles = toggledSelection(muscle, in: selectedPrimaryMuscles)
-                        }
-                    }
+                if !hidesPrimaryFilter {
+                    filterPillButton(
+                        title: "Primary",
+                        value: selectionTitle(selectedPrimaryMuscles),
+                        systemImage: "scope",
+                        filter: .primary
+                    )
                 }
 
-                filterMenuPill(
+                filterPillButton(
                     title: "Secondary",
                     value: selectionTitle(selectedSecondaryMuscles),
-                    systemImage: "scope"
-                ) {
-                    menuChoice("All Secondary", isSelected: selectedSecondaryMuscles.isEmpty) {
-                        selectedSecondaryMuscles.removeAll()
-                    }
-                    ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
-                        menuChoice(muscle, isSelected: selectedSecondaryMuscles.contains(muscle)) {
-                            selectedSecondaryMuscles = toggledSelection(muscle, in: selectedSecondaryMuscles)
-                        }
-                    }
-                }
+                    systemImage: "scope",
+                    filter: .secondary
+                )
 
-                filterMenuPill(
+                filterPillButton(
                     title: "Equipment",
                     value: selectionTitle(selectedRawEquipment),
-                    systemImage: "dumbbell.fill"
-                ) {
-                    menuChoice("All Equipment", isSelected: selectedRawEquipment.isEmpty) {
-                        selectedRawEquipment.removeAll()
-                    }
-                    ForEach(service.availableRawEquipment, id: \.self) { equipment in
-                        menuChoice(equipment, isSelected: selectedRawEquipment.contains(equipment)) {
-                            selectedRawEquipment = toggledSelection(equipment, in: selectedRawEquipment)
-                        }
-                    }
-                }
+                    systemImage: "dumbbell.fill",
+                    filter: .equipment
+                )
 
-                filterMenuPill(
+                filterPillButton(
                     title: "Level",
                     value: selectionTitle(selectedLevels),
-                    systemImage: "chart.bar.fill"
-                ) {
-                    menuChoice("All Levels", isSelected: selectedLevels.isEmpty) {
-                        selectedLevels.removeAll()
-                    }
-                    ForEach(service.availableLevels, id: \.self) { level in
-                        menuChoice(level, isSelected: selectedLevels.contains(level)) {
-                            selectedLevels = toggledSelection(level, in: selectedLevels)
-                        }
-                    }
-                }
+                    systemImage: "chart.bar.fill",
+                    filter: .level
+                )
 
-                filterMenuPill(
+                filterPillButton(
                     title: "Force",
                     value: selectionTitle(selectedForces),
-                    systemImage: "arrow.left.arrow.right"
-                ) {
-                    menuChoice("All Forces", isSelected: selectedForces.isEmpty) {
-                        selectedForces.removeAll()
-                    }
-                    ForEach(service.availableForces, id: \.self) { force in
-                        menuChoice(force, isSelected: selectedForces.contains(force)) {
-                            selectedForces = toggledSelection(force, in: selectedForces)
-                        }
-                    }
-                }
+                    systemImage: "arrow.left.arrow.right",
+                    filter: .force
+                )
 
-                filterMenuPill(
+                filterPillButton(
                     title: "Mechanic",
                     value: selectionTitle(selectedMechanics),
-                    systemImage: "gearshape"
-                ) {
-                    menuChoice("All Mechanics", isSelected: selectedMechanics.isEmpty) {
-                        selectedMechanics.removeAll()
-                    }
-                    ForEach(service.availableMechanics, id: \.self) { mechanic in
-                        menuChoice(mechanic, isSelected: selectedMechanics.contains(mechanic)) {
-                            selectedMechanics = toggledSelection(mechanic, in: selectedMechanics)
-                        }
-                    }
-                }
+                    systemImage: "gearshape",
+                    filter: .mechanic
+                )
 
-                filterMenuPill(
+                filterPillButton(
                     title: "Category",
                     value: selectionTitle(selectedCategories),
-                    systemImage: "tag"
-                ) {
-                    menuChoice("All Categories", isSelected: selectedCategories.isEmpty) {
-                        selectedCategories.removeAll()
-                    }
-                    ForEach(service.availableCategoryCounts) { categoryCount in
-                        menuChoice(categoryCount.category, isSelected: selectedCategories.contains(categoryCount.category)) {
-                            selectedCategories = toggledSelection(categoryCount.category, in: selectedCategories)
-                        }
-                    }
-                }
+                    systemImage: "tag",
+                    filter: .category
+                )
             }
             .padding(.vertical, 1)
         }
@@ -695,30 +675,31 @@ struct WorkoutPickerSheet: View {
         selectedSort = .name
     }
 
+    private func normalizePrimaryFilterSelection() {
+        if hidesPrimaryFilter {
+            selectedPrimaryMuscles.removeAll()
+            return
+        }
+
+        let validOptions = Set(primaryFilterOptions)
+        guard !validOptions.isEmpty else { return }
+        selectedPrimaryMuscles = selectedPrimaryMuscles.intersection(validOptions)
+    }
+
     private func selectionTitle(_ selection: Set<String>) -> String {
         if selection.isEmpty { return "All" }
         if selection.count == 1 { return selection.first ?? "All" }
         return "\(selection.count) selected"
     }
 
-    private func toggledSelection(_ value: String, in selection: Set<String>) -> Set<String> {
-        var next = selection
-        if next.contains(value) {
-            next.remove(value)
-        } else {
-            next.insert(value)
-        }
-        return next
-    }
-
-    private func filterMenuPill<Content: View>(
+    private func filterPillButton(
         title: String,
         value: String,
         systemImage: String,
-        @ViewBuilder content: () -> Content
+        filter: WorkoutPickerFilterSheet
     ) -> some View {
-        Menu {
-            content()
+        Button {
+            activeFilterSheet = filter
         } label: {
             WorkoutPickerFilterPill(title: title, value: value, systemImage: systemImage)
         }
@@ -732,6 +713,68 @@ struct WorkoutPickerSheet: View {
             } else {
                 Text(title)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func filterSelectionSheet(for filter: WorkoutPickerFilterSheet) -> some View {
+        switch filter {
+        case .primary:
+            ExerciseFilterSelectionSheet(
+                title: "Primary",
+                allTitle: "All Primary",
+                systemImage: "scope",
+                options: primaryFilterOptions.map { ExerciseFilterOption($0) },
+                selection: $selectedPrimaryMuscles
+            )
+        case .secondary:
+            ExerciseFilterSelectionSheet(
+                title: "Secondary",
+                allTitle: "All Secondary",
+                systemImage: "scope",
+                options: service.availableSecondaryMuscles.map { ExerciseFilterOption($0) },
+                selection: $selectedSecondaryMuscles
+            )
+        case .equipment:
+            ExerciseFilterSelectionSheet(
+                title: "Equipment",
+                allTitle: "All Equipment",
+                systemImage: "dumbbell.fill",
+                options: service.availableRawEquipment.map { ExerciseFilterOption($0) },
+                selection: $selectedRawEquipment
+            )
+        case .level:
+            ExerciseFilterSelectionSheet(
+                title: "Level",
+                allTitle: "All Levels",
+                systemImage: "chart.bar.fill",
+                options: service.availableLevels.map { ExerciseFilterOption($0) },
+                selection: $selectedLevels
+            )
+        case .force:
+            ExerciseFilterSelectionSheet(
+                title: "Force",
+                allTitle: "All Forces",
+                systemImage: "arrow.left.arrow.right",
+                options: service.availableForces.map { ExerciseFilterOption($0) },
+                selection: $selectedForces
+            )
+        case .mechanic:
+            ExerciseFilterSelectionSheet(
+                title: "Mechanic",
+                allTitle: "All Mechanics",
+                systemImage: "gearshape",
+                options: service.availableMechanics.map { ExerciseFilterOption($0) },
+                selection: $selectedMechanics
+            )
+        case .category:
+            ExerciseFilterSelectionSheet(
+                title: "Category",
+                allTitle: "All Categories",
+                systemImage: "tag",
+                options: service.availableCategoryCounts.map { ExerciseFilterOption($0.category) },
+                selection: $selectedCategories
+            )
         }
     }
 
