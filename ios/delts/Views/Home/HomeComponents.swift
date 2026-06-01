@@ -239,6 +239,9 @@ struct PlannedExerciseRow: View {
                     allowsDerivedImageLookup: false
                 )
                 .frame(width: 62, height: 62)
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .clipped()
+                .layoutPriority(0)
 
                 VStack(alignment: .leading, spacing: 5) {
                     Text(exercise.name)
@@ -252,6 +255,8 @@ struct PlannedExerciseRow: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.72)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
             }
 
             HStack(spacing: 12) {
@@ -370,7 +375,10 @@ struct WorkoutPickerRow: View {
                     fillsWidth: false,
                     allowsDerivedImageLookup: false
                 )
-                .frame(width: 66, height: 58)
+                .frame(width: 76, height: 58)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .clipped()
+                .layoutPriority(0)
 
                 VStack(alignment: .leading, spacing: 5) {
                     Text(item.name)
@@ -384,12 +392,13 @@ struct WorkoutPickerRow: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.72)
                 }
-
-                Spacer(minLength: 0)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "plus.circle.fill")
                     .font(.title3.weight(.bold))
                     .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsMutedText)
+                    .frame(width: 34, height: 34)
             }
             .padding(.vertical, 4)
             .contentShape(Rectangle())
