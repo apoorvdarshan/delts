@@ -412,11 +412,7 @@ private struct ExerciseLibraryBrowserView: View {
             if isSelected {
                 Label(title, systemImage: "checkmark")
             } else {
-                Label {
-                    Text(title)
-                } icon: {
-                    MuscleGlyphIcon(title: title, muscles: muscles, size: 20)
-                }
+                Label(title, image: MuscleGlyphAsset.name(title: title, muscles: muscles))
             }
         }
     }

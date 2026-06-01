@@ -451,14 +451,10 @@ private struct WorkoutPickerContextMenuLabel: View {
     }
 
     var body: some View {
-        Label {
-            Text(context.title)
-        } icon: {
-            if isSaved {
-                Image(systemName: "bookmark.fill")
-            } else {
-                MuscleGlyphIcon(title: context.title, muscles: context.muscles, size: 20)
-            }
+        if isSaved {
+            Label(context.title, systemImage: "bookmark.fill")
+        } else {
+            Label(context.title, image: MuscleGlyphAsset.name(title: context.title, muscles: context.muscles))
         }
     }
 }

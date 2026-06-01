@@ -268,6 +268,12 @@ struct MuscleGlyphIcon: View {
     }
 }
 
+enum MuscleGlyphAsset {
+    static func name(title: String, muscles: Set<String>) -> String {
+        MuscleGlyphKind(title: title, muscles: muscles).assetName
+    }
+}
+
 private enum MuscleGlyphKind {
     case abs
     case abductors
@@ -294,6 +300,61 @@ private enum MuscleGlyphKind {
     case groupArms
     case groupBack
     case generic
+
+    var assetName: String {
+        switch self {
+        case .abs:
+            return "muscle_icon_abs"
+        case .abductors:
+            return "muscle_icon_abductors"
+        case .adductors:
+            return "muscle_icon_adductors"
+        case .biceps:
+            return "muscle_icon_biceps"
+        case .triceps:
+            return "muscle_icon_triceps"
+        case .forearms:
+            return "muscle_icon_forearms"
+        case .calves:
+            return "muscle_icon_calves"
+        case .chest:
+            return "muscle_icon_chest"
+        case .glutes:
+            return "muscle_icon_glutes"
+        case .hamstrings:
+            return "muscle_icon_hamstrings"
+        case .lats:
+            return "muscle_icon_lats"
+        case .lowerBack:
+            return "muscle_icon_lower_back"
+        case .middleBack:
+            return "muscle_icon_middle_back"
+        case .neck:
+            return "muscle_icon_neck"
+        case .quadriceps:
+            return "muscle_icon_quadriceps"
+        case .shoulders:
+            return "muscle_icon_shoulders"
+        case .traps:
+            return "muscle_icon_traps"
+        case .groupUpper:
+            return "muscle_icon_group_upper"
+        case .groupLower:
+            return "muscle_icon_group_lower"
+        case .groupPush:
+            return "muscle_icon_group_push"
+        case .groupPull:
+            return "muscle_icon_group_pull"
+        case .groupLegs:
+            return "muscle_icon_group_legs"
+        case .groupArms:
+            return "muscle_icon_group_arms"
+        case .groupBack:
+            return "muscle_icon_group_back"
+        case .generic:
+            return "muscle_icon_generic"
+        }
+    }
 
     init(title: String, muscles: Set<String>) {
         let normalizedTitle = title.lowercased()
