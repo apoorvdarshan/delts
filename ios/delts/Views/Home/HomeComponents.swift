@@ -218,7 +218,12 @@ struct EmptyRoutineRow: View {
                     .foregroundStyle(Color.deltsMutedText)
             }
         }
-        .padding(.vertical, 6)
+        .padding(12)
+        .background(Color.deltsPanel.opacity(0.36), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.44), lineWidth: 0.75)
+        }
     }
 }
 

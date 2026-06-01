@@ -127,7 +127,9 @@ struct HomeView: View {
                                     selectedDetailItem = libraryItem(for: exercise)
                                 }
                             )
-                            .listRowBackground(Color.deltsPanel.opacity(0.20))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 7, leading: 16, bottom: 7, trailing: 16))
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
                                     removeExercise(exercise.id)
