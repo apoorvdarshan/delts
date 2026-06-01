@@ -15,6 +15,7 @@ struct WorkoutsView: View {
 
 private struct ExerciseLibraryBrowserView: View {
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
+    @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
     @State private var searchText = ""
     @State private var selectedSplitGroupTitles: Set<String> = []
     @State private var selectedLevels: Set<String> = []
@@ -67,6 +68,11 @@ private struct ExerciseLibraryBrowserView: View {
         guard !selectedSplitGroups.isEmpty else { return service.availablePrimaryMuscles }
         let allowedMuscles = Set(selectedSplitGroups.flatMap(\.muscles))
         return service.availablePrimaryMuscles.filter { allowedMuscles.contains($0) }
+    }
+
+    private var profileRawEquipmentOptions: [String] {
+        let selectedEquipment = datasetStoredSet(datasetRawEquipmentRaw, allowedValues: service.availableRawEquipment)
+        return service.availableRawEquipment.filter { selectedEquipment.contains($0) }
     }
 
     private var items: [ExerciseLibraryItem] {
@@ -174,6 +180,7 @@ private struct ExerciseLibraryBrowserView: View {
         .onAppear {
             applyFilterState(ExerciseFilterStateStore.load(key: ExerciseFilterStateStore.workoutsKey))
             normalizePrimaryFilterSelection()
+            normalizeEquipmentFilterSelection()
         }
         .onChange(of: filterStateSnapshot) { _, state in
             ExerciseFilterStateStore.save(state, key: ExerciseFilterStateStore.workoutsKey)
@@ -184,6 +191,9 @@ private struct ExerciseLibraryBrowserView: View {
         }
         .onChange(of: selectedSplitGroupTitles) {
             normalizePrimaryFilterSelection()
+        }
+        .onChange(of: datasetRawEquipmentRaw) {
+            normalizeEquipmentFilterSelection()
         }
     }
 
@@ -248,7 +258,7 @@ private struct ExerciseLibraryBrowserView: View {
                         menuChoice("All Equipment", isSelected: selectedRawEquipment.isEmpty) {
                             selectedRawEquipment.removeAll()
                         }
-                        ForEach(service.availableRawEquipment, id: \.self) { equipment in
+                        ForEach(profileRawEquipmentOptions, id: \.self) { equipment in
                             menuChoice(equipment, isSelected: selectedRawEquipment.contains(equipment)) {
                                 selectedRawEquipment = toggledSelection(equipment, in: selectedRawEquipment)
                             }
@@ -359,6 +369,19 @@ private struct ExerciseLibraryBrowserView: View {
         let validOptions = Set(primaryFilterOptions)
         guard !validOptions.isEmpty else { return }
         selectedPrimaryMuscles = selectedPrimaryMuscles.intersection(validOptions)
+    }
+
+    private func normalizeEquipmentFilterSelection() {
+        let validOptions = Set(profileRawEquipmentOptions)
+        selectedRawEquipment = selectedRawEquipment.intersection(validOptions)
+    }
+
+    private func datasetStoredSet(_ rawValue: String, allowedValues: [String]) -> Set<String> {
+        let allowedValues = Set(allowedValues)
+        return Set(rawValue
+            .split(separator: "|")
+            .map(String.init)
+            .filter { allowedValues.contains($0) })
     }
 
     private func selectionTitle(_ selection: Set<String>) -> String {

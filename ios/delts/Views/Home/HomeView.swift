@@ -22,6 +22,7 @@ struct HomeView: View {
     @FocusState private var focusedRepsField: PlannedSetFocus?
     @State private var keyboardHeight: CGFloat = 0
     @State private var selectedDetailItem: ExerciseLibraryItem?
+    @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
 
     private let service = ExerciseLibraryService.shared
 
@@ -107,6 +108,11 @@ struct HomeView: View {
             categories: pickerSelectedCategories,
             sort: pickerSelectedSort
         )
+    }
+
+    private var profileRawEquipmentOptions: [String] {
+        let selectedEquipment = datasetStoredSet(datasetRawEquipmentRaw, allowedValues: service.availableRawEquipment)
+        return service.availableRawEquipment.filter { selectedEquipment.contains($0) }
     }
 
     private var matchingExercises: [ExerciseLibraryItem] {
@@ -262,6 +268,7 @@ struct HomeView: View {
                     showsSourcePicker: !isSavedWorkoutPickerContext,
                     primaryFilterMuscles: workoutPickerContext.muscles,
                     hidesPrimaryFilter: hidesWorkoutPickerPrimaryFilter,
+                    rawEquipmentOptions: profileRawEquipmentOptions,
                     exercises: matchingExercises,
                     selectedExerciseIDs: selectedExerciseIDs,
                     savedExerciseIDs: savedExerciseIDs,
@@ -277,6 +284,9 @@ struct HomeView: View {
             .onChange(of: workoutPickerFilterState) { _, state in
                 guard isWorkoutPickerPresented else { return }
                 ExerciseFilterStateStore.save(state, key: workoutPickerFilterKey)
+            }
+            .onChange(of: datasetRawEquipmentRaw) {
+                normalizeWorkoutPickerEquipmentFilter()
             }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) { notification in
                 updateKeyboardHeight(from: notification)
@@ -385,6 +395,7 @@ struct HomeView: View {
         pickerSelectedCategories = state.categories
         pickerSelectedSort = state.sort
         normalizeWorkoutPickerPrimaryFilter()
+        normalizeWorkoutPickerEquipmentFilter()
     }
 
     private func normalizeWorkoutPickerPrimaryFilter() {
@@ -398,6 +409,19 @@ struct HomeView: View {
             : Set(service.availablePrimaryMuscles.filter { workoutPickerContext.muscles.contains($0) })
         guard !validOptions.isEmpty else { return }
         pickerSelectedPrimaryMuscles = pickerSelectedPrimaryMuscles.intersection(validOptions)
+    }
+
+    private func normalizeWorkoutPickerEquipmentFilter() {
+        let validOptions = Set(profileRawEquipmentOptions)
+        pickerSelectedRawEquipment = pickerSelectedRawEquipment.intersection(validOptions)
+    }
+
+    private func datasetStoredSet(_ rawValue: String, allowedValues: [String]) -> Set<String> {
+        let allowedValues = Set(allowedValues)
+        return Set(rawValue
+            .split(separator: "|")
+            .map(String.init)
+            .filter { allowedValues.contains($0) })
     }
 
     private func removeExercise(_ id: UUID) {

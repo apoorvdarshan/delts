@@ -440,6 +440,7 @@ struct WorkoutPickerSheet: View {
     let showsSourcePicker: Bool
     let primaryFilterMuscles: Set<String>
     let hidesPrimaryFilter: Bool
+    let rawEquipmentOptions: [String]
     let exercises: [ExerciseLibraryItem]
     let selectedExerciseIDs: Set<String>
     let savedExerciseIDs: Set<String>
@@ -529,12 +530,16 @@ struct WorkoutPickerSheet: View {
         }
         .onAppear {
             normalizePrimaryFilterSelection()
+            normalizeEquipmentFilterSelection()
         }
         .onChange(of: primaryFilterMuscles) {
             normalizePrimaryFilterSelection()
         }
         .onChange(of: hidesPrimaryFilter) {
             normalizePrimaryFilterSelection()
+        }
+        .onChange(of: rawEquipmentOptions) {
+            normalizeEquipmentFilterSelection()
         }
     }
 
@@ -640,7 +645,7 @@ struct WorkoutPickerSheet: View {
                     menuChoice("All Equipment", isSelected: selectedRawEquipment.isEmpty) {
                         selectedRawEquipment.removeAll()
                     }
-                    ForEach(service.availableRawEquipment, id: \.self) { equipment in
+                    ForEach(rawEquipmentOptions, id: \.self) { equipment in
                         menuChoice(equipment, isSelected: selectedRawEquipment.contains(equipment)) {
                             selectedRawEquipment = toggledSelection(equipment, in: selectedRawEquipment)
                         }
@@ -732,6 +737,11 @@ struct WorkoutPickerSheet: View {
         let validOptions = Set(primaryFilterOptions)
         guard !validOptions.isEmpty else { return }
         selectedPrimaryMuscles = selectedPrimaryMuscles.intersection(validOptions)
+    }
+
+    private func normalizeEquipmentFilterSelection() {
+        let validOptions = Set(rawEquipmentOptions)
+        selectedRawEquipment = selectedRawEquipment.intersection(validOptions)
     }
 
     private func selectionTitle(_ selection: Set<String>) -> String {
