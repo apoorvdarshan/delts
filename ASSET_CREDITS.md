@@ -10,7 +10,11 @@ Target muscle selector images are bundled as cropped derivatives from Wikimedia 
 - Female core, quads, and hips crops: CC BY-SA 4.0, [Anna Kushkian IFBB 2026](https://commons.wikimedia.org/wiki/File:Anna_Kushkian_IFBB_2026.jpg)
 - Female legs, hamstrings, glutes, and calves crops: CC0, [Female bodybuilder 2016 Women bodybuilding](https://commons.wikimedia.org/wiki/File:Female_bodybuilder_2016_Women_bodybuilding.jpg)
 
-Menu muscle glyph assets are cropped/rasterized derivatives of SVG muscle paths from `react-muscle-highlighter` 1.2.0, MIT License.
+Body fat selector images are AI-generated reference images created for this app and bundled locally in the asset catalog.
+
+App icon artwork was provided by the project owner and bundled locally in the asset catalog.
+
+Menu muscle glyph assets are cropped/rasterized derivatives of SVG muscle paths from [`react-muscle-highlighter`](https://github.com/soroojshehryar/react-muscle-highlighter) 1.2.0, MIT License. The generated app assets are bundled locally in the asset catalog and do not depend on the upstream repository at runtime.
 
 Copyright (c) 2024 My Muscle Contributors
 
