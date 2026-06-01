@@ -13,6 +13,7 @@ struct HomeView: View {
     @AppStorage("delts.savedExerciseIDs") private var savedExerciseIDsRaw = ""
     @FocusState private var focusedRepsExerciseID: UUID?
     @State private var keyboardHeight: CGFloat = 0
+    @State private var selectedDetailItem: ExerciseLibraryItem?
 
     private let service = ExerciseLibraryService.shared
 
@@ -121,6 +122,9 @@ struct HomeView: View {
                                 },
                                 updateReps: { reps in
                                     updateExercise(exercise.id) { $0.reps = reps }
+                                },
+                                openDetail: {
+                                    selectedDetailItem = libraryItem(for: exercise)
                                 }
                             )
                             .listRowBackground(Color.deltsPanel.opacity(0.20))
@@ -180,6 +184,9 @@ struct HomeView: View {
                     .accessibilityLabel("Add workout")
                 }
             }
+            .navigationDestination(item: $selectedDetailItem) { item in
+                ExerciseLibraryDetailView(item: item)
+            }
             .sheet(isPresented: $isWorkoutPickerPresented) {
                 WorkoutPickerSheet(
                     searchText: $exerciseSearch,
@@ -235,6 +242,10 @@ struct HomeView: View {
 
     private func workoutCount(for date: Date) -> Int {
         dayPlans[WorkoutDayPlanStore.key(for: date)]?.exercises.count ?? 0
+    }
+
+    private func libraryItem(for exercise: PlannedRoutineExercise) -> ExerciseLibraryItem? {
+        service.exercises.first { $0.id == exercise.itemID }
     }
 
     private func openWorkoutPicker(_ context: WorkoutPickerContext) {

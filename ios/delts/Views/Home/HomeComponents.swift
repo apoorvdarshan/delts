@@ -227,37 +227,42 @@ struct PlannedExerciseRow: View {
     let focusedRepsExerciseID: FocusState<UUID?>.Binding
     let updateSets: (Int) -> Void
     let updateReps: (String) -> Void
+    let openDetail: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                AnimatedExerciseVisual(
-                    exerciseName: exercise.name,
-                    imagePaths: exercise.imagePaths,
-                    height: 62,
-                    fillsWidth: false,
-                    allowsDerivedImageLookup: false
-                )
-                .frame(width: 62, height: 62)
-                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .clipped()
-                .layoutPriority(0)
+            Button(action: openDetail) {
+                HStack(spacing: 12) {
+                    AnimatedExerciseVisual(
+                        exerciseName: exercise.name,
+                        imagePaths: exercise.imagePaths,
+                        height: 62,
+                        fillsWidth: false,
+                        allowsDerivedImageLookup: false
+                    )
+                    .frame(width: 62, height: 62)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .clipped()
+                    .layoutPriority(0)
 
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(exercise.name)
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(Color.deltsCharcoal)
-                        .lineLimit(2)
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(exercise.name)
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(Color.deltsCharcoal)
+                            .lineLimit(2)
 
-                    Text("\(exercise.primaryMuscles.joined(separator: ", ")) - \(exercise.rawEquipment) - \(exercise.rawLevel)")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.deltsMutedText)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
+                        Text("\(exercise.primaryMuscles.joined(separator: ", ")) - \(exercise.rawEquipment) - \(exercise.rawLevel)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.deltsMutedText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .layoutPriority(1)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .layoutPriority(1)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
 
             HStack(spacing: 12) {
                 Stepper(value: Binding(get: { exercise.sets }, set: updateSets), in: 1...12) {

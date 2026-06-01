@@ -765,7 +765,7 @@ private struct LibraryTag: View {
     }
 }
 
-private struct ExerciseLibraryDetailView: View {
+struct ExerciseLibraryDetailView: View {
     let item: ExerciseLibraryItem
 
     var body: some View {
