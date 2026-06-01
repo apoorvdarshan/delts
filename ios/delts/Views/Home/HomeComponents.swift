@@ -639,10 +639,10 @@ struct WorkoutPickerSheet: View {
 
                 filterMenuPill(
                     title: "Equipment",
-                    value: selectionTitle(selectedRawEquipment),
+                    value: equipmentFilterTitle,
                     systemImage: "dumbbell.fill"
                 ) {
-                    menuChoice("All Equipment", isSelected: selectedRawEquipment.isEmpty) {
+                    menuChoice(allEquipmentMenuTitle, isSelected: selectedRawEquipment.isEmpty) {
                         selectedRawEquipment.removeAll()
                     }
                     ForEach(rawEquipmentOptions, id: \.self) { equipment in
@@ -714,6 +714,17 @@ struct WorkoutPickerSheet: View {
             }
             .padding(.vertical, 1)
         }
+    }
+
+    private var equipmentFilterTitle: String {
+        if selectedRawEquipment.isEmpty {
+            return "All \(rawEquipmentOptions.count)"
+        }
+        return selectionTitle(selectedRawEquipment)
+    }
+
+    private var allEquipmentMenuTitle: String {
+        "All Equipment (\(rawEquipmentOptions.count))"
     }
 
     private func resetFilters() {

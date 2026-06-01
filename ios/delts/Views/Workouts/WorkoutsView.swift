@@ -255,7 +255,7 @@ private struct ExerciseLibraryBrowserView: View {
                         value: equipmentFilterTitle,
                         systemImage: "dumbbell.fill"
                     ) {
-                        menuChoice("All Equipment", isSelected: selectedRawEquipment.isEmpty) {
+                        menuChoice(allEquipmentMenuTitle, isSelected: selectedRawEquipment.isEmpty) {
                             selectedRawEquipment.removeAll()
                         }
                         ForEach(profileRawEquipmentOptions, id: \.self) { equipment in
@@ -323,7 +323,14 @@ private struct ExerciseLibraryBrowserView: View {
     }
 
     private var equipmentFilterTitle: String {
-        selectionTitle(selectedRawEquipment)
+        if selectedRawEquipment.isEmpty {
+            return "All \(profileRawEquipmentOptions.count)"
+        }
+        return selectionTitle(selectedRawEquipment)
+    }
+
+    private var allEquipmentMenuTitle: String {
+        "All Equipment (\(profileRawEquipmentOptions.count))"
     }
 
     private var categoryFilterTitle: String {
