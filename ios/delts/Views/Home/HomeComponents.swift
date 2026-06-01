@@ -230,12 +230,18 @@ struct EmptyRoutineRow: View {
 
 struct PlannedExerciseRow: View {
     let exercise: PlannedRoutineExercise
-    let focusedRepsExerciseID: FocusState<UUID?>.Binding
+    let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
     let updateSets: (Int) -> Void
-    let updateReps: (String) -> Void
+    let updateSetReps: (Int, String) -> Void
     let openDetail: () -> Void
 
     var body: some View {
+        let setReps = exercise.normalizedSetReps
+        let columns = Array(
+            repeating: GridItem(.flexible(), spacing: 8),
+            count: setReps.count == 1 ? 1 : 2
+        )
+
         VStack(alignment: .leading, spacing: 14) {
             Button(action: openDetail) {
                 HStack(alignment: .center, spacing: 12) {
@@ -279,25 +285,32 @@ struct PlannedExerciseRow: View {
             .buttonStyle(.plain)
 
             HStack(spacing: 12) {
+                Text("Sets")
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
+                    .foregroundStyle(Color.deltsMutedText)
+
                 Stepper(value: Binding(get: { exercise.sets }, set: updateSets), in: 1...12) {
                     Text("\(exercise.sets) set\(exercise.sets == 1 ? "" : "s")")
                         .font(.system(.subheadline, design: .rounded, weight: .bold))
                         .foregroundStyle(Color.deltsCharcoal)
                 }
+            }
 
-                TextField("Reps", text: Binding(get: { exercise.reps }, set: updateReps))
-                    .keyboardType(.numberPad)
-                    .textFieldStyle(.plain)
-                    .font(.system(.subheadline, design: .rounded, weight: .bold).monospacedDigit())
-                    .multilineTextAlignment(.center)
-                    .focused(focusedRepsExerciseID, equals: exercise.id)
-                    .frame(width: 74, height: 38)
-                    .background(Color.deltsCard.opacity(0.76), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(Color.deltsHairline.opacity(0.52), lineWidth: 0.6)
-                    }
-
+            LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+                ForEach(Array(setReps.enumerated()), id: \.offset) { index, _ in
+                    SetRepsField(
+                        exerciseID: exercise.id,
+                        setIndex: index,
+                        reps: Binding(
+                            get: {
+                                let values = exercise.normalizedSetReps
+                                return values.indices.contains(index) ? values[index] : ""
+                            },
+                            set: { updateSetReps(index, $0) }
+                        ),
+                        focusedRepsField: focusedRepsField
+                    )
+                }
             }
         }
         .padding(16)
@@ -308,6 +321,40 @@ struct PlannedExerciseRow: View {
                 .stroke(Color.deltsHairline.opacity(0.82), lineWidth: 0.8)
         }
         .shadow(color: Color.black.opacity(0.22), radius: 12, x: 0, y: 7)
+    }
+}
+
+private struct SetRepsField: View {
+    let exerciseID: UUID
+    let setIndex: Int
+    @Binding var reps: String
+    let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text("Set \(setIndex + 1)")
+                .font(.system(.caption, design: .rounded, weight: .bold))
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(1)
+
+            Spacer(minLength: 4)
+
+            TextField("Reps", text: $reps)
+                .keyboardType(.numberPad)
+                .textFieldStyle(.plain)
+                .font(.system(.subheadline, design: .rounded, weight: .bold).monospacedDigit())
+                .foregroundStyle(Color.deltsCharcoal)
+                .multilineTextAlignment(.trailing)
+                .focused(focusedRepsField, equals: PlannedSetFocus(exerciseID: exerciseID, setIndex: setIndex))
+                .frame(minWidth: 42)
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 42)
+        .background(Color.deltsCard.opacity(0.78), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.48), lineWidth: 0.6)
+        }
     }
 }
 

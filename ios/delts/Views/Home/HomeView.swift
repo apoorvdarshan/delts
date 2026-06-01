@@ -11,7 +11,7 @@ struct HomeView: View {
     @State private var workoutPickerContext = WorkoutPickerContext.all
     @AppStorage("delts.workoutPickerSource") private var workoutPickerSourceRaw = WorkoutPickerSource.dataset.rawValue
     @AppStorage("delts.savedExerciseIDs") private var savedExerciseIDsRaw = ""
-    @FocusState private var focusedRepsExerciseID: UUID?
+    @FocusState private var focusedRepsField: PlannedSetFocus?
     @State private var keyboardHeight: CGFloat = 0
     @State private var selectedDetailItem: ExerciseLibraryItem?
 
@@ -116,12 +116,12 @@ struct HomeView: View {
                         ForEach(selectedExercises) { exercise in
                             PlannedExerciseRow(
                                 exercise: exercise,
-                                focusedRepsExerciseID: $focusedRepsExerciseID,
+                                focusedRepsField: $focusedRepsField,
                                 updateSets: { sets in
-                                    updateExercise(exercise.id) { $0.sets = sets }
+                                    updateExercise(exercise.id) { $0.setSetCount(sets) }
                                 },
-                                updateReps: { reps in
-                                    updateExercise(exercise.id) { $0.reps = reps }
+                                updateSetReps: { setIndex, reps in
+                                    updateExercise(exercise.id) { $0.setReps(reps, forSet: setIndex) }
                                 },
                                 openDetail: {
                                     selectedDetailItem = libraryItem(for: exercise)
@@ -160,7 +160,7 @@ struct HomeView: View {
             .background(Color.deltsBackground)
             .contentShape(Rectangle())
             .onTapGesture {
-                focusedRepsExerciseID = nil
+                focusedRepsField = nil
                 dismissKeyboard()
             }
             .animation(.snappy, value: selectedDate)
@@ -214,9 +214,9 @@ struct HomeView: View {
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
             .overlay(alignment: .bottomTrailing) {
-                if focusedRepsExerciseID != nil {
+                if focusedRepsField != nil {
                     Button("Done") {
-                        focusedRepsExerciseID = nil
+                        focusedRepsField = nil
                         dismissKeyboard()
                     }
                     .font(.headline.weight(.bold))
