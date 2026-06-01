@@ -87,7 +87,8 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            ScrollViewReader { proxy in
+                List {
                 Section {
                     WorkoutWeekStrip(
                         selectedDate: $selectedDate,
@@ -127,6 +128,7 @@ struct HomeView: View {
                                     selectedDetailItem = libraryItem(for: exercise)
                                 }
                             )
+                            .id(exercise.id)
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                             .listRowInsets(EdgeInsets(top: 7, leading: 16, bottom: 7, trailing: 16))
@@ -212,18 +214,29 @@ struct HomeView: View {
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
                 keyboardHeight = 0
             }
-            .ignoresSafeArea(.keyboard, edges: .bottom)
-            .overlay(alignment: .bottomTrailing) {
-                if focusedRepsField != nil {
-                    Button("Done") {
-                        focusedRepsField = nil
-                        dismissKeyboard()
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    if focusedRepsField != nil {
+                        HStack {
+                            Spacer()
+                            Button("Done") {
+                                focusedRepsField = nil
+                                dismissKeyboard()
+                            }
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(Color.deltsAccent)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 8)
+                        .transition(.opacity)
                     }
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.deltsAccent)
-                    .padding(.trailing, 20)
-                    .padding(.bottom, max(keyboardHeight, 0) + 10)
-                    .transition(.opacity)
+                }
+                .onChange(of: focusedRepsField) { _, field in
+                    guard let field else { return }
+                    scrollFocusedExercise(field.exerciseID, with: proxy, delay: 0.18)
+                }
+                .onChange(of: keyboardHeight) { _, _ in
+                    guard let field = focusedRepsField else { return }
+                    scrollFocusedExercise(field.exerciseID, with: proxy, delay: 0.05)
                 }
             }
         }
@@ -302,6 +315,14 @@ struct HomeView: View {
 
     private func dismissKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+
+    private func scrollFocusedExercise(_ id: UUID, with proxy: ScrollViewProxy, delay: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            withAnimation(.snappy) {
+                proxy.scrollTo(id, anchor: .center)
+            }
+        }
     }
 
     private func updateKeyboardHeight(from notification: Notification) {
