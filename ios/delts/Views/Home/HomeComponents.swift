@@ -440,6 +440,8 @@ struct WorkoutPickerSheet: View {
     let showsSourcePicker: Bool
     let primaryFilterMuscles: Set<String>
     let hidesPrimaryFilter: Bool
+    let targetPrimaryMuscles: Set<String>
+    let limitsPrimaryToTargetMuscles: Bool
     let rawEquipmentOptions: [String]
     let exercises: [ExerciseLibraryItem]
     let selectedExerciseIDs: Set<String>
@@ -451,8 +453,14 @@ struct WorkoutPickerSheet: View {
     private let service = ExerciseLibraryService.shared
 
     private var primaryFilterOptions: [String] {
-        guard !primaryFilterMuscles.isEmpty else { return service.availablePrimaryMuscles }
-        return service.availablePrimaryMuscles.filter { primaryFilterMuscles.contains($0) }
+        let baseOptions: [String]
+        if primaryFilterMuscles.isEmpty {
+            baseOptions = service.availablePrimaryMuscles
+        } else {
+            baseOptions = service.availablePrimaryMuscles.filter { primaryFilterMuscles.contains($0) }
+        }
+        guard limitsPrimaryToTargetMuscles else { return baseOptions }
+        return baseOptions.filter { targetPrimaryMuscles.contains($0) }
     }
 
     var body: some View {
@@ -536,6 +544,12 @@ struct WorkoutPickerSheet: View {
             normalizePrimaryFilterSelection()
         }
         .onChange(of: hidesPrimaryFilter) {
+            normalizePrimaryFilterSelection()
+        }
+        .onChange(of: targetPrimaryMuscles) {
+            normalizePrimaryFilterSelection()
+        }
+        .onChange(of: limitsPrimaryToTargetMuscles) {
             normalizePrimaryFilterSelection()
         }
         .onChange(of: rawEquipmentOptions) {
@@ -746,7 +760,10 @@ struct WorkoutPickerSheet: View {
         }
 
         let validOptions = Set(primaryFilterOptions)
-        guard !validOptions.isEmpty else { return }
+        guard !validOptions.isEmpty else {
+            selectedPrimaryMuscles.removeAll()
+            return
+        }
         selectedPrimaryMuscles = selectedPrimaryMuscles.intersection(validOptions)
     }
 

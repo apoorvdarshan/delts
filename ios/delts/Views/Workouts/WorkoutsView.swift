@@ -15,7 +15,9 @@ struct WorkoutsView: View {
 
 private struct ExerciseLibraryBrowserView: View {
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
+    @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
+    @AppStorage("profile_show_only_target_primary_filters") private var showOnlyTargetPrimaryFilters = false
     @State private var searchText = ""
     @State private var selectedSplitGroupTitles: Set<String> = []
     @State private var selectedLevels: Set<String> = []
@@ -65,14 +67,23 @@ private struct ExerciseLibraryBrowserView: View {
     }
 
     private var primaryFilterOptions: [String] {
-        guard !selectedSplitGroups.isEmpty else { return service.availablePrimaryMuscles }
-        let allowedMuscles = Set(selectedSplitGroups.flatMap(\.muscles))
-        return service.availablePrimaryMuscles.filter { allowedMuscles.contains($0) }
+        let baseOptions: [String]
+        if selectedSplitGroups.isEmpty {
+            baseOptions = service.availablePrimaryMuscles
+        } else {
+            let allowedMuscles = Set(selectedSplitGroups.flatMap(\.muscles))
+            baseOptions = service.availablePrimaryMuscles.filter { allowedMuscles.contains($0) }
+        }
+        return targetFilteredPrimaryOptions(baseOptions)
     }
 
     private var profileRawEquipmentOptions: [String] {
         let selectedEquipment = datasetStoredSet(datasetRawEquipmentRaw, allowedValues: service.availableRawEquipment)
         return service.availableRawEquipment.filter { selectedEquipment.contains($0) }
+    }
+
+    private var profileTargetPrimaryMuscles: Set<String> {
+        datasetStoredSet(datasetPrimaryMusclesRaw, allowedValues: service.availablePrimaryMuscles)
     }
 
     private var effectiveRawEquipmentSelection: Set<String> {
@@ -200,6 +211,12 @@ private struct ExerciseLibraryBrowserView: View {
             normalizePrimaryFilterSelection()
         }
         .onChange(of: selectedSplitGroupTitles) {
+            normalizePrimaryFilterSelection()
+        }
+        .onChange(of: datasetPrimaryMusclesRaw) {
+            normalizePrimaryFilterSelection()
+        }
+        .onChange(of: showOnlyTargetPrimaryFilters) {
             normalizePrimaryFilterSelection()
         }
         .onChange(of: datasetRawEquipmentRaw) {
@@ -384,8 +401,17 @@ private struct ExerciseLibraryBrowserView: View {
         }
 
         let validOptions = Set(primaryFilterOptions)
-        guard !validOptions.isEmpty else { return }
+        guard !validOptions.isEmpty else {
+            selectedPrimaryMuscles.removeAll()
+            return
+        }
         selectedPrimaryMuscles = selectedPrimaryMuscles.intersection(validOptions)
+    }
+
+    private func targetFilteredPrimaryOptions(_ options: [String]) -> [String] {
+        guard showOnlyTargetPrimaryFilters else { return options }
+        let targetMuscles = profileTargetPrimaryMuscles
+        return options.filter { targetMuscles.contains($0) }
     }
 
     private func normalizeEquipmentFilterSelection() {

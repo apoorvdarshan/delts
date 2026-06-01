@@ -22,7 +22,9 @@ struct HomeView: View {
     @FocusState private var focusedRepsField: PlannedSetFocus?
     @State private var keyboardHeight: CGFloat = 0
     @State private var selectedDetailItem: ExerciseLibraryItem?
+    @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
+    @AppStorage("profile_show_only_target_primary_filters") private var showOnlyTargetPrimaryFilters = false
 
     private let service = ExerciseLibraryService.shared
 
@@ -113,6 +115,22 @@ struct HomeView: View {
     private var profileRawEquipmentOptions: [String] {
         let selectedEquipment = datasetStoredSet(datasetRawEquipmentRaw, allowedValues: service.availableRawEquipment)
         return service.availableRawEquipment.filter { selectedEquipment.contains($0) }
+    }
+
+    private var profileTargetPrimaryMuscles: Set<String> {
+        datasetStoredSet(datasetPrimaryMusclesRaw, allowedValues: service.availablePrimaryMuscles)
+    }
+
+    private var workoutPickerPrimaryFilterOptions: [String] {
+        let baseOptions: [String]
+        if workoutPickerContext.muscles.isEmpty {
+            baseOptions = service.availablePrimaryMuscles
+        } else {
+            baseOptions = service.availablePrimaryMuscles.filter { workoutPickerContext.muscles.contains($0) }
+        }
+        guard showOnlyTargetPrimaryFilters else { return baseOptions }
+        let targetMuscles = profileTargetPrimaryMuscles
+        return baseOptions.filter { targetMuscles.contains($0) }
     }
 
     private var effectivePickerRawEquipmentSelection: Set<String> {
@@ -278,6 +296,8 @@ struct HomeView: View {
                     showsSourcePicker: !isSavedWorkoutPickerContext,
                     primaryFilterMuscles: workoutPickerContext.muscles,
                     hidesPrimaryFilter: hidesWorkoutPickerPrimaryFilter,
+                    targetPrimaryMuscles: profileTargetPrimaryMuscles,
+                    limitsPrimaryToTargetMuscles: showOnlyTargetPrimaryFilters,
                     rawEquipmentOptions: profileRawEquipmentOptions,
                     exercises: matchingExercises,
                     selectedExerciseIDs: selectedExerciseIDs,
@@ -297,6 +317,12 @@ struct HomeView: View {
             }
             .onChange(of: datasetRawEquipmentRaw) {
                 normalizeWorkoutPickerEquipmentFilter()
+            }
+            .onChange(of: datasetPrimaryMusclesRaw) {
+                normalizeWorkoutPickerPrimaryFilter()
+            }
+            .onChange(of: showOnlyTargetPrimaryFilters) {
+                normalizeWorkoutPickerPrimaryFilter()
             }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) { notification in
                 updateKeyboardHeight(from: notification)
@@ -414,10 +440,11 @@ struct HomeView: View {
             return
         }
 
-        let validOptions = workoutPickerContext.muscles.isEmpty
-            ? Set(service.availablePrimaryMuscles)
-            : Set(service.availablePrimaryMuscles.filter { workoutPickerContext.muscles.contains($0) })
-        guard !validOptions.isEmpty else { return }
+        let validOptions = Set(workoutPickerPrimaryFilterOptions)
+        guard !validOptions.isEmpty else {
+            pickerSelectedPrimaryMuscles.removeAll()
+            return
+        }
         pickerSelectedPrimaryMuscles = pickerSelectedPrimaryMuscles.intersection(validOptions)
     }
 
