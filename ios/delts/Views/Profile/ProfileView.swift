@@ -51,6 +51,7 @@ private struct ProfileEditorView: View {
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
     @AppStorage("profile_show_only_target_primary_filters") private var showOnlyTargetPrimaryFilters = false
+    @AppStorage("weekStartsOnMonday") private var weekStartsOnMonday = true
     @AppStorage("apple_health_enabled") private var appleHealthEnabled = false
     @AppStorage("profile_goal_weight_kg") private var goalWeightKG = 0.0
     @AppStorage("profile_current_body_fat_is_exact") private var currentBodyFatIsExact = false
@@ -242,6 +243,12 @@ private struct ProfileEditorView: View {
                     selection: frequencyBinding,
                     options: frequencyOptions,
                     label: { "\($0) days/week" }
+                )
+                ProfileDivider()
+                ProfileToggleRow(
+                    title: "Week starts Monday",
+                    systemImage: "calendar.badge.clock",
+                    isOn: $weekStartsOnMonday
                 )
                 ProfileDivider()
                 ProfileMenuPicker(
