@@ -622,10 +622,10 @@ struct WorkoutPickerSheet: View {
                 if !hidesPrimaryFilter {
                     filterMenuPill(
                         title: "Primary",
-                        value: selectionTitle(selectedPrimaryMuscles),
+                        value: primaryFilterTitle,
                         systemImage: "scope"
                     ) {
-                        menuChoice("All Primary", isSelected: selectedPrimaryMuscles.isEmpty) {
+                        menuChoice(allPrimaryMenuTitle, isSelected: selectedPrimaryMuscles.isEmpty) {
                             selectedPrimaryMuscles.removeAll()
                         }
                         ForEach(primaryFilterOptions, id: \.self) { muscle in
@@ -735,6 +735,17 @@ struct WorkoutPickerSheet: View {
             return "All \(rawEquipmentOptions.count)"
         }
         return selectionTitle(selectedRawEquipment)
+    }
+
+    private var primaryFilterTitle: String {
+        if selectedPrimaryMuscles.isEmpty {
+            return "All \(primaryFilterOptions.count)"
+        }
+        return selectionTitle(selectedPrimaryMuscles)
+    }
+
+    private var allPrimaryMenuTitle: String {
+        "All Primary (\(primaryFilterOptions.count))"
     }
 
     private var allEquipmentMenuTitle: String {

@@ -248,10 +248,10 @@ private struct ExerciseLibraryBrowserView: View {
                     if shouldShowPrimaryFilter {
                         filterMenuPill(
                             title: "Primary",
-                            value: selectionTitle(selectedPrimaryMuscles),
+                            value: primaryFilterTitle,
                             systemImage: "scope"
                         ) {
-                            menuChoice("All Primary", isSelected: selectedPrimaryMuscles.isEmpty) {
+                            menuChoice(allPrimaryMenuTitle, isSelected: selectedPrimaryMuscles.isEmpty) {
                                 selectedPrimaryMuscles.removeAll()
                             }
                             ForEach(primaryFilterOptions, id: \.self) { muscle in
@@ -354,6 +354,17 @@ private struct ExerciseLibraryBrowserView: View {
             return "All \(profileRawEquipmentOptions.count)"
         }
         return selectionTitle(selectedRawEquipment)
+    }
+
+    private var primaryFilterTitle: String {
+        if selectedPrimaryMuscles.isEmpty {
+            return "All \(primaryFilterOptions.count)"
+        }
+        return selectionTitle(selectedPrimaryMuscles)
+    }
+
+    private var allPrimaryMenuTitle: String {
+        "All Primary (\(primaryFilterOptions.count))"
     }
 
     private var allEquipmentMenuTitle: String {
