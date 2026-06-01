@@ -227,7 +227,6 @@ struct PlannedExerciseRow: View {
     let focusedRepsExerciseID: FocusState<UUID?>.Binding
     let updateSets: (Int) -> Void
     let updateReps: (String) -> Void
-    let remove: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -275,13 +274,6 @@ struct PlannedExerciseRow: View {
                             .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
                     }
 
-                Button(action: remove) {
-                    Image(systemName: "trash")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(Color.deltsInferno)
-                        .frame(width: 36, height: 36)
-                }
-                .buttonStyle(.plain)
             }
         }
         .padding(.vertical, 6)

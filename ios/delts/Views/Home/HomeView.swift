@@ -121,9 +121,6 @@ struct HomeView: View {
                                 },
                                 updateReps: { reps in
                                     updateExercise(exercise.id) { $0.reps = reps }
-                                },
-                                remove: {
-                                    removeExercise(exercise.id)
                                 }
                             )
                             .listRowBackground(Color.deltsPanel.opacity(0.20))
