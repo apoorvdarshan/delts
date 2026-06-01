@@ -488,6 +488,8 @@ struct WorkoutPickerSheet: View {
                 }
             }
             .scrollContentBackground(.hidden)
+            .listStyle(.plain)
+            .contentMargins(.top, 0, for: .scrollContent)
             .background(Color.deltsBackground)
             .contentShape(Rectangle())
             .onTapGesture {
