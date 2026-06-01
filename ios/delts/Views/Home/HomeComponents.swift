@@ -450,12 +450,12 @@ struct WorkoutPickerSheet: View {
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
 
-                    workoutPickerHeaderControls
+                    workoutFilterStrip
                         .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 6, trailing: 20))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
 
-                    workoutFilterStrip
+                    workoutPickerHeaderControls
                         .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)

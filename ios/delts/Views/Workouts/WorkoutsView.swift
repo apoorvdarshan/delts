@@ -109,11 +109,12 @@ private struct ExerciseLibraryBrowserView: View {
                         noun: "exercise",
                         subtitle: selectedSort.title,
                         selectedSort: $selectedSort,
-                        onReset: hasActiveFilters ? {
+                        canReset: hasActiveFilters,
+                        onReset: {
                             withAnimation(.snappy) {
                                 resetFilters()
                             }
-                        } : nil
+                        }
                     )
                     .padding(.horizontal, 20)
                     .padding(.bottom, 4)
@@ -524,7 +525,8 @@ private struct ResultsHeader: View {
     let noun: String
     let subtitle: String
     @Binding var selectedSort: ExerciseLibrarySort
-    var onReset: (() -> Void)?
+    let canReset: Bool
+    let onReset: () -> Void
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
@@ -542,25 +544,24 @@ private struct ResultsHeader: View {
             Spacer()
 
             HStack(spacing: 8) {
-            if let onReset {
                 Button {
                     onReset()
                 } label: {
                     Label("Reset", systemImage: "arrow.counterclockwise")
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(Color.deltsInferno)
+                        .foregroundStyle(canReset ? Color.deltsInferno : Color.deltsMutedText)
                         .lineLimit(1)
                         .padding(.horizontal, 11)
                         .frame(height: 34)
-                        .background(Color.deltsInferno.opacity(0.10), in: Capsule())
+                        .background((canReset ? Color.deltsInferno : Color.deltsPanel).opacity(canReset ? 0.10 : 0.22), in: Capsule())
                         .overlay {
                             Capsule()
-                                .stroke(Color.deltsInferno.opacity(0.28), lineWidth: 0.5)
+                                .stroke((canReset ? Color.deltsInferno : Color.deltsHairline).opacity(canReset ? 0.28 : 0.24), lineWidth: 0.5)
                         }
                 }
+                .disabled(!canReset)
                 .buttonStyle(.plain)
                 .deltsPressable()
-            }
 
                 Menu {
                     ForEach(ExerciseLibrarySort.allCases) { sort in
