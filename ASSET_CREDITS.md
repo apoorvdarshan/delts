@@ -14,6 +14,8 @@ Body fat selector images are AI-generated reference images created for this app 
 
 App icon artwork was provided by the project owner and bundled locally in the asset catalog.
 
+1RM lift glyphs are original vector artwork created for this app and bundled locally in the asset catalog.
+
 Menu muscle glyph assets are cropped/rasterized derivatives of SVG muscle paths from [`react-muscle-highlighter`](https://github.com/soroojshehryar/react-muscle-highlighter) 1.2.0, MIT License. The generated app assets are bundled locally in the asset catalog and do not depend on the upstream repository at runtime.
 
 Copyright (c) 2024 My Muscle Contributors

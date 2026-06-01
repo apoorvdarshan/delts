@@ -284,6 +284,7 @@ private struct ProfileEditorView: View {
                 ProfileNumberInputRow(
                     title: "Bench Press",
                     systemImage: "figure.strengthtraining.traditional",
+                    assetImageName: "one_rm_icon_bench",
                     system: weightMeasurementSystemBinding,
                     value: benchBinding
                 )
@@ -291,6 +292,7 @@ private struct ProfileEditorView: View {
                 ProfileNumberInputRow(
                     title: "Squat",
                     systemImage: "figure.strengthtraining.functional",
+                    assetImageName: "one_rm_icon_squat",
                     system: weightMeasurementSystemBinding,
                     value: squatBinding
                 )
@@ -298,6 +300,7 @@ private struct ProfileEditorView: View {
                 ProfileNumberInputRow(
                     title: "Deadlift",
                     systemImage: "figure.core.training",
+                    assetImageName: "one_rm_icon_deadlift",
                     system: weightMeasurementSystemBinding,
                     value: deadliftBinding
                 )
@@ -305,6 +308,7 @@ private struct ProfileEditorView: View {
                 ProfileNumberInputRow(
                     title: "Overhead Press",
                     systemImage: "arrow.up",
+                    assetImageName: "one_rm_icon_overhead_press",
                     system: weightMeasurementSystemBinding,
                     value: overheadPressBinding
                 )
@@ -781,15 +785,26 @@ private struct ProfileDivider: View {
 private struct ProfileFieldLabel: View {
     let title: String
     let systemImage: String
+    var assetImageName: String? = nil
     var tint: Color = .deltsSecondaryAccent
 
     var body: some View {
         HStack(alignment: .center, spacing: 11) {
-            Image(systemName: systemImage)
-                .font(.system(size: 19, weight: .semibold))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(tint)
-                .frame(width: 38, height: 34)
+            if let assetImageName {
+                Image(assetImageName)
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(tint)
+                    .frame(width: 27, height: 27)
+                    .frame(width: 38, height: 34)
+            } else {
+                Image(systemName: systemImage)
+                    .font(.system(size: 19, weight: .semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(tint)
+                    .frame(width: 38, height: 34)
+            }
 
             Text(title)
                 .font(.body.weight(.semibold))
@@ -804,6 +819,7 @@ private struct ProfileFieldLabel: View {
 private struct ProfileFieldRow<Content: View>: View {
     let title: String
     let systemImage: String
+    let assetImageName: String?
     let tint: Color
     let content: Content
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -811,11 +827,13 @@ private struct ProfileFieldRow<Content: View>: View {
     init(
         title: String,
         systemImage: String,
+        assetImageName: String? = nil,
         tint: Color = .deltsSecondaryAccent,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.systemImage = systemImage
+        self.assetImageName = assetImageName
         self.tint = tint
         self.content = content()
     }
@@ -823,7 +841,7 @@ private struct ProfileFieldRow<Content: View>: View {
     var body: some View {
         if dynamicTypeSize.isAccessibilitySize {
             VStack(alignment: .leading, spacing: 10) {
-                ProfileFieldLabel(title: title, systemImage: systemImage, tint: tint)
+                ProfileFieldLabel(title: title, systemImage: systemImage, assetImageName: assetImageName, tint: tint)
                 content
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -831,7 +849,7 @@ private struct ProfileFieldRow<Content: View>: View {
             .contentShape(Rectangle())
         } else {
             HStack(alignment: .center, spacing: 12) {
-                ProfileFieldLabel(title: title, systemImage: systemImage, tint: tint)
+                ProfileFieldLabel(title: title, systemImage: systemImage, assetImageName: assetImageName, tint: tint)
                     .layoutPriority(2)
 
                 Spacer(minLength: 12)
@@ -1160,6 +1178,7 @@ private struct ProfileTextAreaRow: View {
 private struct ProfileNumberInputRow: View {
     let title: String
     let systemImage: String
+    var assetImageName: String? = nil
     @Binding var system: MeasurementSystem
     @Binding var value: Double
     @State private var isPickerPresented = false
@@ -1178,7 +1197,7 @@ private struct ProfileNumberInputRow: View {
     }
 
     var body: some View {
-        ProfileFieldRow(title: title, systemImage: systemImage) {
+        ProfileFieldRow(title: title, systemImage: systemImage, assetImageName: assetImageName) {
             Button {
                 isPickerPresented = true
             } label: {
