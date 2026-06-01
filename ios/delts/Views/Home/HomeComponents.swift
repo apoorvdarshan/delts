@@ -219,10 +219,10 @@ struct EmptyRoutineRow: View {
             }
         }
         .padding(12)
-        .background(Color.deltsPanel.opacity(0.36), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Color.deltsPanel.opacity(0.62), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.44), lineWidth: 0.75)
+                .stroke(Color.deltsHairline.opacity(0.68), lineWidth: 0.9)
         }
     }
 }
