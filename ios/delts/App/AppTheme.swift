@@ -1,31 +1,99 @@
 import SwiftUI
 
+enum AppAppearance: String, CaseIterable, Identifiable, Hashable {
+    case system
+    case light
+    case dark
+    case darker
+
+    static let storageKey = "app_appearance"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system: return "System"
+        case .light: return "Light"
+        case .dark: return "Dark"
+        case .darker: return "Darker"
+        }
+    }
+
+    var preferredColorScheme: ColorScheme? {
+        switch self {
+        case .system:
+            return nil
+        case .light:
+            return .light
+        case .dark, .darker:
+            return .dark
+        }
+    }
+
+    static var current: AppAppearance {
+        AppAppearance(rawValue: UserDefaults.standard.string(forKey: storageKey) ?? "") ?? .system
+    }
+
+    static var usesDarkerPalette: Bool {
+        current == .darker
+    }
+}
+
 extension Color {
-    static let deltsBackground = Color(uiColor: UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.047, green: 0.055, blue: 0.052, alpha: 1)
-            : UIColor(red: 0.946, green: 0.965, blue: 0.928, alpha: 1)
-    })
-    static let deltsCharcoal = Color(uiColor: UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.890, green: 0.935, blue: 0.865, alpha: 1)
-            : UIColor(red: 0.056, green: 0.080, blue: 0.066, alpha: 1)
-    })
-    static let deltsCard = Color(uiColor: UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.090, green: 0.108, blue: 0.098, alpha: 1)
-            : UIColor(red: 0.894, green: 0.930, blue: 0.866, alpha: 1)
-    })
-    static let deltsPanel = Color(uiColor: UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.124, green: 0.150, blue: 0.132, alpha: 1)
-            : UIColor(red: 0.828, green: 0.884, blue: 0.790, alpha: 1)
-    })
-    static let deltsHairline = Color(uiColor: UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.286, green: 0.366, blue: 0.304, alpha: 1)
-            : UIColor(red: 0.545, green: 0.646, blue: 0.490, alpha: 1)
-    })
+    static var deltsBackground: Color {
+        Color(uiColor: UIColor { traits in
+            if AppAppearance.usesDarkerPalette {
+                return UIColor(red: 0.000, green: 0.000, blue: 0.000, alpha: 1)
+            }
+            return traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.047, green: 0.055, blue: 0.052, alpha: 1)
+                : UIColor(red: 0.946, green: 0.965, blue: 0.928, alpha: 1)
+        })
+    }
+
+    static var deltsCharcoal: Color {
+        Color(uiColor: UIColor { traits in
+            if AppAppearance.usesDarkerPalette {
+                return UIColor(red: 0.940, green: 0.975, blue: 0.910, alpha: 1)
+            }
+            return traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.890, green: 0.935, blue: 0.865, alpha: 1)
+                : UIColor(red: 0.056, green: 0.080, blue: 0.066, alpha: 1)
+        })
+    }
+
+    static var deltsCard: Color {
+        Color(uiColor: UIColor { traits in
+            if AppAppearance.usesDarkerPalette {
+                return UIColor(red: 0.024, green: 0.026, blue: 0.023, alpha: 1)
+            }
+            return traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.090, green: 0.108, blue: 0.098, alpha: 1)
+                : UIColor(red: 0.894, green: 0.930, blue: 0.866, alpha: 1)
+        })
+    }
+
+    static var deltsPanel: Color {
+        Color(uiColor: UIColor { traits in
+            if AppAppearance.usesDarkerPalette {
+                return UIColor(red: 0.038, green: 0.043, blue: 0.038, alpha: 1)
+            }
+            return traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.124, green: 0.150, blue: 0.132, alpha: 1)
+                : UIColor(red: 0.828, green: 0.884, blue: 0.790, alpha: 1)
+        })
+    }
+
+    static var deltsHairline: Color {
+        Color(uiColor: UIColor { traits in
+            if AppAppearance.usesDarkerPalette {
+                return UIColor(red: 0.300, green: 0.405, blue: 0.305, alpha: 1)
+            }
+            return traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.286, green: 0.366, blue: 0.304, alpha: 1)
+                : UIColor(red: 0.545, green: 0.646, blue: 0.490, alpha: 1)
+        })
+    }
     static let deltsAccent = Color(red: 0.70, green: 0.94, blue: 0.26)
     static let deltsSecondaryAccent = Color(red: 0.35, green: 0.78, blue: 0.52)
     static let deltsWarning = Color(red: 0.76, green: 0.88, blue: 0.24)
@@ -33,11 +101,16 @@ extension Color {
     static let deltsAcidGreen = Color.deltsSecondaryAccent
     static let deltsGold = Color.deltsWarning
     static let deltsOnAccent = Color(red: 0.032, green: 0.048, blue: 0.038)
-    static let deltsMutedText = Color(uiColor: UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.620, green: 0.710, blue: 0.622, alpha: 1)
-            : UIColor(red: 0.314, green: 0.386, blue: 0.312, alpha: 1)
-    })
+    static var deltsMutedText: Color {
+        Color(uiColor: UIColor { traits in
+            if AppAppearance.usesDarkerPalette {
+                return UIColor(red: 0.690, green: 0.765, blue: 0.675, alpha: 1)
+            }
+            return traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.620, green: 0.710, blue: 0.622, alpha: 1)
+                : UIColor(red: 0.314, green: 0.386, blue: 0.312, alpha: 1)
+        })
+    }
 }
 
 struct DeltsBackground: View {

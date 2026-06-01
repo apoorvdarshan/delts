@@ -12,10 +12,17 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
     @State private var selectedTab: DeltsTab = .initialTab
+    @AppStorage(AppAppearance.storageKey) private var appAppearanceRaw = AppAppearance.system.rawValue
+
+    private var appAppearance: AppAppearance {
+        AppAppearance(rawValue: appAppearanceRaw) ?? .system
+    }
 
     var body: some View {
         rootView
             .tint(Color.deltsAccent)
+            .preferredColorScheme(appAppearance.preferredColorScheme)
+            .id(appAppearanceRaw)
             .task {
                 ensureDefaultProfile()
             }

@@ -47,6 +47,7 @@ private struct ProfileEditorView: View {
     @AppStorage("profile_custom_workout_split") private var customWorkoutSplit = ""
     @AppStorage("profile_selected_goals") private var selectedGoalRawValues = ""
     @AppStorage("profile_extra_issues") private var extraIssues = ""
+    @AppStorage(AppAppearance.storageKey) private var appAppearanceRaw = AppAppearance.system.rawValue
     @AppStorage("profile_dataset_level") private var datasetLevelRaw = ""
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
@@ -156,6 +157,14 @@ private struct ProfileEditorView: View {
                     Toggle("", isOn: appleHealthBinding)
                         .labelsHidden()
                 }
+                ProfileDivider()
+                ProfileMenuPicker(
+                    title: "Appearance",
+                    systemImage: "circle.lefthalf.filled",
+                    selection: appAppearanceBinding,
+                    options: AppAppearance.allCases,
+                    label: { $0.title }
+                )
             }
         }
     }
@@ -169,6 +178,14 @@ private struct ProfileEditorView: View {
             } else {
                 appleHealthEnabled = false
             }
+        }
+    }
+
+    private var appAppearanceBinding: Binding<AppAppearance> {
+        Binding {
+            AppAppearance(rawValue: appAppearanceRaw) ?? .system
+        } set: { newValue in
+            appAppearanceRaw = newValue.rawValue
         }
     }
 
