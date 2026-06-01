@@ -108,6 +108,7 @@ private struct ExerciseLibraryBrowserView: View {
                         count: items.count,
                         noun: "exercise",
                         subtitle: selectedSort.title,
+                        selectedSort: $selectedSort,
                         onReset: hasActiveFilters ? {
                             withAnimation(.snappy) {
                                 resetFilters()
@@ -253,16 +254,6 @@ private struct ExerciseLibraryBrowserView: View {
                             menuChoice(categoryMenuTitle(categoryCount), isSelected: selectedCategory == categoryCount.category) {
                                 selectedCategory = categoryCount.category
                             }
-                        }
-                    }
-
-                    filterMenuPill(
-                        title: "Sort",
-                        value: selectedSort.title,
-                        systemImage: "arrow.up.arrow.down"
-                    ) {
-                        ForEach(ExerciseLibrarySort.allCases) { sort in
-                            menuChoice(sort.title, isSelected: selectedSort == sort) { selectedSort = sort }
                         }
                     }
 
@@ -532,6 +523,7 @@ private struct ResultsHeader: View {
     let count: Int
     let noun: String
     let subtitle: String
+    @Binding var selectedSort: ExerciseLibrarySort
     var onReset: (() -> Void)?
 
     var body: some View {
@@ -549,6 +541,7 @@ private struct ResultsHeader: View {
 
             Spacer()
 
+            HStack(spacing: 8) {
             if let onReset {
                 Button {
                     onReset()
@@ -563,6 +556,35 @@ private struct ResultsHeader: View {
                         .overlay {
                             Capsule()
                                 .stroke(Color.deltsInferno.opacity(0.28), lineWidth: 0.5)
+                        }
+                }
+                .buttonStyle(.plain)
+                .deltsPressable()
+            }
+
+                Menu {
+                    ForEach(ExerciseLibrarySort.allCases) { sort in
+                        Button {
+                            selectedSort = sort
+                        } label: {
+                            if selectedSort == sort {
+                                Label(sort.title, systemImage: "checkmark")
+                            } else {
+                                Text(sort.title)
+                            }
+                        }
+                    }
+                } label: {
+                    Label("Sort", systemImage: "arrow.up.arrow.down")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(selectedSort == .name ? Color.deltsMutedText : Color.deltsAccent)
+                        .lineLimit(1)
+                        .padding(.horizontal, 11)
+                        .frame(height: 34)
+                        .background(Color.deltsPanel.opacity(selectedSort == .name ? 0.30 : 0.46), in: Capsule())
+                        .overlay {
+                            Capsule()
+                                .stroke((selectedSort == .name ? Color.deltsHairline : Color.deltsAccent).opacity(0.32), lineWidth: 0.5)
                         }
                 }
                 .buttonStyle(.plain)

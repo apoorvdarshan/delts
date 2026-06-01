@@ -446,12 +446,19 @@ struct WorkoutPickerSheet: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                    .listRowInsets(EdgeInsets(top: 10, leading: 20, bottom: 8, trailing: 20))
+                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 4, trailing: 20))
                     .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+
+                    workoutPickerHeaderControls
+                        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 6, trailing: 20))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
 
                     workoutFilterStrip
-                        .listRowInsets(EdgeInsets(top: 2, leading: 20, bottom: 12, trailing: 20))
+                        .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20))
                         .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                 }
 
                 Section {
@@ -487,6 +494,7 @@ struct WorkoutPickerSheet: View {
                 dismissKeyboard()
             }
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search workouts")
+            .listSectionSpacing(0)
             .navigationTitle("Add \(pickerTitle)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -496,6 +504,65 @@ struct WorkoutPickerSheet: View {
                         .foregroundStyle(Color.deltsAccent)
                 }
             }
+        }
+    }
+
+    private var hasActiveFilters: Bool {
+        !searchText.isEmpty ||
+            selectedLevel != nil ||
+            selectedRawEquipment != nil ||
+            selectedPrimaryMuscle != nil ||
+            selectedSecondaryMuscle != nil ||
+            selectedForce != nil ||
+            selectedMechanic != nil ||
+            selectedCategory != nil ||
+            selectedSort != .name
+    }
+
+    private var workoutPickerHeaderControls: some View {
+        HStack(spacing: 8) {
+            Spacer()
+
+            Button {
+                resetFilters()
+            } label: {
+                Label("Reset", systemImage: "arrow.counterclockwise")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(hasActiveFilters ? Color.deltsInferno : Color.deltsMutedText)
+                    .lineLimit(1)
+                    .padding(.horizontal, 11)
+                    .frame(height: 34)
+                    .background((hasActiveFilters ? Color.deltsInferno : Color.deltsPanel).opacity(hasActiveFilters ? 0.10 : 0.22), in: Capsule())
+                    .overlay {
+                        Capsule()
+                            .stroke((hasActiveFilters ? Color.deltsInferno : Color.deltsHairline).opacity(hasActiveFilters ? 0.28 : 0.24), lineWidth: 0.5)
+                    }
+            }
+            .disabled(!hasActiveFilters)
+            .buttonStyle(.plain)
+            .deltsPressable()
+
+            Menu {
+                ForEach(ExerciseLibrarySort.allCases) { sort in
+                    menuChoice(sort.title, isSelected: selectedSort == sort) {
+                        selectedSort = sort
+                    }
+                }
+            } label: {
+                Label("Sort", systemImage: "arrow.up.arrow.down")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(selectedSort == .name ? Color.deltsMutedText : Color.deltsAccent)
+                    .lineLimit(1)
+                    .padding(.horizontal, 11)
+                    .frame(height: 34)
+                    .background(Color.deltsPanel.opacity(selectedSort == .name ? 0.30 : 0.46), in: Capsule())
+                    .overlay {
+                        Capsule()
+                            .stroke((selectedSort == .name ? Color.deltsHairline : Color.deltsAccent).opacity(0.32), lineWidth: 0.5)
+                    }
+            }
+            .buttonStyle(.plain)
+            .deltsPressable()
         }
     }
 
@@ -606,21 +673,21 @@ struct WorkoutPickerSheet: View {
                         }
                     }
                 }
-
-                filterMenuPill(
-                    title: "Sort",
-                    value: selectedSort.title,
-                    systemImage: "arrow.up.arrow.down"
-                ) {
-                    ForEach(ExerciseLibrarySort.allCases) { sort in
-                        menuChoice(sort.title, isSelected: selectedSort == sort) {
-                            selectedSort = sort
-                        }
-                    }
-                }
             }
             .padding(.vertical, 1)
         }
+    }
+
+    private func resetFilters() {
+        searchText = ""
+        selectedLevel = nil
+        selectedRawEquipment = nil
+        selectedPrimaryMuscle = nil
+        selectedSecondaryMuscle = nil
+        selectedForce = nil
+        selectedMechanic = nil
+        selectedCategory = nil
+        selectedSort = .name
     }
 
     private func filterMenuPill<Content: View>(
