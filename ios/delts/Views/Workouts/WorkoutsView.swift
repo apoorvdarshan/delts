@@ -895,10 +895,10 @@ struct ExerciseLibraryDetailView: View {
         GeometryReader { geometry in
             let screenWidth = geometry.size.width
 
-            ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 0) {
-                    detailHero(width: screenWidth)
+            VStack(spacing: 0) {
+                detailHero(width: screenWidth)
 
+                ScrollView(.vertical) {
                     VStack(alignment: .leading, spacing: 24) {
                         DetailMetricGrid(item: item)
 
@@ -912,9 +912,9 @@ struct ExerciseLibraryDetailView: View {
                     .padding(.bottom, 112)
                     .frame(width: screenWidth, alignment: .leading)
                 }
-                .frame(width: screenWidth, alignment: .leading)
+                .scrollIndicators(.hidden)
             }
-            .scrollIndicators(.hidden)
+            .frame(width: screenWidth, alignment: .top)
         }
         .deltsScreen()
         .contentMargins(.bottom, 104, for: .scrollContent)
