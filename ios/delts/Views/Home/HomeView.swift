@@ -133,6 +133,18 @@ struct HomeView: View {
         return baseOptions.filter { targetMuscles.contains($0) }
     }
 
+    private var effectivePickerPrimaryMuscleSelection: Set<String> {
+        if !pickerSelectedPrimaryMuscles.isEmpty {
+            return pickerSelectedPrimaryMuscles
+        }
+        guard shouldApplyTargetPrimaryPickerFilter else { return [] }
+        return Set(workoutPickerPrimaryFilterOptions)
+    }
+
+    private var shouldApplyTargetPrimaryPickerFilter: Bool {
+        !hidesWorkoutPickerPrimaryFilter && showOnlyTargetPrimaryFilters
+    }
+
     private var effectivePickerRawEquipmentSelection: Set<String> {
         if pickerSelectedRawEquipment.isEmpty {
             return Set(profileRawEquipmentOptions)
@@ -141,13 +153,18 @@ struct HomeView: View {
     }
 
     private var matchingExercises: [ExerciseLibraryItem] {
+        let primaryMuscleSelection = effectivePickerPrimaryMuscleSelection
+        if shouldApplyTargetPrimaryPickerFilter && primaryMuscleSelection.isEmpty {
+            return []
+        }
+
         let rawEquipmentSelection = effectivePickerRawEquipmentSelection
         guard !rawEquipmentSelection.isEmpty else { return [] }
 
         let filtered = service.filtered(
             levels: pickerSelectedLevels,
             rawEquipment: rawEquipmentSelection,
-            primaryMuscles: pickerSelectedPrimaryMuscles,
+            primaryMuscles: primaryMuscleSelection,
             secondaryMuscles: pickerSelectedSecondaryMuscles,
             forces: pickerSelectedForces,
             mechanics: pickerSelectedMechanics,

@@ -86,6 +86,18 @@ private struct ExerciseLibraryBrowserView: View {
         datasetStoredSet(datasetPrimaryMusclesRaw, allowedValues: service.availablePrimaryMuscles)
     }
 
+    private var effectivePrimaryMuscleSelection: Set<String> {
+        if !selectedPrimaryMuscles.isEmpty {
+            return selectedPrimaryMuscles
+        }
+        guard shouldApplyTargetPrimaryFilter else { return [] }
+        return Set(primaryFilterOptions)
+    }
+
+    private var shouldApplyTargetPrimaryFilter: Bool {
+        shouldShowPrimaryFilter && showOnlyTargetPrimaryFilters
+    }
+
     private var effectiveRawEquipmentSelection: Set<String> {
         if selectedRawEquipment.isEmpty {
             return Set(profileRawEquipmentOptions)
@@ -94,13 +106,18 @@ private struct ExerciseLibraryBrowserView: View {
     }
 
     private var items: [ExerciseLibraryItem] {
+        let primaryMuscleSelection = effectivePrimaryMuscleSelection
+        if shouldApplyTargetPrimaryFilter && primaryMuscleSelection.isEmpty {
+            return []
+        }
+
         let rawEquipmentSelection = effectiveRawEquipmentSelection
         guard !rawEquipmentSelection.isEmpty else { return [] }
 
         let filtered = service.filtered(
             levels: selectedLevels,
             rawEquipment: rawEquipmentSelection,
-            primaryMuscles: selectedPrimaryMuscles,
+            primaryMuscles: primaryMuscleSelection,
             secondaryMuscles: selectedSecondaryMuscles,
             forces: selectedForces,
             mechanics: selectedMechanics,
