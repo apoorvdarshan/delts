@@ -236,35 +236,43 @@ struct PlannedExerciseRow: View {
     let openDetail: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             Button(action: openDetail) {
-                HStack(spacing: 12) {
+                HStack(alignment: .center, spacing: 12) {
                     AnimatedExerciseVisual(
                         exerciseName: exercise.name,
                         imagePaths: exercise.imagePaths,
-                        height: 62,
+                        height: 64,
                         fillsWidth: false,
                         allowsDerivedImageLookup: false
                     )
-                    .frame(width: 62, height: 62)
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .frame(width: 64, height: 64)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color.deltsHairline.opacity(0.48), lineWidth: 0.7)
+                    }
                     .clipped()
                     .layoutPriority(0)
 
-                    VStack(alignment: .leading, spacing: 5) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text(exercise.name)
-                            .font(.headline.weight(.semibold))
+                            .font(.system(.headline, design: .rounded, weight: .semibold))
                             .foregroundStyle(Color.deltsCharcoal)
                             .lineLimit(2)
 
                         Text("\(exercise.primaryMuscles.joined(separator: ", ")) - \(exercise.rawEquipment) - \(exercise.rawLevel)")
-                            .font(.caption.weight(.semibold))
+                            .font(.system(.caption, design: .rounded, weight: .semibold))
                             .foregroundStyle(Color.deltsMutedText)
                             .lineLimit(1)
                             .minimumScaleFactor(0.72)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .layoutPriority(1)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.deltsMutedText.opacity(0.72))
                 }
                 .contentShape(Rectangle())
             }
@@ -273,26 +281,33 @@ struct PlannedExerciseRow: View {
             HStack(spacing: 12) {
                 Stepper(value: Binding(get: { exercise.sets }, set: updateSets), in: 1...12) {
                     Text("\(exercise.sets) set\(exercise.sets == 1 ? "" : "s")")
-                        .font(.subheadline.weight(.bold))
+                        .font(.system(.subheadline, design: .rounded, weight: .bold))
                         .foregroundStyle(Color.deltsCharcoal)
                 }
 
                 TextField("Reps", text: Binding(get: { exercise.reps }, set: updateReps))
                     .keyboardType(.numberPad)
                     .textFieldStyle(.plain)
-                    .font(.subheadline.monospacedDigit().weight(.bold))
+                    .font(.system(.subheadline, design: .rounded, weight: .bold).monospacedDigit())
                     .multilineTextAlignment(.center)
                     .focused(focusedRepsExerciseID, equals: exercise.id)
                     .frame(width: 74, height: 38)
-                    .background(Color.deltsPanel.opacity(0.34), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Color.deltsCard.opacity(0.76), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
+                            .stroke(Color.deltsHairline.opacity(0.52), lineWidth: 0.6)
                     }
 
             }
         }
-        .padding(.vertical, 6)
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.82), lineWidth: 0.8)
+        }
+        .shadow(color: Color.black.opacity(0.22), radius: 12, x: 0, y: 7)
     }
 }
 
