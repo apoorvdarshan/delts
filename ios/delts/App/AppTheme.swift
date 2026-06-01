@@ -47,7 +47,7 @@ extension Color {
             }
             return traits.userInterfaceStyle == .dark
                 ? UIColor(red: 0.047, green: 0.055, blue: 0.052, alpha: 1)
-                : UIColor(red: 0.946, green: 0.965, blue: 0.928, alpha: 1)
+                : UIColor(red: 0.918, green: 0.953, blue: 0.845, alpha: 1)
         })
     }
 
@@ -69,7 +69,7 @@ extension Color {
             }
             return traits.userInterfaceStyle == .dark
                 ? UIColor(red: 0.090, green: 0.108, blue: 0.098, alpha: 1)
-                : UIColor(red: 0.894, green: 0.930, blue: 0.866, alpha: 1)
+                : UIColor(red: 0.846, green: 0.914, blue: 0.752, alpha: 1)
         })
     }
 
@@ -80,7 +80,7 @@ extension Color {
             }
             return traits.userInterfaceStyle == .dark
                 ? UIColor(red: 0.124, green: 0.150, blue: 0.132, alpha: 1)
-                : UIColor(red: 0.828, green: 0.884, blue: 0.790, alpha: 1)
+                : UIColor(red: 0.768, green: 0.864, blue: 0.640, alpha: 1)
         })
     }
 
@@ -91,16 +91,43 @@ extension Color {
             }
             return traits.userInterfaceStyle == .dark
                 ? UIColor(red: 0.286, green: 0.366, blue: 0.304, alpha: 1)
-                : UIColor(red: 0.545, green: 0.646, blue: 0.490, alpha: 1)
+                : UIColor(red: 0.368, green: 0.516, blue: 0.282, alpha: 1)
         })
     }
-    static let deltsAccent = Color(red: 0.70, green: 0.94, blue: 0.26)
-    static let deltsSecondaryAccent = Color(red: 0.35, green: 0.78, blue: 0.52)
-    static let deltsWarning = Color(red: 0.76, green: 0.88, blue: 0.24)
-    static let deltsInferno = Color.deltsSecondaryAccent
-    static let deltsAcidGreen = Color.deltsSecondaryAccent
-    static let deltsGold = Color.deltsWarning
-    static let deltsOnAccent = Color(red: 0.032, green: 0.048, blue: 0.038)
+    static var deltsAccent: Color {
+        Color(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.70, green: 0.94, blue: 0.26, alpha: 1)
+                : UIColor(red: 0.374, green: 0.565, blue: 0.075, alpha: 1)
+        })
+    }
+
+    static var deltsSecondaryAccent: Color {
+        Color(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.35, green: 0.78, blue: 0.52, alpha: 1)
+                : UIColor(red: 0.192, green: 0.494, blue: 0.280, alpha: 1)
+        })
+    }
+
+    static var deltsWarning: Color {
+        Color(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.76, green: 0.88, blue: 0.24, alpha: 1)
+                : UIColor(red: 0.438, green: 0.568, blue: 0.084, alpha: 1)
+        })
+    }
+
+    static var deltsInferno: Color { Color.deltsSecondaryAccent }
+    static var deltsAcidGreen: Color { Color.deltsSecondaryAccent }
+    static var deltsGold: Color { Color.deltsWarning }
+    static var deltsOnAccent: Color {
+        Color(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.032, green: 0.048, blue: 0.038, alpha: 1)
+                : UIColor(red: 0.972, green: 1.000, blue: 0.900, alpha: 1)
+        })
+    }
     static var deltsMutedText: Color {
         Color(uiColor: UIColor { traits in
             if AppAppearance.usesDarkerPalette {
@@ -108,7 +135,7 @@ extension Color {
             }
             return traits.userInterfaceStyle == .dark
                 ? UIColor(red: 0.620, green: 0.710, blue: 0.622, alpha: 1)
-                : UIColor(red: 0.314, green: 0.386, blue: 0.312, alpha: 1)
+                : UIColor(red: 0.236, green: 0.322, blue: 0.220, alpha: 1)
         })
     }
 }
