@@ -191,7 +191,7 @@ struct HomeView: View {
                     exercises: matchingExercises,
                     selectedExerciseIDs: selectedExerciseIDs,
                     savedExerciseIDs: savedExerciseIDs,
-                    onAdd: addExercise,
+                    onToggleSelection: toggleExerciseSelection,
                     onToggleSaved: toggleSavedExercise,
                     onDone: {
                         isWorkoutPickerPresented = false
@@ -246,10 +246,13 @@ struct HomeView: View {
         isWorkoutPickerPresented = true
     }
 
-    private func addExercise(_ item: ExerciseLibraryItem) {
+    private func toggleExerciseSelection(_ item: ExerciseLibraryItem) {
         updateSelectedPlan { plan in
-            guard !plan.exercises.contains(where: { $0.itemID == item.id }) else { return }
-            plan.exercises.append(PlannedRoutineExercise(item: item))
+            if plan.exercises.contains(where: { $0.itemID == item.id }) {
+                plan.exercises.removeAll { $0.itemID == item.id }
+            } else {
+                plan.exercises.append(PlannedRoutineExercise(item: item))
+            }
         }
     }
 

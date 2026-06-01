@@ -295,7 +295,7 @@ struct WorkoutPickerSheet: View {
     let exercises: [ExerciseLibraryItem]
     let selectedExerciseIDs: Set<String>
     let savedExerciseIDs: Set<String>
-    let onAdd: (ExerciseLibraryItem) -> Void
+    let onToggleSelection: (ExerciseLibraryItem) -> Void
     let onToggleSaved: (String) -> Void
     let onDone: () -> Void
 
@@ -324,7 +324,7 @@ struct WorkoutPickerSheet: View {
                                 item: item,
                                 isSelected: selectedExerciseIDs.contains(item.id)
                             ) {
-                                onAdd(item)
+                                onToggleSelection(item)
                             }
                             .listRowBackground(Color.deltsPanel.opacity(selectedExerciseIDs.contains(item.id) ? 0.28 : 0.18))
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -400,6 +400,7 @@ struct WorkoutPickerRow: View {
                     .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsMutedText)
             }
             .padding(.vertical, 4)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
