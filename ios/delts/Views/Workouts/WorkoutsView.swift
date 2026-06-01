@@ -75,10 +75,20 @@ private struct ExerciseLibraryBrowserView: View {
         return service.availableRawEquipment.filter { selectedEquipment.contains($0) }
     }
 
+    private var effectiveRawEquipmentSelection: Set<String> {
+        if selectedRawEquipment.isEmpty {
+            return Set(profileRawEquipmentOptions)
+        }
+        return selectedRawEquipment
+    }
+
     private var items: [ExerciseLibraryItem] {
+        let rawEquipmentSelection = effectiveRawEquipmentSelection
+        guard !rawEquipmentSelection.isEmpty else { return [] }
+
         let filtered = service.filtered(
             levels: selectedLevels,
-            rawEquipment: selectedRawEquipment,
+            rawEquipment: rawEquipmentSelection,
             primaryMuscles: selectedPrimaryMuscles,
             secondaryMuscles: selectedSecondaryMuscles,
             forces: selectedForces,

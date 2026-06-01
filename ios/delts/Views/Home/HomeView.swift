@@ -115,10 +115,20 @@ struct HomeView: View {
         return service.availableRawEquipment.filter { selectedEquipment.contains($0) }
     }
 
+    private var effectivePickerRawEquipmentSelection: Set<String> {
+        if pickerSelectedRawEquipment.isEmpty {
+            return Set(profileRawEquipmentOptions)
+        }
+        return pickerSelectedRawEquipment
+    }
+
     private var matchingExercises: [ExerciseLibraryItem] {
+        let rawEquipmentSelection = effectivePickerRawEquipmentSelection
+        guard !rawEquipmentSelection.isEmpty else { return [] }
+
         let filtered = service.filtered(
             levels: pickerSelectedLevels,
-            rawEquipment: pickerSelectedRawEquipment,
+            rawEquipment: rawEquipmentSelection,
             primaryMuscles: pickerSelectedPrimaryMuscles,
             secondaryMuscles: pickerSelectedSecondaryMuscles,
             forces: pickerSelectedForces,
