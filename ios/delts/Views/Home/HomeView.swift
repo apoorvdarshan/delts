@@ -225,13 +225,13 @@ struct HomeView: View {
                             Button {
                                 openSavedWorkoutPicker()
                             } label: {
-                                Label(WorkoutPickerContext.saved.title, systemImage: WorkoutPickerContext.saved.systemImage)
+                                WorkoutPickerContextMenuLabel(context: .saved)
                             }
                             ForEach(addWorkoutContexts) { context in
                                 Button {
                                     openWorkoutPicker(context)
                                 } label: {
-                                    Label(context.title, systemImage: context.systemImage)
+                                    WorkoutPickerContextMenuLabel(context: context)
                                 }
                             }
                         }
@@ -440,5 +440,25 @@ struct HomeView: View {
         guard let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
         let screenHeight = UIScreen.main.bounds.height
         keyboardHeight = max(0, screenHeight - frame.minY)
+    }
+}
+
+private struct WorkoutPickerContextMenuLabel: View {
+    let context: WorkoutPickerContext
+
+    private var isSaved: Bool {
+        context.id == WorkoutPickerContext.saved.id
+    }
+
+    var body: some View {
+        Label {
+            Text(context.title)
+        } icon: {
+            if isSaved {
+                Image(systemName: "bookmark.fill")
+            } else {
+                MuscleGlyphIcon(title: context.title, muscles: context.muscles, size: 20)
+            }
+        }
     }
 }

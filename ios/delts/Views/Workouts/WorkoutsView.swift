@@ -202,7 +202,7 @@ private struct ExerciseLibraryBrowserView: View {
                             selectedSplitGroupTitles.removeAll()
                         }
                         ForEach(splitGroups) { group in
-                            menuChoice(group.title, isSelected: selectedSplitGroupTitles.contains(group.title)) {
+                            muscleMenuChoice(group.title, muscles: group.muscles, isSelected: selectedSplitGroupTitles.contains(group.title)) {
                                 selectedSplitGroupTitles = toggledSelection(group.title, in: selectedSplitGroupTitles)
                             }
                         }
@@ -218,7 +218,7 @@ private struct ExerciseLibraryBrowserView: View {
                                 selectedPrimaryMuscles.removeAll()
                             }
                             ForEach(primaryFilterOptions, id: \.self) { muscle in
-                                menuChoice(muscle, isSelected: selectedPrimaryMuscles.contains(muscle)) {
+                                muscleMenuChoice(muscle, muscles: [muscle], isSelected: selectedPrimaryMuscles.contains(muscle)) {
                                     selectedPrimaryMuscles = toggledSelection(muscle, in: selectedPrimaryMuscles)
                                 }
                             }
@@ -234,7 +234,7 @@ private struct ExerciseLibraryBrowserView: View {
                             selectedSecondaryMuscles.removeAll()
                         }
                         ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
-                            menuChoice(muscle, isSelected: selectedSecondaryMuscles.contains(muscle)) {
+                            muscleMenuChoice(muscle, muscles: [muscle], isSelected: selectedSecondaryMuscles.contains(muscle)) {
                                 selectedSecondaryMuscles = toggledSelection(muscle, in: selectedSecondaryMuscles)
                             }
                         }
@@ -398,6 +398,25 @@ private struct ExerciseLibraryBrowserView: View {
                 Label(title, systemImage: "checkmark")
             } else {
                 Text(title)
+            }
+        }
+    }
+
+    private func muscleMenuChoice(
+        _ title: String,
+        muscles: Set<String>,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            if isSelected {
+                Label(title, systemImage: "checkmark")
+            } else {
+                Label {
+                    Text(title)
+                } icon: {
+                    MuscleGlyphIcon(title: title, muscles: muscles, size: 20)
+                }
             }
         }
     }

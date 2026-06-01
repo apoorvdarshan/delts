@@ -600,7 +600,7 @@ struct WorkoutPickerSheet: View {
                             selectedPrimaryMuscles.removeAll()
                         }
                         ForEach(primaryFilterOptions, id: \.self) { muscle in
-                            menuChoice(muscle, isSelected: selectedPrimaryMuscles.contains(muscle)) {
+                            muscleMenuChoice(muscle, muscles: [muscle], isSelected: selectedPrimaryMuscles.contains(muscle)) {
                                 selectedPrimaryMuscles = toggledSelection(muscle, in: selectedPrimaryMuscles)
                             }
                         }
@@ -612,15 +612,15 @@ struct WorkoutPickerSheet: View {
                     value: selectionTitle(selectedSecondaryMuscles),
                     systemImage: "scope"
                 ) {
-                    menuChoice("All Secondary", isSelected: selectedSecondaryMuscles.isEmpty) {
-                        selectedSecondaryMuscles.removeAll()
-                    }
-                    ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
-                        menuChoice(muscle, isSelected: selectedSecondaryMuscles.contains(muscle)) {
-                            selectedSecondaryMuscles = toggledSelection(muscle, in: selectedSecondaryMuscles)
+                        menuChoice("All Secondary", isSelected: selectedSecondaryMuscles.isEmpty) {
+                            selectedSecondaryMuscles.removeAll()
+                        }
+                        ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
+                            muscleMenuChoice(muscle, muscles: [muscle], isSelected: selectedSecondaryMuscles.contains(muscle)) {
+                                selectedSecondaryMuscles = toggledSelection(muscle, in: selectedSecondaryMuscles)
+                            }
                         }
                     }
-                }
 
                 filterMenuPill(
                     title: "Equipment",
@@ -761,6 +761,25 @@ struct WorkoutPickerSheet: View {
                 Label(title, systemImage: "checkmark")
             } else {
                 Text(title)
+            }
+        }
+    }
+
+    private func muscleMenuChoice(
+        _ title: String,
+        muscles: Set<String>,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            if isSelected {
+                Label(title, systemImage: "checkmark")
+            } else {
+                Label {
+                    Text(title)
+                } icon: {
+                    MuscleGlyphIcon(title: title, muscles: muscles, size: 20)
+                }
             }
         }
     }
