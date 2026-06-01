@@ -32,8 +32,23 @@ private struct ExerciseLibraryBrowserView: View {
         profiles.first?.workoutSplit ?? .fullBody
     }
 
+    private var splitFilterTitle: String {
+        switch selectedWorkoutSplit {
+        case .fullBody, .custom:
+            return "Body Part"
+        default:
+            return selectedWorkoutSplit.title
+        }
+    }
+
     private var splitGroups: [WorkoutSplitMuscleGroup] {
-        WorkoutSplitMuscleGroup.groups(for: selectedWorkoutSplit)
+        let groups = WorkoutSplitMuscleGroup.groups(for: selectedWorkoutSplit)
+        guard groups.isEmpty else { return groups }
+
+        let muscles = Set(service.availablePrimaryMuscles + service.availableSecondaryMuscles)
+        return muscles.sorted().map { muscle in
+            WorkoutSplitMuscleGroup(title: muscle, muscles: [muscle])
+        }
     }
 
     private var selectedSplitGroup: WorkoutSplitMuscleGroup? {
@@ -54,7 +69,8 @@ private struct ExerciseLibraryBrowserView: View {
         )
         guard let selectedSplitGroup else { return filtered }
         return filtered.filter { item in
-            item.primaryMuscles.contains { selectedSplitGroup.muscles.contains($0) }
+            item.primaryMuscles.contains { selectedSplitGroup.muscles.contains($0) } ||
+                item.secondaryMuscles.contains { selectedSplitGroup.muscles.contains($0) }
         }
     }
 
@@ -134,19 +150,17 @@ private struct ExerciseLibraryBrowserView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 9) {
-                    if !splitGroups.isEmpty {
-                        filterMenuPill(
-                            title: selectedWorkoutSplit.title,
-                            value: selectedSplitGroup?.title ?? "All",
-                            systemImage: "square.grid.2x2"
-                        ) {
-                            menuChoice("All \(selectedWorkoutSplit.title)", isSelected: selectedSplitGroup == nil) {
-                                selectedSplitGroupTitle = nil
-                            }
-                            ForEach(splitGroups) { group in
-                                menuChoice(group.title, isSelected: selectedSplitGroupTitle == group.title) {
-                                    selectedSplitGroupTitle = group.title
-                                }
+                    filterMenuPill(
+                        title: splitFilterTitle,
+                        value: selectedSplitGroup?.title ?? "All",
+                        systemImage: "square.grid.2x2"
+                    ) {
+                        menuChoice("All \(splitFilterTitle)", isSelected: selectedSplitGroup == nil) {
+                            selectedSplitGroupTitle = nil
+                        }
+                        ForEach(splitGroups) { group in
+                            menuChoice(group.title, isSelected: selectedSplitGroupTitle == group.title) {
+                                selectedSplitGroupTitle = group.title
                             }
                         }
                     }

@@ -39,9 +39,16 @@ struct HomeView: View {
 
     private var addWorkoutContexts: [WorkoutPickerContext] {
         let groups = WorkoutSplitMuscleGroup.groups(for: selectedWorkoutSplit)
-        guard !groups.isEmpty else { return [.all] }
+        guard !groups.isEmpty else { return datasetMuscleContexts }
         return groups.map { group in
             WorkoutPickerContext(title: group.title, muscles: group.muscles)
+        }
+    }
+
+    private var datasetMuscleContexts: [WorkoutPickerContext] {
+        let muscles = Set(service.availablePrimaryMuscles + service.availableSecondaryMuscles)
+        return muscles.sorted().map { muscle in
+            WorkoutPickerContext(title: muscle, muscles: [muscle])
         }
     }
 
@@ -77,7 +84,8 @@ struct HomeView: View {
             splitFiltered = filtered
         } else {
             splitFiltered = filtered.filter { item in
-                item.primaryMuscles.contains { workoutPickerContext.muscles.contains($0) }
+                item.primaryMuscles.contains { workoutPickerContext.muscles.contains($0) } ||
+                    item.secondaryMuscles.contains { workoutPickerContext.muscles.contains($0) }
             }
         }
         return splitFiltered.filter { item in
@@ -171,14 +179,6 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        Section {
-                            Button {
-                                openSavedWorkoutPicker()
-                            } label: {
-                                Label(WorkoutPickerContext.saved.title, systemImage: WorkoutPickerContext.saved.systemImage)
-                            }
-                        }
-
                         Section(selectedWorkoutSplit.title) {
                             ForEach(addWorkoutContexts) { context in
                                 Button {
@@ -186,6 +186,11 @@ struct HomeView: View {
                                 } label: {
                                     Label(context.title, systemImage: context.systemImage)
                                 }
+                            }
+                            Button {
+                                openSavedWorkoutPicker()
+                            } label: {
+                                Label(WorkoutPickerContext.saved.title, systemImage: WorkoutPickerContext.saved.systemImage)
                             }
                         }
                     } label: {
