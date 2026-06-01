@@ -331,6 +331,8 @@ private struct SetRepsField: View {
     let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
 
     var body: some View {
+        let focus = PlannedSetFocus(exerciseID: exerciseID, setIndex: setIndex)
+
         HStack(spacing: 8) {
             Text("Set \(setIndex + 1)")
                 .font(.system(.caption, design: .rounded, weight: .bold))
@@ -341,7 +343,7 @@ private struct SetRepsField: View {
 
             RepsCursorTextField(
                 text: $reps,
-                focus: PlannedSetFocus(exerciseID: exerciseID, setIndex: setIndex),
+                focus: focus,
                 focusedRepsField: focusedRepsField
             )
             .frame(minWidth: 42)
@@ -353,6 +355,14 @@ private struct SetRepsField: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(Color.deltsHairline.opacity(0.48), lineWidth: 0.6)
         }
+        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .highPriorityGesture(
+            TapGesture().onEnded {
+                focusedRepsField.wrappedValue = focus
+            }
+        )
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Opens reps input")
     }
 }
 
