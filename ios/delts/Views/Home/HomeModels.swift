@@ -9,6 +9,7 @@ enum WorkoutPickerSource: String, CaseIterable, Identifiable {
 
 struct WorkoutPickerContext: Identifiable, Hashable {
     static let all = WorkoutPickerContext(title: "All Workouts", muscles: [])
+    static let saved = WorkoutPickerContext(title: "Saved", muscles: [])
 
     let title: String
     let muscles: Set<String>
@@ -25,6 +26,7 @@ struct WorkoutPickerContext: Identifiable, Hashable {
         if title.contains("back") { return "figure.pullup" }
         if title.contains("shoulder") { return "figure.strengthtraining.functional" }
         if title.contains("arm") || title.contains("bicep") || title.contains("tricep") { return "dumbbell.fill" }
+        if title.contains("saved") { return "bookmark.fill" }
         return "square.grid.2x2"
     }
 }

@@ -171,6 +171,14 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
+                        Section {
+                            Button {
+                                openSavedWorkoutPicker()
+                            } label: {
+                                Label(WorkoutPickerContext.saved.title, systemImage: WorkoutPickerContext.saved.systemImage)
+                            }
+                        }
+
                         Section(selectedWorkoutSplit.title) {
                             ForEach(addWorkoutContexts) { context in
                                 Button {
@@ -274,6 +282,11 @@ struct HomeView: View {
         workoutPickerContext = context
         exerciseSearch = ""
         isWorkoutPickerPresented = true
+    }
+
+    private func openSavedWorkoutPicker() {
+        workoutPickerSourceRaw = WorkoutPickerSource.saved.rawValue
+        openWorkoutPicker(.saved)
     }
 
     private func toggleExerciseSelection(_ item: ExerciseLibraryItem) {
