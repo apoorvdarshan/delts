@@ -1088,15 +1088,6 @@ private struct ProfileSexImagePickerSheet: View {
             .background(DeltsBackground())
             .navigationTitle("Sex")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.deltsAccent)
-                }
-            }
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
@@ -2326,18 +2317,31 @@ private struct ProfileEquipmentImagePickerSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 18) {
-                    ForEach(options) { option in
-                        Button {
-                            toggle(option.value)
-                        } label: {
-                            ProfileEquipmentImageTile(
-                                option: option,
-                                isSelected: selection.contains(option.value)
-                            )
+                VStack(spacing: 14) {
+                    ProfileSelectionActionRow(
+                        selectAllDisabled: selectableValues.isEmpty || selectableValues.isSubset(of: selection),
+                        clearAllDisabled: selection.isEmpty,
+                        selectAll: {
+                            selection = selectableValues
+                        },
+                        clearAll: {
+                            selection.removeAll()
                         }
-                        .buttonStyle(.plain)
-                        .deltsPressable()
+                    )
+
+                    LazyVGrid(columns: columns, spacing: 18) {
+                        ForEach(options) { option in
+                            Button {
+                                toggle(option.value)
+                            } label: {
+                                ProfileEquipmentImageTile(
+                                    option: option,
+                                    isSelected: selection.contains(option.value)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .deltsPressable()
+                        }
                     }
                 }
                 .padding(.horizontal, 18)
@@ -2359,6 +2363,10 @@ private struct ProfileEquipmentImagePickerSheet: View {
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+    }
+
+    private var selectableValues: Set<String> {
+        Set(options.map(\.value))
     }
 
     private func toggle(_ value: String) {
@@ -2825,6 +2833,17 @@ private struct ProfileTargetMuscleSelectionSheet: View {
                             .foregroundStyle(Color.deltsCharcoal)
                     }
 
+                    ProfileSelectionActionRow(
+                        selectAllDisabled: selectableMuscles.isEmpty || selectableMuscles.isSubset(of: selection),
+                        clearAllDisabled: selection.isEmpty,
+                        selectAll: {
+                            selection = selectableMuscles
+                        },
+                        clearAll: {
+                            selection.removeAll()
+                        }
+                    )
+
                     ForEach(sections) { section in
                         let sectionGroups = section.groups(allowedValues: allowedValues)
                         VStack(alignment: .leading, spacing: 10) {
@@ -2875,6 +2894,65 @@ private struct ProfileTargetMuscleSelectionSheet: View {
                 }
             }
         }
+    }
+
+    private var selectableMuscles: Set<String> {
+        Set(sections.flatMap { section in
+            section.groups(allowedValues: allowedValues)
+                .flatMap { $0.availableMuscles(allowedValues: allowedValues) }
+        })
+    }
+}
+
+private struct ProfileSelectionActionRow: View {
+    let selectAllDisabled: Bool
+    let clearAllDisabled: Bool
+    let selectAll: () -> Void
+    let clearAll: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ProfileSelectionActionButton(
+                title: "Select all",
+                systemImage: "checkmark.circle",
+                isDisabled: selectAllDisabled,
+                action: selectAll
+            )
+
+            ProfileSelectionActionButton(
+                title: "Clear all",
+                systemImage: "xmark.circle",
+                isDisabled: clearAllDisabled,
+                action: clearAll
+            )
+        }
+    }
+}
+
+private struct ProfileSelectionActionButton: View {
+    let title: String
+    let systemImage: String
+    let isDisabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            action()
+        } label: {
+            Label(title, systemImage: systemImage)
+                .font(.subheadline.weight(.heavy))
+                .foregroundStyle(isDisabled ? Color.deltsMutedText.opacity(0.55) : Color.deltsAccent)
+                .frame(maxWidth: .infinity)
+                .frame(height: 40)
+                .background(Color.deltsPanel.opacity(isDisabled ? 0.12 : 0.28), in: Capsule())
+                .overlay {
+                    Capsule()
+                        .stroke(Color.deltsHairline.opacity(isDisabled ? 0.18 : 0.42), lineWidth: 0.7)
+                }
+        }
+        .buttonStyle(.plain)
+        .disabled(isDisabled)
+        .deltsPressable()
     }
 }
 
