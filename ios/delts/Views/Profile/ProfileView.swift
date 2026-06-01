@@ -991,6 +991,10 @@ private struct ProfileDoneAccessoryTextField: UIViewRepresentable {
             parent.text = sender.text ?? ""
         }
 
+        func textFieldDidBeginEditing(_ textField: UITextField) {
+            moveCursorToEnd(textField)
+        }
+
         @objc private func doneTapped() {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
@@ -998,6 +1002,13 @@ private struct ProfileDoneAccessoryTextField: UIViewRepresentable {
         func textFieldShouldReturn(_ textField: UITextField) -> Bool {
             textField.resignFirstResponder()
             return true
+        }
+
+        private func moveCursorToEnd(_ textField: UITextField) {
+            DispatchQueue.main.async {
+                let end = textField.endOfDocument
+                textField.selectedTextRange = textField.textRange(from: end, to: end)
+            }
         }
     }
 }

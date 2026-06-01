@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct WorkoutWeekStrip: View {
     @Binding var selectedDate: Date
@@ -339,14 +340,12 @@ private struct SetRepsField: View {
 
             Spacer(minLength: 4)
 
-            TextField("Reps", text: $reps)
-                .keyboardType(.numberPad)
-                .textFieldStyle(.plain)
-                .font(.system(.subheadline, design: .rounded, weight: .bold).monospacedDigit())
-                .foregroundStyle(Color.deltsCharcoal)
-                .multilineTextAlignment(.trailing)
-                .focused(focusedRepsField, equals: PlannedSetFocus(exerciseID: exerciseID, setIndex: setIndex))
-                .frame(minWidth: 42)
+            SetRepsTextField(
+                text: $reps,
+                focus: PlannedSetFocus(exerciseID: exerciseID, setIndex: setIndex),
+                focusedRepsField: focusedRepsField
+            )
+            .frame(minWidth: 42, minHeight: 28)
         }
         .padding(.horizontal, 10)
         .frame(height: 42)
@@ -354,6 +353,87 @@ private struct SetRepsField: View {
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(Color.deltsHairline.opacity(0.48), lineWidth: 0.6)
+        }
+    }
+}
+
+private struct SetRepsTextField: UIViewRepresentable {
+    @Binding var text: String
+    let focus: PlannedSetFocus
+    let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func makeUIView(context: Context) -> UITextField {
+        let textField = UITextField(frame: .zero)
+        textField.borderStyle = .none
+        textField.clearButtonMode = .never
+        textField.delegate = context.coordinator
+        textField.keyboardType = .numberPad
+        textField.textAlignment = .right
+        textField.addTarget(context.coordinator, action: #selector(Coordinator.textDidChange(_:)), for: .editingChanged)
+        applyConfiguration(to: textField)
+        return textField
+    }
+
+    func updateUIView(_ textField: UITextField, context: Context) {
+        context.coordinator.parent = self
+        if textField.text != text {
+            textField.text = text
+            if textField.isFirstResponder {
+                context.coordinator.moveCursorToEnd(textField)
+            }
+        }
+        applyConfiguration(to: textField)
+
+        let shouldFocus = focusedRepsField.wrappedValue == focus
+        if shouldFocus, !textField.isFirstResponder {
+            textField.becomeFirstResponder()
+            context.coordinator.moveCursorToEnd(textField)
+        } else if !shouldFocus, textField.isFirstResponder {
+            textField.resignFirstResponder()
+        }
+    }
+
+    private func applyConfiguration(to textField: UITextField) {
+        textField.placeholder = "Reps"
+        textField.textColor = UIColor(Color.deltsCharcoal)
+        textField.tintColor = UIColor(Color.deltsAccent)
+        textField.font = UIFont.monospacedDigitSystemFont(ofSize: UIFont.preferredFont(forTextStyle: .subheadline).pointSize, weight: .bold)
+        textField.adjustsFontForContentSizeCategory = true
+        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: SetRepsTextField
+
+        init(_ parent: SetRepsTextField) {
+            self.parent = parent
+        }
+
+        @objc func textDidChange(_ sender: UITextField) {
+            parent.text = sender.text ?? ""
+        }
+
+        func textFieldDidBeginEditing(_ textField: UITextField) {
+            parent.focusedRepsField.wrappedValue = parent.focus
+            moveCursorToEnd(textField)
+        }
+
+        func textFieldDidEndEditing(_ textField: UITextField) {
+            if parent.focusedRepsField.wrappedValue == parent.focus {
+                parent.focusedRepsField.wrappedValue = nil
+            }
+        }
+
+        func moveCursorToEnd(_ textField: UITextField) {
+            DispatchQueue.main.async {
+                let end = textField.endOfDocument
+                textField.selectedTextRange = textField.textRange(from: end, to: end)
+            }
         }
     }
 }
