@@ -418,6 +418,14 @@ private struct RepsSelectionTextField: View {
 struct WorkoutPickerSheet: View {
     @Binding var searchText: String
     @Binding var source: WorkoutPickerSource
+    @Binding var selectedLevel: String?
+    @Binding var selectedRawEquipment: String?
+    @Binding var selectedPrimaryMuscle: String?
+    @Binding var selectedSecondaryMuscle: String?
+    @Binding var selectedForce: String?
+    @Binding var selectedMechanic: String?
+    @Binding var selectedCategory: String?
+    @Binding var selectedSort: ExerciseLibrarySort
     let pickerTitle: String
     let exercises: [ExerciseLibraryItem]
     let selectedExerciseIDs: Set<String>
@@ -425,6 +433,8 @@ struct WorkoutPickerSheet: View {
     let onToggleSelection: (ExerciseLibraryItem) -> Void
     let onToggleSaved: (String) -> Void
     let onDone: () -> Void
+
+    private let service = ExerciseLibraryService.shared
 
     var body: some View {
         NavigationStack {
@@ -438,6 +448,10 @@ struct WorkoutPickerSheet: View {
                     .pickerStyle(.segmented)
                     .listRowInsets(EdgeInsets(top: 10, leading: 20, bottom: 8, trailing: 20))
                     .listRowBackground(Color.clear)
+
+                    workoutFilterStrip
+                        .listRowInsets(EdgeInsets(top: 2, leading: 20, bottom: 12, trailing: 20))
+                        .listRowBackground(Color.clear)
                 }
 
                 Section {
@@ -485,8 +499,208 @@ struct WorkoutPickerSheet: View {
         }
     }
 
+    private var workoutFilterStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 9) {
+                filterMenuPill(
+                    title: "Primary",
+                    value: selectedPrimaryMuscle ?? "All",
+                    systemImage: "scope"
+                ) {
+                    menuChoice("All Primary", isSelected: selectedPrimaryMuscle == nil) {
+                        selectedPrimaryMuscle = nil
+                    }
+                    ForEach(service.availablePrimaryMuscles, id: \.self) { muscle in
+                        menuChoice(muscle, isSelected: selectedPrimaryMuscle == muscle) {
+                            selectedPrimaryMuscle = muscle
+                        }
+                    }
+                }
+
+                filterMenuPill(
+                    title: "Secondary",
+                    value: selectedSecondaryMuscle ?? "All",
+                    systemImage: "scope"
+                ) {
+                    menuChoice("All Secondary", isSelected: selectedSecondaryMuscle == nil) {
+                        selectedSecondaryMuscle = nil
+                    }
+                    ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
+                        menuChoice(muscle, isSelected: selectedSecondaryMuscle == muscle) {
+                            selectedSecondaryMuscle = muscle
+                        }
+                    }
+                }
+
+                filterMenuPill(
+                    title: "Equipment",
+                    value: selectedRawEquipment ?? "All",
+                    systemImage: "dumbbell.fill"
+                ) {
+                    menuChoice("All Equipment", isSelected: selectedRawEquipment == nil) {
+                        selectedRawEquipment = nil
+                    }
+                    ForEach(service.availableRawEquipment, id: \.self) { equipment in
+                        menuChoice(equipment, isSelected: selectedRawEquipment == equipment) {
+                            selectedRawEquipment = equipment
+                        }
+                    }
+                }
+
+                filterMenuPill(
+                    title: "Level",
+                    value: selectedLevel ?? "All",
+                    systemImage: "chart.bar.fill"
+                ) {
+                    menuChoice("All Levels", isSelected: selectedLevel == nil) {
+                        selectedLevel = nil
+                    }
+                    ForEach(service.availableLevels, id: \.self) { level in
+                        menuChoice(level, isSelected: selectedLevel == level) {
+                            selectedLevel = level
+                        }
+                    }
+                }
+
+                filterMenuPill(
+                    title: "Force",
+                    value: selectedForce ?? "All",
+                    systemImage: "arrow.left.arrow.right"
+                ) {
+                    menuChoice("All Forces", isSelected: selectedForce == nil) {
+                        selectedForce = nil
+                    }
+                    ForEach(service.availableForces, id: \.self) { force in
+                        menuChoice(force, isSelected: selectedForce == force) {
+                            selectedForce = force
+                        }
+                    }
+                }
+
+                filterMenuPill(
+                    title: "Mechanic",
+                    value: selectedMechanic ?? "All",
+                    systemImage: "gearshape"
+                ) {
+                    menuChoice("All Mechanics", isSelected: selectedMechanic == nil) {
+                        selectedMechanic = nil
+                    }
+                    ForEach(service.availableMechanics, id: \.self) { mechanic in
+                        menuChoice(mechanic, isSelected: selectedMechanic == mechanic) {
+                            selectedMechanic = mechanic
+                        }
+                    }
+                }
+
+                filterMenuPill(
+                    title: "Category",
+                    value: selectedCategory ?? "All",
+                    systemImage: "tag"
+                ) {
+                    menuChoice("All Categories", isSelected: selectedCategory == nil) {
+                        selectedCategory = nil
+                    }
+                    ForEach(service.availableCategoryCounts) { categoryCount in
+                        menuChoice(categoryCount.category, isSelected: selectedCategory == categoryCount.category) {
+                            selectedCategory = categoryCount.category
+                        }
+                    }
+                }
+
+                filterMenuPill(
+                    title: "Sort",
+                    value: selectedSort.title,
+                    systemImage: "arrow.up.arrow.down"
+                ) {
+                    ForEach(ExerciseLibrarySort.allCases) { sort in
+                        menuChoice(sort.title, isSelected: selectedSort == sort) {
+                            selectedSort = sort
+                        }
+                    }
+                }
+            }
+            .padding(.vertical, 1)
+        }
+    }
+
+    private func filterMenuPill<Content: View>(
+        title: String,
+        value: String,
+        systemImage: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        Menu {
+            content()
+        } label: {
+            WorkoutPickerFilterPill(title: title, value: value, systemImage: systemImage)
+        }
+        .deltsPressable()
+    }
+
+    private func menuChoice(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            if isSelected {
+                Label(title, systemImage: "checkmark")
+            } else {
+                Text(title)
+            }
+        }
+    }
+
     private func dismissKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
+private struct WorkoutPickerFilterPill: View {
+    let title: String
+    let value: String
+    let systemImage: String
+
+    private var isDefaultValue: Bool {
+        value == "All" || value == "Name"
+    }
+
+    var body: some View {
+        HStack(spacing: 9) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(isDefaultValue ? Color.deltsSecondaryAccent : Color.deltsAccent)
+                .frame(width: 18)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .textCase(.uppercase)
+                    .lineLimit(1)
+
+                Text(value)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+
+            Image(systemName: "chevron.down")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(Color.deltsMutedText)
+                .padding(.leading, 1)
+        }
+        .padding(.horizontal, 12)
+        .frame(minWidth: 112, minHeight: 46, alignment: .leading)
+        .background(
+            Color.deltsPanel.opacity(isDefaultValue ? 0.30 : 0.46),
+            in: RoundedRectangle(cornerRadius: 17, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                .stroke(
+                    (isDefaultValue ? Color.deltsHairline : Color.deltsAccent).opacity(isDefaultValue ? 0.30 : 0.42),
+                    lineWidth: 0.5
+                )
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
     }
 }
 
