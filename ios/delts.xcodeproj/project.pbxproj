@@ -11,7 +11,7 @@
 		C0DEF1000000000000000011 /* WorkoutTimerLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DEF1000000000000000004 /* WorkoutTimerLiveActivity.swift */; };
 		C0DEF1000000000000000012 /* WorkoutTimerActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DEF1000000000000000006 /* WorkoutTimerActivityAttributes.swift */; };
 		C0DEF1000000000000000053 /* DeltsTimerWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C0DEF1000000000000000001 /* DeltsTimerWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		C0DEF1000000000000000054 /* AppIcon-1024.png in Resources */ = {isa = PBXBuildFile; fileRef = C0DEF1000000000000000055 /* AppIcon-1024.png */; };
+		C0DEF1000000000000000056 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0DEF1000000000000000057 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,7 +44,7 @@
 		C0DEF1000000000000000004 /* WorkoutTimerLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutTimerLiveActivity.swift; sourceTree = "<group>"; };
 		C0DEF1000000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C0DEF1000000000000000006 /* WorkoutTimerActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = delts/LiveActivity/WorkoutTimerActivityAttributes.swift; sourceTree = SOURCE_ROOT; };
-		C0DEF1000000000000000055 /* AppIcon-1024.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "delts/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png"; sourceTree = SOURCE_ROOT; };
+		C0DEF1000000000000000057 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BAE99A722FC0922800559E0F /* delts.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = delts.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BAE99A802FC0B00000559E0F /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		BAE99A812FC0B00000559E0F /* Secrets.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.example.xcconfig; sourceTree = "<group>"; };
@@ -103,7 +103,7 @@
 				C0DEF1000000000000000004 /* WorkoutTimerLiveActivity.swift */,
 				C0DEF1000000000000000005 /* Info.plist */,
 				C0DEF1000000000000000006 /* WorkoutTimerActivityAttributes.swift */,
-				C0DEF1000000000000000055 /* AppIcon-1024.png */,
+				C0DEF1000000000000000057 /* Assets.xcassets */,
 			);
 			path = DeltsTimerWidget;
 			sourceTree = "<group>";
@@ -210,7 +210,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C0DEF1000000000000000054 /* AppIcon-1024.png in Resources */,
+				C0DEF1000000000000000056 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

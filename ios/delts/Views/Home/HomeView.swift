@@ -25,7 +25,6 @@ struct HomeView: View {
     @State private var sessionDateKey: String?
     @State private var sessionStartedAt: Date?
     @State private var sessionElapsedSeconds = 0
-    @State private var isTimerStopDialogPresented = false
     @State private var isOtherDateTimerDialogPresented = false
     @State private var keyboardHeight: CGFloat = 0
     @State private var selectedDetailItem: ExerciseLibraryItem?
@@ -65,8 +64,16 @@ struct HomeView: View {
         isSelectedSessionDate && sessionStartedAt != nil
     }
 
+    private var isSessionTimerPaused: Bool {
+        isSelectedSessionDate && sessionStartedAt == nil && sessionDateKey != nil && sessionElapsedSeconds > 0
+    }
+
+    private var hasSelectedSessionTimer: Bool {
+        isSessionTimerRunning || isSessionTimerPaused
+    }
+
     private var isAnySessionTimerRunning: Bool {
-        sessionStartedAt != nil
+        sessionDateKey != nil && (sessionStartedAt != nil || sessionElapsedSeconds > 0)
     }
 
     private var isSelectedSessionDate: Bool {
@@ -245,7 +252,11 @@ struct HomeView: View {
                         timerStartedAt: selectedTimerStartedAt,
                         timerElapsedSeconds: selectedTimerElapsedSeconds,
                         isTimerRunning: isSessionTimerRunning,
-                        toggleTimer: handleSessionTimerTap
+                        isTimerPaused: isSessionTimerPaused,
+                        hasTimerSession: hasSelectedSessionTimer,
+                        toggleTimer: handleSessionTimerTap,
+                        stopTimer: stopSessionTimer,
+                        discardTimer: discardSessionTimer
                     )
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -339,19 +350,6 @@ struct HomeView: View {
             }
             .navigationDestination(item: $selectedDetailItem) { item in
                 ExerciseLibraryDetailView(item: item)
-            }
-            .confirmationDialog("Workout timer", isPresented: $isTimerStopDialogPresented, titleVisibility: .visible) {
-                Button("Stop") {
-                    stopSessionTimer()
-                }
-
-                Button("Discard", role: .destructive) {
-                    discardSessionTimer()
-                }
-
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Elapsed \(currentSessionElapsedDisplay)")
             }
             .confirmationDialog("Timer already running", isPresented: $isOtherDateTimerDialogPresented, titleVisibility: .visible) {
                 Button("Go to \(activeSessionDateTitle)") {
@@ -470,10 +468,6 @@ struct HomeView: View {
         return sessionElapsedSeconds + max(0, Int(Date().timeIntervalSince(sessionStartedAt)))
     }
 
-    private var currentSessionElapsedDisplay: String {
-        ActiveWorkoutViewModel.elapsedDisplay(currentSessionElapsedSeconds)
-    }
-
     private var activeSessionDateTitle: String {
         guard let sessionDate else { return "active day" }
         if Calendar.current.isDateInToday(sessionDate) {
@@ -495,7 +489,9 @@ struct HomeView: View {
     private func handleSessionTimerTap() {
         playTimerClick()
         if isSessionTimerRunning {
-            isTimerStopDialogPresented = true
+            pauseSessionTimer()
+        } else if isSessionTimerPaused {
+            resumeSessionTimer()
         } else if isAnySessionTimerRunning {
             isOtherDateTimerDialogPresented = true
         } else {
@@ -514,10 +510,24 @@ struct HomeView: View {
         startSessionLiveActivity(startedAt: startedAt)
     }
 
-    private func stopSessionTimer() {
-        playTimerClick()
+    private func pauseSessionTimer() {
         sessionElapsedSeconds = currentSessionElapsedSeconds
         sessionStartedAt = nil
+        endSessionLiveActivity()
+    }
+
+    private func resumeSessionTimer() {
+        let startedAt = Date()
+        sessionStartedAt = startedAt
+        startSessionLiveActivity(startedAt: startedAt)
+    }
+
+    private func stopSessionTimer() {
+        playTimerClick()
+        sessionElapsedSeconds = 0
+        sessionStartedAt = nil
+        sessionDate = nil
+        sessionDateKey = nil
         endSessionLiveActivity()
     }
 
@@ -537,9 +547,10 @@ struct HomeView: View {
 
     private func startSessionLiveActivity(startedAt: Date) {
         guard let sessionDateKey else { return }
+        let visibleStartedAt = startedAt.addingTimeInterval(-TimeInterval(sessionElapsedSeconds))
         WorkoutTimerLiveActivityController.shared.start(
             sessionID: sessionDateKey,
-            startedAt: startedAt,
+            startedAt: visibleStartedAt,
             dayTitle: activeSessionDateTitle,
             setCount: selectedCompletedSetCount,
             workoutCount: selectedExercises.count,
@@ -553,9 +564,10 @@ struct HomeView: View {
               let sessionDateKey,
               let sessionStartedAt
         else { return }
+        let visibleStartedAt = sessionStartedAt.addingTimeInterval(-TimeInterval(sessionElapsedSeconds))
         WorkoutTimerLiveActivityController.shared.update(
             sessionID: sessionDateKey,
-            startedAt: sessionStartedAt,
+            startedAt: visibleStartedAt,
             dayTitle: activeSessionDateTitle,
             setCount: selectedCompletedSetCount,
             workoutCount: selectedExercises.count,

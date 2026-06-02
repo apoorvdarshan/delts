@@ -115,16 +115,40 @@ struct StartWorkoutHero: View {
     let timerStartedAt: Date?
     let timerElapsedSeconds: Int
     let isTimerRunning: Bool
+    let isTimerPaused: Bool
+    let hasTimerSession: Bool
     let toggleTimer: () -> Void
+    let stopTimer: () -> Void
+    let discardTimer: () -> Void
 
     var body: some View {
-        VStack(spacing: 24) {
-            HomeSessionTimerButton(
-                startedAt: timerStartedAt,
-                elapsedSeconds: timerElapsedSeconds,
-                isRunning: isTimerRunning,
-                action: toggleTimer
-            )
+        VStack(spacing: 22) {
+            HStack(spacing: 12) {
+                Spacer(minLength: 0)
+
+                HomeSessionTimerButton(
+                    startedAt: timerStartedAt,
+                    elapsedSeconds: timerElapsedSeconds,
+                    isRunning: isTimerRunning,
+                    isPaused: isTimerPaused,
+                    hasSession: hasTimerSession,
+                    action: toggleTimer
+                )
+
+                if isTimerPaused {
+                    HomeSessionTimerSideControls(
+                        stopTimer: stopTimer,
+                        discardTimer: discardTimer
+                    )
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .trailing).combined(with: .opacity)
+                    ))
+                }
+
+                Spacer(minLength: 0)
+            }
+            .animation(.snappy(duration: 0.28), value: isTimerPaused)
 
             HomeSessionStatsStrip(
                 setCount: setCount,
@@ -143,13 +167,15 @@ struct HomeSessionTimerButton: View {
     let startedAt: Date?
     let elapsedSeconds: Int
     let isRunning: Bool
+    let isPaused: Bool
+    let hasSession: Bool
     let action: () -> Void
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             Button(action: action) {
                 VStack(spacing: 10) {
-                    Image(systemName: isRunning ? "stop.fill" : "play.fill")
+                    Image(systemName: isRunning ? "pause.fill" : "play.fill")
                         .font(.system(size: 30, weight: .black))
                         .foregroundStyle(Color.white)
                         .shadow(color: Color.black.opacity(0.52), radius: 2, y: 1)
@@ -173,8 +199,14 @@ struct HomeSessionTimerButton: View {
                 }
             }
             .buttonStyle(HomeTimerButtonStyle(isRunning: isRunning))
-            .accessibilityLabel(isRunning ? "Stop workout timer" : "Start workout timer")
+            .accessibilityLabel(accessibilityLabel)
         }
+    }
+
+    private var accessibilityLabel: String {
+        if isRunning { return "Pause workout timer" }
+        if isPaused || hasSession { return "Resume workout timer" }
+        return "Start workout timer"
     }
 
     private func displayText(at date: Date) -> String {
@@ -184,6 +216,73 @@ struct HomeSessionTimerButton: View {
     private func totalElapsedSeconds(at date: Date) -> Int {
         guard let startedAt else { return elapsedSeconds }
         return elapsedSeconds + max(0, Int(date.timeIntervalSince(startedAt)))
+    }
+}
+
+private struct HomeSessionTimerSideControls: View {
+    let stopTimer: () -> Void
+    let discardTimer: () -> Void
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Button(action: stopTimer) {
+                Label("Stop", systemImage: "stop.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(HomeTimerSideButtonStyle(role: .stop))
+
+            Button(action: discardTimer) {
+                Label("Discard", systemImage: "trash.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(HomeTimerSideButtonStyle(role: .discard))
+        }
+        .frame(width: 104)
+    }
+}
+
+private struct HomeTimerSideButtonStyle: ButtonStyle {
+    enum Role {
+        case stop
+        case discard
+    }
+
+    let role: Role
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13, weight: .black, design: .rounded))
+            .foregroundStyle(role == .stop ? Color.deltsOnAccent : Color.deltsCharcoal)
+            .labelStyle(.titleAndIcon)
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
+            .padding(.horizontal, 12)
+            .frame(height: 48)
+            .background(background, in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(border, lineWidth: 0.8)
+            }
+            .scaleEffect(configuration.isPressed ? 0.94 : 1)
+            .animation(.snappy(duration: 0.12), value: configuration.isPressed)
+    }
+
+    private var background: Color {
+        switch role {
+        case .stop:
+            return Color.deltsAccent
+        case .discard:
+            return Color.deltsPanel.opacity(0.9)
+        }
+    }
+
+    private var border: Color {
+        switch role {
+        case .stop:
+            return Color.deltsAccent.opacity(0.45)
+        case .discard:
+            return Color.red.opacity(0.46)
+        }
     }
 }
 
