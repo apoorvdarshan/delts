@@ -134,7 +134,8 @@ struct StartWorkoutHero: View {
             )
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 18)
+        .padding(.top, 4)
+        .padding(.bottom, 18)
     }
 }
 
