@@ -112,54 +112,76 @@ struct StartWorkoutHero: View {
     let workoutCount: Int
     let setCount: Int
     let repCount: Int
+    let timerStartedAt: Date?
+    let timerElapsedSeconds: Int
+    let isTimerRunning: Bool
+    let toggleTimer: () -> Void
 
     var body: some View {
-        VStack(spacing: 20) {
-            VStack(spacing: 4) {
-                Text("\(workoutCount)")
-                    .font(.system(size: 72, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.deltsAccent)
-                    .contentTransition(.numericText())
-
-                Text("workout\(workoutCount == 1 ? "" : "s") done")
-                    .font(.system(.callout, design: .rounded, weight: .medium))
-                    .foregroundStyle(Color.deltsMutedText)
-            }
-
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(Color.deltsAccent.opacity(0.10))
-                        .frame(height: 10)
-
-                    Capsule()
-                        .fill(Color.deltsAccent)
-                        .frame(width: progressWidth(totalWidth: geometry.size.width), height: 10)
-                        .shadow(color: Color.deltsAccent.opacity(0.24), radius: 8, y: 3)
-                        .animation(.spring(response: 0.8, dampingFraction: 0.75), value: loggedTotal)
-                }
-            }
-            .frame(height: 10)
-            .padding(.horizontal, 24)
+        VStack(spacing: 28) {
+            HomeSessionTimerButton(
+                startedAt: timerStartedAt,
+                elapsedSeconds: timerElapsedSeconds,
+                isRunning: isTimerRunning,
+                action: toggleTimer
+            )
 
             HStack(spacing: 20) {
                 HomeMetricCard(label: "Sets", value: setCount)
                 HomeMetricCard(label: "Workouts", value: workoutCount)
                 HomeMetricCard(label: "Reps", value: repCount)
             }
-            .padding(.top, 22)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
     }
+}
 
-    private var loggedTotal: Int {
-        workoutCount + setCount + repCount
+struct HomeSessionTimerButton: View {
+    let startedAt: Date?
+    let elapsedSeconds: Int
+    let isRunning: Bool
+    let action: () -> Void
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            Button(action: action) {
+                VStack(spacing: 10) {
+                    Image(systemName: isRunning ? "stop.fill" : "play.fill")
+                        .font(.system(size: 30, weight: .black))
+                        .foregroundStyle(Color.deltsOnAccent)
+                        .frame(height: 34)
+
+                    Text(displayText(at: context.date))
+                        .font(.system(size: 34, weight: .black, design: .rounded))
+                        .foregroundStyle(Color.deltsOnAccent)
+                        .contentTransition(.numericText())
+                        .monospacedDigit()
+                        .lineLimit(1)
+                }
+                .frame(width: 148, height: 148)
+                .background {
+                    Circle()
+                        .fill(Color.deltsAccent)
+                        .shadow(color: Color.deltsAccent.opacity(isRunning ? 0.40 : 0.26), radius: isRunning ? 22 : 16, y: 8)
+                }
+                .overlay {
+                    Circle()
+                        .stroke(Color.deltsOnAccent.opacity(0.18), lineWidth: 1)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isRunning ? "Stop workout timer" : "Start workout timer")
+        }
     }
 
-    private func progressWidth(totalWidth: CGFloat) -> CGFloat {
-        guard loggedTotal > 0 else { return 0 }
-        return totalWidth
+    private func displayText(at date: Date) -> String {
+        ActiveWorkoutViewModel.elapsedDisplay(totalElapsedSeconds(at: date))
+    }
+
+    private func totalElapsedSeconds(at date: Date) -> Int {
+        guard let startedAt else { return elapsedSeconds }
+        return elapsedSeconds + max(0, Int(date.timeIntervalSince(startedAt)))
     }
 }
 

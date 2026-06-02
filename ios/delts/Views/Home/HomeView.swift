@@ -20,6 +20,8 @@ struct HomeView: View {
     @AppStorage("delts.workoutPickerSource") private var workoutPickerSourceRaw = WorkoutPickerSource.dataset.rawValue
     @AppStorage("delts.savedExerciseIDs") private var savedExerciseIDsRaw = ""
     @FocusState private var focusedRepsField: PlannedSetFocus?
+    @State private var sessionStartedAt: Date?
+    @State private var sessionElapsedSeconds = 0
     @State private var keyboardHeight: CGFloat = 0
     @State private var selectedDetailItem: ExerciseLibraryItem?
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
@@ -52,6 +54,10 @@ struct HomeView: View {
                 repsTotal + (Int(value.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0)
             }
         }
+    }
+
+    private var isSessionTimerRunning: Bool {
+        sessionStartedAt != nil
     }
 
     private var selectedWorkoutSplit: WorkoutSplit {
@@ -214,7 +220,11 @@ struct HomeView: View {
                     StartWorkoutHero(
                         workoutCount: selectedExercises.count,
                         setCount: selectedCompletedSetCount,
-                        repCount: selectedRepCount
+                        repCount: selectedRepCount,
+                        timerStartedAt: sessionStartedAt,
+                        timerElapsedSeconds: sessionElapsedSeconds,
+                        isTimerRunning: isSessionTimerRunning,
+                        toggleTimer: toggleSessionTimer
                     )
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -407,6 +417,15 @@ struct HomeView: View {
 
     private func workoutCount(for date: Date) -> Int {
         dayPlans[WorkoutDayPlanStore.key(for: date)]?.exercises.count ?? 0
+    }
+
+    private func toggleSessionTimer() {
+        if let startedAt = sessionStartedAt {
+            sessionElapsedSeconds += max(0, Int(Date().timeIntervalSince(startedAt)))
+            sessionStartedAt = nil
+        } else {
+            sessionStartedAt = Date()
+        }
     }
 
     private func libraryItem(for exercise: PlannedRoutineExercise) -> ExerciseLibraryItem? {
