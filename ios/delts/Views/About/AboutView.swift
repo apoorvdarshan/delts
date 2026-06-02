@@ -5,33 +5,41 @@ import UIKit
 
 struct AboutView: View {
     @Environment(\.openURL) private var openURL
-    @State private var isWhatsNewPresented = false
+    @State private var isWhatsNewExpanded = false
     @State private var placeholder: AboutPlaceholder?
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    AboutHero(versionText: appVersionText)
-
                     AboutSection(title: "Release") {
                         AboutRowStack {
                             AboutActionRow(
                                 title: "Check for Updates",
                                 systemImage: "arrow.down.circle.fill",
-                                value: "Configure later",
+                                value: appVersionText,
                                 tint: .deltsAccent
                             ) {
                                 placeholder = .updates
                             }
                             AboutDivider()
-                            AboutActionRow(
+                            AboutExpandableActionRow(
                                 title: "What's New",
                                 systemImage: "sparkles",
-                                value: "Latest notes",
-                                tint: .deltsSecondaryAccent
+                                value: isWhatsNewExpanded ? "Hide" : "Show",
+                                tint: .deltsSecondaryAccent,
+                                isExpanded: isWhatsNewExpanded
                             ) {
-                                isWhatsNewPresented = true
+                                withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+                                    isWhatsNewExpanded.toggle()
+                                }
+                            }
+                            if isWhatsNewExpanded {
+                                AboutDivider()
+                                AboutWhatsNewInlineContent()
+                                    .padding(.top, 4)
+                                    .padding(.bottom, 12)
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
                             }
                             AboutDivider()
                             AboutActionRow(
@@ -166,12 +174,6 @@ struct AboutView: View {
                             ) {
                                 placeholder = .terms
                             }
-                            AboutDivider()
-                            AboutInfoRow(
-                                title: "Version",
-                                systemImage: "number.circle",
-                                value: appVersionText
-                            )
                         }
                     }
                 }
@@ -183,9 +185,6 @@ struct AboutView: View {
             .navigationTitle("About")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
-        }
-        .sheet(isPresented: $isWhatsNewPresented) {
-            AboutWhatsNewSheet()
         }
         .alert(item: $placeholder) { placeholder in
             Alert(
@@ -302,48 +301,6 @@ private enum AboutPlaceholder: Identifiable {
     }
 }
 
-private struct AboutHero: View {
-    let versionText: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .center, spacing: 14) {
-                Image("timer_button_red")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 72, height: 72)
-                    .shadow(color: Color.black.opacity(0.22), radius: 12, y: 7)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Delts")
-                        .font(.system(size: 32, weight: .black, design: .rounded))
-                        .foregroundStyle(Color.deltsCharcoal)
-
-                    Text("Training tools, exercise data, and timer workflows.")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.deltsMutedText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-
-            Text("Version \(versionText)")
-                .font(.caption.weight(.bold))
-                .monospacedDigit()
-                .foregroundStyle(Color.deltsAccent)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color.deltsAccent.opacity(0.10), in: Capsule())
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.7)
-        }
-    }
-}
-
 private struct AboutSection<Content: View>: View {
     let title: String
     let content: Content
@@ -411,15 +368,33 @@ private struct AboutActionRow: View {
     }
 }
 
-private struct AboutInfoRow: View {
+private struct AboutExpandableActionRow: View {
     let title: String
     let systemImage: String
     let value: String
+    let tint: Color
+    let isExpanded: Bool
+    let action: () -> Void
 
     var body: some View {
-        AboutFieldRow(title: title, systemImage: systemImage, tint: .deltsMutedText) {
-            AboutValueLabel(text: value, showsChevron: false)
+        Button(action: action) {
+            AboutFieldRow(title: title, systemImage: systemImage, tint: tint) {
+                HStack(spacing: 7) {
+                    Text(value)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .multilineTextAlignment(.trailing)
+
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.deltsMutedText.opacity(0.72))
+                }
+                .frame(minWidth: 72, maxWidth: 180, minHeight: 38, alignment: .trailing)
+            }
         }
+        .deltsPressable()
     }
 }
 
@@ -513,9 +488,7 @@ private struct AboutValueLabel: View {
     }
 }
 
-private struct AboutWhatsNewSheet: View {
-    @Environment(\.dismiss) private var dismiss
-
+private struct AboutWhatsNewInlineContent: View {
     private let items = [
         AboutWhatsNewItem(
             title: "Workout timer controls",
@@ -532,59 +505,12 @@ private struct AboutWhatsNewSheet: View {
     ]
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("What's New")
-                            .font(.system(size: 32, weight: .black, design: .rounded))
-                            .foregroundStyle(Color.deltsCharcoal)
-
-                        Text("Recent changes and launch-ready placeholders.")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(Color.deltsMutedText)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    VStack(spacing: 10) {
-                        ForEach(items) { item in
-                            AboutWhatsNewRow(item: item)
-                        }
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 24)
-                .padding(.bottom, 100)
-            }
-            .deltsScreen()
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                    .fontWeight(.bold)
-                }
-            }
-            .safeAreaInset(edge: .bottom) {
-                Button {
-                    dismiss()
-                } label: {
-                    Text("Close")
-                        .font(.headline.weight(.bold))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.deltsOnAccent)
-                .background(Color.deltsAccent, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
-                .padding(.bottom, 12)
-                .deltsBottomActionBackground()
+        VStack(spacing: 10) {
+            ForEach(items) { item in
+                AboutWhatsNewRow(item: item)
             }
         }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
+        .padding(.leading, 48)
     }
 }
 
