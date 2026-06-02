@@ -224,20 +224,78 @@ private struct HomeSessionTimerSideControls: View {
     let discardTimer: () -> Void
 
     var body: some View {
-        VStack(spacing: 10) {
-            Button(action: stopTimer) {
-                Label("Stop", systemImage: "stop.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(HomeTimerSideButtonStyle(role: .stop))
+        VStack(spacing: 8) {
+            HomeTimerSideButton(
+                title: "Stop",
+                systemImage: "stop.fill",
+                role: .stop,
+                action: stopTimer
+            )
 
-            Button(action: discardTimer) {
-                Label("Discard", systemImage: "trash.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(HomeTimerSideButtonStyle(role: .discard))
+            HomeTimerSideButton(
+                title: "Discard",
+                systemImage: "trash.fill",
+                role: .discard,
+                action: discardTimer
+            )
         }
-        .frame(width: 104)
+        .padding(6)
+        .frame(width: 118)
+        .background(Color.deltsPanel.opacity(0.48), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.62), lineWidth: 0.8)
+        }
+        .shadow(color: Color.black.opacity(0.14), radius: 10, x: 0, y: 6)
+    }
+}
+
+private struct HomeTimerSideButton: View {
+    let title: String
+    let systemImage: String
+    let role: HomeTimerSideButtonStyle.Role
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 11, weight: .black))
+                    .foregroundStyle(iconForeground)
+                    .frame(width: 22, height: 22)
+                    .background(iconBackground, in: Circle())
+
+                Text(title)
+                    .font(.system(size: 13, weight: .black, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.74)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.leading, 7)
+            .padding(.trailing, 8)
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(HomeTimerSideButtonStyle(role: role))
+        .accessibilityLabel(title)
+    }
+
+    private var iconForeground: Color {
+        switch role {
+        case .stop:
+            return Color.deltsAccent
+        case .discard:
+            return Color.white
+        }
+    }
+
+    private var iconBackground: Color {
+        switch role {
+        case .stop:
+            return Color.deltsOnAccent.opacity(0.96)
+        case .discard:
+            return Color.red.opacity(0.88)
+        }
     }
 }
 
@@ -251,20 +309,25 @@ private struct HomeTimerSideButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 13, weight: .black, design: .rounded))
-            .foregroundStyle(role == .stop ? Color.deltsOnAccent : Color.deltsCharcoal)
-            .labelStyle(.titleAndIcon)
-            .lineLimit(1)
-            .minimumScaleFactor(0.72)
-            .padding(.horizontal, 12)
-            .frame(height: 48)
-            .background(background, in: Capsule())
+            .foregroundStyle(foreground)
+            .frame(height: 46)
+            .background(configuration.isPressed ? pressedBackground : background, in: RoundedRectangle(cornerRadius: 21, style: .continuous))
             .overlay {
-                Capsule()
-                    .stroke(border, lineWidth: 0.8)
+                RoundedRectangle(cornerRadius: 21, style: .continuous)
+                    .stroke(border, lineWidth: role == .stop ? 0.8 : 1)
             }
-            .scaleEffect(configuration.isPressed ? 0.94 : 1)
+            .shadow(color: shadowColor, radius: role == .stop ? 7 : 0, x: 0, y: role == .stop ? 4 : 0)
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
             .animation(.snappy(duration: 0.12), value: configuration.isPressed)
+    }
+
+    private var foreground: Color {
+        switch role {
+        case .stop:
+            return Color.deltsOnAccent
+        case .discard:
+            return Color.red.opacity(0.92)
+        }
     }
 
     private var background: Color {
@@ -272,7 +335,16 @@ private struct HomeTimerSideButtonStyle: ButtonStyle {
         case .stop:
             return Color.deltsAccent
         case .discard:
-            return Color.deltsPanel.opacity(0.9)
+            return Color.deltsCard.opacity(0.72)
+        }
+    }
+
+    private var pressedBackground: Color {
+        switch role {
+        case .stop:
+            return Color.deltsAccent.opacity(0.82)
+        case .discard:
+            return Color.red.opacity(0.10)
         }
     }
 
@@ -281,7 +353,16 @@ private struct HomeTimerSideButtonStyle: ButtonStyle {
         case .stop:
             return Color.deltsAccent.opacity(0.45)
         case .discard:
-            return Color.red.opacity(0.46)
+            return Color.red.opacity(0.42)
+        }
+    }
+
+    private var shadowColor: Color {
+        switch role {
+        case .stop:
+            return Color.deltsAccent.opacity(0.24)
+        case .discard:
+            return Color.clear
         }
     }
 }

@@ -50,15 +50,15 @@ private struct WorkoutTimerLockScreenView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 12) {
-                DeltsLiveActivityLogo(size: 48, cornerRadius: 12)
+                DeltsLiveActivityLogo(size: 44, cornerRadius: 11)
+                    .frame(width: 44, height: 44)
 
                 DeltsLiveActivityTitle(dayTitle: state.dayTitle, brandSize: 16, daySize: 15)
-                    .frame(minWidth: 86, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .layoutPriority(3)
 
-                Spacer(minLength: 0)
-
                 TimerText(startedAt: state.startedAt, size: 38)
+                    .frame(width: 128, alignment: .trailing)
                     .layoutPriority(1)
             }
 
