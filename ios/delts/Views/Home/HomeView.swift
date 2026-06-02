@@ -65,7 +65,7 @@ struct HomeView: View {
     }
 
     private var isSessionTimerPaused: Bool {
-        isSelectedSessionDate && sessionStartedAt == nil && sessionDateKey != nil && sessionElapsedSeconds > 0
+        isSelectedSessionDate && sessionStartedAt == nil && sessionDateKey != nil
     }
 
     private var hasSelectedSessionTimer: Bool {
@@ -73,7 +73,7 @@ struct HomeView: View {
     }
 
     private var isAnySessionTimerRunning: Bool {
-        sessionDateKey != nil && (sessionStartedAt != nil || sessionElapsedSeconds > 0)
+        sessionDateKey != nil
     }
 
     private var isSelectedSessionDate: Bool {
