@@ -239,14 +239,7 @@ private struct HomeSessionTimerSideControls: View {
                 action: discardTimer
             )
         }
-        .padding(6)
         .frame(width: 118)
-        .background(Color.deltsPanel.opacity(0.48), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.62), lineWidth: 0.8)
-        }
-        .shadow(color: Color.black.opacity(0.14), radius: 10, x: 0, y: 6)
     }
 }
 
