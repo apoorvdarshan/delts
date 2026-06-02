@@ -1,4 +1,3 @@
-import AudioToolbox
 import SwiftData
 import SwiftUI
 import UIKit
@@ -542,7 +541,7 @@ struct HomeView: View {
 
     private func playTimerClick() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        AudioServicesPlaySystemSound(1104)
+        ButtonClickPlayer.shared.play()
     }
 
     private func startSessionLiveActivity(startedAt: Date) {

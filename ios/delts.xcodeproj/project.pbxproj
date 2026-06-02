@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		C0DEF1000000000000000010 /* DeltsTimerWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DEF1000000000000000003 /* DeltsTimerWidgetBundle.swift */; };
 		C0DEF1000000000000000011 /* WorkoutTimerLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DEF1000000000000000004 /* WorkoutTimerLiveActivity.swift */; };
-		C0DEF1000000000000000012 /* WorkoutTimerActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DEF1000000000000000006 /* WorkoutTimerActivityAttributes.swift */; };
+		C0DEF1000000000000000012 /* delts/LiveActivity/WorkoutTimerActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DEF1000000000000000006 /* delts/LiveActivity/WorkoutTimerActivityAttributes.swift */; };
 		C0DEF1000000000000000053 /* DeltsTimerWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C0DEF1000000000000000001 /* DeltsTimerWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		C0DEF1000000000000000056 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0DEF1000000000000000057 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -39,15 +39,15 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		C0DEF1000000000000000001 /* DeltsTimerWidget.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = DeltsTimerWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		C0DEF1000000000000000003 /* DeltsTimerWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeltsTimerWidgetBundle.swift; sourceTree = "<group>"; };
-		C0DEF1000000000000000004 /* WorkoutTimerLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutTimerLiveActivity.swift; sourceTree = "<group>"; };
-		C0DEF1000000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		C0DEF1000000000000000006 /* WorkoutTimerActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = delts/LiveActivity/WorkoutTimerActivityAttributes.swift; sourceTree = SOURCE_ROOT; };
-		C0DEF1000000000000000057 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BAE99A722FC0922800559E0F /* delts.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = delts.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BAE99A802FC0B00000559E0F /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		BAE99A812FC0B00000559E0F /* Secrets.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.example.xcconfig; sourceTree = "<group>"; };
+		C0DEF1000000000000000001 /* DeltsTimerWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DeltsTimerWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0DEF1000000000000000003 /* DeltsTimerWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeltsTimerWidgetBundle.swift; sourceTree = "<group>"; };
+		C0DEF1000000000000000004 /* WorkoutTimerLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutTimerLiveActivity.swift; sourceTree = "<group>"; };
+		C0DEF1000000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C0DEF1000000000000000006 /* delts/LiveActivity/WorkoutTimerActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = delts/LiveActivity/WorkoutTimerActivityAttributes.swift; sourceTree = SOURCE_ROOT; };
+		C0DEF1000000000000000057 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -59,14 +59,14 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		C0DEF1000000000000000021 /* Frameworks */ = {
+		BAE99A6F2FC0922800559E0F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		BAE99A6F2FC0922800559E0F /* Frameworks */ = {
+		C0DEF1000000000000000021 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -96,24 +96,24 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		C0DEF1000000000000000002 /* DeltsTimerWidget */ = {
-			isa = PBXGroup;
-			children = (
-				C0DEF1000000000000000003 /* DeltsTimerWidgetBundle.swift */,
-				C0DEF1000000000000000004 /* WorkoutTimerLiveActivity.swift */,
-				C0DEF1000000000000000005 /* Info.plist */,
-				C0DEF1000000000000000006 /* WorkoutTimerActivityAttributes.swift */,
-				C0DEF1000000000000000057 /* Assets.xcassets */,
-			);
-			path = DeltsTimerWidget;
-			sourceTree = "<group>";
-		};
 		BAE99A822FC0B00000559E0F /* Config */ = {
 			isa = PBXGroup;
 			children = (
 				BAE99A802FC0B00000559E0F /* Base.xcconfig */,
 			);
 			path = Config;
+			sourceTree = "<group>";
+		};
+		C0DEF1000000000000000002 /* DeltsTimerWidget */ = {
+			isa = PBXGroup;
+			children = (
+				C0DEF1000000000000000003 /* DeltsTimerWidgetBundle.swift */,
+				C0DEF1000000000000000004 /* WorkoutTimerLiveActivity.swift */,
+				C0DEF1000000000000000005 /* Info.plist */,
+				C0DEF1000000000000000006 /* delts/LiveActivity/WorkoutTimerActivityAttributes.swift */,
+				C0DEF1000000000000000057 /* Assets.xcassets */,
+			);
+			path = DeltsTimerWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -206,6 +206,13 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		BAE99A702FC0922800559E0F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C0DEF1000000000000000022 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -214,30 +221,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		BAE99A702FC0922800559E0F /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BAE99A6E2FC0922800559E0F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXResourcesBuildPhase section */
-
-/* Begin PBXSourcesBuildPhase section */
 		C0DEF1000000000000000020 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				C0DEF1000000000000000010 /* DeltsTimerWidgetBundle.swift in Sources */,
 				C0DEF1000000000000000011 /* WorkoutTimerLiveActivity.swift in Sources */,
-				C0DEF1000000000000000012 /* WorkoutTimerActivityAttributes.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		BAE99A6E2FC0922800559E0F /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
+				C0DEF1000000000000000012 /* delts/LiveActivity/WorkoutTimerActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -252,68 +252,6 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		C0DEF1000000000000000040 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 23RV7FYH36;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = DeltsTimerWidget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.apoorvdarshan.delts.timerwidget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Debug;
-		};
-		C0DEF1000000000000000041 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 23RV7FYH36;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = DeltsTimerWidget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.apoorvdarshan.delts.timerwidget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Release;
-		};
 		BAE99A7B2FC0922900559E0F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -525,18 +463,71 @@
 			};
 			name = Release;
 		};
+		C0DEF1000000000000000040 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 23RV7FYH36;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DeltsTimerWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.apoorvdarshan.delts.timerwidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		C0DEF1000000000000000041 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 23RV7FYH36;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DeltsTimerWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.apoorvdarshan.delts.timerwidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		C0DEF1000000000000000042 /* Build configuration list for PBXNativeTarget "DeltsTimerWidget" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				C0DEF1000000000000000040 /* Debug */,
-				C0DEF1000000000000000041 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		BAE99A6D2FC0922800559E0F /* Build configuration list for PBXProject "delts" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -551,6 +542,15 @@
 			buildConfigurations = (
 				BAE99A7E2FC0922900559E0F /* Debug */,
 				BAE99A7F2FC0922900559E0F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C0DEF1000000000000000042 /* Build configuration list for PBXNativeTarget "DeltsTimerWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0DEF1000000000000000040 /* Debug */,
+				C0DEF1000000000000000041 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -48,32 +48,28 @@ private struct WorkoutTimerLockScreenView: View {
     let state: WorkoutTimerActivityAttributes.ContentState
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack(alignment: .center, spacing: 8) {
-                DeltsLiveActivityLogo(size: 34, cornerRadius: 8)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
+                DeltsLiveActivityLogo(size: 38, cornerRadius: 9)
 
-                Text("DELTS")
-                    .font(.system(size: 13, weight: .black, design: .rounded))
-                    .foregroundStyle(liveActivityAccent)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("DELTS")
+                        .font(.system(size: 13, weight: .black, design: .rounded))
+                        .foregroundStyle(liveActivityAccent)
 
-                Text(state.dayTitle)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.white.opacity(0.64))
-                    .lineLimit(1)
-
-                Spacer()
-            }
-
-            HStack(alignment: .center, spacing: 9) {
-                Image(systemName: "timer")
-                    .font(.system(size: 20, weight: .black, design: .rounded))
-                    .foregroundStyle(liveActivityAccent)
-
-                TimerText(startedAt: state.startedAt, size: 52)
+                    Text(state.dayTitle)
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.white.opacity(0.72))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                }
+                .layoutPriority(1)
 
                 Spacer(minLength: 0)
+
+                TimerText(startedAt: state.startedAt, size: 40)
+                    .layoutPriority(2)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
             LiveActivityStatsRow(state: state)
         }
