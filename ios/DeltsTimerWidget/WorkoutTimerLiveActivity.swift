@@ -14,12 +14,12 @@ struct WorkoutTimerLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 7) {
-                        DeltsLiveActivityLogo(size: 26, cornerRadius: 7)
-                        Text("Delts")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.white)
-                    }
+                    DeltsLiveActivityLogo(size: 32, cornerRadius: 8)
+                }
+
+                DynamicIslandExpandedRegion(.center) {
+                    DeltsLiveActivityTitle(dayTitle: context.state.dayTitle, brandSize: 14, daySize: 13)
+                        .frame(minWidth: 76, alignment: .leading)
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
@@ -49,26 +49,17 @@ private struct WorkoutTimerLockScreenView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 10) {
-                DeltsLiveActivityLogo(size: 38, cornerRadius: 9)
+            HStack(alignment: .center, spacing: 12) {
+                DeltsLiveActivityLogo(size: 48, cornerRadius: 12)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("DELTS")
-                        .font(.system(size: 13, weight: .black, design: .rounded))
-                        .foregroundStyle(liveActivityAccent)
-
-                    Text(state.dayTitle)
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.white.opacity(0.72))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                }
-                .layoutPriority(1)
+                DeltsLiveActivityTitle(dayTitle: state.dayTitle, brandSize: 16, daySize: 15)
+                    .frame(minWidth: 86, alignment: .leading)
+                    .layoutPriority(3)
 
                 Spacer(minLength: 0)
 
-                TimerText(startedAt: state.startedAt, size: 40)
-                    .layoutPriority(2)
+                TimerText(startedAt: state.startedAt, size: 38)
+                    .layoutPriority(1)
             }
 
             LiveActivityStatsRow(state: state)
@@ -109,6 +100,27 @@ private struct LiveActivityStatsRow: View {
         .overlay {
             Capsule()
                 .stroke(Color.white.opacity(0.09), lineWidth: 0.8)
+        }
+    }
+}
+
+private struct DeltsLiveActivityTitle: View {
+    let dayTitle: String
+    let brandSize: CGFloat
+    let daySize: CGFloat
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("DELTS")
+                .font(.system(size: brandSize, weight: .black, design: .rounded))
+                .foregroundStyle(liveActivityAccent)
+                .lineLimit(1)
+
+            Text(dayTitle)
+                .font(.system(size: daySize, weight: .heavy, design: .rounded))
+                .foregroundStyle(Color.white.opacity(0.86))
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
         }
     }
 }
