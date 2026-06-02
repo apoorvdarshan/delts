@@ -22,9 +22,12 @@ struct HomeView: View {
     @AppStorage("delts.workoutPickerSource") private var workoutPickerSourceRaw = WorkoutPickerSource.dataset.rawValue
     @AppStorage("delts.savedExerciseIDs") private var savedExerciseIDsRaw = ""
     @FocusState private var focusedRepsField: PlannedSetFocus?
+    @State private var sessionDate: Date?
+    @State private var sessionDateKey: String?
     @State private var sessionStartedAt: Date?
     @State private var sessionElapsedSeconds = 0
     @State private var isTimerStopDialogPresented = false
+    @State private var isOtherDateTimerDialogPresented = false
     @State private var keyboardHeight: CGFloat = 0
     @State private var selectedDetailItem: ExerciseLibraryItem?
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
@@ -61,7 +64,23 @@ struct HomeView: View {
     }
 
     private var isSessionTimerRunning: Bool {
+        isSelectedSessionDate && sessionStartedAt != nil
+    }
+
+    private var isAnySessionTimerRunning: Bool {
         sessionStartedAt != nil
+    }
+
+    private var isSelectedSessionDate: Bool {
+        sessionDateKey == selectedDateKey
+    }
+
+    private var selectedTimerStartedAt: Date? {
+        isSelectedSessionDate ? sessionStartedAt : nil
+    }
+
+    private var selectedTimerElapsedSeconds: Int {
+        isSelectedSessionDate ? sessionElapsedSeconds : 0
     }
 
     private var selectedWorkoutSplit: WorkoutSplit {
@@ -225,8 +244,8 @@ struct HomeView: View {
                         workoutCount: selectedExercises.count,
                         setCount: selectedCompletedSetCount,
                         repCount: selectedRepCount,
-                        timerStartedAt: sessionStartedAt,
-                        timerElapsedSeconds: sessionElapsedSeconds,
+                        timerStartedAt: selectedTimerStartedAt,
+                        timerElapsedSeconds: selectedTimerElapsedSeconds,
                         isTimerRunning: isSessionTimerRunning,
                         toggleTimer: handleSessionTimerTap
                     )
@@ -336,6 +355,17 @@ struct HomeView: View {
             } message: {
                 Text("Elapsed \(currentSessionElapsedDisplay)")
             }
+            .confirmationDialog("Timer already running", isPresented: $isOtherDateTimerDialogPresented, titleVisibility: .visible) {
+                Button("Go to \(activeSessionDateTitle)") {
+                    if let sessionDate {
+                        selectedDate = sessionDate
+                    }
+                }
+
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Stop or discard the \(activeSessionDateTitle) timer before starting another.")
+            }
             .sheet(isPresented: $isWorkoutPickerPresented) {
                 WorkoutPickerSheet(
                     searchText: $exerciseSearch,
@@ -443,6 +473,20 @@ struct HomeView: View {
         ActiveWorkoutViewModel.elapsedDisplay(currentSessionElapsedSeconds)
     }
 
+    private var activeSessionDateTitle: String {
+        guard let sessionDate else { return "active day" }
+        if Calendar.current.isDateInToday(sessionDate) {
+            return "Today"
+        }
+        if Calendar.current.isDateInTomorrow(sessionDate) {
+            return "Tomorrow"
+        }
+        if Calendar.current.isDateInYesterday(sessionDate) {
+            return "Yesterday"
+        }
+        return sessionDate.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
+    }
+
     private func workoutCount(for date: Date) -> Int {
         dayPlans[WorkoutDayPlanStore.key(for: date)]?.exercises.count ?? 0
     }
@@ -451,12 +495,19 @@ struct HomeView: View {
         playTimerClick()
         if isSessionTimerRunning {
             isTimerStopDialogPresented = true
+        } else if isAnySessionTimerRunning {
+            isOtherDateTimerDialogPresented = true
         } else {
             startSessionTimer()
         }
     }
 
     private func startSessionTimer() {
+        if sessionDateKey != selectedDateKey {
+            sessionElapsedSeconds = 0
+        }
+        sessionDate = selectedDate
+        sessionDateKey = selectedDateKey
         sessionStartedAt = Date()
         scheduleWorkoutTimerNotification()
     }
@@ -471,6 +522,8 @@ struct HomeView: View {
     private func discardSessionTimer() {
         playTimerClick()
         sessionElapsedSeconds = 0
+        sessionDate = nil
+        sessionDateKey = nil
         sessionStartedAt = nil
         cancelWorkoutTimerNotification()
     }
