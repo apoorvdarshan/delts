@@ -2,7 +2,6 @@ import AudioToolbox
 import SwiftData
 import SwiftUI
 import UIKit
-import UserNotifications
 
 struct HomeView: View {
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
@@ -35,7 +34,6 @@ struct HomeView: View {
     @AppStorage("profile_show_only_target_primary_filters") private var showOnlyTargetPrimaryFilters = false
 
     private let service = ExerciseLibraryService.shared
-    private let workoutTimerNotificationID = "delts.workout.timer.running"
 
     private var selectedDateKey: String {
         WorkoutDayPlanStore.key(for: selectedDate)
@@ -410,6 +408,9 @@ struct HomeView: View {
             .onChange(of: showOnlyTargetPrimaryFilters) {
                 normalizeWorkoutPickerPrimaryFilter()
             }
+            .onChange(of: selectedExercises) {
+                updateSessionLiveActivityIfNeeded()
+            }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) { notification in
                 updateKeyboardHeight(from: notification)
             }
@@ -508,15 +509,16 @@ struct HomeView: View {
         }
         sessionDate = selectedDate
         sessionDateKey = selectedDateKey
-        sessionStartedAt = Date()
-        scheduleWorkoutTimerNotification()
+        let startedAt = Date()
+        sessionStartedAt = startedAt
+        startSessionLiveActivity(startedAt: startedAt)
     }
 
     private func stopSessionTimer() {
         playTimerClick()
         sessionElapsedSeconds = currentSessionElapsedSeconds
         sessionStartedAt = nil
-        cancelWorkoutTimerNotification()
+        endSessionLiveActivity()
     }
 
     private func discardSessionTimer() {
@@ -525,7 +527,7 @@ struct HomeView: View {
         sessionDate = nil
         sessionDateKey = nil
         sessionStartedAt = nil
-        cancelWorkoutTimerNotification()
+        endSessionLiveActivity()
     }
 
     private func playTimerClick() {
@@ -533,45 +535,38 @@ struct HomeView: View {
         AudioServicesPlaySystemSound(1104)
     }
 
-    private func scheduleWorkoutTimerNotification() {
-        let center = UNUserNotificationCenter.current()
-        center.getNotificationSettings { settings in
-            switch settings.authorizationStatus {
-            case .authorized, .provisional, .ephemeral:
-                addWorkoutTimerNotification(using: center)
-            case .notDetermined:
-                center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
-                    guard granted else { return }
-                    addWorkoutTimerNotification(using: center)
-                }
-            case .denied:
-                return
-            @unknown default:
-                return
-            }
-        }
-    }
-
-    private func addWorkoutTimerNotification(using center: UNUserNotificationCenter) {
-        let content = UNMutableNotificationContent()
-        content.title = "Workout timer running"
-        content.body = "Started \(Date.now.formatted(date: .omitted, time: .shortened)). Open Delts to stop or discard it."
-        content.sound = .default
-
-        let request = UNNotificationRequest(
-            identifier: workoutTimerNotificationID,
-            content: content,
-            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+    private func startSessionLiveActivity(startedAt: Date) {
+        guard let sessionDateKey else { return }
+        WorkoutTimerLiveActivityController.shared.start(
+            sessionID: sessionDateKey,
+            startedAt: startedAt,
+            dayTitle: activeSessionDateTitle,
+            setCount: selectedCompletedSetCount,
+            workoutCount: selectedExercises.count,
+            repCount: selectedRepCount
         )
-        center.removePendingNotificationRequests(withIdentifiers: [workoutTimerNotificationID])
-        center.removeDeliveredNotifications(withIdentifiers: [workoutTimerNotificationID])
-        center.add(request)
     }
 
-    private func cancelWorkoutTimerNotification() {
-        let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: [workoutTimerNotificationID])
-        center.removeDeliveredNotifications(withIdentifiers: [workoutTimerNotificationID])
+    private func updateSessionLiveActivityIfNeeded() {
+        guard isAnySessionTimerRunning,
+              isSelectedSessionDate,
+              let sessionDateKey,
+              let sessionStartedAt
+        else { return }
+        WorkoutTimerLiveActivityController.shared.update(
+            sessionID: sessionDateKey,
+            startedAt: sessionStartedAt,
+            dayTitle: activeSessionDateTitle,
+            setCount: selectedCompletedSetCount,
+            workoutCount: selectedExercises.count,
+            repCount: selectedRepCount
+        )
+    }
+
+    private func endSessionLiveActivity() {
+        Task {
+            await WorkoutTimerLiveActivityController.shared.end()
+        }
     }
 
     private func libraryItem(for exercise: PlannedRoutineExercise) -> ExerciseLibraryItem? {
