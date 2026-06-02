@@ -167,7 +167,6 @@ struct HomeSessionTimerButton: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 176, height: 176)
-                        .shadow(color: Color.red.opacity(isRunning ? 0.36 : 0.20), radius: isRunning ? 24 : 16, y: 8)
                         .shadow(color: Color.black.opacity(0.34), radius: 16, y: 8)
                 }
             }
