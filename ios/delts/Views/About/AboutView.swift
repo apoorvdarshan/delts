@@ -1,0 +1,638 @@
+import Foundation
+import StoreKit
+import SwiftUI
+import UIKit
+
+struct AboutView: View {
+    @Environment(\.openURL) private var openURL
+    @State private var isWhatsNewPresented = false
+    @State private var placeholder: AboutPlaceholder?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    AboutHero(versionText: appVersionText)
+
+                    AboutSection(title: "Release") {
+                        AboutRowStack {
+                            AboutActionRow(
+                                title: "Check for Updates",
+                                systemImage: "arrow.down.circle.fill",
+                                value: "Configure later",
+                                tint: .deltsAccent
+                            ) {
+                                placeholder = .updates
+                            }
+                            AboutDivider()
+                            AboutActionRow(
+                                title: "What's New",
+                                systemImage: "sparkles",
+                                value: "Latest notes",
+                                tint: .deltsSecondaryAccent
+                            ) {
+                                isWhatsNewPresented = true
+                            }
+                            AboutDivider()
+                            AboutActionRow(
+                                title: "Rate Delts",
+                                systemImage: "star.fill",
+                                value: "Native prompt",
+                                tint: .deltsWarning
+                            ) {
+                                requestAppReview()
+                            }
+                            AboutDivider()
+                            AboutActionRow(
+                                title: "Share Delts",
+                                systemImage: "square.and.arrow.up",
+                                value: "App Store link",
+                                tint: .deltsSecondaryAccent
+                            ) {
+                                shareApp()
+                            }
+                        }
+                    }
+
+                    AboutSection(title: "Community") {
+                        AboutRowStack {
+                            AboutActionRow(
+                                title: "Support on Ko-fi",
+                                systemImage: "cup.and.saucer.fill",
+                                value: "apoorvdarshan",
+                                tint: .deltsAccent
+                            ) {
+                                open(AboutLinks.kofiURL)
+                            }
+                            AboutDivider()
+                            AboutActionRow(
+                                title: "Open Source",
+                                systemImage: "curlybraces.square.fill",
+                                value: "Repo soon",
+                                tint: .deltsSecondaryAccent
+                            ) {
+                                placeholder = .openSource
+                            }
+                            AboutDivider()
+                            AboutActionRow(
+                                title: "Product Hunt",
+                                systemImage: "paperplane.fill",
+                                value: "Coming soon",
+                                tint: .deltsWarning
+                            ) {
+                                placeholder = .productHunt
+                            }
+                        }
+                    }
+
+                    AboutSection(title: "Contact") {
+                        AboutRowStack {
+                            AboutActionRow(
+                                title: "Contact Us",
+                                systemImage: "envelope.fill",
+                                value: AboutLinks.contactEmail,
+                                tint: .deltsSecondaryAccent
+                            ) {
+                                open(AboutLinks.contactEmailURL)
+                            }
+                            AboutDivider()
+                            AboutActionRow(
+                                title: "Follow on X",
+                                systemImage: "at",
+                                value: "@apoorvdarshan",
+                                tint: .deltsCharcoal
+                            ) {
+                                open(AboutLinks.xProfileURL)
+                            }
+                            AboutDivider()
+                            AboutActionRow(
+                                title: "Instagram",
+                                systemImage: "camera.fill",
+                                value: "Coming soon",
+                                tint: .deltsSecondaryAccent
+                            ) {
+                                placeholder = .instagram
+                            }
+                            AboutDivider()
+                            AboutActionRow(
+                                title: "LinkedIn",
+                                systemImage: "person.crop.square.filled.and.at.rectangle",
+                                value: "Coming soon",
+                                tint: .deltsSecondaryAccent
+                            ) {
+                                placeholder = .linkedIn
+                            }
+                        }
+                    }
+
+                    AboutSection(title: "Feedback") {
+                        AboutRowStack {
+                            AboutActionRow(
+                                title: "Report an Issue",
+                                systemImage: "exclamationmark.bubble.fill",
+                                value: "GitHub",
+                                tint: .red
+                            ) {
+                                open(AboutLinks.githubIssueURL)
+                            }
+                            AboutDivider()
+                            AboutActionRow(
+                                title: "Request a Feature",
+                                systemImage: "lightbulb.fill",
+                                value: "GitHub",
+                                tint: .deltsAccent
+                            ) {
+                                open(AboutLinks.githubFeatureURL)
+                            }
+                        }
+                    }
+
+                    AboutSection(title: "Legal") {
+                        AboutRowStack {
+                            AboutActionRow(
+                                title: "Privacy Policy",
+                                systemImage: "hand.raised.fill",
+                                value: "delts.fit/privacy",
+                                tint: .deltsSecondaryAccent
+                            ) {
+                                placeholder = .privacy
+                            }
+                            AboutDivider()
+                            AboutActionRow(
+                                title: "Terms",
+                                systemImage: "doc.text.fill",
+                                value: "delts.fit/terms",
+                                tint: .deltsSecondaryAccent
+                            ) {
+                                placeholder = .terms
+                            }
+                            AboutDivider()
+                            AboutInfoRow(
+                                title: "Version",
+                                systemImage: "number.circle",
+                                value: appVersionText
+                            )
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 14)
+                .padding(.bottom, 120)
+            }
+            .deltsScreen()
+            .navigationTitle("About")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
+        }
+        .sheet(isPresented: $isWhatsNewPresented) {
+            AboutWhatsNewSheet()
+        }
+        .alert(item: $placeholder) { placeholder in
+            Alert(
+                title: Text(placeholder.title),
+                message: Text(placeholder.message),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+    }
+
+    private var appVersionText: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+
+        switch (version?.isEmpty == false ? version : nil, build?.isEmpty == false ? build : nil) {
+        case let (.some(version), .some(build)):
+            return "\(version) (\(build))"
+        case let (.some(version), .none):
+            return version
+        case let (.none, .some(build)):
+            return "Build \(build)"
+        case (.none, .none):
+            return "Unavailable"
+        }
+    }
+
+    private func requestAppReview() {
+        guard let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive })
+        else { return }
+
+        SKStoreReviewController.requestReview(in: scene)
+    }
+
+    private func shareApp() {
+        guard let url = AboutLinks.appStoreShareURL else {
+            placeholder = .share
+            return
+        }
+
+        let activityController = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        guard let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive }),
+              let rootController = scene.deltsPrimaryWindow?.rootViewController
+        else { return }
+
+        rootController.deltsTopPresentedController.present(activityController, animated: true)
+    }
+
+    private func open(_ url: URL?) {
+        guard let url else { return }
+        openURL(url)
+    }
+}
+
+private enum AboutLinks {
+    static let appStoreShareURL: URL? = nil
+    static let contactEmail = "ad13dtu@gmail.com"
+    static let contactEmailURL = URL(string: "mailto:\(contactEmail)")
+    static let githubIssueURL = URL(string: "https://github.com/apoorvdarshan/delts/issues/new")
+    static let githubFeatureURL = URL(string: "https://github.com/apoorvdarshan/delts/issues/new?labels=enhancement")
+    static let kofiURL = URL(string: "https://ko-fi.com/apoorvdarshan")
+    static let xProfileURL = URL(string: "https://x.com/apoorvdarshan")
+}
+
+private enum AboutPlaceholder: Identifiable {
+    case updates
+    case share
+    case openSource
+    case productHunt
+    case instagram
+    case linkedIn
+    case privacy
+    case terms
+
+    var id: String {
+        title
+    }
+
+    var title: String {
+        switch self {
+        case .updates: return "Update Checker"
+        case .share: return "Share Delts"
+        case .openSource: return "Open Source"
+        case .productHunt: return "Product Hunt"
+        case .instagram: return "Instagram"
+        case .linkedIn: return "LinkedIn"
+        case .privacy: return "Privacy Policy"
+        case .terms: return "Terms"
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .updates:
+            return "Update checking will be configured after the App Store release data is connected."
+        case .share:
+            return "The App Store share link will be added when the listing is ready."
+        case .openSource:
+            return "The repository is private for now. This row is ready for the public open-source repo link later."
+        case .productHunt:
+            return "The Product Hunt launch link will be added when it is ready."
+        case .instagram:
+            return "The Instagram profile link will be added later."
+        case .linkedIn:
+            return "The LinkedIn profile link will be added later."
+        case .privacy:
+            return "This will open delts.fit/privacy after the website is configured."
+        case .terms:
+            return "This will open delts.fit/terms after the website is configured."
+        }
+    }
+}
+
+private struct AboutHero: View {
+    let versionText: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 14) {
+                Image("timer_button_red")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 72, height: 72)
+                    .shadow(color: Color.black.opacity(0.22), radius: 12, y: 7)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Delts")
+                        .font(.system(size: 32, weight: .black, design: .rounded))
+                        .foregroundStyle(Color.deltsCharcoal)
+
+                    Text("Training tools, exercise data, and timer workflows.")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Text("Version \(versionText)")
+                .font(.caption.weight(.bold))
+                .monospacedDigit()
+                .foregroundStyle(Color.deltsAccent)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.deltsAccent.opacity(0.10), in: Capsule())
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.7)
+        }
+    }
+}
+
+private struct AboutSection<Content: View>: View {
+    let title: String
+    let content: Content
+
+    init(title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.callout.weight(.bold))
+                .foregroundStyle(Color.deltsMutedText)
+                .padding(.horizontal, 14)
+
+            content
+        }
+    }
+}
+
+private struct AboutRowStack<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            content
+        }
+        .padding(.horizontal, 14)
+        .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.22), lineWidth: 0.5)
+        }
+    }
+}
+
+private struct AboutDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(Color.deltsHairline.opacity(0.28))
+            .frame(height: 0.5)
+            .padding(.leading, 48)
+    }
+}
+
+private struct AboutActionRow: View {
+    let title: String
+    let systemImage: String
+    let value: String
+    let tint: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            AboutFieldRow(title: title, systemImage: systemImage, tint: tint) {
+                AboutValueLabel(text: value, showsChevron: true)
+            }
+        }
+        .deltsPressable()
+    }
+}
+
+private struct AboutInfoRow: View {
+    let title: String
+    let systemImage: String
+    let value: String
+
+    var body: some View {
+        AboutFieldRow(title: title, systemImage: systemImage, tint: .deltsMutedText) {
+            AboutValueLabel(text: value, showsChevron: false)
+        }
+    }
+}
+
+private struct AboutFieldRow<Content: View>: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+    let content: Content
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    init(
+        title: String,
+        systemImage: String,
+        tint: Color = .deltsSecondaryAccent,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.systemImage = systemImage
+        self.tint = tint
+        self.content = content()
+    }
+
+    var body: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 10) {
+                AboutFieldLabel(title: title, systemImage: systemImage, tint: tint)
+                content
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        } else {
+            HStack(alignment: .center, spacing: 12) {
+                AboutFieldLabel(title: title, systemImage: systemImage, tint: tint)
+                    .layoutPriority(2)
+
+                Spacer(minLength: 12)
+
+                content
+                    .layoutPriority(0)
+            }
+            .padding(.vertical, 9)
+            .contentShape(Rectangle())
+        }
+    }
+}
+
+private struct AboutFieldLabel: View {
+    let title: String
+    let systemImage: String
+    var tint: Color = .deltsSecondaryAccent
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 11) {
+            Image(systemName: systemImage)
+                .font(.system(size: 19, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(tint)
+                .frame(width: 38, height: 34)
+
+            Text(title)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+private struct AboutValueLabel: View {
+    let text: String
+    let showsChevron: Bool
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Text(text)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .multilineTextAlignment(.trailing)
+
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.deltsMutedText.opacity(0.72))
+            }
+        }
+        .frame(minWidth: 72, maxWidth: 180, minHeight: 38, alignment: .trailing)
+    }
+}
+
+private struct AboutWhatsNewSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    private let items = [
+        AboutWhatsNewItem(
+            title: "Workout timer controls",
+            detail: "Pause, resume, stop, and discard now live directly in the Start tab."
+        ),
+        AboutWhatsNewItem(
+            title: "Live Activity timer",
+            detail: "The timer notification shows the Delts logo, day, timer, and workout stats."
+        ),
+        AboutWhatsNewItem(
+            title: "About section",
+            detail: "App updates, support, social, legal, and feedback actions now live outside Profile."
+        )
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("What's New")
+                            .font(.system(size: 32, weight: .black, design: .rounded))
+                            .foregroundStyle(Color.deltsCharcoal)
+
+                        Text("Recent changes and launch-ready placeholders.")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(Color.deltsMutedText)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    VStack(spacing: 10) {
+                        ForEach(items) { item in
+                            AboutWhatsNewRow(item: item)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
+                .padding(.bottom, 100)
+            }
+            .deltsScreen()
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                Button {
+                    dismiss()
+                } label: {
+                    Text("Close")
+                        .font(.headline.weight(.bold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.deltsOnAccent)
+                .background(Color.deltsAccent, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 12)
+                .deltsBottomActionBackground()
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+private struct AboutWhatsNewItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+}
+
+private struct AboutWhatsNewRow: View {
+    let item: AboutWhatsNewItem
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(Color.deltsAccent)
+                .frame(width: 28, height: 28)
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(item.title)
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+
+                Text(item.detail)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.26), lineWidth: 0.6)
+        }
+    }
+}
+
+private extension UIWindowScene {
+    var deltsPrimaryWindow: UIWindow? {
+        windows.first(where: \.isKeyWindow) ?? windows.first
+    }
+}
+
+private extension UIViewController {
+    var deltsTopPresentedController: UIViewController {
+        presentedViewController?.deltsTopPresentedController ?? self
+    }
+}

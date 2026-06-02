@@ -54,6 +54,10 @@ struct ContentView: View {
             ProfileView()
                 .tabItem { Label(DeltsTab.profile.title, systemImage: DeltsTab.profile.systemImage) }
                 .tag(DeltsTab.profile)
+
+            AboutView()
+                .tabItem { Label(DeltsTab.about.title, systemImage: DeltsTab.about.systemImage) }
+                .tag(DeltsTab.about)
         }
     }
 
@@ -190,6 +194,7 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
     case workouts
     case progress
     case profile
+    case about
 
     var id: String { rawValue }
 
@@ -215,6 +220,7 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
         case .workouts: return "Workouts"
         case .progress: return "Progress"
         case .profile: return "Profile"
+        case .about: return "About"
         }
     }
 
@@ -224,6 +230,7 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
         case .workouts: return "list.clipboard.fill"
         case .progress: return "chart.line.uptrend.xyaxis"
         case .profile: return "person.fill"
+        case .about: return "info.circle.fill"
         }
     }
 }

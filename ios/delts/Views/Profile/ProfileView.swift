@@ -1,5 +1,4 @@
 import Foundation
-import StoreKit
 import SwiftData
 import SwiftUI
 import UIKit
@@ -41,7 +40,6 @@ private enum MeasurementSystem: String, CaseIterable, Hashable {
 }
 
 private struct ProfileEditorView: View {
-    @Environment(\.openURL) private var openURL
     @Environment(\.modelContext) private var modelContext
     @Bindable var profile: UserProfile
     @AppStorage("profile_height_measurement_system") private var heightMeasurementSystemRaw = MeasurementSystem.metric.rawValue
@@ -60,15 +58,6 @@ private struct ProfileEditorView: View {
     @AppStorage("profile_current_body_fat_is_exact") private var currentBodyFatIsExact = false
     @AppStorage("profile_goal_body_fat_is_exact") private var goalBodyFatIsExact = false
     @State private var isSelectingTargetMuscles = false
-    @State private var isWhatsNewPresented = false
-    @State private var isUpdateCheckerPlaceholderPresented = false
-    @State private var isSharePlaceholderPresented = false
-    @State private var isOpenSourcePlaceholderPresented = false
-    @State private var isProductHuntPlaceholderPresented = false
-    @State private var isInstagramPlaceholderPresented = false
-    @State private var isLinkedInPlaceholderPresented = false
-    @State private var isPrivacyPlaceholderPresented = false
-    @State private var isTermsPlaceholderPresented = false
     @StateObject private var healthKit = HealthKitProgressService()
 
     private let exerciseLibraryService = ExerciseLibraryService.shared
@@ -88,7 +77,6 @@ private struct ProfileEditorView: View {
                 goalSection
                 scheduleSection
                 strengthSection
-                appInfoSection
             }
             .padding(.horizontal, 20)
             .padding(.top, 10)
@@ -106,49 +94,6 @@ private struct ProfileEditorView: View {
                 allowedValues: exerciseLibraryService.availablePrimaryMuscles,
                 gender: profile.gender
             )
-        }
-        .sheet(isPresented: $isWhatsNewPresented) {
-            ProfileWhatsNewSheet()
-        }
-        .alert("Update Checker", isPresented: $isUpdateCheckerPlaceholderPresented) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("Update checking will be configured after the App Store release data is connected.")
-        }
-        .alert("Share Delts", isPresented: $isSharePlaceholderPresented) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("The App Store share link will be added when the listing is ready.")
-        }
-        .alert("Open Source", isPresented: $isOpenSourcePlaceholderPresented) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("The repository is private for now. This row is ready for the public open-source repo link later.")
-        }
-        .alert("Product Hunt", isPresented: $isProductHuntPlaceholderPresented) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("The Product Hunt launch link will be added when it is ready.")
-        }
-        .alert("Instagram", isPresented: $isInstagramPlaceholderPresented) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("The Instagram profile link will be added later.")
-        }
-        .alert("LinkedIn", isPresented: $isLinkedInPlaceholderPresented) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("The LinkedIn profile link will be added later.")
-        }
-        .alert("Privacy Policy", isPresented: $isPrivacyPlaceholderPresented) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("This will open delts.fit/privacy after the website is configured.")
-        }
-        .alert("Terms", isPresented: $isTermsPlaceholderPresented) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("This will open delts.fit/terms after the website is configured.")
         }
     }
 
@@ -400,223 +345,6 @@ private struct ProfileEditorView: View {
                 )
             }
         }
-    }
-
-    private var appInfoSection: some View {
-        ProfileSection(
-            title: "About Delts",
-            subtitle: "App updates, release notes, and support.",
-            systemImage: "info.circle"
-        ) {
-            ProfileRowStack {
-                ProfileActionRow(
-                    title: "Check for Updates",
-                    systemImage: "arrow.down.circle.fill",
-                    value: "Configure later",
-                    tint: .deltsAccent
-                ) {
-                    isUpdateCheckerPlaceholderPresented = true
-                }
-                ProfileDivider()
-                ProfileActionRow(
-                    title: "What's New",
-                    systemImage: "sparkles",
-                    value: "Latest notes",
-                    tint: .deltsSecondaryAccent
-                ) {
-                    isWhatsNewPresented = true
-                }
-                ProfileDivider()
-                ProfileActionRow(
-                    title: "Rate Delts",
-                    systemImage: "star.fill",
-                    value: "Native prompt",
-                    tint: .deltsWarning
-                ) {
-                    requestAppReview()
-                }
-                ProfileDivider()
-                ProfileActionRow(
-                    title: "Share Delts",
-                    systemImage: "square.and.arrow.up",
-                    value: "App Store link",
-                    tint: .deltsSecondaryAccent
-                ) {
-                    shareApp()
-                }
-                ProfileDivider()
-                ProfileActionRow(
-                    title: "Support on Ko-fi",
-                    systemImage: "cup.and.saucer.fill",
-                    value: "apoorvdarshan",
-                    tint: .deltsAccent
-                ) {
-                    openSupportLink()
-                }
-                ProfileDivider()
-                ProfileActionRow(
-                    title: "Open Source",
-                    systemImage: "curlybraces.square.fill",
-                    value: "Repo soon",
-                    tint: .deltsSecondaryAccent
-                ) {
-                    isOpenSourcePlaceholderPresented = true
-                }
-                ProfileDivider()
-                ProfileActionRow(
-                    title: "Product Hunt",
-                    systemImage: "paperplane.fill",
-                    value: "Coming soon",
-                    tint: .deltsWarning
-                ) {
-                    isProductHuntPlaceholderPresented = true
-                }
-                ProfileDivider()
-                ProfileActionRow(
-                    title: "Contact Us",
-                    systemImage: "envelope.fill",
-                    value: ProfileAppLinks.contactEmail,
-                    tint: .deltsSecondaryAccent
-                ) {
-                    openContactEmail()
-                }
-                ProfileDivider()
-                ProfileActionRow(
-                    title: "Follow on X",
-                    systemImage: "at",
-                    value: "@apoorvdarshan",
-                    tint: .deltsCharcoal
-                ) {
-                    openXProfile()
-                }
-                ProfileDivider()
-                ProfileActionRow(
-                    title: "Instagram",
-                    systemImage: "camera.fill",
-                    value: "Coming soon",
-                    tint: .deltsSecondaryAccent
-                ) {
-                    isInstagramPlaceholderPresented = true
-                }
-                ProfileDivider()
-                ProfileActionRow(
-                    title: "LinkedIn",
-                    systemImage: "person.crop.square.filled.and.at.rectangle",
-                    value: "Coming soon",
-                    tint: .deltsSecondaryAccent
-                ) {
-                    isLinkedInPlaceholderPresented = true
-                }
-                ProfileDivider()
-                ProfileActionRow(
-                    title: "Report an Issue",
-                    systemImage: "exclamationmark.bubble.fill",
-                    value: "GitHub",
-                    tint: .red
-                ) {
-                    openGitHubIssue()
-                }
-                ProfileDivider()
-                ProfileActionRow(
-                    title: "Request a Feature",
-                    systemImage: "lightbulb.fill",
-                    value: "GitHub",
-                    tint: .deltsAccent
-                ) {
-                    openGitHubFeature()
-                }
-                ProfileDivider()
-                ProfileActionRow(
-                    title: "Privacy Policy",
-                    systemImage: "hand.raised.fill",
-                    value: "delts.fit/privacy",
-                    tint: .deltsSecondaryAccent
-                ) {
-                    isPrivacyPlaceholderPresented = true
-                }
-                ProfileDivider()
-                ProfileActionRow(
-                    title: "Terms",
-                    systemImage: "doc.text.fill",
-                    value: "delts.fit/terms",
-                    tint: .deltsSecondaryAccent
-                ) {
-                    isTermsPlaceholderPresented = true
-                }
-                ProfileDivider()
-                ProfileInfoRow(
-                    title: "Version",
-                    systemImage: "number.circle",
-                    value: appVersionText
-                )
-            }
-        }
-    }
-
-    private var appVersionText: String {
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
-
-        switch (version?.isEmpty == false ? version : nil, build?.isEmpty == false ? build : nil) {
-        case let (.some(version), .some(build)):
-            return "\(version) (\(build))"
-        case let (.some(version), .none):
-            return version
-        case let (.none, .some(build)):
-            return "Build \(build)"
-        case (.none, .none):
-            return "Unavailable"
-        }
-    }
-
-    private func requestAppReview() {
-        guard let scene = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .first(where: { $0.activationState == .foregroundActive })
-        else { return }
-
-        SKStoreReviewController.requestReview(in: scene)
-    }
-
-    private func shareApp() {
-        guard let url = ProfileAppLinks.appStoreShareURL else {
-            isSharePlaceholderPresented = true
-            return
-        }
-
-        let activityController = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-        guard let scene = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .first(where: { $0.activationState == .foregroundActive }),
-              let rootController = scene.deltsPrimaryWindow?.rootViewController
-        else { return }
-
-        rootController.deltsTopPresentedController.present(activityController, animated: true)
-    }
-
-    private func openSupportLink() {
-        guard let url = ProfileAppLinks.kofiURL else { return }
-        openURL(url)
-    }
-
-    private func openGitHubIssue() {
-        guard let url = ProfileAppLinks.githubIssueURL else { return }
-        openURL(url)
-    }
-
-    private func openGitHubFeature() {
-        guard let url = ProfileAppLinks.githubFeatureURL else { return }
-        openURL(url)
-    }
-
-    private func openContactEmail() {
-        guard let url = ProfileAppLinks.contactEmailURL else { return }
-        openURL(url)
-    }
-
-    private func openXProfile() {
-        guard let url = ProfileAppLinks.xProfileURL else { return }
-        openURL(url)
     }
 
     private func enableAppleHealth() async {
@@ -884,140 +612,6 @@ private struct ProfileEditorView: View {
         }
     }
 
-}
-
-private enum ProfileAppLinks {
-    static let appStoreShareURL: URL? = nil
-    static let contactEmail = "ad13dtu@gmail.com"
-    static let contactEmailURL = URL(string: "mailto:\(contactEmail)")
-    static let githubIssueURL = URL(string: "https://github.com/apoorvdarshan/delts/issues/new")
-    static let githubFeatureURL = URL(string: "https://github.com/apoorvdarshan/delts/issues/new?labels=enhancement")
-    static let kofiURL = URL(string: "https://ko-fi.com/apoorvdarshan")
-    static let xProfileURL = URL(string: "https://x.com/apoorvdarshan")
-}
-
-private struct ProfileWhatsNewSheet: View {
-    @Environment(\.dismiss) private var dismiss
-
-    private let items = [
-        ProfileWhatsNewItem(
-            title: "Workout timer controls",
-            detail: "Pause, resume, stop, and discard now live directly in the Start tab."
-        ),
-        ProfileWhatsNewItem(
-            title: "Live Activity timer",
-            detail: "The timer notification shows the Delts logo, day, timer, and workout stats."
-        ),
-        ProfileWhatsNewItem(
-            title: "About Delts",
-            detail: "Update, sharing, support, social, legal, and feedback actions are ready to wire."
-        )
-    ]
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("What's New")
-                            .font(.system(size: 32, weight: .black, design: .rounded))
-                            .foregroundStyle(Color.deltsCharcoal)
-
-                        Text("Recent changes and launch-ready placeholders.")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(Color.deltsMutedText)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    VStack(spacing: 10) {
-                        ForEach(items) { item in
-                            ProfileWhatsNewRow(item: item)
-                        }
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 24)
-                .padding(.bottom, 100)
-            }
-            .deltsScreen()
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                    .fontWeight(.bold)
-                }
-            }
-            .safeAreaInset(edge: .bottom) {
-                Button {
-                    dismiss()
-                } label: {
-                    Text("Close")
-                        .font(.headline.weight(.bold))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.deltsOnAccent)
-                .background(Color.deltsAccent, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
-                .padding(.bottom, 12)
-                .deltsBottomActionBackground()
-            }
-        }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
-    }
-}
-
-private struct ProfileWhatsNewItem: Identifiable {
-    let id = UUID()
-    let title: String
-    let detail: String
-}
-
-private struct ProfileWhatsNewRow: View {
-    let item: ProfileWhatsNewItem
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.title3.weight(.bold))
-                .foregroundStyle(Color.deltsAccent)
-                .frame(width: 28, height: 28)
-
-            VStack(alignment: .leading, spacing: 5) {
-                Text(item.title)
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.deltsCharcoal)
-
-                Text(item.detail)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.26), lineWidth: 0.6)
-        }
-    }
-}
-
-private extension UIWindowScene {
-    var deltsPrimaryWindow: UIWindow? {
-        windows.first(where: \.isKeyWindow) ?? windows.first
-    }
-}
-
-private extension UIViewController {
-    var deltsTopPresentedController: UIViewController {
-        presentedViewController?.deltsTopPresentedController ?? self
-    }
 }
 
 private struct ProfileLoadingView: View {
@@ -1297,58 +891,6 @@ private struct ProfileFieldRow<Content: View>: View {
             .padding(.vertical, 9)
             .contentShape(Rectangle())
         }
-    }
-}
-
-private struct ProfileActionRow: View {
-    let title: String
-    let systemImage: String
-    let value: String
-    let tint: Color
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            ProfileFieldRow(title: title, systemImage: systemImage, tint: tint) {
-                ProfileActionValueLabel(text: value, showsChevron: true)
-            }
-        }
-        .deltsPressable()
-    }
-}
-
-private struct ProfileInfoRow: View {
-    let title: String
-    let systemImage: String
-    let value: String
-
-    var body: some View {
-        ProfileFieldRow(title: title, systemImage: systemImage, tint: .deltsMutedText) {
-            ProfileActionValueLabel(text: value, showsChevron: false)
-        }
-    }
-}
-
-private struct ProfileActionValueLabel: View {
-    let text: String
-    let showsChevron: Bool
-
-    var body: some View {
-        HStack(spacing: 7) {
-            Text(text)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(Color.deltsMutedText)
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
-                .multilineTextAlignment(.trailing)
-
-            if showsChevron {
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.deltsMutedText.opacity(0.72))
-            }
-        }
-        .frame(minWidth: 72, maxWidth: 180, minHeight: 38, alignment: .trailing)
     }
 }
 
