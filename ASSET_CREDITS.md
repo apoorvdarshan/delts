@@ -12,6 +12,8 @@ Target muscle selector images are bundled as cropped derivatives from Wikimedia 
 
 Body fat selector images are AI-generated reference images created for this app and bundled locally in the asset catalog.
 
+Start timer red button artwork is an AI-generated product-style image created for this app and bundled locally in the asset catalog.
+
 App icon artwork was provided by the project owner and bundled locally in the asset catalog.
 
 1RM lift glyphs are original vector artwork created for this app and bundled locally in the asset catalog.

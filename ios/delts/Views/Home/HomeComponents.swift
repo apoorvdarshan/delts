@@ -149,28 +149,31 @@ struct HomeSessionTimerButton: View {
                 VStack(spacing: 10) {
                     Image(systemName: isRunning ? "stop.fill" : "play.fill")
                         .font(.system(size: 30, weight: .black))
-                        .foregroundStyle(Color.deltsOnAccent)
+                        .foregroundStyle(Color.white)
+                        .shadow(color: Color.black.opacity(0.52), radius: 2, y: 1)
                         .frame(height: 34)
 
                     Text(displayText(at: context.date))
                         .font(.system(size: 34, weight: .black, design: .rounded))
-                        .foregroundStyle(Color.deltsOnAccent)
+                        .foregroundStyle(Color.white)
                         .contentTransition(.numericText())
                         .monospacedDigit()
                         .lineLimit(1)
+                        .shadow(color: Color.black.opacity(0.62), radius: 2, y: 1)
                 }
-                .frame(width: 148, height: 148)
+                .frame(width: 156, height: 156)
                 .background {
-                    Circle()
-                        .fill(Color.deltsAccent)
-                        .shadow(color: Color.deltsAccent.opacity(isRunning ? 0.40 : 0.26), radius: isRunning ? 22 : 16, y: 8)
-                }
-                .overlay {
-                    Circle()
-                        .stroke(Color.deltsOnAccent.opacity(0.18), lineWidth: 1)
+                    Image("timer_button_red")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 176, height: 176)
+                        .shadow(color: Color.red.opacity(isRunning ? 0.36 : 0.20), radius: isRunning ? 24 : 16, y: 8)
+                        .shadow(color: Color.black.opacity(0.34), radius: 16, y: 8)
                 }
             }
             .buttonStyle(.plain)
+            .scaleEffect(isRunning ? 0.985 : 1)
+            .animation(.snappy(duration: 0.18), value: isRunning)
             .accessibilityLabel(isRunning ? "Stop workout timer" : "Start workout timer")
         }
     }
