@@ -143,9 +143,9 @@ struct StartWorkoutHero: View {
             .padding(.horizontal, 24)
 
             HStack(spacing: 20) {
-                HomeMetricCard(label: "Sets done", value: setCount)
-                HomeMetricCard(label: "Workouts done", value: workoutCount)
-                HomeMetricCard(label: "Reps done", value: repCount)
+                HomeMetricCard(label: "Sets", value: setCount)
+                HomeMetricCard(label: "Workouts", value: workoutCount)
+                HomeMetricCard(label: "Reps", value: repCount)
             }
             .padding(.top, 22)
         }

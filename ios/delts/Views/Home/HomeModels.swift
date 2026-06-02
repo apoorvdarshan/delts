@@ -91,7 +91,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         let clampedCount = min(max(count, 1), 12)
         var values = normalizedSetReps
         if values.count < clampedCount {
-            values.append(contentsOf: Array(repeating: values.last ?? reps, count: clampedCount - values.count))
+            values.append(contentsOf: Array(repeating: "", count: clampedCount - values.count))
         }
         values = Array(values.prefix(clampedCount))
         sets = clampedCount
