@@ -7,6 +7,7 @@ struct CompletedSetLog: Codable, Identifiable, Hashable {
     var completed: Bool
     var weight: String
     var reps: String
+    var rpe: String?
     var elapsedSeconds: Int?
     var completedAt: Date?
 
@@ -16,6 +17,7 @@ struct CompletedSetLog: Codable, Identifiable, Hashable {
         completed: Bool,
         weight: String,
         reps: String,
+        rpe: String? = nil,
         elapsedSeconds: Int? = nil,
         completedAt: Date? = nil
     ) {
@@ -24,6 +26,7 @@ struct CompletedSetLog: Codable, Identifiable, Hashable {
         self.completed = completed
         self.weight = weight
         self.reps = reps
+        self.rpe = rpe
         self.elapsedSeconds = elapsedSeconds
         self.completedAt = completedAt
     }

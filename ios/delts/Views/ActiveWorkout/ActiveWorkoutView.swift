@@ -5,6 +5,7 @@ import UIKit
 private enum ActiveWorkoutLogField: Hashable {
     case weight(exerciseIndex: Int, setIndex: Int)
     case reps(exerciseIndex: Int, setIndex: Int)
+    case rpe(exerciseIndex: Int, setIndex: Int)
 }
 
 struct ActiveWorkoutView: View {
@@ -13,6 +14,7 @@ struct ActiveWorkoutView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @StateObject private var viewModel: ActiveWorkoutViewModel
     @FocusState private var focusedField: ActiveWorkoutLogField?
+    @AppStorage(RPEScale.storageKey) private var rpeScaleRaw = RPEScale.strength.rawValue
     @State private var restSecondsRemaining = 0
     @State private var restTimerRunning = false
     @State private var now = Date()
@@ -172,7 +174,7 @@ struct ActiveWorkoutView: View {
             } else {
                 ViewThatFits(in: .horizontal) {
                     standardSetLoggerRow(setIndex)
-                        .frame(minWidth: 310)
+                        .frame(minWidth: 380)
                     stackedSetLoggerRow(setIndex)
                 }
             }
@@ -439,6 +441,17 @@ struct ActiveWorkoutView: View {
             )
             .frame(width: 88)
 
+            setEntryField(
+                title: "RPE",
+                placeholder: rpeScale.inputPlaceholder,
+                text: rpeBinding(setIndex),
+                keyboardType: rpeKeyboardType,
+                field: .rpe(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex),
+                accessibilityLabel: "RPE for set \(setIndex + 1)",
+                alignment: .center
+            )
+            .frame(width: 78)
+
             setCompleteButton(setIndex)
         }
         .padding(.horizontal, 10)
@@ -484,11 +497,13 @@ struct ActiveWorkoutView: View {
             VStack(alignment: .leading, spacing: 10) {
                 weightEntryField(setIndex)
                 repsEntryField(setIndex)
+                rpeEntryField(setIndex)
             }
         } else {
             HStack(alignment: .top, spacing: 10) {
                 weightEntryField(setIndex)
                 repsEntryField(setIndex)
+                rpeEntryField(setIndex)
             }
         }
     }
@@ -512,6 +527,18 @@ struct ActiveWorkoutView: View {
             keyboardType: .numberPad,
             field: .reps(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex),
             accessibilityLabel: "Reps for set \(setIndex + 1)",
+            alignment: .center
+        )
+    }
+
+    private func rpeEntryField(_ setIndex: Int) -> some View {
+        setEntryField(
+            title: "RPE",
+            placeholder: rpeScale.inputPlaceholder,
+            text: rpeBinding(setIndex),
+            keyboardType: rpeKeyboardType,
+            field: .rpe(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex),
+            accessibilityLabel: "RPE for set \(setIndex + 1)",
             alignment: .center
         )
     }
@@ -657,6 +684,14 @@ struct ActiveWorkoutView: View {
         return "Exercise \(viewModel.currentExerciseIndex + 1) of \(viewModel.exercises.count)"
     }
 
+    private var rpeScale: RPEScale {
+        RPEScale(rawValue: rpeScaleRaw) ?? .strength
+    }
+
+    private var rpeKeyboardType: UIKeyboardType {
+        rpeScale == .borg ? .numberPad : .decimalPad
+    }
+
     private func goToNextExercise() {
         focusedField = nil
         resetRestTimer()
@@ -713,6 +748,17 @@ struct ActiveWorkoutView: View {
                   viewModel.repInputs[viewModel.currentExerciseIndex].indices.contains(setIndex)
             else { return }
             viewModel.repInputs[viewModel.currentExerciseIndex][setIndex] = newValue
+        }
+    }
+
+    private func rpeBinding(_ setIndex: Int) -> Binding<String> {
+        Binding {
+            viewModel.rpeInputs[safe: viewModel.currentExerciseIndex]?[safe: setIndex] ?? ""
+        } set: { newValue in
+            guard viewModel.rpeInputs.indices.contains(viewModel.currentExerciseIndex),
+                  viewModel.rpeInputs[viewModel.currentExerciseIndex].indices.contains(setIndex)
+            else { return }
+            viewModel.rpeInputs[viewModel.currentExerciseIndex][setIndex] = newValue
         }
     }
 

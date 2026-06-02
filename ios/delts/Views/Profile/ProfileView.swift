@@ -16,7 +16,7 @@ struct ProfileView: View {
                     ProfileLoadingView()
                 }
             }
-            .navigationTitle("Profile")
+            .navigationTitle("Setting")
             .navigationBarTitleDisplayMode(.inline)
             .onDisappear {
                 try? modelContext.save()
@@ -48,6 +48,7 @@ private struct ProfileEditorView: View {
     @AppStorage("profile_selected_goals") private var selectedGoalRawValues = ""
     @AppStorage("profile_extra_issues") private var extraIssues = ""
     @AppStorage(AppAppearance.storageKey) private var appAppearanceRaw = AppAppearance.system.rawValue
+    @AppStorage(RPEScale.storageKey) private var rpeScaleRaw = RPEScale.strength.rawValue
     @AppStorage("profile_dataset_level") private var datasetLevelRaw = ""
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
@@ -58,6 +59,7 @@ private struct ProfileEditorView: View {
     @AppStorage("profile_current_body_fat_is_exact") private var currentBodyFatIsExact = false
     @AppStorage("profile_goal_body_fat_is_exact") private var goalBodyFatIsExact = false
     @State private var isSelectingTargetMuscles = false
+    @State private var isTargetOnlyPrimaryInfoPresented = false
     @StateObject private var healthKit = HealthKitProgressService()
 
     private let exerciseLibraryService = ExerciseLibraryService.shared
@@ -94,6 +96,11 @@ private struct ProfileEditorView: View {
                 allowedValues: exerciseLibraryService.availablePrimaryMuscles,
                 gender: profile.gender
             )
+        }
+        .alert("Target-only Primary", isPresented: $isTargetOnlyPrimaryInfoPresented) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("When enabled, exercise filters only match muscles listed as the exercise's primary target. When off, matching can include secondary muscles too.")
         }
     }
 
@@ -189,6 +196,14 @@ private struct ProfileEditorView: View {
         }
     }
 
+    private var rpeScaleBinding: Binding<RPEScale> {
+        Binding {
+            RPEScale(rawValue: rpeScaleRaw) ?? .strength
+        } set: { newValue in
+            rpeScaleRaw = newValue.rawValue
+        }
+    }
+
     private var goalSection: some View {
         ProfileSection(
             title: "Goals & Constraints",
@@ -222,11 +237,13 @@ private struct ProfileEditorView: View {
                     isPresented: $isSelectingTargetMuscles
                 )
                 ProfileDivider()
-                ProfileToggleRow(
+                ProfileToggleInfoRow(
                     title: "Target-only Primary",
                     systemImage: "line.3.horizontal.decrease.circle",
                     isOn: $showOnlyTargetPrimaryFilters
-                )
+                ) {
+                    isTargetOnlyPrimaryInfoPresented = true
+                }
                 ProfileDivider()
                 ProfileMultiSelectMenuRow(
                     title: "Issues",
@@ -268,12 +285,10 @@ private struct ProfileEditorView: View {
                     isOn: $weekStartsOnMonday
                 )
                 ProfileDivider()
-                ProfileMenuPicker(
+                ProfileWorkoutSplitPickerRow(
                     title: "Workout split",
                     systemImage: "square.split.2x2",
-                    selection: splitBinding,
-                    options: WorkoutSplit.allCases,
-                    label: { $0.title }
+                    selection: splitBinding
                 )
                 if profile.workoutSplit == .custom {
                     ProfileDivider()
@@ -291,6 +306,14 @@ private struct ProfileEditorView: View {
                     value: durationBinding,
                     range: durationRange,
                     unit: "min"
+                )
+                ProfileDivider()
+                ProfileMenuPicker(
+                    title: "RPE scale",
+                    systemImage: "gauge.medium",
+                    selection: rpeScaleBinding,
+                    options: RPEScale.allCases,
+                    label: { $0.title }
                 )
                 ProfileDivider()
                 ProfileEquipmentImagePickerRow(
@@ -2190,6 +2213,34 @@ private struct ProfileToggleRow: View {
     }
 }
 
+private struct ProfileToggleInfoRow: View {
+    let title: String
+    let systemImage: String
+    @Binding var isOn: Bool
+    let onInfo: () -> Void
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            HStack(spacing: 10) {
+                Button(action: onInfo) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(Color.deltsSecondaryAccent)
+                        .frame(width: 34, height: 34)
+                        .background(Color.deltsPanel.opacity(0.28), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .deltsPressable()
+                .accessibilityLabel("Explain \(title)")
+
+                Toggle("", isOn: $isOn)
+                    .labelsHidden()
+            }
+        }
+    }
+}
+
 private struct ProfileMultiSelectMenuRow<Option: Hashable>: View {
     let title: String
     let systemImage: String
@@ -2322,6 +2373,168 @@ private struct ProfileEquipmentImagePickerRow: View {
                     .padding(.bottom, 10)
                 }
             }
+        }
+    }
+}
+
+private struct ProfileWorkoutSplitPickerRow: View {
+    let title: String
+    let systemImage: String
+    @Binding var selection: WorkoutSplit
+    @State private var isPickerPresented = false
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            Button {
+                isPickerPresented = true
+            } label: {
+                ProfileMenuValueLabel(text: selection.title)
+            }
+            .deltsPressable()
+            .sheet(isPresented: $isPickerPresented) {
+                ProfileWorkoutSplitPickerSheet(selection: $selection)
+            }
+        }
+    }
+}
+
+private struct ProfileWorkoutSplitPickerSheet: View {
+    @Binding var selection: WorkoutSplit
+    @Environment(\.dismiss) private var dismiss
+
+    private let columns = [
+        GridItem(.flexible(), spacing: 14),
+        GridItem(.flexible(), spacing: 14)
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 14) {
+                    ForEach(WorkoutSplit.allCases) { split in
+                        Button {
+                            selection = split
+                            dismiss()
+                        } label: {
+                            ProfileWorkoutSplitTile(
+                                split: split,
+                                isSelected: split == selection
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .deltsPressable()
+                    }
+                }
+                .padding(.horizontal, 18)
+                .padding(.top, 16)
+                .padding(.bottom, 28)
+            }
+            .background(DeltsBackground())
+            .navigationTitle("Workout split")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+private struct ProfileWorkoutSplitTile: View {
+    let split: WorkoutSplit
+    let isSelected: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ZStack(alignment: .topTrailing) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 17, style: .continuous)
+                        .fill(isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.28))
+
+                    Image(systemName: split.profileSystemImage)
+                        .font(.system(size: 34, weight: .bold))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsSecondaryAccent)
+                }
+                .frame(height: 94)
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 23, weight: .bold))
+                        .foregroundStyle(Color.deltsOnAccent)
+                        .padding(8)
+                }
+            }
+
+            Text(split.title)
+                .font(.subheadline.weight(.heavy))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(2)
+                .minimumScaleFactor(0.76)
+
+            Text(split.profileDescription)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(4)
+                .minimumScaleFactor(0.78)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, minHeight: 206, alignment: .topLeading)
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(isSelected ? Color.deltsAccent.opacity(0.16) : Color.deltsPanel.opacity(0.20))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(isSelected ? Color.deltsAccent.opacity(0.74) : Color.deltsHairline.opacity(0.28), lineWidth: isSelected ? 1.3 : 0.7)
+        }
+    }
+}
+
+private extension WorkoutSplit {
+    var profileSystemImage: String {
+        switch self {
+        case .fullBody: return "figure.strengthtraining.traditional"
+        case .upperLower: return "square.split.2x1"
+        case .pushPullLegs: return "arrow.triangle.branch"
+        case .broSplit: return "person.3.fill"
+        case .arnoldSplit: return "figure.arms.open"
+        case .pushPull: return "arrow.left.arrow.right"
+        case .antagonistSplit: return "circle.grid.cross"
+        case .hybridSplit: return "sparkles"
+        case .custom: return "pencil"
+        }
+    }
+
+    var profileDescription: String {
+        switch self {
+        case .fullBody:
+            return "Train the whole body each workout with broad coverage."
+        case .upperLower:
+            return "Alternate upper-body, lower-body, and core-focused days."
+        case .pushPullLegs:
+            return "Group exercises into push, pull, legs, and core work."
+        case .broSplit:
+            return "Focus each day around one major muscle or body region."
+        case .arnoldSplit:
+            return "Pair chest/back, shoulders/arms, legs, and core days."
+        case .pushPull:
+            return "Split work by pushing and pulling patterns across the body."
+        case .antagonistSplit:
+            return "Pair opposing muscle groups for balanced sessions."
+        case .hybridSplit:
+            return "Mix compound strength days with accessory hypertrophy work."
+        case .custom:
+            return "Use your own split text for plan prompts and filtering."
         }
     }
 }

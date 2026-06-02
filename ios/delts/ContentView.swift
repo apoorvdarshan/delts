@@ -172,9 +172,9 @@ private enum DeltsPreviewWorkoutFactory {
                     targetMuscle: MuscleGroup.chest.title,
                     equipment: Equipment.barbell.title,
                     sets: [
-                        CompletedSetLog(setNumber: 1, completed: true, weight: "80", reps: "8"),
-                        CompletedSetLog(setNumber: 2, completed: true, weight: "85", reps: "7"),
-                        CompletedSetLog(setNumber: 3, completed: true, weight: "85", reps: "6")
+                        CompletedSetLog(setNumber: 1, completed: true, weight: "80", reps: "8", rpe: "7"),
+                        CompletedSetLog(setNumber: 2, completed: true, weight: "85", reps: "7", rpe: "8"),
+                        CompletedSetLog(setNumber: 3, completed: true, weight: "85", reps: "6", rpe: "8.5")
                     ]
                 ),
                 CompletedExerciseLog(
@@ -182,8 +182,8 @@ private enum DeltsPreviewWorkoutFactory {
                     targetMuscle: MuscleGroup.chest.title,
                     equipment: Equipment.dumbbells.title,
                     sets: [
-                        CompletedSetLog(setNumber: 1, completed: true, weight: "30", reps: "10"),
-                        CompletedSetLog(setNumber: 2, completed: true, weight: "30", reps: "9"),
+                        CompletedSetLog(setNumber: 1, completed: true, weight: "30", reps: "10", rpe: "7"),
+                        CompletedSetLog(setNumber: 2, completed: true, weight: "30", reps: "9", rpe: "8"),
                         CompletedSetLog(setNumber: 3, completed: false, weight: "", reps: "")
                     ]
                 )
@@ -219,20 +219,20 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .home: return "Start"
+        case .home: return "Home"
         case .workouts: return "Workouts"
         case .progress: return "Progress"
-        case .profile: return "Profile"
+        case .profile: return "Setting"
         case .about: return "About"
         }
     }
 
     var systemImage: String {
         switch self {
-        case .home: return "play.fill"
+        case .home: return "house.fill"
         case .workouts: return "list.clipboard.fill"
         case .progress: return "chart.line.uptrend.xyaxis"
-        case .profile: return "person.fill"
+        case .profile: return "gearshape.fill"
         case .about: return "info.circle.fill"
         }
     }

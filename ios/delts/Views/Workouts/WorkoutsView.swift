@@ -1279,6 +1279,8 @@ private struct CompletedSetLogRow: View {
             Text(weightRepText)
                 .foregroundStyle(Color.deltsMutedText)
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.74)
         }
         .font(.subheadline)
         .padding(.vertical, 10)
@@ -1287,7 +1289,13 @@ private struct CompletedSetLogRow: View {
     private var weightRepText: String {
         let weight = set.weight.isEmpty ? "--" : set.weight
         let reps = set.reps.isEmpty ? "--" : set.reps
-        return "\(weight) x \(reps)"
+        guard let rpe = set.rpe?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !rpe.isEmpty
+        else {
+            return "\(weight) x \(reps)"
+        }
+
+        return "\(weight) x \(reps) | RPE \(rpe)"
     }
 }
 

@@ -9,6 +9,7 @@ final class ActiveWorkoutViewModel: ObservableObject {
     @Published var completedSets: [[Bool]]
     @Published var weightInputs: [[String]]
     @Published var repInputs: [[String]]
+    @Published var rpeInputs: [[String]]
     @Published var setElapsedSeconds: [[Int?]]
     @Published var setCompletionDates: [[Date?]]
 
@@ -22,6 +23,7 @@ final class ActiveWorkoutViewModel: ObservableObject {
         self.repInputs = sortedExercises.map { exercise in
             Array(repeating: exercise.reps.components(separatedBy: "-").last ?? exercise.reps, count: max(exercise.sets, 1))
         }
+        self.rpeInputs = sortedExercises.map { Array(repeating: "", count: max($0.sets, 1)) }
         self.setElapsedSeconds = sortedExercises.map { Array(repeating: nil, count: max($0.sets, 1)) }
         self.setCompletionDates = sortedExercises.map { Array(repeating: nil, count: max($0.sets, 1)) }
     }
@@ -81,6 +83,7 @@ final class ActiveWorkoutViewModel: ObservableObject {
                     completed: completedSets[safe: exerciseIndex]?[safe: setIndex] ?? false,
                     weight: weightInputs[safe: exerciseIndex]?[safe: setIndex] ?? "",
                     reps: repInputs[safe: exerciseIndex]?[safe: setIndex] ?? "",
+                    rpe: normalizedRPEInput(exerciseIndex: exerciseIndex, setIndex: setIndex),
                     elapsedSeconds: setElapsedSeconds[safe: exerciseIndex]?[safe: setIndex] ?? nil,
                     completedAt: setCompletionDates[safe: exerciseIndex]?[safe: setIndex] ?? nil
                 )
@@ -106,6 +109,12 @@ final class ActiveWorkoutViewModel: ObservableObject {
         let minutes = seconds / 60
         let remainder = seconds % 60
         return String(format: "%d:%02d", minutes, remainder)
+    }
+
+    private func normalizedRPEInput(exerciseIndex: Int, setIndex: Int) -> String? {
+        let value = rpeInputs[safe: exerciseIndex]?[safe: setIndex] ?? ""
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 
