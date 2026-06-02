@@ -5,8 +5,9 @@ import UIKit
 
 struct AboutView: View {
     @Environment(\.openURL) private var openURL
+    @ObservedObject var updateChecker: AppUpdateChecker
     @State private var isWhatsNewExpanded = false
-    @State private var placeholder: AboutPlaceholder?
+    @State private var activeAlert: AboutAlert?
 
     var body: some View {
         NavigationStack {
@@ -18,9 +19,9 @@ struct AboutView: View {
                                 title: "Check for Updates",
                                 systemImage: "arrow.down.circle.fill",
                                 value: appVersionText,
-                                tint: .deltsAccent
+                                tint: .deltsSecondaryAccent
                             ) {
-                                placeholder = .updates
+                                checkForUpdates()
                             }
                             AboutDivider()
                             AboutExpandableActionRow(
@@ -46,7 +47,7 @@ struct AboutView: View {
                                 title: "Rate Delts",
                                 systemImage: "star.fill",
                                 value: "Native prompt",
-                                tint: .deltsWarning
+                                tint: .deltsSecondaryAccent
                             ) {
                                 requestAppReview()
                             }
@@ -68,7 +69,7 @@ struct AboutView: View {
                                 title: "Support on Ko-fi",
                                 systemImage: "cup.and.saucer.fill",
                                 value: "apoorvdarshan",
-                                tint: .deltsAccent
+                                tint: .deltsSecondaryAccent
                             ) {
                                 open(AboutLinks.kofiURL)
                             }
@@ -79,16 +80,16 @@ struct AboutView: View {
                                 value: "Repo soon",
                                 tint: .deltsSecondaryAccent
                             ) {
-                                placeholder = .openSource
+                                activeAlert = .placeholder(.openSource)
                             }
                             AboutDivider()
                             AboutActionRow(
                                 title: "Product Hunt",
                                 systemImage: "paperplane.fill",
                                 value: "Coming soon",
-                                tint: .deltsWarning
+                                tint: .deltsSecondaryAccent
                             ) {
-                                placeholder = .productHunt
+                                activeAlert = .placeholder(.productHunt)
                             }
                         }
                     }
@@ -108,7 +109,7 @@ struct AboutView: View {
                                 title: "Follow on X",
                                 systemImage: "at",
                                 value: "@apoorvdarshan",
-                                tint: .deltsCharcoal
+                                tint: .deltsSecondaryAccent
                             ) {
                                 open(AboutLinks.xProfileURL)
                             }
@@ -119,7 +120,7 @@ struct AboutView: View {
                                 value: "Coming soon",
                                 tint: .deltsSecondaryAccent
                             ) {
-                                placeholder = .instagram
+                                activeAlert = .placeholder(.instagram)
                             }
                             AboutDivider()
                             AboutActionRow(
@@ -128,7 +129,7 @@ struct AboutView: View {
                                 value: "Coming soon",
                                 tint: .deltsSecondaryAccent
                             ) {
-                                placeholder = .linkedIn
+                                activeAlert = .placeholder(.linkedIn)
                             }
                         }
                     }
@@ -148,7 +149,7 @@ struct AboutView: View {
                                 title: "Request a Feature",
                                 systemImage: "lightbulb.fill",
                                 value: "GitHub",
-                                tint: .deltsAccent
+                                tint: .deltsSecondaryAccent
                             ) {
                                 open(AboutLinks.githubFeatureURL)
                             }
@@ -163,7 +164,7 @@ struct AboutView: View {
                                 value: "delts.fit/privacy",
                                 tint: .deltsSecondaryAccent
                             ) {
-                                placeholder = .privacy
+                                activeAlert = .placeholder(.privacy)
                             }
                             AboutDivider()
                             AboutActionRow(
@@ -172,7 +173,7 @@ struct AboutView: View {
                                 value: "delts.fit/terms",
                                 tint: .deltsSecondaryAccent
                             ) {
-                                placeholder = .terms
+                                activeAlert = .placeholder(.terms)
                             }
                         }
                     }
@@ -186,12 +187,17 @@ struct AboutView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
         }
-        .alert(item: $placeholder) { placeholder in
-            Alert(
-                title: Text(placeholder.title),
-                message: Text(placeholder.message),
-                dismissButton: .default(Text("OK"))
-            )
+        .alert(item: $activeAlert) { alert in
+            switch alert {
+            case let .placeholder(placeholder):
+                return Alert(
+                    title: Text(placeholder.title),
+                    message: Text(placeholder.message),
+                    dismissButton: .default(Text("OK"))
+                )
+            case let .update(result):
+                return updateAlert(for: result)
+            }
         }
     }
 
@@ -221,8 +227,8 @@ struct AboutView: View {
     }
 
     private func shareApp() {
-        guard let url = AboutLinks.appStoreShareURL else {
-            placeholder = .share
+        guard let url = updateChecker.appStoreURL ?? AboutLinks.appStoreShareURL else {
+            activeAlert = .placeholder(.share)
             return
         }
 
@@ -240,6 +246,63 @@ struct AboutView: View {
         guard let url else { return }
         openURL(url)
     }
+
+    private func checkForUpdates() {
+        guard !updateChecker.isChecking else { return }
+
+        Task {
+            let result = await updateChecker.checkForUpdates()
+            activeAlert = .update(result)
+        }
+    }
+
+    private func updateAlert(for result: AppUpdateCheckResult) -> Alert {
+        switch result {
+        case .idle, .checking:
+            return Alert(
+                title: Text("Checking for Updates"),
+                message: Text("Delts is checking the App Store for a newer version."),
+                dismissButton: .default(Text("OK"))
+            )
+        case let .available(version, storeURL):
+            let message = "Version \(version) is available. You are on \(appVersionText)."
+            if let storeURL {
+                return Alert(
+                    title: Text("Update Available"),
+                    message: Text(message),
+                    primaryButton: .default(Text("Open")) {
+                        open(storeURL)
+                    },
+                    secondaryButton: .cancel()
+                )
+            }
+
+            return Alert(
+                title: Text("Update Available"),
+                message: Text(message),
+                dismissButton: .default(Text("OK"))
+            )
+        case let .upToDate(latestVersion):
+            let latestText = latestVersion.map { " Latest App Store version: \($0)." } ?? ""
+            return Alert(
+                title: Text("Delts Is Up to Date"),
+                message: Text("You are on \(appVersionText).\(latestText)"),
+                dismissButton: .default(Text("OK"))
+            )
+        case .unavailable:
+            return Alert(
+                title: Text("Update Check Ready"),
+                message: Text("The automatic update checker is ready. The App Store listing is not live for this bundle yet."),
+                dismissButton: .default(Text("OK"))
+            )
+        case let .failed(message):
+            return Alert(
+                title: Text("Update Check Failed"),
+                message: Text(message),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+    }
 }
 
 private enum AboutLinks {
@@ -253,7 +316,6 @@ private enum AboutLinks {
 }
 
 private enum AboutPlaceholder: Identifiable {
-    case updates
     case share
     case openSource
     case productHunt
@@ -268,7 +330,6 @@ private enum AboutPlaceholder: Identifiable {
 
     var title: String {
         switch self {
-        case .updates: return "Update Checker"
         case .share: return "Share Delts"
         case .openSource: return "Open Source"
         case .productHunt: return "Product Hunt"
@@ -281,8 +342,6 @@ private enum AboutPlaceholder: Identifiable {
 
     var message: String {
         switch self {
-        case .updates:
-            return "Update checking will be configured after the App Store release data is connected."
         case .share:
             return "The App Store share link will be added when the listing is ready."
         case .openSource:
@@ -297,6 +356,20 @@ private enum AboutPlaceholder: Identifiable {
             return "This will open delts.fit/privacy after the website is configured."
         case .terms:
             return "This will open delts.fit/terms after the website is configured."
+        }
+    }
+}
+
+private enum AboutAlert: Identifiable {
+    case placeholder(AboutPlaceholder)
+    case update(AppUpdateCheckResult)
+
+    var id: String {
+        switch self {
+        case let .placeholder(placeholder):
+            return "placeholder-\(placeholder.id)"
+        case .update:
+            return "update"
         }
     }
 }
@@ -527,7 +600,7 @@ private struct AboutWhatsNewRow: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.title3.weight(.bold))
-                .foregroundStyle(Color.deltsAccent)
+                .foregroundStyle(Color.deltsSecondaryAccent)
                 .frame(width: 28, height: 28)
 
             VStack(alignment: .leading, spacing: 5) {

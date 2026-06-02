@@ -12,6 +12,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
     @State private var selectedTab: DeltsTab = .initialTab
+    @StateObject private var updateChecker = AppUpdateChecker()
     @AppStorage(AppAppearance.storageKey) private var appAppearanceRaw = AppAppearance.system.rawValue
 
     private var appAppearance: AppAppearance {
@@ -25,6 +26,7 @@ struct ContentView: View {
             .id(appAppearanceRaw)
             .task {
                 ensureDefaultProfile()
+                await updateChecker.checkForUpdatesIfNeeded()
             }
     }
 
@@ -55,9 +57,10 @@ struct ContentView: View {
                 .tabItem { Label(DeltsTab.profile.title, systemImage: DeltsTab.profile.systemImage) }
                 .tag(DeltsTab.profile)
 
-            AboutView()
+            AboutView(updateChecker: updateChecker)
                 .tabItem { Label(DeltsTab.about.title, systemImage: DeltsTab.about.systemImage) }
                 .tag(DeltsTab.about)
+                .badge(updateChecker.isUpdateAvailable ? Text("") : nil)
         }
     }
 
