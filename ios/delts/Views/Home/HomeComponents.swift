@@ -118,7 +118,7 @@ struct StartWorkoutHero: View {
     let toggleTimer: () -> Void
 
     var body: some View {
-        VStack(spacing: 28) {
+        VStack(spacing: 24) {
             HomeSessionTimerButton(
                 startedAt: timerStartedAt,
                 elapsedSeconds: timerElapsedSeconds,
@@ -126,14 +126,15 @@ struct StartWorkoutHero: View {
                 action: toggleTimer
             )
 
-            HStack(spacing: 20) {
-                HomeMetricCard(label: "Sets", value: setCount)
-                HomeMetricCard(label: "Workouts", value: workoutCount)
-                HomeMetricCard(label: "Reps", value: repCount)
-            }
+            HomeSessionStatsStrip(
+                setCount: setCount,
+                workoutCount: workoutCount,
+                repCount: repCount,
+                calorieBurnText: "-- kcal"
+            )
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(.vertical, 18)
     }
 }
 
@@ -170,9 +171,7 @@ struct HomeSessionTimerButton: View {
                         .shadow(color: Color.black.opacity(0.34), radius: 16, y: 8)
                 }
             }
-            .buttonStyle(.plain)
-            .scaleEffect(isRunning ? 0.985 : 1)
-            .animation(.snappy(duration: 0.18), value: isRunning)
+            .buttonStyle(HomeTimerButtonStyle(isRunning: isRunning))
             .accessibilityLabel(isRunning ? "Stop workout timer" : "Start workout timer")
         }
     }
@@ -187,32 +186,110 @@ struct HomeSessionTimerButton: View {
     }
 }
 
-struct HomeMetricCard: View {
-    let label: String
-    let value: Int
+private struct HomeTimerButtonStyle: ButtonStyle {
+    let isRunning: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.88 : (isRunning ? 0.985 : 1))
+            .animation(.snappy(duration: 0.12), value: configuration.isPressed)
+            .animation(.snappy(duration: 0.18), value: isRunning)
+    }
+}
+
+struct HomeSessionStatsStrip: View {
+    let setCount: Int
+    let workoutCount: Int
+    let repCount: Int
+    let calorieBurnText: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("\(value)")
-                .font(.system(size: 36, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.deltsAccent)
-                .contentTransition(.numericText())
-                .minimumScaleFactor(0.62)
-                .lineLimit(1)
+        HStack(spacing: 0) {
+            HomeMetricCard(
+                label: "Sets",
+                value: "\(setCount)",
+                systemImage: "checklist",
+                isActive: setCount > 0
+            )
 
-            Capsule()
-                .fill(Color.deltsAccent.opacity(0.18))
-                .frame(height: 7)
-                .overlay(alignment: .leading) {
-                    Capsule()
-                        .fill(Color.deltsAccent)
-                        .frame(width: value > 0 ? 74 : 0)
-                }
+            HomeMetricDivider()
 
-            Text(label)
-                .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                .foregroundStyle(Color.deltsMutedText)
+            HomeMetricCard(
+                label: "Workouts",
+                value: "\(workoutCount)",
+                systemImage: "dumbbell.fill",
+                isActive: workoutCount > 0
+            )
+
+            HomeMetricDivider()
+
+            HomeMetricCard(
+                label: "Reps",
+                value: "\(repCount)",
+                systemImage: "repeat",
+                isActive: repCount > 0
+            )
+
+            HomeMetricDivider()
+
+            HomeMetricCard(
+                label: "Burn",
+                value: calorieBurnText,
+                systemImage: "flame.fill",
+                isActive: false
+            )
         }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 10)
+        .background(Color.deltsPanel.opacity(0.84), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.72), lineWidth: 0.8)
+        }
+        .shadow(color: Color.black.opacity(0.18), radius: 12, x: 0, y: 8)
+    }
+}
+
+private struct HomeMetricDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(Color.deltsHairline.opacity(0.52))
+            .frame(width: 1, height: 44)
+            .padding(.horizontal, 2)
+    }
+}
+
+struct HomeMetricCard: View {
+    let label: String
+    let value: String
+    let systemImage: String
+    let isActive: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 4) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 11, weight: .heavy))
+                    .foregroundStyle(isActive ? Color.deltsAccent : Color.deltsMutedText.opacity(0.72))
+                    .frame(width: 14, height: 14)
+
+                Text(label)
+                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+
+            Text(value)
+                .font(.system(size: 24, weight: .black, design: .rounded))
+                .foregroundStyle(isActive ? Color.deltsAccent : Color.deltsCharcoal)
+                .contentTransition(.numericText())
+                .minimumScaleFactor(0.5)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+        .padding(.horizontal, 7)
     }
 }
 

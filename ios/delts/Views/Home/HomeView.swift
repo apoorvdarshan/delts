@@ -1,6 +1,8 @@
+import AudioToolbox
 import SwiftData
 import SwiftUI
 import UIKit
+import UserNotifications
 
 struct HomeView: View {
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
@@ -22,6 +24,7 @@ struct HomeView: View {
     @FocusState private var focusedRepsField: PlannedSetFocus?
     @State private var sessionStartedAt: Date?
     @State private var sessionElapsedSeconds = 0
+    @State private var isTimerStopDialogPresented = false
     @State private var keyboardHeight: CGFloat = 0
     @State private var selectedDetailItem: ExerciseLibraryItem?
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
@@ -29,6 +32,7 @@ struct HomeView: View {
     @AppStorage("profile_show_only_target_primary_filters") private var showOnlyTargetPrimaryFilters = false
 
     private let service = ExerciseLibraryService.shared
+    private let workoutTimerNotificationID = "delts.workout.timer.running"
 
     private var selectedDateKey: String {
         WorkoutDayPlanStore.key(for: selectedDate)
@@ -224,7 +228,7 @@ struct HomeView: View {
                         timerStartedAt: sessionStartedAt,
                         timerElapsedSeconds: sessionElapsedSeconds,
                         isTimerRunning: isSessionTimerRunning,
-                        toggleTimer: toggleSessionTimer
+                        toggleTimer: handleSessionTimerTap
                     )
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -316,6 +320,19 @@ struct HomeView: View {
             }
             .navigationDestination(item: $selectedDetailItem) { item in
                 ExerciseLibraryDetailView(item: item)
+            }
+            .confirmationDialog("Workout timer", isPresented: $isTimerStopDialogPresented, titleVisibility: .visible) {
+                Button("Stop") {
+                    stopSessionTimer()
+                }
+
+                Button("Discard", role: .destructive) {
+                    discardSessionTimer()
+                }
+
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Elapsed \(currentSessionElapsedDisplay)")
             }
             .sheet(isPresented: $isWorkoutPickerPresented) {
                 WorkoutPickerSheet(
@@ -415,17 +432,91 @@ struct HomeView: View {
         return selectedDate.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
     }
 
+    private var currentSessionElapsedSeconds: Int {
+        guard let sessionStartedAt else { return sessionElapsedSeconds }
+        return sessionElapsedSeconds + max(0, Int(Date().timeIntervalSince(sessionStartedAt)))
+    }
+
+    private var currentSessionElapsedDisplay: String {
+        ActiveWorkoutViewModel.elapsedDisplay(currentSessionElapsedSeconds)
+    }
+
     private func workoutCount(for date: Date) -> Int {
         dayPlans[WorkoutDayPlanStore.key(for: date)]?.exercises.count ?? 0
     }
 
-    private func toggleSessionTimer() {
-        if let startedAt = sessionStartedAt {
-            sessionElapsedSeconds += max(0, Int(Date().timeIntervalSince(startedAt)))
-            sessionStartedAt = nil
+    private func handleSessionTimerTap() {
+        playTimerClick()
+        if isSessionTimerRunning {
+            isTimerStopDialogPresented = true
         } else {
-            sessionStartedAt = Date()
+            startSessionTimer()
         }
+    }
+
+    private func startSessionTimer() {
+        sessionStartedAt = Date()
+        scheduleWorkoutTimerNotification()
+    }
+
+    private func stopSessionTimer() {
+        playTimerClick()
+        sessionElapsedSeconds = currentSessionElapsedSeconds
+        sessionStartedAt = nil
+        cancelWorkoutTimerNotification()
+    }
+
+    private func discardSessionTimer() {
+        playTimerClick()
+        sessionElapsedSeconds = 0
+        sessionStartedAt = nil
+        cancelWorkoutTimerNotification()
+    }
+
+    private func playTimerClick() {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        AudioServicesPlaySystemSound(1104)
+    }
+
+    private func scheduleWorkoutTimerNotification() {
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            switch settings.authorizationStatus {
+            case .authorized, .provisional, .ephemeral:
+                addWorkoutTimerNotification(using: center)
+            case .notDetermined:
+                center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+                    guard granted else { return }
+                    addWorkoutTimerNotification(using: center)
+                }
+            case .denied:
+                return
+            @unknown default:
+                return
+            }
+        }
+    }
+
+    private func addWorkoutTimerNotification(using center: UNUserNotificationCenter) {
+        let content = UNMutableNotificationContent()
+        content.title = "Workout timer running"
+        content.body = "Started \(Date.now.formatted(date: .omitted, time: .shortened)). Open Delts to stop or discard it."
+        content.sound = .default
+
+        let request = UNNotificationRequest(
+            identifier: workoutTimerNotificationID,
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        )
+        center.removePendingNotificationRequests(withIdentifiers: [workoutTimerNotificationID])
+        center.removeDeliveredNotifications(withIdentifiers: [workoutTimerNotificationID])
+        center.add(request)
+    }
+
+    private func cancelWorkoutTimerNotification() {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [workoutTimerNotificationID])
+        center.removeDeliveredNotifications(withIdentifiers: [workoutTimerNotificationID])
     }
 
     private func libraryItem(for exercise: PlannedRoutineExercise) -> ExerciseLibraryItem? {
