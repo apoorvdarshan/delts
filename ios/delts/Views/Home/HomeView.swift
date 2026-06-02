@@ -232,6 +232,7 @@ struct HomeView: View {
                     )
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                 }
 
                 Section {
@@ -285,6 +286,7 @@ struct HomeView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Color.deltsBackground)
+            .listSectionSpacing(8)
             .contentShape(Rectangle())
             .onTapGesture {
                 focusedRepsField = nil
