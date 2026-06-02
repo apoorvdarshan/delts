@@ -111,7 +111,7 @@ struct WorkoutWeekStrip: View {
 struct StartWorkoutHero: View {
     let workoutCount: Int
     let setCount: Int
-    let libraryCount: Int
+    let repCount: Int
 
     var body: some View {
         VStack(spacing: 20) {
@@ -121,7 +121,7 @@ struct StartWorkoutHero: View {
                     .foregroundStyle(Color.deltsAccent)
                     .contentTransition(.numericText())
 
-                Text("workout\(workoutCount == 1 ? "" : "s") planned")
+                Text("workout\(workoutCount == 1 ? "" : "s") done")
                     .font(.system(.callout, design: .rounded, weight: .medium))
                     .foregroundStyle(Color.deltsMutedText)
             }
@@ -136,16 +136,16 @@ struct StartWorkoutHero: View {
                         .fill(Color.deltsAccent)
                         .frame(width: progressWidth(totalWidth: geometry.size.width), height: 10)
                         .shadow(color: Color.deltsAccent.opacity(0.24), radius: 8, y: 3)
-                        .animation(.spring(response: 0.8, dampingFraction: 0.75), value: setCount)
+                        .animation(.spring(response: 0.8, dampingFraction: 0.75), value: loggedTotal)
                 }
             }
             .frame(height: 10)
             .padding(.horizontal, 24)
 
             HStack(spacing: 20) {
-                HomeMetricCard(label: "Sets", current: setCount, goal: 24)
-                HomeMetricCard(label: "Workouts", current: workoutCount, goal: 6)
-                HomeMetricCard(label: "Library", current: libraryCount, goal: libraryCount)
+                HomeMetricCard(label: "Sets done", value: setCount)
+                HomeMetricCard(label: "Workouts done", value: workoutCount)
+                HomeMetricCard(label: "Reps done", value: repCount)
             }
             .padding(.top, 22)
         }
@@ -153,31 +153,28 @@ struct StartWorkoutHero: View {
         .padding(.vertical, 20)
     }
 
+    private var loggedTotal: Int {
+        workoutCount + setCount + repCount
+    }
+
     private func progressWidth(totalWidth: CGFloat) -> CGFloat {
-        guard setCount > 0 else { return 0 }
-        return max(10, totalWidth * min(Double(setCount) / 24.0, 1.0))
+        guard loggedTotal > 0 else { return 0 }
+        return totalWidth
     }
 }
 
 struct HomeMetricCard: View {
     let label: String
-    let current: Int
-    let goal: Int
+    let value: Int
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text("\(current)")
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.deltsAccent)
-                    .minimumScaleFactor(0.62)
-                    .lineLimit(1)
-                Text("/\(goal)")
-                    .font(.system(.headline, design: .rounded, weight: .semibold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .minimumScaleFactor(0.62)
-                    .lineLimit(1)
-            }
+            Text("\(value)")
+                .font(.system(size: 36, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.deltsAccent)
+                .contentTransition(.numericText())
+                .minimumScaleFactor(0.62)
+                .lineLimit(1)
 
             Capsule()
                 .fill(Color.deltsAccent.opacity(0.18))
@@ -185,18 +182,13 @@ struct HomeMetricCard: View {
                 .overlay(alignment: .leading) {
                     Capsule()
                         .fill(Color.deltsAccent)
-                        .frame(width: progressWidth)
+                        .frame(width: value > 0 ? 74 : 0)
                 }
 
             Text(label)
                 .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 .foregroundStyle(Color.deltsMutedText)
         }
-    }
-
-    private var progressWidth: CGFloat {
-        guard goal > 0 else { return 0 }
-        return CGFloat(min(Double(current) / Double(goal), 1.0)) * 74
     }
 }
 

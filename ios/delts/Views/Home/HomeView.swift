@@ -40,8 +40,18 @@ struct HomeView: View {
         Set(selectedExercises.map(\.itemID))
     }
 
-    private var selectedSetCount: Int {
-        selectedExercises.reduce(0) { $0 + max($1.sets, 1) }
+    private var selectedCompletedSetCount: Int {
+        selectedExercises.reduce(0) { total, exercise in
+            total + exercise.normalizedSetReps.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }.count
+        }
+    }
+
+    private var selectedRepCount: Int {
+        selectedExercises.reduce(0) { total, exercise in
+            total + exercise.normalizedSetReps.reduce(0) { repsTotal, value in
+                repsTotal + (Int(value.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0)
+            }
+        }
     }
 
     private var selectedWorkoutSplit: WorkoutSplit {
@@ -203,8 +213,8 @@ struct HomeView: View {
                 Section {
                     StartWorkoutHero(
                         workoutCount: selectedExercises.count,
-                        setCount: selectedSetCount,
-                        libraryCount: service.exercises.count
+                        setCount: selectedCompletedSetCount,
+                        repCount: selectedRepCount
                     )
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -253,7 +263,7 @@ struct HomeView: View {
                     HStack(alignment: .center) {
                         Label(selectedDateTitle, systemImage: "dumbbell.fill")
                         Spacer()
-                        Text("\(selectedSetCount) set\(selectedSetCount == 1 ? "" : "s")")
+                        Text("\(selectedCompletedSetCount) set\(selectedCompletedSetCount == 1 ? "" : "s") done")
                             .font(.caption.weight(.bold))
                     }
                     .textCase(nil)
