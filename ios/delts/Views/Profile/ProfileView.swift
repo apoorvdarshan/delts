@@ -2530,7 +2530,7 @@ private struct ProfileWorkoutSplitVisual: View {
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(isSelected ? Color.deltsAccent.opacity(0.82) : Color.deltsHairline.opacity(0.34), lineWidth: isSelected ? 1.4 : 0.7)
+                .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.7)
         }
     }
 
