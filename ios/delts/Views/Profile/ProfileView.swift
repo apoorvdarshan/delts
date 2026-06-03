@@ -3306,12 +3306,6 @@ private struct ProfileTargetMuscleCard: View {
                     .frame(height: 88)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 25, weight: .bold))
-                            .foregroundStyle(Color.deltsAccent)
-                            .padding(8)
-                    }
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
