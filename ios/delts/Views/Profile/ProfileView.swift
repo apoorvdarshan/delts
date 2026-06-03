@@ -2796,6 +2796,7 @@ private extension ProfileEquipmentImageOption {
         case "machine": return "equipment_machine"
         case "medicine ball": return "equipment_medicine_ball"
         case "other": return "equipment_other"
+        case "unspecified": return "equipment_unspecified"
         default: return nil
         }
     }
