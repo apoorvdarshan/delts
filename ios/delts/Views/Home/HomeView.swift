@@ -278,6 +278,9 @@ struct HomeView: View {
                                 updateSetReps: { setIndex, reps in
                                     updateExercise(exercise.id) { $0.setReps(reps, forSet: setIndex) }
                                 },
+                                updateSetRPE: { setIndex, rpe in
+                                    updateExercise(exercise.id) { $0.setRPE(rpe, forSet: setIndex) }
+                                },
                                 openDetail: {
                                     selectedDetailItem = libraryItem(for: exercise)
                                 }

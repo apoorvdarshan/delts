@@ -100,7 +100,7 @@ private struct ProfileEditorView: View {
         .alert("Target-only Primary", isPresented: $isTargetOnlyPrimaryInfoPresented) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("When enabled, exercise filters only match muscles listed as the exercise's primary target. When off, matching can include secondary muscles too.")
+            Text("When enabled, exercise filters only show moves whose primary target matches your selected target muscles.")
         }
     }
 
@@ -2402,21 +2402,16 @@ private struct ProfileWorkoutSplitPickerSheet: View {
     @Binding var selection: WorkoutSplit
     @Environment(\.dismiss) private var dismiss
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 14),
-        GridItem(.flexible(), spacing: 14)
-    ]
-
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 14) {
+                LazyVStack(spacing: 12) {
                     ForEach(WorkoutSplit.allCases) { split in
                         Button {
                             selection = split
                             dismiss()
                         } label: {
-                            ProfileWorkoutSplitTile(
+                            ProfileWorkoutSplitChoiceRow(
                                 split: split,
                                 isSelected: split == selection
                             )
@@ -2447,47 +2442,37 @@ private struct ProfileWorkoutSplitPickerSheet: View {
     }
 }
 
-private struct ProfileWorkoutSplitTile: View {
+private struct ProfileWorkoutSplitChoiceRow: View {
     let split: WorkoutSplit
     let isSelected: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ZStack(alignment: .topTrailing) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 17, style: .continuous)
-                        .fill(isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.28))
+        HStack(alignment: .center, spacing: 13) {
+            ProfileWorkoutSplitVisual(split: split, isSelected: isSelected)
 
-                    Image(systemName: split.profileSystemImage)
-                        .font(.system(size: 34, weight: .bold))
-                        .symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsSecondaryAccent)
-                }
-                .frame(height: 94)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(split.title)
+                    .font(.subheadline.weight(.heavy))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.78)
 
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 23, weight: .bold))
-                        .foregroundStyle(Color.deltsOnAccent)
-                        .padding(8)
-                }
+                Text(split.profileDescription)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.82)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(split.title)
-                .font(.subheadline.weight(.heavy))
-                .foregroundStyle(Color.deltsCharcoal)
-                .lineLimit(2)
-                .minimumScaleFactor(0.76)
-
-            Text(split.profileDescription)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.deltsMutedText)
-                .lineLimit(4)
-                .minimumScaleFactor(0.78)
-                .fixedSize(horizontal: false, vertical: true)
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "chevron.right")
+                .font(.system(size: isSelected ? 22 : 15, weight: .bold))
+                .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsMutedText.opacity(0.7))
+                .frame(width: 25, height: 25)
         }
-        .padding(8)
-        .frame(maxWidth: .infinity, minHeight: 206, alignment: .topLeading)
+        .padding(10)
+        .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
         .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -2496,6 +2481,38 @@ private struct ProfileWorkoutSplitTile: View {
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(isSelected ? Color.deltsAccent.opacity(0.74) : Color.deltsHairline.opacity(0.28), lineWidth: isSelected ? 1.3 : 0.7)
+        }
+    }
+}
+
+private struct ProfileWorkoutSplitVisual: View {
+    let split: WorkoutSplit
+    let isSelected: Bool
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                .fill(isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.32))
+
+            VStack(spacing: 7) {
+                HStack(spacing: 5) {
+                    ForEach(Array(split.profilePattern.enumerated()), id: \.offset) { _, symbol in
+                        Image(systemName: symbol)
+                            .font(.system(size: 11, weight: .heavy))
+                    }
+                }
+                .foregroundStyle(isSelected ? Color.deltsOnAccent.opacity(0.78) : Color.deltsSecondaryAccent.opacity(0.72))
+
+                Image(systemName: split.profileSystemImage)
+                    .font(.system(size: 30, weight: .bold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsSecondaryAccent)
+            }
+        }
+        .frame(width: 86, height: 86)
+        .overlay {
+            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                .stroke(isSelected ? Color.deltsOnAccent.opacity(0.28) : Color.deltsHairline.opacity(0.34), lineWidth: 0.7)
         }
     }
 }
@@ -2512,6 +2529,29 @@ private extension WorkoutSplit {
         case .antagonistSplit: return "circle.grid.cross"
         case .hybridSplit: return "sparkles"
         case .custom: return "pencil"
+        }
+    }
+
+    var profilePattern: [String] {
+        switch self {
+        case .fullBody:
+            return ["circle.fill", "circle.fill", "circle.fill"]
+        case .upperLower:
+            return ["rectangle.tophalf.filled", "rectangle.bottomhalf.filled"]
+        case .pushPullLegs:
+            return ["arrow.up.forward", "arrow.down.backward", "figure.run"]
+        case .broSplit:
+            return ["1.circle.fill", "2.circle.fill", "3.circle.fill"]
+        case .arnoldSplit:
+            return ["figure.arms.open", "dumbbell.fill", "figure.run"]
+        case .pushPull:
+            return ["arrow.left", "arrow.right"]
+        case .antagonistSplit:
+            return ["arrow.left.and.right.circle.fill", "circle.grid.cross"]
+        case .hybridSplit:
+            return ["sparkle", "dumbbell.fill", "plus"]
+        case .custom:
+            return ["pencil", "text.line.first.and.arrowtriangle.forward"]
         }
     }
 

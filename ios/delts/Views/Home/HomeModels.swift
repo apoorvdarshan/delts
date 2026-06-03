@@ -39,8 +39,14 @@ struct WorkoutDayPlan: Codable, Identifiable, Hashable {
 }
 
 struct PlannedSetFocus: Hashable {
+    enum Field: Hashable {
+        case reps
+        case rpe
+    }
+
     let exerciseID: UUID
     let setIndex: Int
+    let field: Field
 }
 
 struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
@@ -56,6 +62,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
     var sets: Int = 1
     var reps: String = ""
     var setReps: [String] = [""]
+    var setRPE: [String] = [""]
 
     init(item: ExerciseLibraryItem) {
         self.itemID = item.id
@@ -69,13 +76,29 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
     }
 
     var normalizedSetReps: [String] {
+        normalizedValues(setReps, fallback: reps)
+    }
+
+    var normalizedSetRPE: [String] {
         let count = max(sets, 1)
-        var values = setReps
+        var values = setRPE
+        if values.count < count {
+            values.append(contentsOf: Array(repeating: "", count: count - values.count))
+        }
+        if values.count > count {
+            values = Array(values.prefix(count))
+        }
+        return values
+    }
+
+    private func normalizedValues(_ storedValues: [String], fallback: String) -> [String] {
+        let count = max(sets, 1)
+        var values = storedValues
         if values.isEmpty {
-            values = Array(repeating: reps, count: count)
+            values = Array(repeating: fallback, count: count)
         }
         if values.count < count {
-            values.append(contentsOf: Array(repeating: values.last ?? reps, count: count - values.count))
+            values.append(contentsOf: Array(repeating: values.last ?? fallback, count: count - values.count))
         }
         if values.count > count {
             values = Array(values.prefix(count))
@@ -89,14 +112,20 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
 
     mutating func setSetCount(_ count: Int) {
         let clampedCount = min(max(count, 1), 12)
-        var values = normalizedSetReps
-        if values.count < clampedCount {
-            values.append(contentsOf: Array(repeating: "", count: clampedCount - values.count))
+        var repValues = normalizedSetReps
+        var rpeValues = normalizedSetRPE
+        if repValues.count < clampedCount {
+            repValues.append(contentsOf: Array(repeating: "", count: clampedCount - repValues.count))
         }
-        values = Array(values.prefix(clampedCount))
+        if rpeValues.count < clampedCount {
+            rpeValues.append(contentsOf: Array(repeating: "", count: clampedCount - rpeValues.count))
+        }
+        repValues = Array(repValues.prefix(clampedCount))
+        rpeValues = Array(rpeValues.prefix(clampedCount))
         sets = clampedCount
-        setReps = values
-        reps = Self.summary(for: values)
+        setReps = repValues
+        setRPE = rpeValues
+        reps = Self.summary(for: repValues)
     }
 
     mutating func setReps(_ value: String, forSet index: Int) {
@@ -105,6 +134,13 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         values[index] = value
         setReps = values
         reps = Self.summary(for: values)
+    }
+
+    mutating func setRPE(_ value: String, forSet index: Int) {
+        var values = normalizedSetRPE
+        guard values.indices.contains(index) else { return }
+        values[index] = value
+        setRPE = values
     }
 
     private mutating func normalizeStoredSets() {
@@ -138,6 +174,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         case sets
         case reps
         case setReps
+        case setRPE
     }
 
     init(from decoder: Decoder) throws {
@@ -154,6 +191,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         sets = try container.decodeIfPresent(Int.self, forKey: .sets) ?? 1
         reps = try container.decodeIfPresent(String.self, forKey: .reps) ?? ""
         setReps = try container.decodeIfPresent([String].self, forKey: .setReps) ?? []
+        setRPE = try container.decodeIfPresent([String].self, forKey: .setRPE) ?? []
         normalizeStoredSets()
     }
 
@@ -171,6 +209,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         try container.encode(max(sets, 1), forKey: .sets)
         try container.encode(repsSummary, forKey: .reps)
         try container.encode(normalizedSetReps, forKey: .setReps)
+        try container.encode(normalizedSetRPE, forKey: .setRPE)
     }
 }
 

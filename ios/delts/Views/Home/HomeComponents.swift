@@ -500,10 +500,12 @@ struct PlannedExerciseRow: View {
     let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
     let updateSets: (Int) -> Void
     let updateSetReps: (Int, String) -> Void
+    let updateSetRPE: (Int, String) -> Void
     let openDetail: () -> Void
 
     var body: some View {
         let setReps = exercise.normalizedSetReps
+        let setRPE = exercise.normalizedSetRPE
         let columns = Array(
             repeating: GridItem(.flexible(), spacing: 8),
             count: setReps.count == 1 ? 1 : 2
@@ -565,7 +567,7 @@ struct PlannedExerciseRow: View {
 
             LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
                 ForEach(Array(setReps.enumerated()), id: \.offset) { index, _ in
-                    SetRepsField(
+                    PlannedSetField(
                         exerciseID: exercise.id,
                         setIndex: index,
                         reps: Binding(
@@ -574,6 +576,12 @@ struct PlannedExerciseRow: View {
                                 return values.indices.contains(index) ? values[index] : ""
                             },
                             set: { updateSetReps(index, $0) }
+                        ),
+                        rpe: Binding(
+                            get: {
+                                setRPE.indices.contains(index) ? setRPE[index] : ""
+                            },
+                            set: { updateSetRPE(index, $0) }
                         ),
                         focusedRepsField: focusedRepsField
                     )
@@ -591,32 +599,46 @@ struct PlannedExerciseRow: View {
     }
 }
 
-private struct SetRepsField: View {
+private struct PlannedSetField: View {
     let exerciseID: UUID
     let setIndex: Int
     @Binding var reps: String
+    @Binding var rpe: String
     let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
 
     var body: some View {
-        let focus = PlannedSetFocus(exerciseID: exerciseID, setIndex: setIndex)
+        let repsFocus = PlannedSetFocus(exerciseID: exerciseID, setIndex: setIndex, field: .reps)
+        let rpeFocus = PlannedSetFocus(exerciseID: exerciseID, setIndex: setIndex, field: .rpe)
 
-        HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 7) {
             Text("Set \(setIndex + 1)")
                 .font(.system(.caption, design: .rounded, weight: .bold))
                 .foregroundStyle(Color.deltsMutedText)
                 .lineLimit(1)
 
-            Spacer(minLength: 4)
+            HStack(spacing: 8) {
+                PlannedSetValueField(
+                    title: "Reps",
+                    placeholder: "0",
+                    text: $reps,
+                    keyboardType: .numberPad,
+                    focus: repsFocus,
+                    focusedRepsField: focusedRepsField
+                )
 
-            RepsCursorTextField(
-                text: $reps,
-                focus: focus,
-                focusedRepsField: focusedRepsField
-            )
-            .frame(minWidth: 42)
+                PlannedSetValueField(
+                    title: "RPE",
+                    placeholder: "Opt",
+                    text: $rpe,
+                    keyboardType: .decimalPad,
+                    focus: rpeFocus,
+                    focusedRepsField: focusedRepsField
+                )
+            }
         }
         .padding(.horizontal, 10)
-        .frame(height: 42)
+        .padding(.vertical, 8)
+        .frame(minHeight: 76)
         .background(Color.deltsCard.opacity(0.78), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -625,56 +647,71 @@ private struct SetRepsField: View {
         .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .highPriorityGesture(
             TapGesture().onEnded {
-                focusedRepsField.wrappedValue = focus
+                focusedRepsField.wrappedValue = repsFocus
             }
         )
         .accessibilityAddTraits(.isButton)
-        .accessibilityHint("Opens reps input")
+        .accessibilityHint("Opens set reps and RPE input")
     }
 }
 
-private struct RepsCursorTextField: View {
+private struct PlannedSetValueField: View {
+    let title: String
+    let placeholder: String
     @Binding var text: String
+    let keyboardType: UIKeyboardType
     let focus: PlannedSetFocus
     let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
 
     var body: some View {
-        if #available(iOS 18.0, *) {
-            RepsSelectionTextField(
-                text: $text,
-                focus: focus,
-                focusedRepsField: focusedRepsField
-            )
-        } else {
-            baseTextField
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(1)
+
+            if #available(iOS 18.0, *) {
+                PlannedSetSelectionTextField(
+                    placeholder: placeholder,
+                    text: $text,
+                    keyboardType: keyboardType,
+                    focus: focus,
+                    focusedRepsField: focusedRepsField
+                )
+            } else {
+                baseTextField
+            }
         }
+        .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
     }
 
     private var baseTextField: some View {
-        TextField("Reps", text: $text)
-            .keyboardType(.numberPad)
+        TextField(placeholder, text: $text)
+            .keyboardType(keyboardType)
             .textFieldStyle(.plain)
             .font(.system(.subheadline, design: .rounded, weight: .bold).monospacedDigit())
             .foregroundStyle(Color.deltsCharcoal)
-            .multilineTextAlignment(.trailing)
+            .multilineTextAlignment(.leading)
             .focused(focusedRepsField, equals: focus)
     }
 }
 
 @available(iOS 18.0, *)
-private struct RepsSelectionTextField: View {
+private struct PlannedSetSelectionTextField: View {
+    let placeholder: String
     @Binding var text: String
+    let keyboardType: UIKeyboardType
     let focus: PlannedSetFocus
     let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
     @State private var selection: TextSelection?
 
     var body: some View {
-        TextField("Reps", text: $text, selection: $selection)
-            .keyboardType(.numberPad)
+        TextField(placeholder, text: $text, selection: $selection)
+            .keyboardType(keyboardType)
             .textFieldStyle(.plain)
             .font(.system(.subheadline, design: .rounded, weight: .bold).monospacedDigit())
             .foregroundStyle(Color.deltsCharcoal)
-            .multilineTextAlignment(.trailing)
+            .multilineTextAlignment(.leading)
             .focused(focusedRepsField, equals: focus)
             .onTapGesture {
                 moveCursorToEnd()
