@@ -2404,29 +2404,45 @@ private struct ProfileWorkoutSplitPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 12) {
-                    ForEach(WorkoutSplit.allCases) { split in
-                        Button {
-                            selection = split
-                            dismiss()
-                        } label: {
-                            ProfileWorkoutSplitChoiceRow(
-                                split: split,
-                                isSelected: split == selection
-                            )
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(WorkoutSplit.allCases) { split in
+                            Button {
+                                selection = split
+                            } label: {
+                                ProfileWorkoutSplitChoiceRow(
+                                    split: split,
+                                    isSelected: split == selection
+                                )
+                            }
+                            .id(split.id)
+                            .buttonStyle(.plain)
+                            .deltsPressable()
                         }
-                        .buttonStyle(.plain)
-                        .deltsPressable()
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.top, 16)
+                    .padding(.bottom, 28)
+                }
+                .onAppear {
+                    DispatchQueue.main.async {
+                        proxy.scrollTo(selection.id, anchor: .center)
                     }
                 }
-                .padding(.horizontal, 18)
-                .padding(.top, 16)
-                .padding(.bottom, 28)
             }
             .background(DeltsBackground())
             .navigationTitle("Workout split")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                }
+            }
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
