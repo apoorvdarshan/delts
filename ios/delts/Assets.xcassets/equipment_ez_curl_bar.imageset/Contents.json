@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "equipment_ez_curl_bar.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

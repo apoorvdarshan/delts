@@ -2721,13 +2721,7 @@ private struct ProfileEquipmentImageTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ZStack(alignment: .topTrailing) {
-                AnimatedExerciseVisual(
-                    imagePaths: option.imagePaths,
-                    height: 96,
-                    allowsDerivedImageLookup: false,
-                    fallbackSystemImage: "dumbbell.fill",
-                    fallbackTitle: option.title
-                )
+                equipmentVisual
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
@@ -2768,6 +2762,52 @@ private struct ProfileEquipmentImageTile: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(option.title), \(option.count) exercises")
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
+    }
+
+    @ViewBuilder
+    private var equipmentVisual: some View {
+        if let assetName = option.equipmentAssetName,
+           let assetImage = UIImage(named: assetName) {
+            Image(uiImage: assetImage)
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity)
+                .frame(height: 96)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.deltsHairline.opacity(0.32), lineWidth: 0.7)
+                }
+        } else {
+            AnimatedExerciseVisual(
+                imagePaths: option.imagePaths,
+                height: 96,
+                allowsDerivedImageLookup: false,
+                fallbackSystemImage: "dumbbell.fill",
+                fallbackTitle: option.title
+            )
+        }
+    }
+}
+
+private extension ProfileEquipmentImageOption {
+    var equipmentAssetName: String? {
+        switch value.lowercased() {
+        case "bands": return "equipment_bands"
+        case "barbell": return "equipment_barbell"
+        case "body only": return "equipment_body_only"
+        case "cable": return "equipment_cable"
+        case "dumbbell": return "equipment_dumbbell"
+        case "exercise ball": return "equipment_exercise_ball"
+        case "e-z curl bar": return "equipment_ez_curl_bar"
+        case "foam roll": return "equipment_foam_roll"
+        case "kettlebells": return "equipment_kettlebells"
+        case "machine": return "equipment_machine"
+        case "medicine ball": return "equipment_medicine_ball"
+        case "other": return "equipment_other"
+        default: return nil
+        }
     }
 }
 
