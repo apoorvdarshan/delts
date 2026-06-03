@@ -758,7 +758,8 @@ struct ActiveWorkoutView: View {
             guard viewModel.rpeInputs.indices.contains(viewModel.currentExerciseIndex),
                   viewModel.rpeInputs[viewModel.currentExerciseIndex].indices.contains(setIndex)
             else { return }
-            viewModel.rpeInputs[viewModel.currentExerciseIndex][setIndex] = newValue
+            let previous = viewModel.rpeInputs[viewModel.currentExerciseIndex][setIndex]
+            viewModel.rpeInputs[viewModel.currentExerciseIndex][setIndex] = rpeScale.sanitizedInput(newValue, previousValue: previous)
         }
     }
 

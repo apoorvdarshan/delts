@@ -498,6 +498,7 @@ struct EmptyRoutineRow: View {
 struct PlannedExerciseRow: View {
     let exercise: PlannedRoutineExercise
     let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
+    let rpeScale: RPEScale
     let updateSets: (Int) -> Void
     let updateSetReps: (Int, String) -> Void
     let updateSetRPE: (Int, String) -> Void
@@ -566,6 +567,7 @@ struct PlannedExerciseRow: View {
                     PlannedSetField(
                         exerciseID: exercise.id,
                         setIndex: index,
+                        rpeScale: rpeScale,
                         reps: Binding(
                             get: {
                                 let values = exercise.normalizedSetReps
@@ -604,6 +606,7 @@ struct PlannedExerciseRow: View {
 private struct PlannedSetField: View {
     let exerciseID: UUID
     let setIndex: Int
+    let rpeScale: RPEScale
     @Binding var reps: String
     @Binding var rpe: String
     let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
@@ -629,20 +632,14 @@ private struct PlannedSetField: View {
             )
             .frame(maxWidth: .infinity)
 
-            Text("RPE")
-                .font(.system(.caption, design: .rounded, weight: .heavy))
-                .foregroundStyle(Color.deltsMutedText)
-                .lineLimit(1)
-                .frame(width: 30, alignment: .trailing)
-
             PlannedSetValueField(
-                placeholder: "Opt",
+                placeholder: "RPE \(rpeScale.inputPlaceholder)",
                 text: $rpe,
-                keyboardType: .decimalPad,
+                keyboardType: rpeScale.allowsDecimalInput ? .decimalPad : .numberPad,
                 focus: rpeFocus,
                 focusedRepsField: focusedRepsField
             )
-            .frame(width: 62)
+            .frame(maxWidth: .infinity)
         }
         .padding(.vertical, 7)
         .contentShape(Rectangle())

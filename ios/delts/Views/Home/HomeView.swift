@@ -31,6 +31,7 @@ struct HomeView: View {
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
     @AppStorage("profile_show_only_target_primary_filters") private var showOnlyTargetPrimaryFilters = false
+    @AppStorage(RPEScale.storageKey) private var rpeScaleRaw = RPEScale.strength.rawValue
 
     private let service = ExerciseLibraryService.shared
 
@@ -44,6 +45,10 @@ struct HomeView: View {
 
     private var selectedExerciseIDs: Set<String> {
         Set(selectedExercises.map(\.itemID))
+    }
+
+    private var rpeScale: RPEScale {
+        RPEScale(rawValue: rpeScaleRaw) ?? .strength
     }
 
     private var selectedCompletedSetCount: Int {
@@ -272,6 +277,7 @@ struct HomeView: View {
                             PlannedExerciseRow(
                                 exercise: exercise,
                                 focusedRepsField: $focusedRepsField,
+                                rpeScale: rpeScale,
                                 updateSets: { sets in
                                     updateExercise(exercise.id) { $0.setSetCount(sets) }
                                 },
@@ -279,7 +285,12 @@ struct HomeView: View {
                                     updateExercise(exercise.id) { $0.setReps(reps, forSet: setIndex) }
                                 },
                                 updateSetRPE: { setIndex, rpe in
-                                    updateExercise(exercise.id) { $0.setRPE(rpe, forSet: setIndex) }
+                                    let scale = rpeScale
+                                    updateExercise(exercise.id) { exercise in
+                                        let values = exercise.normalizedSetRPE
+                                        let previous = values.indices.contains(setIndex) ? values[setIndex] : ""
+                                        exercise.setRPE(scale.sanitizedInput(rpe, previousValue: previous), forSet: setIndex)
+                                    }
                                 },
                                 openDetail: {
                                     selectedDetailItem = libraryItem(for: exercise)
