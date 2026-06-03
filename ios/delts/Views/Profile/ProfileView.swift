@@ -2440,15 +2440,12 @@ private struct ProfileWorkoutSplitChoiceRow: View {
     var body: some View {
         HStack(alignment: .center, spacing: 13) {
             ProfileWorkoutSplitVisual(split: split, isSelected: isSelected)
-                .scaleEffect(isSelected ? 1.06 : 1)
                 .shadow(
                     color: isSelected ? Color.deltsAccent.opacity(0.30) : Color.clear,
                     radius: isSelected ? 18 : 0,
                     x: 0,
                     y: isSelected ? 9 : 0
                 )
-                .offset(x: isSelected ? -5 : 0)
-                .zIndex(1)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(split.title)
@@ -2466,10 +2463,15 @@ private struct ProfileWorkoutSplitChoiceRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Image(systemName: isSelected ? "checkmark.circle.fill" : "chevron.right")
-                .font(.system(size: isSelected ? 22 : 15, weight: .bold))
-                .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsMutedText.opacity(0.7))
-                .frame(width: 25, height: 25)
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .frame(width: 25, height: 25)
+            } else {
+                Color.clear
+                    .frame(width: 25, height: 25)
+            }
         }
         .padding(10)
         .frame(maxWidth: .infinity, minHeight: 168, alignment: .leading)
