@@ -2402,32 +2402,25 @@ private struct ProfileRPEScalePickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: 16) {
-                        ForEach(RPEScale.allCases, id: \.self) { scale in
-                            Button {
-                                selection = scale
-                            } label: {
-                                ProfileRPEScaleChoiceRow(
-                                    scale: scale,
-                                    isSelected: scale == selection
-                                )
-                            }
-                            .id(scale.rawValue)
-                            .buttonStyle(.plain)
-                            .deltsPressable()
+            ScrollView {
+                LazyVStack(spacing: 10) {
+                    ForEach(RPEScale.allCases, id: \.self) { scale in
+                        Button {
+                            selection = scale
+                        } label: {
+                            ProfileRPEScaleChoiceRow(
+                                scale: scale,
+                                isSelected: scale == selection
+                            )
                         }
-                    }
-                    .padding(.horizontal, 18)
-                    .padding(.top, 16)
-                    .padding(.bottom, 36)
-                }
-                .onAppear {
-                    DispatchQueue.main.async {
-                        proxy.scrollTo(selection.rawValue, anchor: .center)
+                        .id(scale.rawValue)
+                        .buttonStyle(.plain)
+                        .deltsPressable()
                     }
                 }
+                .padding(.horizontal, 18)
+                .padding(.top, 12)
+                .padding(.bottom, 18)
             }
             .background(DeltsBackground())
             .navigationTitle("RPE scale")
@@ -2452,26 +2445,26 @@ private struct ProfileRPEScaleChoiceRow: View {
     let isSelected: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 11) {
+        VStack(alignment: .leading, spacing: 8) {
             ProfileRPEScaleVisual(scale: scale, isSelected: isSelected)
 
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .top, spacing: 10) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(scale.title)
-                        .font(.headline.weight(.heavy))
+                        .font(.subheadline.weight(.heavy))
                         .foregroundStyle(Color.deltsCharcoal)
                         .lineLimit(2)
                         .minimumScaleFactor(0.78)
 
                     Text(scale.profileDescription)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.deltsMutedText)
-                        .lineLimit(3)
+                        .lineLimit(2)
                         .minimumScaleFactor(0.82)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(scale.profileInputDetail)
-                        .font(.caption.weight(.heavy))
+                        .font(.caption2.weight(.heavy))
                         .foregroundStyle(Color.deltsAccent)
                         .lineLimit(1)
                         .minimumScaleFactor(0.76)
@@ -2480,16 +2473,16 @@ private struct ProfileRPEScaleChoiceRow: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 23, weight: .bold))
+                        .font(.system(size: 22, weight: .bold))
                         .foregroundStyle(Color.deltsAccent)
-                        .frame(width: 27, height: 27)
+                        .frame(width: 25, height: 25)
                 } else {
                     Color.clear
-                        .frame(width: 27, height: 27)
+                        .frame(width: 25, height: 25)
                 }
             }
         }
-        .padding(11)
+        .padding(8)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .background(
@@ -2517,7 +2510,7 @@ private struct ProfileRPEScaleVisual: View {
                     .resizable()
                     .scaledToFill()
                     .frame(maxWidth: .infinity)
-                    .frame(height: 164)
+                    .frame(height: 112)
                     .clipped()
                     .overlay {
                         LinearGradient(
@@ -2537,7 +2530,7 @@ private struct ProfileRPEScaleVisual: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 164)
+        .frame(height: 112)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
