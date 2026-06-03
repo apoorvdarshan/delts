@@ -2427,15 +2427,6 @@ private struct ProfileWorkoutSplitPickerSheet: View {
             .background(DeltsBackground())
             .navigationTitle("Workout split")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.deltsAccent)
-                }
-            }
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
