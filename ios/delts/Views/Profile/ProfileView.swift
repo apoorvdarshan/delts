@@ -2488,15 +2488,14 @@ private struct ProfileWorkoutSplitChoiceRow: View {
 private struct ProfileWorkoutSplitVisual: View {
     let split: WorkoutSplit
     let isSelected: Bool
-    @State private var generatedImage: UIImage?
 
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 17, style: .continuous)
                 .fill(isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.32))
 
-            if let generatedImage {
-                Image(uiImage: generatedImage)
+            if let assetImage = UIImage(named: split.profileAssetName) {
+                Image(uiImage: assetImage)
                     .resizable()
                     .scaledToFill()
                     .frame(width: 86, height: 86)
@@ -2526,9 +2525,6 @@ private struct ProfileWorkoutSplitVisual: View {
             RoundedRectangle(cornerRadius: 17, style: .continuous)
                 .stroke(isSelected ? Color.deltsOnAccent.opacity(0.28) : Color.deltsHairline.opacity(0.34), lineWidth: 0.7)
         }
-        .task(id: split.id) {
-            await loadGeneratedImageIfAvailable()
-        }
     }
 
     private var fallbackVisual: some View {
@@ -2548,20 +2544,23 @@ private struct ProfileWorkoutSplitVisual: View {
         }
     }
 
-    private func loadGeneratedImageIfAvailable() async {
-        guard generatedImage == nil else { return }
-        guard let imageData = await GeminiSplitImageService.shared.imageData(for: split),
-              let image = UIImage(data: imageData)
-        else {
-            return
-        }
-        withAnimation(.easeInOut(duration: 0.24)) {
-            generatedImage = image
-        }
-    }
 }
 
 private extension WorkoutSplit {
+    var profileAssetName: String {
+        switch self {
+        case .fullBody: return "workout_split_full_body"
+        case .upperLower: return "workout_split_upper_lower"
+        case .pushPullLegs: return "workout_split_push_pull_legs"
+        case .broSplit: return "workout_split_bro_split"
+        case .arnoldSplit: return "workout_split_arnold_split"
+        case .pushPull: return "workout_split_push_pull"
+        case .antagonistSplit: return "workout_split_antagonist_split"
+        case .hybridSplit: return "workout_split_hybrid_split"
+        case .custom: return "workout_split_custom"
+        }
+    }
+
     var profileSystemImage: String {
         switch self {
         case .fullBody: return "figure.strengthtraining.traditional"
