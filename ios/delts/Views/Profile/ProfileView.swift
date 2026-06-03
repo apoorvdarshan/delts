@@ -308,12 +308,10 @@ private struct ProfileEditorView: View {
                     unit: "min"
                 )
                 ProfileDivider()
-                ProfileMenuPicker(
+                ProfileRPEScalePickerRow(
                     title: "RPE scale",
                     systemImage: "gauge.medium",
-                    selection: rpeScaleBinding,
-                    options: RPEScale.allCases,
-                    label: { $0.title }
+                    selection: rpeScaleBinding
                 )
                 ProfileDivider()
                 ProfileEquipmentImagePickerRow(
@@ -2373,6 +2371,205 @@ private struct ProfileEquipmentImagePickerRow: View {
                     .padding(.bottom, 10)
                 }
             }
+        }
+    }
+}
+
+private struct ProfileRPEScalePickerRow: View {
+    let title: String
+    let systemImage: String
+    @Binding var selection: RPEScale
+    @State private var isPickerPresented = false
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            Button {
+                isPickerPresented = true
+            } label: {
+                ProfileMenuValueLabel(text: selection.title)
+            }
+            .deltsPressable()
+            .sheet(isPresented: $isPickerPresented) {
+                ProfileRPEScalePickerSheet(selection: $selection)
+            }
+        }
+    }
+}
+
+private struct ProfileRPEScalePickerSheet: View {
+    @Binding var selection: RPEScale
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(RPEScale.allCases, id: \.self) { scale in
+                            Button {
+                                selection = scale
+                            } label: {
+                                ProfileRPEScaleChoiceRow(
+                                    scale: scale,
+                                    isSelected: scale == selection
+                                )
+                            }
+                            .id(scale.rawValue)
+                            .buttonStyle(.plain)
+                            .deltsPressable()
+                        }
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.top, 16)
+                    .padding(.bottom, 28)
+                }
+                .onAppear {
+                    DispatchQueue.main.async {
+                        proxy.scrollTo(selection.rawValue, anchor: .center)
+                    }
+                }
+            }
+            .background(DeltsBackground())
+            .navigationTitle("RPE scale")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+private struct ProfileRPEScaleChoiceRow: View {
+    let scale: RPEScale
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 13) {
+            ProfileRPEScaleVisual(scale: scale, isSelected: isSelected)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(scale.title)
+                    .font(.subheadline.weight(.heavy))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.78)
+
+                Text(scale.profileDescription)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.82)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(scale.profileInputDetail)
+                    .font(.caption2.weight(.heavy))
+                    .foregroundStyle(Color.deltsAccent)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .frame(width: 25, height: 25)
+            } else {
+                Color.clear
+                    .frame(width: 25, height: 25)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, minHeight: 122, alignment: .leading)
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(isSelected ? Color.deltsAccent.opacity(0.16) : Color.deltsPanel.opacity(0.20))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(isSelected ? Color.deltsAccent.opacity(0.74) : Color.deltsHairline.opacity(0.28), lineWidth: isSelected ? 1.3 : 0.7)
+        }
+    }
+}
+
+private struct ProfileRPEScaleVisual: View {
+    let scale: RPEScale
+    let isSelected: Bool
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.deltsPanel.opacity(isSelected ? 0.52 : 0.32))
+
+            if let assetImage = UIImage(named: scale.profileAssetName) {
+                Image(uiImage: assetImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 150, height: 84)
+                    .clipped()
+                    .overlay {
+                        LinearGradient(
+                            colors: [
+                                Color.black.opacity(0.04),
+                                Color.black.opacity(0.18)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    }
+            } else {
+                Image(systemName: "gauge.medium")
+                    .font(.system(size: 36, weight: .bold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsSecondaryAccent)
+            }
+        }
+        .frame(width: 150, height: 84)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.7)
+        }
+    }
+}
+
+private extension RPEScale {
+    var profileAssetName: String {
+        switch self {
+        case .strength: return "rpe_strength"
+        case .cr10: return "rpe_cr10"
+        case .borg: return "rpe_borg"
+        }
+    }
+
+    var profileDescription: String {
+        switch self {
+        case .strength:
+            return "Best for lifting: rate effort by how many reps you had left."
+        case .cr10:
+            return "General effort scale for strength, conditioning, and mixed sessions."
+        case .borg:
+            return "Classic endurance scale tied to breathing, fatigue, and heart rate."
+        }
+    }
+
+    var profileInputDetail: String {
+        switch self {
+        case .strength:
+            return "Range 1-10 - decimals allowed"
+        case .cr10:
+            return "Range 0-10 - decimals allowed"
+        case .borg:
+            return "Range 6-20 - whole numbers"
         }
     }
 }
