@@ -2440,12 +2440,6 @@ private struct ProfileWorkoutSplitChoiceRow: View {
     var body: some View {
         HStack(alignment: .center, spacing: 13) {
             ProfileWorkoutSplitVisual(split: split, isSelected: isSelected)
-                .shadow(
-                    color: isSelected ? Color.deltsAccent.opacity(0.30) : Color.clear,
-                    radius: isSelected ? 18 : 0,
-                    x: 0,
-                    y: isSelected ? 9 : 0
-                )
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(split.title)
