@@ -2472,14 +2472,14 @@ private struct ProfileWorkoutSplitChoiceRow: View {
                 .frame(width: 25, height: 25)
         }
         .padding(10)
-        .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
-        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .frame(maxWidth: .infinity, minHeight: 168, alignment: .leading)
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(isSelected ? Color.deltsAccent.opacity(0.16) : Color.deltsPanel.opacity(0.20))
         )
         .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .stroke(isSelected ? Color.deltsAccent.opacity(0.74) : Color.deltsHairline.opacity(0.28), lineWidth: isSelected ? 1.3 : 0.7)
         }
     }
@@ -2491,14 +2491,14 @@ private struct ProfileWorkoutSplitVisual: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 17, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.32))
 
             if let assetImage = UIImage(named: split.profileAssetName) {
                 Image(uiImage: assetImage)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 86, height: 86)
+                    .frame(width: 148, height: 148)
                     .clipped()
                     .overlay {
                         LinearGradient(
@@ -2519,10 +2519,10 @@ private struct ProfileWorkoutSplitVisual: View {
                 fallbackVisual
             }
         }
-        .frame(width: 86, height: 86)
-        .clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
+        .frame(width: 148, height: 148)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 17, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(isSelected ? Color.deltsOnAccent.opacity(0.28) : Color.deltsHairline.opacity(0.34), lineWidth: 0.7)
         }
     }
@@ -2532,13 +2532,13 @@ private struct ProfileWorkoutSplitVisual: View {
             HStack(spacing: 5) {
                 ForEach(Array(split.profilePattern.enumerated()), id: \.offset) { _, symbol in
                     Image(systemName: symbol)
-                        .font(.system(size: 11, weight: .heavy))
+                        .font(.system(size: 15, weight: .heavy))
                 }
             }
             .foregroundStyle(isSelected ? Color.deltsOnAccent.opacity(0.78) : Color.deltsSecondaryAccent.opacity(0.72))
 
             Image(systemName: split.profileSystemImage)
-                .font(.system(size: 30, weight: .bold))
+                .font(.system(size: 50, weight: .bold))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsSecondaryAccent)
         }
