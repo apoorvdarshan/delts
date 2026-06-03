@@ -2720,17 +2720,7 @@ private struct ProfileEquipmentImageTile: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ZStack(alignment: .topTrailing) {
-                equipmentVisual
-
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 23, weight: .bold))
-                        .foregroundStyle(Color.deltsAccent)
-                        .padding(8)
-                        .shadow(color: .black.opacity(0.35), radius: 6, x: 0, y: 2)
-                }
-            }
+            equipmentVisual
 
             Text(option.title)
                 .font(.subheadline.weight(.heavy))
