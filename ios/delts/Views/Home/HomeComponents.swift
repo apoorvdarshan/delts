@@ -506,10 +506,6 @@ struct PlannedExerciseRow: View {
     var body: some View {
         let setReps = exercise.normalizedSetReps
         let setRPE = exercise.normalizedSetRPE
-        let columns = Array(
-            repeating: GridItem(.flexible(), spacing: 8),
-            count: setReps.count == 1 ? 1 : 2
-        )
 
         VStack(alignment: .leading, spacing: 14) {
             Button(action: openDetail) {
@@ -565,7 +561,7 @@ struct PlannedExerciseRow: View {
                 }
             }
 
-            LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+            VStack(spacing: 0) {
                 ForEach(Array(setReps.enumerated()), id: \.offset) { index, _ in
                     PlannedSetField(
                         exerciseID: exercise.id,
@@ -585,6 +581,12 @@ struct PlannedExerciseRow: View {
                         ),
                         focusedRepsField: focusedRepsField
                     )
+
+                    if index < setReps.count - 1 {
+                        Divider()
+                            .overlay(Color.deltsHairline.opacity(0.5))
+                            .padding(.leading, 64)
+                    }
                 }
             }
         }
@@ -610,53 +612,45 @@ private struct PlannedSetField: View {
         let repsFocus = PlannedSetFocus(exerciseID: exerciseID, setIndex: setIndex, field: .reps)
         let rpeFocus = PlannedSetFocus(exerciseID: exerciseID, setIndex: setIndex, field: .rpe)
 
-        VStack(alignment: .leading, spacing: 7) {
+        HStack(spacing: 10) {
             Text("Set \(setIndex + 1)")
-                .font(.system(.caption, design: .rounded, weight: .bold))
+                .font(.system(.subheadline, design: .rounded, weight: .bold))
                 .foregroundStyle(Color.deltsMutedText)
                 .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(width: 54, alignment: .leading)
 
-            HStack(spacing: 8) {
-                PlannedSetValueField(
-                    title: "Reps",
-                    placeholder: "0",
-                    text: $reps,
-                    keyboardType: .numberPad,
-                    focus: repsFocus,
-                    focusedRepsField: focusedRepsField
-                )
+            PlannedSetValueField(
+                placeholder: "Reps",
+                text: $reps,
+                keyboardType: .numberPad,
+                focus: repsFocus,
+                focusedRepsField: focusedRepsField
+            )
+            .frame(maxWidth: .infinity)
 
-                PlannedSetValueField(
-                    title: "RPE",
-                    placeholder: "Opt",
-                    text: $rpe,
-                    keyboardType: .decimalPad,
-                    focus: rpeFocus,
-                    focusedRepsField: focusedRepsField
-                )
-            }
+            Text("RPE")
+                .font(.system(.caption, design: .rounded, weight: .heavy))
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(1)
+                .frame(width: 30, alignment: .trailing)
+
+            PlannedSetValueField(
+                placeholder: "Opt",
+                text: $rpe,
+                keyboardType: .decimalPad,
+                focus: rpeFocus,
+                focusedRepsField: focusedRepsField
+            )
+            .frame(width: 62)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .frame(minHeight: 76)
-        .background(Color.deltsCard.opacity(0.78), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.48), lineWidth: 0.6)
-        }
-        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .highPriorityGesture(
-            TapGesture().onEnded {
-                focusedRepsField.wrappedValue = repsFocus
-            }
-        )
-        .accessibilityAddTraits(.isButton)
+        .padding(.vertical, 7)
+        .contentShape(Rectangle())
         .accessibilityHint("Opens set reps and RPE input")
     }
 }
 
 private struct PlannedSetValueField: View {
-    let title: String
     let placeholder: String
     @Binding var text: String
     let keyboardType: UIKeyboardType
@@ -664,12 +658,7 @@ private struct PlannedSetValueField: View {
     let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(Color.deltsMutedText)
-                .lineLimit(1)
-
+        Group {
             if #available(iOS 18.0, *) {
                 PlannedSetSelectionTextField(
                     placeholder: placeholder,
@@ -682,7 +671,13 @@ private struct PlannedSetValueField: View {
                 baseTextField
             }
         }
-        .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
+        .padding(.horizontal, 10)
+        .frame(height: 36)
+        .background(Color.deltsCard.opacity(0.74), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.4), lineWidth: 0.6)
+        }
     }
 
     private var baseTextField: some View {
@@ -691,7 +686,7 @@ private struct PlannedSetValueField: View {
             .textFieldStyle(.plain)
             .font(.system(.subheadline, design: .rounded, weight: .bold).monospacedDigit())
             .foregroundStyle(Color.deltsCharcoal)
-            .multilineTextAlignment(.leading)
+            .multilineTextAlignment(.center)
             .focused(focusedRepsField, equals: focus)
     }
 }
@@ -711,7 +706,7 @@ private struct PlannedSetSelectionTextField: View {
             .textFieldStyle(.plain)
             .font(.system(.subheadline, design: .rounded, weight: .bold).monospacedDigit())
             .foregroundStyle(Color.deltsCharcoal)
-            .multilineTextAlignment(.leading)
+            .multilineTextAlignment(.center)
             .focused(focusedRepsField, equals: focus)
             .onTapGesture {
                 moveCursorToEnd()

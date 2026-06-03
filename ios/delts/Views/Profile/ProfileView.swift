@@ -2488,31 +2488,75 @@ private struct ProfileWorkoutSplitChoiceRow: View {
 private struct ProfileWorkoutSplitVisual: View {
     let split: WorkoutSplit
     let isSelected: Bool
+    @State private var generatedImage: UIImage?
 
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 17, style: .continuous)
                 .fill(isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.32))
 
-            VStack(spacing: 7) {
-                HStack(spacing: 5) {
-                    ForEach(Array(split.profilePattern.enumerated()), id: \.offset) { _, symbol in
-                        Image(systemName: symbol)
-                            .font(.system(size: 11, weight: .heavy))
+            if let generatedImage {
+                Image(uiImage: generatedImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 86, height: 86)
+                    .clipped()
+                    .overlay {
+                        LinearGradient(
+                            colors: [
+                                Color.black.opacity(0.08),
+                                Color.black.opacity(0.34)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                     }
-                }
-                .foregroundStyle(isSelected ? Color.deltsOnAccent.opacity(0.78) : Color.deltsSecondaryAccent.opacity(0.72))
-
-                Image(systemName: split.profileSystemImage)
-                    .font(.system(size: 30, weight: .bold))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsSecondaryAccent)
+                    .overlay {
+                        if isSelected {
+                            Color.deltsAccent.opacity(0.18)
+                        }
+                    }
+            } else {
+                fallbackVisual
             }
         }
         .frame(width: 86, height: 86)
+        .clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 17, style: .continuous)
                 .stroke(isSelected ? Color.deltsOnAccent.opacity(0.28) : Color.deltsHairline.opacity(0.34), lineWidth: 0.7)
+        }
+        .task(id: split.id) {
+            await loadGeneratedImageIfAvailable()
+        }
+    }
+
+    private var fallbackVisual: some View {
+        VStack(spacing: 7) {
+            HStack(spacing: 5) {
+                ForEach(Array(split.profilePattern.enumerated()), id: \.offset) { _, symbol in
+                    Image(systemName: symbol)
+                        .font(.system(size: 11, weight: .heavy))
+                }
+            }
+            .foregroundStyle(isSelected ? Color.deltsOnAccent.opacity(0.78) : Color.deltsSecondaryAccent.opacity(0.72))
+
+            Image(systemName: split.profileSystemImage)
+                .font(.system(size: 30, weight: .bold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsSecondaryAccent)
+        }
+    }
+
+    private func loadGeneratedImageIfAvailable() async {
+        guard generatedImage == nil else { return }
+        guard let imageData = await GeminiSplitImageService.shared.imageData(for: split),
+              let image = UIImage(data: imageData)
+        else {
+            return
+        }
+        withAnimation(.easeInOut(duration: 0.24)) {
+            generatedImage = image
         }
     }
 }

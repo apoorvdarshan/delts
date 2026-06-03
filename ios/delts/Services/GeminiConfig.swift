@@ -2,6 +2,7 @@ import Foundation
 
 enum GeminiConfig {
     static let modelName = "gemini-2.5-flash"
+    static let imageModelName = "gemini-3.1-flash-image"
 
     static var apiKey: String? {
         normalizedAPIKey(Bundle.main.object(forInfoDictionaryKey: "GEMINI_API_KEY") as? String)
