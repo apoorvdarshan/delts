@@ -2440,6 +2440,15 @@ private struct ProfileWorkoutSplitChoiceRow: View {
     var body: some View {
         HStack(alignment: .center, spacing: 13) {
             ProfileWorkoutSplitVisual(split: split, isSelected: isSelected)
+                .scaleEffect(isSelected ? 1.06 : 1)
+                .shadow(
+                    color: isSelected ? Color.deltsAccent.opacity(0.30) : Color.clear,
+                    radius: isSelected ? 18 : 0,
+                    x: 0,
+                    y: isSelected ? 9 : 0
+                )
+                .offset(x: isSelected ? -5 : 0)
+                .zIndex(1)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(split.title)
@@ -2483,7 +2492,7 @@ private struct ProfileWorkoutSplitVisual: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(isSelected ? Color.deltsAccent : Color.deltsPanel.opacity(0.32))
+                .fill(Color.deltsPanel.opacity(isSelected ? 0.52 : 0.32))
 
             if let assetImage = UIImage(named: split.profileAssetName) {
                 Image(uiImage: assetImage)
@@ -2501,11 +2510,6 @@ private struct ProfileWorkoutSplitVisual: View {
                             endPoint: .bottom
                         )
                     }
-                    .overlay {
-                        if isSelected {
-                            Color.deltsAccent.opacity(0.18)
-                        }
-                    }
             } else {
                 fallbackVisual
             }
@@ -2514,7 +2518,7 @@ private struct ProfileWorkoutSplitVisual: View {
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(isSelected ? Color.deltsOnAccent.opacity(0.28) : Color.deltsHairline.opacity(0.34), lineWidth: 0.7)
+                .stroke(isSelected ? Color.deltsAccent.opacity(0.82) : Color.deltsHairline.opacity(0.34), lineWidth: isSelected ? 1.4 : 0.7)
         }
     }
 
