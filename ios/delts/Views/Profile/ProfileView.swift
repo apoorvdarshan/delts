@@ -2404,7 +2404,7 @@ private struct ProfileRPEScalePickerSheet: View {
         NavigationStack {
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 12) {
+                    LazyVStack(spacing: 16) {
                         ForEach(RPEScale.allCases, id: \.self) { scale in
                             Button {
                                 selection = scale
@@ -2421,7 +2421,7 @@ private struct ProfileRPEScalePickerSheet: View {
                     }
                     .padding(.horizontal, 18)
                     .padding(.top, 16)
-                    .padding(.bottom, 28)
+                    .padding(.bottom, 36)
                 }
                 .onAppear {
                     DispatchQueue.main.async {
@@ -2442,7 +2442,7 @@ private struct ProfileRPEScalePickerSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
 }
@@ -2452,43 +2452,45 @@ private struct ProfileRPEScaleChoiceRow: View {
     let isSelected: Bool
 
     var body: some View {
-        HStack(alignment: .center, spacing: 13) {
+        VStack(alignment: .leading, spacing: 11) {
             ProfileRPEScaleVisual(scale: scale, isSelected: isSelected)
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text(scale.title)
-                    .font(.subheadline.weight(.heavy))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.78)
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(scale.title)
+                        .font(.headline.weight(.heavy))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.78)
 
-                Text(scale.profileDescription)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.82)
-                    .fixedSize(horizontal: false, vertical: true)
+                    Text(scale.profileDescription)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.82)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                Text(scale.profileInputDetail)
-                    .font(.caption2.weight(.heavy))
-                    .foregroundStyle(Color.deltsAccent)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.76)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(scale.profileInputDetail)
+                        .font(.caption.weight(.heavy))
+                        .foregroundStyle(Color.deltsAccent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.76)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            if isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(Color.deltsAccent)
-                    .frame(width: 25, height: 25)
-            } else {
-                Color.clear
-                    .frame(width: 25, height: 25)
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 23, weight: .bold))
+                        .foregroundStyle(Color.deltsAccent)
+                        .frame(width: 27, height: 27)
+                } else {
+                    Color.clear
+                        .frame(width: 27, height: 27)
+                }
             }
         }
-        .padding(10)
-        .frame(maxWidth: .infinity, minHeight: 122, alignment: .leading)
+        .padding(11)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -2514,7 +2516,8 @@ private struct ProfileRPEScaleVisual: View {
                 Image(uiImage: assetImage)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 150, height: 84)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 164)
                     .clipped()
                     .overlay {
                         LinearGradient(
@@ -2533,7 +2536,8 @@ private struct ProfileRPEScaleVisual: View {
                     .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsSecondaryAccent)
             }
         }
-        .frame(width: 150, height: 84)
+        .frame(maxWidth: .infinity)
+        .frame(height: 164)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
