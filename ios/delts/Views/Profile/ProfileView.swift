@@ -2285,6 +2285,7 @@ private struct ProfileMultiSelectMenuRow<Option: Hashable>: View {
     let options: [Option]
     @Binding var selection: Set<Option>
     let label: (Option) -> String
+    @State private var isPickerPresented = false
 
     private var summary: String {
         if selectedTitles.isEmpty {
@@ -2303,28 +2304,20 @@ private struct ProfileMultiSelectMenuRow<Option: Hashable>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ProfileFieldRow(title: title, systemImage: systemImage) {
-                Menu {
-                    ForEach(options, id: \.self) { option in
-                        Button {
-                            var updatedSelection = selection
-                            if updatedSelection.contains(option) {
-                                updatedSelection.remove(option)
-                            } else {
-                                updatedSelection.insert(option)
-                            }
-                            selection = updatedSelection
-                        } label: {
-                            if selection.contains(option) {
-                                Label(label(option), systemImage: "checkmark")
-                            } else {
-                                Text(label(option))
-                            }
-                        }
-                    }
+                Button {
+                    isPickerPresented = true
                 } label: {
                     ProfileMenuValueLabel(text: summary)
                 }
                 .deltsPressable()
+                .sheet(isPresented: $isPickerPresented) {
+                    ProfileMultiSelectPickerSheet(
+                        title: title,
+                        options: options,
+                        selection: $selection,
+                        label: label
+                    )
+                }
             }
 
             if !selectedTitles.isEmpty {
@@ -2340,6 +2333,106 @@ private struct ProfileMultiSelectMenuRow<Option: Hashable>: View {
                 }
             }
         }
+    }
+}
+
+private struct ProfileMultiSelectPickerSheet<Option: Hashable>: View {
+    let title: String
+    let options: [Option]
+    @Binding var selection: Set<Option>
+    let label: (Option) -> String
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVStack(spacing: 10) {
+                    ForEach(options, id: \.self) { option in
+                        Button {
+                            toggle(option)
+                        } label: {
+                            ProfileMultiSelectChoiceRow(
+                                title: label(option),
+                                isSelected: selection.contains(option)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .deltsPressable()
+                    }
+                }
+                .padding(.horizontal, 18)
+                .padding(.top, 16)
+                .padding(.bottom, 30)
+            }
+            .background(DeltsBackground())
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func toggle(_ option: Option) {
+        var updatedSelection = selection
+        if updatedSelection.contains(option) {
+            updatedSelection.remove(option)
+        } else {
+            updatedSelection.insert(option)
+        }
+        selection = updatedSelection
+    }
+}
+
+private struct ProfileMultiSelectChoiceRow: View {
+    let title: String
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(title)
+                .font(.body.weight(.heavy))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(2)
+                .minimumScaleFactor(0.86)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 12, weight: .black))
+                    .foregroundStyle(Color.deltsOnAccent)
+                    .frame(width: 25, height: 25)
+                    .background(Color.deltsAccent, in: Circle())
+                    .overlay {
+                        Circle()
+                            .stroke(Color.deltsOnAccent.opacity(0.20), lineWidth: 0.7)
+                    }
+            } else {
+                Circle()
+                    .stroke(Color.deltsHairline.opacity(0.52), lineWidth: 1)
+                    .frame(width: 25, height: 25)
+            }
+        }
+        .padding(.horizontal, 16)
+        .frame(minHeight: 58)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(isSelected ? Color.deltsAccent.opacity(0.16) : Color.deltsPanel.opacity(0.20))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(isSelected ? Color.deltsAccent.opacity(0.72) : Color.deltsHairline.opacity(0.28), lineWidth: isSelected ? 1.2 : 0.7)
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 
