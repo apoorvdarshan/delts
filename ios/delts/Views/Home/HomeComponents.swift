@@ -780,7 +780,7 @@ struct WorkoutPickerSheet: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
 
-                    workoutPickerHeaderControls
+                    workoutPickerResultsHeader
                         .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
@@ -865,8 +865,20 @@ struct WorkoutPickerSheet: View {
             selectedSort != .name
     }
 
-    private var workoutPickerHeaderControls: some View {
-        HStack(spacing: 8) {
+    private var workoutPickerResultsHeader: some View {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(exercises.count) \(exercises.count == 1 ? "exercise" : "exercises")")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .textCase(nil)
+
+                Text(selectedSort.title)
+                    .font(.caption)
+                    .foregroundStyle(Color.deltsMutedText)
+                    .textCase(nil)
+            }
+
             Spacer()
 
             Button {
