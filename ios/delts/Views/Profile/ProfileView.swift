@@ -239,7 +239,7 @@ private struct ProfileEditorView: View {
                 ProfileDivider()
                 ProfileToggleInfoRow(
                     title: "Target-only Primary",
-                    systemImage: "line.3.horizontal.decrease.circle",
+                    systemImage: "line.3.horizontal.decrease.circle.fill",
                     isOn: $showOnlyTargetPrimaryFilters
                 ) {
                     isTargetOnlyPrimaryInfoPresented = true
@@ -862,6 +862,7 @@ private struct ProfileFieldLabel: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
                 .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
         }
     }
 }
