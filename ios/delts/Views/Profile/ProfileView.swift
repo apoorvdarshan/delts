@@ -239,7 +239,7 @@ private struct ProfileEditorView: View {
                 ProfileDivider()
                 ProfileToggleInfoRow(
                     title: "Target-only Primary",
-                    systemImage: "line.3.horizontal.decrease.circle.fill",
+                    systemImage: "scope",
                     isOn: $showOnlyTargetPrimaryFilters
                 ) {
                     isTargetOnlyPrimaryInfoPresented = true
@@ -2215,26 +2215,65 @@ private struct ProfileToggleInfoRow: View {
     let systemImage: String
     @Binding var isOn: Bool
     let onInfo: () -> Void
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        ProfileFieldRow(title: title, systemImage: systemImage) {
-            HStack(spacing: 10) {
-                Button(action: onInfo) {
-                    Image(systemName: "info.circle.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                        .symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(Color.deltsSecondaryAccent)
-                        .frame(width: 34, height: 34)
-                        .background(Color.deltsPanel.opacity(0.28), in: Circle())
-                }
-                .buttonStyle(.plain)
-                .deltsPressable()
-                .accessibilityLabel("Explain \(title)")
-
-                Toggle("", isOn: $isOn)
-                    .labelsHidden()
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 10) {
+                fixedLabel
+                controls
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        } else {
+            HStack(alignment: .center, spacing: 8) {
+                fixedLabel
+                    .layoutPriority(3)
+
+                Spacer(minLength: 6)
+
+                controls
+            }
+            .padding(.vertical, 9)
+            .contentShape(Rectangle())
         }
+    }
+
+    private var fixedLabel: some View {
+        HStack(alignment: .center, spacing: 11) {
+            Image(systemName: systemImage)
+                .font(.system(size: 19, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.deltsSecondaryAccent)
+                .frame(width: 38, height: 34)
+
+            Text(title)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+        }
+    }
+
+    private var controls: some View {
+        HStack(spacing: 6) {
+            Button(action: onInfo) {
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 17, weight: .semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(Color.deltsSecondaryAccent)
+                    .frame(width: 30, height: 30)
+                    .background(Color.deltsPanel.opacity(0.28), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .deltsPressable()
+            .accessibilityLabel("Explain \(title)")
+
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+        }
+        .fixedSize()
     }
 }
 
