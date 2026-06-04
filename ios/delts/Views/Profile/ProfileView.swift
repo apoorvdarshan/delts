@@ -3826,15 +3826,15 @@ private struct ProfileTargetMuscleCard: View {
 
                     if isSelected {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 15, weight: .black))
+                            .font(.system(size: 12, weight: .black))
                             .foregroundStyle(Color.deltsOnAccent)
-                            .frame(width: 31, height: 31)
+                            .frame(width: 25, height: 25)
                             .background(Color.deltsAccent, in: Circle())
                             .overlay {
                                 Circle()
                                     .stroke(Color.deltsOnAccent.opacity(0.20), lineWidth: 0.7)
                             }
-                            .padding(8)
+                            .padding(7)
                     }
                 }
 
