@@ -2435,18 +2435,12 @@ private struct ProfileIssueImageChoiceRow: View {
         HStack(alignment: .center, spacing: 14) {
             ProfileIssueImageVisual(issue: issue, isSelected: isSelected)
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 0) {
                 Text(issue.title)
-                    .font(.subheadline.weight(.heavy))
+                    .font(.title3.weight(.heavy))
                     .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.78)
-
-                Text(issue.profileDescription)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
                     .lineLimit(3)
-                    .minimumScaleFactor(0.82)
+                    .minimumScaleFactor(0.76)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
