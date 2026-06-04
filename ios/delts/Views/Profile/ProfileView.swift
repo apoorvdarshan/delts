@@ -3824,6 +3824,18 @@ private struct ProfileTargetMuscleCard: View {
                     .frame(height: 88)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
+                    if isSelected {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 15, weight: .black))
+                            .foregroundStyle(Color.deltsOnAccent)
+                            .frame(width: 31, height: 31)
+                            .background(Color.deltsAccent, in: Circle())
+                            .overlay {
+                                Circle()
+                                    .stroke(Color.deltsOnAccent.opacity(0.20), lineWidth: 0.7)
+                            }
+                            .padding(8)
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -3839,22 +3851,9 @@ private struct ProfileTargetMuscleCard: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.74)
                 }
-
-                Spacer(minLength: 0)
-
-                Label(isSelected ? "Selected" : "Select", systemImage: isSelected ? "checkmark" : "plus")
-                    .font(.caption.weight(.heavy))
-                    .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsOnAccent)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 34)
-                    .background(isSelected ? Color.deltsAccent.opacity(0.13) : Color.deltsAccent, in: Capsule())
-                    .overlay {
-                        Capsule()
-                            .stroke(isSelected ? Color.deltsAccent.opacity(0.34) : Color.clear, lineWidth: 0.5)
-                    }
             }
             .padding(10)
-            .frame(maxWidth: .infinity, minHeight: 198, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: 158, alignment: .topLeading)
             .background(Color.deltsPanel.opacity(isSelected ? 0.34 : 0.18), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
