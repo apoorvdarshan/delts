@@ -2432,7 +2432,7 @@ private struct ProfileIssueImageChoiceRow: View {
     let isSelected: Bool
 
     var body: some View {
-        HStack(alignment: .center, spacing: 13) {
+        HStack(alignment: .center, spacing: 14) {
             ProfileIssueImageVisual(issue: issue, isSelected: isSelected)
 
             VStack(alignment: .leading, spacing: 6) {
@@ -2461,8 +2461,8 @@ private struct ProfileIssueImageChoiceRow: View {
                     .frame(width: 25, height: 25)
             }
         }
-        .padding(10)
-        .frame(maxWidth: .infinity, minHeight: 122, alignment: .leading)
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 138, alignment: .leading)
         .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -2488,7 +2488,7 @@ private struct ProfileIssueImageVisual: View {
                 Image(uiImage: assetImage)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 134, height: 76)
+                    .frame(width: 156, height: 88)
                     .clipped()
                     .overlay {
                         LinearGradient(
@@ -2507,7 +2507,7 @@ private struct ProfileIssueImageVisual: View {
                     .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsSecondaryAccent)
             }
         }
-        .frame(width: 134, height: 76)
+        .frame(width: 156, height: 88)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
