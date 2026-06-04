@@ -2472,31 +2472,31 @@ private struct ProfileIssueImageChoiceRow: View {
     let isSelected: Bool
 
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
+        VStack(alignment: .leading, spacing: 11) {
             ProfileIssueImageVisual(issue: issue, isSelected: isSelected)
 
-            VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
                 Text(issue.title)
-                    .font(.title3.weight(.heavy))
+                    .font(.headline.weight(.heavy))
                     .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.76)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.78)
                     .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-            if isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(Color.deltsAccent)
-                    .frame(width: 25, height: 25)
-            } else {
-                Color.clear
-                    .frame(width: 25, height: 25)
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 23, weight: .bold))
+                        .foregroundStyle(Color.deltsAccent)
+                        .frame(width: 27, height: 27)
+                } else {
+                    Color.clear
+                        .frame(width: 27, height: 27)
+                }
             }
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, minHeight: 138, alignment: .leading)
+        .padding(11)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -2522,7 +2522,8 @@ private struct ProfileIssueImageVisual: View {
                 Image(uiImage: assetImage)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 156, height: 88)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 164)
                     .clipped()
                     .overlay {
                         LinearGradient(
@@ -2541,7 +2542,8 @@ private struct ProfileIssueImageVisual: View {
                     .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsSecondaryAccent)
             }
         }
-        .frame(width: 156, height: 88)
+        .frame(maxWidth: .infinity)
+        .frame(height: 164)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
