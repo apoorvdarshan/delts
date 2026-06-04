@@ -245,10 +245,12 @@ private struct ProfileEditorView: View {
                     isTargetOnlyPrimaryInfoPresented = true
                 }
                 ProfileDivider()
-                ProfileIssueImagePickerRow(
+                ProfileMultiSelectMenuRow(
                     title: "Issues",
                     systemImage: "exclamationmark.triangle.fill",
-                    selection: issuesBinding
+                    options: FitnessIssue.allCases,
+                    selection: issuesBinding,
+                    label: { $0.title }
                 )
                 if profile.fitnessIssues.contains(.other) {
                     ProfileDivider()
@@ -2341,256 +2343,6 @@ private struct ProfileMultiSelectMenuRow<Option: Hashable>: View {
     }
 }
 
-private struct ProfileIssueImagePickerRow: View {
-    let title: String
-    let systemImage: String
-    @Binding var selection: Set<FitnessIssue>
-    @State private var isPickerPresented = false
-
-    private var selectedIssues: [FitnessIssue] {
-        FitnessIssue.allCases.filter { selection.contains($0) }
-    }
-
-    private var summary: String {
-        if selectedIssues.isEmpty {
-            return "None"
-        }
-        if selectedIssues.count <= 2 {
-            return selectedIssues.map(\.title).joined(separator: ", ")
-        }
-        return "\(selectedIssues.count) selected"
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ProfileFieldRow(title: title, systemImage: systemImage) {
-                Button {
-                    isPickerPresented = true
-                } label: {
-                    ProfileMenuValueLabel(text: summary)
-                }
-                .deltsPressable()
-                .sheet(isPresented: $isPickerPresented) {
-                    ProfileIssueImagePickerSheet(
-                        title: title,
-                        selection: $selection
-                    )
-                }
-            }
-
-            if !selectedIssues.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(selectedIssues) { issue in
-                            ProfileTargetMuscleChip(title: issue.title)
-                        }
-                    }
-                    .padding(.leading, 48)
-                    .padding(.trailing, 6)
-                    .padding(.bottom, 10)
-                }
-            }
-        }
-    }
-}
-
-private struct ProfileIssueImagePickerSheet: View {
-    let title: String
-    @Binding var selection: Set<FitnessIssue>
-    @Environment(\.dismiss) private var dismiss
-
-    private let issues = FitnessIssue.allCases
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 14) {
-                    ProfileSelectionActionRow(
-                        selectAllDisabled: selectableValues.isSubset(of: selection),
-                        clearAllDisabled: selection.isEmpty,
-                        selectAll: {
-                            selection = selectableValues
-                        },
-                        clearAll: {
-                            selection.removeAll()
-                        }
-                    )
-
-                    LazyVStack(spacing: 12) {
-                        ForEach(issues) { issue in
-                            Button {
-                                toggle(issue)
-                            } label: {
-                                ProfileIssueImageChoiceRow(
-                                    issue: issue,
-                                    isSelected: selection.contains(issue)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .deltsPressable()
-                        }
-                    }
-                }
-                .padding(.horizontal, 18)
-                .padding(.top, 16)
-                .padding(.bottom, 28)
-            }
-            .background(DeltsBackground())
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.deltsAccent)
-                }
-            }
-        }
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
-    }
-
-    private var selectableValues: Set<FitnessIssue> {
-        Set(issues)
-    }
-
-    private func toggle(_ issue: FitnessIssue) {
-        var updatedSelection = selection
-        if updatedSelection.contains(issue) {
-            updatedSelection.remove(issue)
-        } else {
-            updatedSelection.insert(issue)
-        }
-        selection = updatedSelection
-    }
-}
-
-private struct ProfileIssueImageChoiceRow: View {
-    let issue: FitnessIssue
-    let isSelected: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            ProfileIssueImageVisual(issue: issue, isSelected: isSelected)
-
-            HStack(alignment: .center, spacing: 12) {
-                Text(issue.title)
-                    .font(.headline.weight(.heavy))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.78)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 23, weight: .bold))
-                        .foregroundStyle(Color.deltsAccent)
-                        .frame(width: 27, height: 27)
-                } else {
-                    Color.clear
-                        .frame(width: 27, height: 27)
-                }
-            }
-        }
-        .padding(11)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(isSelected ? Color.deltsAccent.opacity(0.16) : Color.deltsPanel.opacity(0.20))
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(isSelected ? Color.deltsAccent.opacity(0.74) : Color.deltsHairline.opacity(0.28), lineWidth: isSelected ? 1.3 : 0.7)
-        }
-    }
-}
-
-private struct ProfileIssueImageVisual: View {
-    let issue: FitnessIssue
-    let isSelected: Bool
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.deltsPanel.opacity(isSelected ? 0.52 : 0.32))
-
-            if let assetImage = UIImage(named: issue.profileAssetName) {
-                Image(uiImage: assetImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 164)
-                    .clipped()
-                    .overlay {
-                        LinearGradient(
-                            colors: [
-                                Color.black.opacity(0.04),
-                                Color.black.opacity(0.18)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    }
-            } else {
-                Image(systemName: issue.icon)
-                    .font(.system(size: 34, weight: .bold))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsSecondaryAccent)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 164)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.7)
-        }
-    }
-}
-
-private extension FitnessIssue {
-    var profileAssetName: String {
-        switch self {
-        case .noConsistency: return "issue_no_consistency"
-        case .unknownTraining: return "issue_unknown_training"
-        case .plateau: return "issue_plateau"
-        case .weakForm: return "issue_weak_form"
-        case .lowMotivation: return "issue_low_motivation"
-        case .crowdedGym: return "issue_crowded_gym"
-        case .injuryPain: return "issue_injury_pain"
-        case .notEnoughTime: return "issue_not_enough_time"
-        case .other: return "issue_other"
-        }
-    }
-
-    var profileDescription: String {
-        switch self {
-        case .noConsistency:
-            return "Missed sessions or uneven habits make progress harder to repeat."
-        case .unknownTraining:
-            return "Use clearer guidance when choosing muscles, exercises, and workout days."
-        case .plateau:
-            return "Progress has stalled, so plan volume, load, or exercise selection needs adjustment."
-        case .weakForm:
-            return "Prioritize safer technique, cleaner movement, and controlled progression."
-        case .lowMotivation:
-            return "Keep sessions easier to start and structured enough to maintain momentum."
-        case .crowdedGym:
-            return "Plan flexible exercise swaps when benches, racks, or machines are taken."
-        case .injuryPain:
-            return "Account for painful areas and avoid choices that may aggravate symptoms."
-        case .notEnoughTime:
-            return "Favor shorter sessions, tighter exercise choices, and efficient workout flow."
-        case .other:
-            return "Add a custom constraint that does not fit the preset issue list."
-        }
-    }
-}
-
 private struct ProfileEquipmentImagePickerRow: View {
     let title: String
     let systemImage: String
@@ -3209,7 +2961,17 @@ private struct ProfileEquipmentImageTile: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            equipmentVisual
+            ZStack(alignment: .topTrailing) {
+                equipmentVisual
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(Color.deltsAccent)
+                        .shadow(color: Color.deltsCharcoal.opacity(0.28), radius: 6, y: 2)
+                        .padding(7)
+                }
+            }
 
             Text(option.title)
                 .font(.subheadline.weight(.heavy))
