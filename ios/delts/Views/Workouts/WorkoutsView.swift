@@ -1154,10 +1154,10 @@ struct ExerciseLibraryDetailView: View {
         GeometryReader { geometry in
             let screenWidth = geometry.size.width
 
-            VStack(spacing: 0) {
-                detailHero(width: screenWidth)
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: 0) {
+                    detailHero(width: screenWidth)
 
-                ScrollView(.vertical) {
                     VStack(alignment: .leading, spacing: 24) {
                         if let plannedExercise {
                             ExerciseDetailSetLogSection(
@@ -1179,8 +1179,9 @@ struct ExerciseLibraryDetailView: View {
                     .padding(.bottom, 112)
                     .frame(width: screenWidth, alignment: .leading)
                 }
-                .scrollIndicators(.hidden)
             }
+            .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
             .frame(width: screenWidth, alignment: .top)
         }
         .deltsScreen()
@@ -1203,50 +1204,40 @@ struct ExerciseLibraryDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $isMetricsPresented) {
-            NavigationStack {
-                ScrollView {
-                    DetailMetricGrid(item: item)
-                        .padding(20)
-                        .padding(.bottom, 28)
-                }
-                .scrollIndicators(.hidden)
-                .deltsScreen()
-                .navigationTitle("Details")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Done") {
-                            isMetricsPresented = false
-                        }
-                        .font(.headline.weight(.heavy))
-                        .foregroundStyle(Color.deltsAccent)
-                    }
-                }
-            }
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-        }
     }
 
     private func detailHero(width: CGFloat) -> some View {
-        AnimatedExerciseVisual(
-            exerciseName: item.name,
-            imagePaths: item.imagePaths,
-            height: 294,
-            allowsDerivedImageLookup: false
-        )
-        .frame(width: width, height: 294)
-        .frame(width: width, height: 294, alignment: .bottomLeading)
-        .overlay(alignment: .topTrailing) {
+        ZStack(alignment: .topTrailing) {
+            AnimatedExerciseVisual(
+                exerciseName: item.name,
+                imagePaths: item.imagePaths,
+                height: 294,
+                allowsDerivedImageLookup: false
+            )
+            .frame(width: width, height: 294)
+            .frame(width: width, height: 294, alignment: .bottomLeading)
+
+            if isMetricsPresented {
+                ExerciseHeroMetricOverlay(item: item)
+                    .padding(.top, 62)
+                    .padding(.trailing, 16)
+                    .padding(.leading, 70)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .trailing).combined(with: .opacity)
+                    ))
+            }
+
             Button {
-                isMetricsPresented = true
+                withAnimation(.snappy(duration: 0.28)) {
+                    isMetricsPresented.toggle()
+                }
             } label: {
                 Image(systemName: "info.circle.fill")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(Color.deltsAccent)
                     .frame(width: 44, height: 44)
-                    .background(Color.deltsBackground.opacity(0.82), in: Circle())
+                    .background(Color.deltsBackground.opacity(0.78), in: Circle())
                     .overlay {
                         Circle()
                             .stroke(Color.deltsHairline.opacity(0.42), lineWidth: 0.7)
@@ -1256,8 +1247,10 @@ struct ExerciseLibraryDetailView: View {
             .deltsPressable()
             .padding(.top, 14)
             .padding(.trailing, 16)
-            .accessibilityLabel("Show exercise details")
+            .accessibilityLabel(isMetricsPresented ? "Hide exercise details" : "Show exercise details")
         }
+        .frame(width: width, height: 294)
+        .animation(.snappy(duration: 0.28), value: isMetricsPresented)
         .clipped()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text("\(item.name) exercise visual"))
@@ -1267,21 +1260,27 @@ struct ExerciseLibraryDetailView: View {
     private var bottomActions: some View {
         if let plannedExercise, hasPlannedActions {
             HStack(spacing: 10) {
-                DoneToggleButton(isDone: plannedExercise.isDone) {
-                    toggleDone?()
-                }
-
-                PrimaryButton(
-                    title: openNext == nil ? "Done & Close" : "Done & Next",
-                    systemImage: openNext == nil ? "checkmark.seal.fill" : "arrow.right"
+                WorkoutDetailLiquidActionButton(
+                    title: "Done",
+                    systemImage: plannedExercise.isDone ? "checkmark.circle.fill" : "checkmark",
+                    prominent: openNext == nil
                 ) {
                     markDone?()
                     focusedField = nil
                     dismissKeyboard()
-                    if let openNext {
+                    dismiss()
+                }
+
+                if let openNext {
+                    WorkoutDetailLiquidActionButton(
+                        title: "Save & Next",
+                        systemImage: "arrow.right",
+                        prominent: true
+                    ) {
+                        markDone?()
+                        focusedField = nil
+                        dismissKeyboard()
                         openNext()
-                    } else {
-                        dismiss()
                     }
                 }
             }
@@ -1308,6 +1307,111 @@ struct ExerciseLibraryDetailView: View {
 
     private func dismissKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
+private struct WorkoutDetailLiquidActionButton: View {
+    let title: String
+    let systemImage: String
+    let prominent: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.headline.weight(.black))
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
+                .foregroundStyle(prominent ? Color.deltsCharcoal : Color.deltsAccent)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background {
+                    Capsule(style: .continuous)
+                        .fill(prominent ? Color.deltsAccent.opacity(0.28) : Color.deltsPanel.opacity(0.16))
+                }
+                .overlay {
+                    Capsule(style: .continuous)
+                        .stroke(prominent ? Color.deltsAccent.opacity(0.70) : Color.deltsHairline.opacity(0.46), lineWidth: prominent ? 1.1 : 0.7)
+                }
+                .shadow(color: prominent ? Color.deltsAccent.opacity(0.18) : Color.black.opacity(0.10), radius: prominent ? 12 : 8, x: 0, y: 6)
+        }
+        .deltsLiquidBarSurface(cornerRadius: 28)
+        .buttonStyle(.plain)
+        .deltsPressable()
+        .accessibilityLabel(title)
+    }
+}
+
+private struct ExerciseHeroMetricOverlay: View {
+    let item: ExerciseLibraryItem
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                metricChip(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill")
+                metricChip(title: "Category", value: item.category, systemImage: "tag")
+            }
+
+            HStack(spacing: 8) {
+                metricChip(title: "Force", value: item.force, systemImage: "arrow.left.arrow.right")
+                metricChip(title: "Mechanic", value: item.mechanic, systemImage: "gearshape")
+            }
+
+            metricLine(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope")
+            metricLine(title: "Secondary", value: item.secondaryMusclesTitle, systemImage: "scope")
+            metricLine(title: "Equipment", value: item.rawEquipment, systemImage: "dumbbell.fill")
+        }
+        .padding(12)
+        .frame(maxWidth: 306, alignment: .leading)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(Color.deltsBackground.opacity(0.54), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.38), lineWidth: 0.7)
+        }
+        .shadow(color: Color.black.opacity(0.24), radius: 14, x: 0, y: 8)
+    }
+
+    private func metricChip(title: String, value: String, systemImage: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Label(title, systemImage: systemImage)
+                .font(.system(size: 10, weight: .black, design: .rounded))
+                .foregroundStyle(Color.deltsAccent)
+                .lineLimit(1)
+
+            Text(value)
+                .font(.system(size: 12, weight: .black, design: .rounded))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+                .minimumScaleFactor(0.74)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 7)
+        .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func metricLine(title: String, value: String, systemImage: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.black))
+                .foregroundStyle(Color.deltsAccent)
+                .frame(width: 18)
+
+            Text(title)
+                .font(.system(size: 11, weight: .black, design: .rounded))
+                .foregroundStyle(Color.deltsMutedText)
+                .frame(width: 64, alignment: .leading)
+
+            Text(value)
+                .font(.system(size: 12, weight: .black, design: .rounded))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .padding(.horizontal, 9)
+        .frame(height: 28)
+        .background(Color.deltsPanel.opacity(0.16), in: Capsule())
     }
 }
 
