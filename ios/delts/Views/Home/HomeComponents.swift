@@ -608,57 +608,52 @@ struct EmptyRoutineRow: View {
 
 struct PlannedExerciseRow: View {
     let exercise: PlannedRoutineExercise
-    let toggleDone: () -> Void
     let openDetail: () -> Void
     let startWorkout: () -> Void
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 12) {
-                Button(action: openDetail) {
-                    HStack(alignment: .center, spacing: 12) {
-                        AnimatedExerciseVisual(
-                            exerciseName: exercise.name,
-                            imagePaths: exercise.imagePaths,
-                            height: 64,
-                            fillsWidth: false,
-                            allowsDerivedImageLookup: false
-                        )
-                        .frame(width: 64, height: 64)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color.deltsHairline.opacity(0.48), lineWidth: 0.7)
-                        }
-                        .clipped()
-                        .layoutPriority(0)
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(exercise.name)
-                                .font(.system(.headline, design: .rounded, weight: .semibold))
-                                .foregroundStyle(Color.deltsCharcoal)
-                                .lineLimit(2)
-
-                            Text("\(exercise.primaryMuscles.joined(separator: ", ")) - \(exercise.rawEquipment)")
-                                .font(.system(.caption, design: .rounded, weight: .semibold))
-                                .foregroundStyle(Color.deltsMutedText)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.72)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .layoutPriority(1)
-
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(Color.deltsMutedText.opacity(0.72))
+            Button(action: openDetail) {
+                HStack(alignment: .center, spacing: 12) {
+                    AnimatedExerciseVisual(
+                        exerciseName: exercise.name,
+                        imagePaths: exercise.imagePaths,
+                        height: 64,
+                        fillsWidth: false,
+                        allowsDerivedImageLookup: false
+                    )
+                    .frame(width: 64, height: 64)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color.deltsHairline.opacity(0.48), lineWidth: 0.7)
                     }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
+                    .clipped()
+                    .layoutPriority(0)
 
-                DoneToggleButton(isDone: exercise.isDone, action: toggleDone)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(exercise.name)
+                            .font(.system(.headline, design: .rounded, weight: .semibold))
+                            .foregroundStyle(Color.deltsCharcoal)
+                            .lineLimit(2)
+
+                        Text("\(exercise.primaryMuscles.joined(separator: ", ")) - \(exercise.rawEquipment)")
+                            .font(.system(.caption, design: .rounded, weight: .semibold))
+                            .foregroundStyle(Color.deltsMutedText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .layoutPriority(1)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.deltsMutedText.opacity(0.72))
+                }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
 
             HStack(spacing: 10) {
                 PlannedExerciseSummaryPill(
@@ -769,28 +764,6 @@ private struct PlannedExerciseSummaryPill: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(Color.deltsHairline.opacity(0.32), lineWidth: 0.6)
         }
-    }
-}
-
-struct DoneToggleButton: View {
-    let isDone: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: "checkmark")
-                .font(.system(size: 14, weight: .black))
-                .foregroundStyle(isDone ? Color.deltsOnAccent : Color.deltsMutedText.opacity(0.62))
-                .frame(width: 34, height: 34)
-                .background(isDone ? Color.deltsAccent : Color.deltsPanel.opacity(0.34), in: Circle())
-                .overlay {
-                    Circle()
-                        .stroke((isDone ? Color.deltsAccent : Color.deltsHairline).opacity(isDone ? 0.34 : 0.72), lineWidth: 0.8)
-                }
-        }
-        .buttonStyle(.plain)
-        .deltsPressable()
-        .accessibilityLabel(isDone ? "Mark workout not done" : "Mark workout done")
     }
 }
 

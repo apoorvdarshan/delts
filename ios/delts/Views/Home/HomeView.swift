@@ -67,10 +67,6 @@ struct HomeView: View {
         }
     }
 
-    private var selectedDoneWorkoutCount: Int {
-        selectedExercises.filter(\.isDone).count
-    }
-
     private var isSessionTimerRunning: Bool {
         isSelectedSessionDate && sessionStartedAt != nil
     }
@@ -287,9 +283,6 @@ struct HomeView: View {
                         ForEach(selectedExercises) { exercise in
                             PlannedExerciseRow(
                                 exercise: exercise,
-                                toggleDone: {
-                                    updateExercise(exercise.id) { $0.setDone(!$0.isDone) }
-                                },
                                 openDetail: {
                                     selectedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: exercise.id)
                                 },
@@ -323,7 +316,7 @@ struct HomeView: View {
                     HStack(alignment: .center) {
                         Label(selectedDateTitle, systemImage: "dumbbell.fill")
                         Spacer()
-                        Text("\(selectedDoneWorkoutCount)/\(selectedExercises.count) done")
+                        Text("\(selectedExercises.count) workout\(selectedExercises.count == 1 ? "" : "s")")
                             .font(.caption.weight(.bold))
                     }
                     .textCase(nil)
