@@ -1255,19 +1255,29 @@ struct ExerciseLibraryDetailView: View {
 
     @ViewBuilder
     private var bottomActions: some View {
-        if plannedExercise != nil, hasPlannedActions {
+        if let plannedExercise, hasPlannedActions {
             HStack(spacing: 10) {
                 WorkoutDetailLiquidActionButton(
-                    title: openNext == nil ? "Close" : "Next",
-                    systemImage: openNext == nil ? "xmark" : "arrow.right",
+                    title: "Done",
+                    systemImage: plannedExercise.isDone ? "checkmark.circle.fill" : "checkmark",
                     prominent: false
                 ) {
+                    markDone?()
                     focusedField = nil
                     dismissKeyboard()
-                    if let openNext {
+                    dismiss()
+                }
+
+                if let openNext {
+                    WorkoutDetailLiquidActionButton(
+                        title: "Save & Next",
+                        systemImage: "arrow.right",
+                        prominent: false
+                    ) {
+                        markDone?()
+                        focusedField = nil
+                        dismissKeyboard()
                         openNext()
-                    } else {
-                        dismiss()
                     }
                 }
             }
@@ -1279,7 +1289,7 @@ struct ExerciseLibraryDetailView: View {
     }
 
     private var hasPlannedActions: Bool {
-        allowsSetEditing || openNext != nil
+        allowsSetEditing || toggleDone != nil || markDone != nil || openNext != nil
     }
 
     private func restBeforeSeconds(for exercise: PlannedRoutineExercise) -> Int? {
