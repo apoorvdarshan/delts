@@ -774,7 +774,7 @@ struct GuidedWorkoutSessionView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                LazyVStack(alignment: .leading, spacing: 16) {
                     Color.clear
                         .frame(height: 0)
                         .id("guided-workout-top")
@@ -783,8 +783,8 @@ struct GuidedWorkoutSessionView: View {
 
                     if let exercise = currentExercise {
                         exerciseHero(exercise)
-                        GuidedWorkoutMetricGrid(exercise: exercise)
                         guidedSetLogger(exercise)
+                        GuidedWorkoutMetricGrid(exercise: exercise)
                         GuidedInstructionSection(instructions: exercise.instructions)
                     } else {
                         ContentUnavailableView(
@@ -796,7 +796,7 @@ struct GuidedWorkoutSessionView: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 14)
+                .padding(.top, 12)
                 .padding(.bottom, 118)
             }
             .scrollIndicators(.hidden)
@@ -868,8 +868,9 @@ struct GuidedWorkoutSessionView: View {
             AnimatedExerciseVisual(
                 exerciseName: exercise.name,
                 imagePaths: exercise.imagePaths,
-                height: 294,
-                allowsDerivedImageLookup: false
+                height: 220,
+                allowsDerivedImageLookup: false,
+                animatesFrames: false
             )
 
             LinearGradient(
@@ -931,14 +932,31 @@ struct GuidedWorkoutSessionView: View {
             Button {
                 markDone(exercise.id, !exercise.isDone)
             } label: {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 14, weight: .black))
-                    .foregroundStyle(exercise.isDone ? Color.deltsOnAccent : Color.deltsMutedText.opacity(0.62))
-                    .frame(width: 42, height: 42)
-                    .background(exercise.isDone ? Color.deltsAccent : Color.deltsCard.opacity(0.42), in: Circle())
-                    .overlay {
-                        Circle()
-                            .stroke((exercise.isDone ? Color.deltsAccent : Color.deltsHairline).opacity(0.36), lineWidth: 0.7)
+                HStack(spacing: 10) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 13, weight: .black))
+                        .foregroundStyle(exercise.isDone ? Color.deltsOnAccent : Color.deltsMutedText.opacity(0.62))
+                        .frame(width: 30, height: 30)
+                        .background(exercise.isDone ? Color.deltsAccent : Color.deltsCard.opacity(0.42), in: Circle())
+                        .overlay {
+                            Circle()
+                                .stroke((exercise.isDone ? Color.deltsAccent : Color.deltsHairline).opacity(0.40), lineWidth: 0.7)
+                        }
+
+                    Text(exercise.isDone ? "Done" : "Mark as done")
+                        .font(.subheadline.weight(.heavy))
+                        .foregroundStyle(exercise.isDone ? Color.deltsAccent : Color.deltsCharcoal)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 10)
+                .frame(maxWidth: .infinity)
+                .frame(height: 46)
+                .background(Color.deltsCard.opacity(exercise.isDone ? 0.62 : 0.32), in: Capsule())
+                .overlay {
+                    Capsule()
+                        .stroke((exercise.isDone ? Color.deltsAccent : Color.deltsHairline).opacity(0.38), lineWidth: 0.7)
                     }
             }
             .buttonStyle(.plain)

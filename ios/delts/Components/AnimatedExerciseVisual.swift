@@ -10,6 +10,7 @@ struct AnimatedExerciseVisual: View {
     var height: CGFloat = 170
     var fillsWidth = true
     var allowsDerivedImageLookup = true
+    var animatesFrames = true
     var fallbackSystemImage = "figure.strengthtraining.traditional"
     var fallbackTitle = "Exercise"
     @State private var animate = false
@@ -19,7 +20,7 @@ struct AnimatedExerciseVisual: View {
 
         ZStack {
             if !imageURLs.isEmpty {
-                ExerciseImageView(urls: imageURLs)
+                ExerciseImageView(urls: imageURLs, animatesFrames: animatesFrames)
             } else {
                 fallbackVisual
             }
@@ -93,6 +94,7 @@ struct AnimatedExerciseVisual: View {
 
 private struct ExerciseImageView: View {
     let urls: [URL]
+    let animatesFrames: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var frameIndex = 0
     @State private var frames: [UIImage] = []
@@ -126,7 +128,7 @@ private struct ExerciseImageView: View {
                 frameIndex = 0
                 frames = loadedFrames
             }
-            guard frames.count > 1, !reduceMotion else { return }
+            guard animatesFrames, frames.count > 1, !reduceMotion else { return }
 
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 850_000_000)
