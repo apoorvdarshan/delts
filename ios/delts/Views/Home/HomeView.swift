@@ -30,7 +30,6 @@ struct HomeView: View {
     @State private var isEmptyWorkoutStartDialogPresented = false
     @State private var keyboardHeight: CGFloat = 0
     @State private var selectedDetailItem: ExerciseLibraryItem?
-    @State private var isGuidedWorkoutPresented = false
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
     @AppStorage("profile_show_only_target_primary_filters") private var showOnlyTargetPrimaryFilters = false
@@ -375,33 +374,6 @@ struct HomeView: View {
             .navigationDestination(item: $selectedDetailItem) { item in
                 ExerciseLibraryDetailView(item: item)
             }
-            .navigationDestination(isPresented: $isGuidedWorkoutPresented) {
-                GuidedWorkoutSessionView(
-                    title: selectedDateTitle,
-                    exercises: selectedExercises,
-                    timerStartedAt: selectedTimerStartedAt,
-                    timerElapsedSeconds: selectedTimerElapsedSeconds,
-                    rpeScale: rpeScale,
-                    updateSets: { exerciseID, sets in
-                        updateExercise(exerciseID) { $0.setSetCount(sets) }
-                    },
-                    updateSetReps: { exerciseID, setIndex, reps in
-                        updateExercise(exerciseID) { $0.setReps(reps, forSet: setIndex) }
-                    },
-                    updateSetRPE: { exerciseID, setIndex, rpe in
-                        let scale = rpeScale
-                        updateExercise(exerciseID) { exercise in
-                            let values = exercise.normalizedSetRPE
-                            let previous = values.indices.contains(setIndex) ? values[setIndex] : ""
-                            exercise.setRPE(scale.sanitizedInput(rpe, previousValue: previous), forSet: setIndex)
-                        }
-                    },
-                    markDone: { exerciseID, isDone in
-                        updateExercise(exerciseID) { $0.isDone = isDone }
-                    },
-                    onFinish: finishGuidedWorkout
-                )
-            }
             .confirmationDialog("Timer already running", isPresented: $isOtherDateTimerDialogPresented, titleVisibility: .visible) {
                 Button("Go to \(activeSessionDateTitle)") {
                     if let sessionDate {
@@ -549,7 +521,6 @@ struct HomeView: View {
         } else if isSessionTimerPaused {
             playTimerClick()
             resumeSessionTimer()
-            openGuidedWorkoutIfPossible()
         } else if isAnySessionTimerRunning {
             playTimerClick()
             isOtherDateTimerDialogPresented = true
@@ -558,7 +529,6 @@ struct HomeView: View {
         } else {
             playTimerClick()
             startSessionTimer()
-            openGuidedWorkoutIfPossible()
         }
     }
 
@@ -587,7 +557,7 @@ struct HomeView: View {
 
     private func stopSessionTimer() {
         playTimerClick()
-        saveCompletedGuidedWorkout()
+        saveCompletedHomeWorkout()
         sessionElapsedSeconds = 0
         sessionStartedAt = nil
         sessionDate = nil
@@ -609,16 +579,7 @@ struct HomeView: View {
         AudioServicesPlaySystemSound(1104)
     }
 
-    private func openGuidedWorkoutIfPossible() {
-        guard !selectedExercises.isEmpty else { return }
-        isGuidedWorkoutPresented = true
-    }
-
-    private func finishGuidedWorkout() {
-        isGuidedWorkoutPresented = false
-    }
-
-    private func saveCompletedGuidedWorkout() {
+    private func saveCompletedHomeWorkout() {
         guard !selectedExercises.isEmpty else { return }
 
         let durationSeconds = max(currentSessionElapsedSeconds, selectedTimerElapsedSeconds)
