@@ -13,10 +13,11 @@ struct LocalWorkoutGenerator {
         muscleGroup: MuscleGroup,
         goal: FitnessGoal,
         equipment selectedEquipment: Set<Equipment>,
-        duration: Int,
+        durationRange: WorkoutDurationRangeOption,
         experience: ExperienceLevel
     ) -> WorkoutPlan {
         let availableEquipment = selectedEquipment.isEmpty ? (profile?.availableEquipment ?? [.bodyweight]) : selectedEquipment
+        let duration = durationRange.targetMinutes
         let exerciseCount = targetExerciseCount(for: duration)
         let templates = candidateTemplates(for: muscleGroup, equipment: availableEquipment, count: exerciseCount)
         let prescription = prescription(for: goal, experience: experience)
@@ -37,7 +38,7 @@ struct LocalWorkoutGenerator {
 
         return WorkoutPlan(
             title: "\(muscleGroup.title) \(goal.title)",
-            summary: "\(duration)-minute \(experience.title.lowercased()) plan tuned for \(goal.title.lowercased()).",
+            summary: "\(durationRange.title) \(experience.title.lowercased()) plan tuned for \(goal.title.lowercased()).",
             muscleGroup: muscleGroup,
             goal: goal,
             durationMinutes: duration,
@@ -51,7 +52,9 @@ struct LocalWorkoutGenerator {
         case ..<35: return 4
         case ..<50: return 5
         case ..<75: return 6
-        default: return 8
+        case ..<105: return 8
+        case ..<135: return 10
+        default: return 12
         }
     }
 

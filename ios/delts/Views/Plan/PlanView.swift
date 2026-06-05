@@ -16,8 +16,6 @@ struct PlanBuilderView: View {
     @State private var generatedPlan: WorkoutPlan?
     @State private var didSyncProfile = false
 
-    private let durationOptions = [30, 45, 60, 90]
-
     private var heroHeight: CGFloat {
         horizontalSizeClass == .compact ? 214 : 252
     }
@@ -85,7 +83,7 @@ struct PlanBuilderView: View {
                             .minimumScaleFactor(0.72)
 
                         Label {
-                            Text("\(viewModel.selectedDuration) min - \(viewModel.selectedGoal.title)")
+                            Text("\(viewModel.selectedDurationRange.title) - \(viewModel.selectedGoal.title)")
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.76)
                         } icon: {
@@ -148,12 +146,16 @@ struct PlanBuilderView: View {
 
             PlanControlDivider()
 
-            planControl("Duration", systemImage: planDurationIcon(viewModel.selectedDuration), detail: "\(viewModel.selectedDuration) min") {
+            planControl(
+                "Duration",
+                systemImage: planDurationIcon(viewModel.selectedDurationRange.targetMinutes),
+                detail: viewModel.selectedDurationRange.title
+            ) {
                 PlanChoiceRail(
-                    options: durationOptions,
-                    selection: $viewModel.selectedDuration,
-                    systemImage: planDurationIcon,
-                    title: { "\($0) min" }
+                    options: WorkoutDurationRangeOption.options,
+                    selection: $viewModel.selectedDurationRange,
+                    systemImage: { planDurationIcon($0.targetMinutes) },
+                    title: { $0.title }
                 )
             }
 

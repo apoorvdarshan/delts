@@ -24,7 +24,7 @@ final class GeminiWorkoutService {
         muscleGroup: MuscleGroup,
         goal: FitnessGoal,
         equipment: Set<Equipment>,
-        duration: Int
+        durationRange: WorkoutDurationRangeOption
     ) async throws -> WorkoutPlan {
         guard let apiKey = GeminiConfig.apiKey else {
             throw GeminiWorkoutError.missingAPIKey
@@ -45,7 +45,7 @@ final class GeminiWorkoutService {
             muscleGroup: muscleGroup,
             goal: goal,
             equipment: equipment,
-            duration: duration
+            durationRange: durationRange
         )))
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -62,7 +62,7 @@ final class GeminiWorkoutService {
             from: text,
             muscleGroup: muscleGroup,
             goal: goal,
-            duration: duration
+            durationRange: durationRange
         )
     }
 
@@ -71,9 +71,10 @@ final class GeminiWorkoutService {
         muscleGroup: MuscleGroup,
         goal: FitnessGoal,
         equipment: Set<Equipment>,
-        duration: Int
+        durationRange: WorkoutDurationRangeOption
     ) -> String {
         let equipmentText = equipment.map(\.title).sorted().joined(separator: ", ")
+        let exerciseBounds = exerciseCountBounds(for: durationRange.targetMinutes)
         let bodyFocusText = profile.selectedBodyFocus.map(\.title).sorted().joined(separator: ", ")
         let selectedGoalText = UserDefaults.standard.string(forKey: "profile_selected_goals")?
             .split(separator: "|")
@@ -118,7 +119,8 @@ final class GeminiWorkoutService {
         Requested workout:
         - Muscle group: \(muscleGroup.title)
         - Goal: \(goal.title)
-        - Duration minutes: \(duration)
+        - Duration range: \(durationRange.promptText)
+        - Planning target minutes: \(durationRange.targetMinutes)
         - Available equipment: \(equipmentText)
 
         JSON schema:
@@ -140,7 +142,7 @@ final class GeminiWorkoutService {
         }
 
         Rules:
-        - Return 4 to 8 exercises.
+        - Return \(exerciseBounds.min) to \(exerciseBounds.max) exercises.
         - Use only available equipment or Bodyweight.
         - No unsafe medical claims.
         - Keep form tips concise and practical.
@@ -151,7 +153,7 @@ final class GeminiWorkoutService {
         from text: String,
         muscleGroup: MuscleGroup,
         goal: FitnessGoal,
-        duration: Int
+        durationRange: WorkoutDurationRangeOption
     ) throws -> WorkoutPlan {
         let cleaned = cleanJSONText(text)
         guard let data = cleaned.data(using: .utf8) else {
@@ -159,7 +161,8 @@ final class GeminiWorkoutService {
         }
 
         let aiPlan = try JSONDecoder().decode(AIWorkoutPlan.self, from: data)
-        let limitedExercises = Array(aiPlan.exercises.prefix(8))
+        let maxExercises = exerciseCountBounds(for: durationRange.targetMinutes).max
+        let limitedExercises = Array(aiPlan.exercises.prefix(maxExercises))
 
         guard !limitedExercises.isEmpty else {
             throw GeminiWorkoutError.emptyExercises
@@ -184,10 +187,25 @@ final class GeminiWorkoutService {
             summary: aiPlan.summary,
             muscleGroup: muscleGroup,
             goal: goal,
-            durationMinutes: duration,
+            durationMinutes: durationRange.targetMinutes,
             generatedByAI: true,
             exercises: exercises
         )
+    }
+
+    private func exerciseCountBounds(for duration: Int) -> (min: Int, max: Int) {
+        switch duration {
+        case ..<35:
+            return (4, 5)
+        case ..<50:
+            return (5, 6)
+        case ..<75:
+            return (6, 8)
+        case ..<105:
+            return (8, 10)
+        default:
+            return (10, 12)
+        }
     }
 
     private func cleanJSONText(_ text: String) -> String {

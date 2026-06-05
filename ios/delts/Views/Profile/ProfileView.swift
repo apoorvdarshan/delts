@@ -66,7 +66,6 @@ private struct ProfileEditorView: View {
     private let sexOptions = ["Male", "Female"]
     private let ageRange = 0...120
     private let frequencyOptions = Array(1...7)
-    private let durationRange = 1...300
     private let otherGoalTitle = "Other"
     private var profileGoalOptions: [String] {
         FitnessGoal.profileCases.map(\.title) + [otherGoalTitle]
@@ -300,12 +299,10 @@ private struct ProfileEditorView: View {
                     )
                 }
                 ProfileDivider()
-                ProfileIntegerPickerRow(
+                ProfileWorkoutDurationRangePickerRow(
                     title: "Workout duration",
                     systemImage: "timer",
-                    value: durationBinding,
-                    range: durationRange,
-                    unit: "min"
+                    minutes: durationBinding
                 )
                 ProfileDivider()
                 ProfileRPEScalePickerRow(
@@ -1290,6 +1287,127 @@ private struct ProfileIntegerPickerRow: View {
                     value = newValue
                 }
             }
+        }
+    }
+}
+
+private struct ProfileWorkoutDurationRangePickerRow: View {
+    let title: String
+    let systemImage: String
+    @Binding var minutes: Int
+    @State private var isPickerPresented = false
+
+    private var selection: WorkoutDurationRangeOption {
+        WorkoutDurationRangeOption.matching(minutes: minutes)
+    }
+
+    var body: some View {
+        ProfileFieldRow(title: title, systemImage: systemImage) {
+            Button {
+                isPickerPresented = true
+            } label: {
+                ProfileMenuValueLabel(text: selection.title)
+            }
+            .deltsPressable()
+            .sheet(isPresented: $isPickerPresented) {
+                ProfileWorkoutDurationRangeSheet(minutes: $minutes)
+            }
+        }
+    }
+}
+
+private struct ProfileWorkoutDurationRangeSheet: View {
+    @Binding var minutes: Int
+    @Environment(\.dismiss) private var dismiss
+
+    private var selection: WorkoutDurationRangeOption {
+        WorkoutDurationRangeOption.matching(minutes: minutes)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 10) {
+                        ForEach(WorkoutDurationRangeOption.options) { option in
+                            Button {
+                                minutes = option.targetMinutes
+                            } label: {
+                                ProfileWorkoutDurationRangeChoiceRow(
+                                    option: option,
+                                    isSelected: option == selection
+                                )
+                            }
+                            .id(option.id)
+                            .buttonStyle(.plain)
+                            .deltsPressable()
+                        }
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.top, 16)
+                    .padding(.bottom, 32)
+                }
+                .onAppear {
+                    DispatchQueue.main.async {
+                        proxy.scrollTo(selection.id, anchor: .center)
+                    }
+                }
+            }
+            .background(DeltsBackground())
+            .navigationTitle("Workout duration")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+private struct ProfileWorkoutDurationRangeChoiceRow: View {
+    let option: WorkoutDurationRangeOption
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: planDurationIcon(option.targetMinutes))
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(isSelected ? Color.deltsOnAccent : Color.deltsAccent)
+                .frame(width: 38, height: 38)
+                .background(isSelected ? Color.deltsAccent : Color.deltsAccent.opacity(0.14), in: Circle())
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(option.title)
+                    .font(.headline.weight(.heavy))
+                    .foregroundStyle(Color.deltsCharcoal)
+
+                Text(option.promptText)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(isSelected ? Color.deltsAccent : Color.deltsMutedText.opacity(0.34))
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(isSelected ? Color.deltsAccent.opacity(0.16) : Color.deltsPanel.opacity(0.22))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(isSelected ? Color.deltsAccent.opacity(0.68) : Color.deltsHairline.opacity(0.26), lineWidth: isSelected ? 1.1 : 0.7)
         }
     }
 }
