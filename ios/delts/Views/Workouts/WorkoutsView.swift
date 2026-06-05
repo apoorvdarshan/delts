@@ -1312,6 +1312,7 @@ private struct WorkoutDetailLiquidActionButton: View {
     let systemImage: String
     let prominent: Bool
     let action: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Button(action: action) {
@@ -1319,28 +1320,57 @@ private struct WorkoutDetailLiquidActionButton: View {
                 .font(.headline.weight(.black))
                 .lineLimit(1)
                 .minimumScaleFactor(0.76)
-                .foregroundStyle(prominent ? Color.deltsCharcoal : Color.deltsAccent)
+                .foregroundStyle(labelColor)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
                 .background {
                     Capsule(style: .continuous)
-                        .fill(prominent ? Color.deltsAccent.opacity(0.28) : Color.deltsPanel.opacity(0.16))
+                        .fill(fillColor)
                 }
                 .overlay {
                     Capsule(style: .continuous)
-                        .stroke(prominent ? Color.deltsAccent.opacity(0.70) : Color.deltsHairline.opacity(0.46), lineWidth: prominent ? 1.1 : 0.7)
+                        .stroke(strokeColor, lineWidth: colorScheme == .light ? 0.9 : (prominent ? 1.1 : 0.7))
                 }
-                .shadow(color: prominent ? Color.deltsAccent.opacity(0.18) : Color.black.opacity(0.10), radius: prominent ? 12 : 8, x: 0, y: 6)
+                .shadow(color: shadowColor, radius: colorScheme == .light ? 0 : (prominent ? 12 : 8), x: 0, y: colorScheme == .light ? 0 : 6)
         }
         .deltsLiquidBarSurface(cornerRadius: 28)
         .buttonStyle(.plain)
         .deltsPressable()
         .accessibilityLabel(title)
     }
+
+    private var labelColor: Color {
+        if colorScheme == .light {
+            return prominent ? Color.deltsCharcoal : Color.deltsSecondaryAccent
+        }
+        return prominent ? Color.deltsCharcoal : Color.deltsAccent
+    }
+
+    private var fillColor: Color {
+        if colorScheme == .light {
+            return prominent ? Color.deltsAccent.opacity(0.34) : Color.deltsPanel.opacity(0.64)
+        }
+        return prominent ? Color.deltsAccent.opacity(0.28) : Color.deltsPanel.opacity(0.16)
+    }
+
+    private var strokeColor: Color {
+        if colorScheme == .light {
+            return Color.deltsSecondaryAccent.opacity(0.42)
+        }
+        return prominent ? Color.deltsAccent.opacity(0.70) : Color.deltsHairline.opacity(0.46)
+    }
+
+    private var shadowColor: Color {
+        if colorScheme == .light {
+            return .clear
+        }
+        return prominent ? Color.deltsAccent.opacity(0.18) : Color.black.opacity(0.10)
+    }
 }
 
 private struct ExerciseHeroMetricOverlay: View {
     let item: ExerciseLibraryItem
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(alignment: .center, spacing: 6) {
@@ -1363,11 +1393,14 @@ private struct ExerciseHeroMetricOverlay: View {
 
     private func metricButton(title: String, value: String, systemImage: String, compact: Bool = true, valueLineLimit: Int = 1) -> some View {
         let valueFontSize: CGFloat = compact ? 15 : (valueLineLimit > 2 ? 13 : 14)
+        let labelColor = colorScheme == .light ? Color.deltsSecondaryAccent : Color.deltsAccent
+        let fillColor = colorScheme == .light ? Color.deltsBackground.opacity(0.70) : Color.deltsBackground.opacity(0.20)
+        let strokeColor = colorScheme == .light ? Color.deltsSecondaryAccent.opacity(0.34) : Color.deltsAccent.opacity(0.40)
 
         return VStack(alignment: .leading, spacing: 3) {
             Label(title, systemImage: systemImage)
                 .font(.system(size: 10, weight: .black, design: .rounded))
-                .foregroundStyle(Color.deltsAccent)
+                .foregroundStyle(labelColor)
                 .lineLimit(1)
 
             Text(value)
@@ -1382,15 +1415,20 @@ private struct ExerciseHeroMetricOverlay: View {
         .padding(.vertical, compact ? 6 : 5)
         .frame(maxWidth: .infinity, minHeight: compact ? 44 : (valueLineLimit > 2 ? 50 : 42), alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.deltsBackground.opacity(0.20))
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            if colorScheme == .light {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(fillColor)
+            } else {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(fillColor)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
         }
         .overlay {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.deltsAccent.opacity(0.40), lineWidth: 0.8)
+                .stroke(strokeColor, lineWidth: 0.8)
         }
-        .shadow(color: Color.black.opacity(0.18), radius: 8, x: 0, y: 4)
+        .shadow(color: colorScheme == .light ? .clear : Color.black.opacity(0.18), radius: colorScheme == .light ? 0 : 8, x: 0, y: colorScheme == .light ? 0 : 4)
     }
 }
 

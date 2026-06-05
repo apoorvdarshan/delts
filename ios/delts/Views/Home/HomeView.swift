@@ -308,13 +308,14 @@ struct HomeView: View {
                                 } label: {
                                     Label("Delete", systemImage: "trash.fill")
                                 }
+                                .tint(Color(red: 0.58, green: 0.10, blue: 0.08))
 
                                 Button {
                                     toggleSavedExercise(exercise.itemID)
                                 } label: {
                                     Label(savedExerciseIDs.contains(exercise.itemID) ? "Unsave" : "Save", systemImage: savedExerciseIDs.contains(exercise.itemID) ? "bookmark.slash.fill" : "bookmark.fill")
                                 }
-                                .tint(Color.deltsAccent)
+                                .tint(Color(red: 0.18, green: 0.42, blue: 0.16))
                             }
                         }
                     }

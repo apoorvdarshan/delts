@@ -475,6 +475,7 @@ struct HomeSessionStatsStrip: View {
     let workoutCount: Int
     let repCount: Int
     let calorieBurnText: String
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(spacing: 0) {
@@ -520,7 +521,11 @@ struct HomeSessionStatsStrip: View {
             RoundedRectangle(cornerRadius: 26, style: .continuous)
                 .stroke(Color.deltsHairline.opacity(0.72), lineWidth: 0.8)
         }
-        .shadow(color: Color.black.opacity(0.18), radius: 12, x: 0, y: 8)
+        .shadow(color: shadowColor, radius: colorScheme == .light ? 0 : 12, x: 0, y: colorScheme == .light ? 0 : 8)
+    }
+
+    private var shadowColor: Color {
+        colorScheme == .light ? .clear : Color.black.opacity(0.18)
     }
 }
 
@@ -568,6 +573,7 @@ struct HomeMetricCard: View {
 
 struct EmptyRoutineRow: View {
     let splitTitle: String
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(spacing: 12) {
@@ -592,7 +598,11 @@ struct EmptyRoutineRow: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Color.deltsHairline.opacity(0.95), lineWidth: 1)
         }
-        .shadow(color: Color.black.opacity(0.16), radius: 10, x: 0, y: 5)
+        .shadow(color: shadowColor, radius: colorScheme == .light ? 0 : 10, x: 0, y: colorScheme == .light ? 0 : 5)
+    }
+
+    private var shadowColor: Color {
+        colorScheme == .light ? .clear : Color.black.opacity(0.16)
     }
 }
 
@@ -601,6 +611,7 @@ struct PlannedExerciseRow: View {
     let toggleDone: () -> Void
     let openDetail: () -> Void
     let startWorkout: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -693,7 +704,11 @@ struct PlannedExerciseRow: View {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .stroke(Color.deltsHairline.opacity(0.82), lineWidth: 0.8)
         }
-        .shadow(color: Color.black.opacity(0.22), radius: 12, x: 0, y: 7)
+        .shadow(color: shadowColor, radius: colorScheme == .light ? 0 : 12, x: 0, y: colorScheme == .light ? 0 : 7)
+    }
+
+    private var shadowColor: Color {
+        colorScheme == .light ? .clear : Color.black.opacity(0.22)
     }
 
     private var repsSummaryTitle: String {
@@ -731,18 +746,21 @@ private struct PlannedExerciseSummaryPill: View {
                 .foregroundStyle(Color.deltsAccent)
                 .frame(width: 16)
 
-            VStack(alignment: .leading, spacing: 1) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(title)
                     .font(.system(.subheadline, design: .rounded, weight: .black).monospacedDigit())
                     .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.74)
+                    .minimumScaleFactor(0.72)
 
                 Text(subtitle)
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.deltsMutedText)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.72)
             }
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
         }
         .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
         .padding(.horizontal, 10)

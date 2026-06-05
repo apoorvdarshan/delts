@@ -173,16 +173,7 @@ extension View {
 
     @ViewBuilder
     func deltsLiquidBarSurface(cornerRadius: CGFloat = 32) -> some View {
-        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-
-        if #available(iOS 26.0, *) {
-            self
-                .glassEffect(.regular.interactive(), in: shape)
-        } else {
-            self
-                .background(Color.deltsPanel.opacity(0.62), in: shape)
-                .overlay(shape.stroke(Color.deltsHairline.opacity(0.52), lineWidth: 0.5))
-        }
+        modifier(DeltsLiquidBarSurfaceModifier(cornerRadius: cornerRadius))
     }
 
     func deltsGlassButton(prominent: Bool = false) -> some View {
@@ -195,20 +186,62 @@ extension View {
     }
 
     func deltsBottomActionBackground() -> some View {
-        background(alignment: .top) {
-            LinearGradient(
-                colors: [
-                    Color.deltsBackground.opacity(0),
-                    Color.deltsBackground.opacity(0.96)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 34)
-            .offset(y: -34)
+        modifier(DeltsBottomActionBackgroundModifier())
+    }
+}
+
+private struct DeltsLiquidBarSurfaceModifier: ViewModifier {
+    let cornerRadius: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+        if colorScheme == .light {
+            content
+                .background(Color.deltsPanel.opacity(0.72), in: shape)
+                .overlay(shape.stroke(Color.deltsHairline.opacity(0.58), lineWidth: 0.6))
+        } else if #available(iOS 26.0, *) {
+            content
+                .glassEffect(.regular.interactive(), in: shape)
+        } else {
+            content
+                .background(Color.deltsPanel.opacity(0.62), in: shape)
+                .overlay(shape.stroke(Color.deltsHairline.opacity(0.52), lineWidth: 0.5))
         }
-        .background(Color.deltsBackground.opacity(0.96))
-        .background(.bar)
+    }
+}
+
+private struct DeltsBottomActionBackgroundModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        content
+            .background(alignment: .top) {
+                LinearGradient(
+                    colors: [
+                        Color.deltsBackground.opacity(0),
+                        Color.deltsBackground.opacity(colorScheme == .light ? 1 : 0.96)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 34)
+                .offset(y: -34)
+            }
+            .background(Color.deltsBackground.opacity(colorScheme == .light ? 1 : 0.96))
+            .conditionalBarBackground(colorScheme == .dark)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func conditionalBarBackground(_ shouldApply: Bool) -> some View {
+        if shouldApply {
+            background(.bar)
+        } else {
+            self
+        }
     }
 }
 
