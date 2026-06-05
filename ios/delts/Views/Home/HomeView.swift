@@ -280,7 +280,9 @@ struct HomeView: View {
                 Section {
                     if selectedExercises.isEmpty {
                         EmptyRoutineRow(splitTitle: selectedWorkoutSplit.title)
-                            .listRowBackground(Color.deltsPanel.opacity(0.22))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 7, leading: 16, bottom: 7, trailing: 16))
                     } else {
                         ForEach(selectedExercises) { exercise in
                             PlannedExerciseRow(
@@ -756,13 +758,13 @@ struct HomeView: View {
 
     private func applyWorkoutPickerFilterState(_ state: ExerciseFilterState) {
         exerciseSearch = state.searchText
-        pickerSelectedLevels = state.levels
-        pickerSelectedRawEquipment = state.rawEquipment
-        pickerSelectedPrimaryMuscles = state.primaryMuscles
-        pickerSelectedSecondaryMuscles = state.secondaryMuscles
-        pickerSelectedForces = state.forces
-        pickerSelectedMechanics = state.mechanics
-        pickerSelectedCategories = state.categories
+        pickerSelectedLevels = singleStoredSelection(state.levels)
+        pickerSelectedRawEquipment = singleStoredSelection(state.rawEquipment)
+        pickerSelectedPrimaryMuscles = singleStoredSelection(state.primaryMuscles)
+        pickerSelectedSecondaryMuscles = singleStoredSelection(state.secondaryMuscles)
+        pickerSelectedForces = singleStoredSelection(state.forces)
+        pickerSelectedMechanics = singleStoredSelection(state.mechanics)
+        pickerSelectedCategories = singleStoredSelection(state.categories)
         pickerSelectedSort = state.sort
         normalizeWorkoutPickerPrimaryFilter()
         normalizeWorkoutPickerEquipmentFilter()
@@ -779,12 +781,12 @@ struct HomeView: View {
             pickerSelectedPrimaryMuscles.removeAll()
             return
         }
-        pickerSelectedPrimaryMuscles = pickerSelectedPrimaryMuscles.intersection(validOptions)
+        pickerSelectedPrimaryMuscles = singleStoredSelection(pickerSelectedPrimaryMuscles.intersection(validOptions))
     }
 
     private func normalizeWorkoutPickerEquipmentFilter() {
         let validOptions = Set(profileRawEquipmentOptions)
-        pickerSelectedRawEquipment = pickerSelectedRawEquipment.intersection(validOptions)
+        pickerSelectedRawEquipment = singleStoredSelection(pickerSelectedRawEquipment.intersection(validOptions))
     }
 
     private func datasetStoredSet(_ rawValue: String, allowedValues: [String]) -> Set<String> {
@@ -793,6 +795,11 @@ struct HomeView: View {
             .split(separator: "|")
             .map(String.init)
             .filter { allowedValues.contains($0) })
+    }
+
+    private func singleStoredSelection(_ selection: Set<String>) -> Set<String> {
+        guard let value = selection.sorted().first else { return [] }
+        return [value]
     }
 
     private func removeExercise(_ id: UUID) {

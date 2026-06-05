@@ -329,7 +329,7 @@ private struct ExerciseLibraryBrowserView: View {
                         }
                         ForEach(splitGroups) { group in
                             muscleMenuChoice(group.title, muscles: group.muscles, isSelected: selectedSplitGroupTitles.contains(group.title)) {
-                                selectedSplitGroupTitles = toggledSelection(group.title, in: selectedSplitGroupTitles)
+                                selectedSplitGroupTitles = [group.title]
                             }
                         }
                     }
@@ -345,7 +345,7 @@ private struct ExerciseLibraryBrowserView: View {
                             }
                             ForEach(primaryFilterOptions, id: \.self) { muscle in
                                 muscleMenuChoice(muscle, muscles: [muscle], isSelected: selectedPrimaryMuscles.contains(muscle)) {
-                                    selectedPrimaryMuscles = toggledSelection(muscle, in: selectedPrimaryMuscles)
+                                    selectedPrimaryMuscles = [muscle]
                                 }
                             }
                         }
@@ -361,7 +361,7 @@ private struct ExerciseLibraryBrowserView: View {
                         }
                         ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
                             muscleMenuChoice(muscle, muscles: [muscle], isSelected: selectedSecondaryMuscles.contains(muscle)) {
-                                selectedSecondaryMuscles = toggledSelection(muscle, in: selectedSecondaryMuscles)
+                                selectedSecondaryMuscles = [muscle]
                             }
                         }
                     }
@@ -376,7 +376,7 @@ private struct ExerciseLibraryBrowserView: View {
                         }
                         ForEach(profileRawEquipmentOptions, id: \.self) { equipment in
                             menuChoice(equipment, isSelected: selectedRawEquipment.contains(equipment)) {
-                                selectedRawEquipment = toggledSelection(equipment, in: selectedRawEquipment)
+                                selectedRawEquipment = [equipment]
                             }
                         }
                     }
@@ -389,7 +389,7 @@ private struct ExerciseLibraryBrowserView: View {
                         menuChoice("All Levels", isSelected: selectedLevels.isEmpty) { selectedLevels.removeAll() }
                         ForEach(service.availableLevels, id: \.self) { level in
                             menuChoice(level, isSelected: selectedLevels.contains(level)) {
-                                selectedLevels = toggledSelection(level, in: selectedLevels)
+                                selectedLevels = [level]
                             }
                         }
                     }
@@ -402,7 +402,7 @@ private struct ExerciseLibraryBrowserView: View {
                         menuChoice("All Forces", isSelected: selectedForces.isEmpty) { selectedForces.removeAll() }
                         ForEach(service.availableForces, id: \.self) { force in
                             menuChoice(force, isSelected: selectedForces.contains(force)) {
-                                selectedForces = toggledSelection(force, in: selectedForces)
+                                selectedForces = [force]
                             }
                         }
                     }
@@ -415,7 +415,7 @@ private struct ExerciseLibraryBrowserView: View {
                         menuChoice("All Mechanics", isSelected: selectedMechanics.isEmpty) { selectedMechanics.removeAll() }
                         ForEach(service.availableMechanics, id: \.self) { mechanic in
                             menuChoice(mechanic, isSelected: selectedMechanics.contains(mechanic)) {
-                                selectedMechanics = toggledSelection(mechanic, in: selectedMechanics)
+                                selectedMechanics = [mechanic]
                             }
                         }
                     }
@@ -428,7 +428,7 @@ private struct ExerciseLibraryBrowserView: View {
                         menuChoice("All Categories", isSelected: selectedCategories.isEmpty) { selectedCategories.removeAll() }
                         ForEach(service.availableCategoryCounts) { categoryCount in
                             menuChoice(categoryMenuTitle(categoryCount), isSelected: selectedCategories.contains(categoryCount.category)) {
-                                selectedCategories = toggledSelection(categoryCount.category, in: selectedCategories)
+                                selectedCategories = [categoryCount.category]
                             }
                         }
                     }
@@ -483,14 +483,14 @@ private struct ExerciseLibraryBrowserView: View {
 
     private func applyFilterState(_ state: ExerciseFilterState) {
         searchText = state.searchText
-        selectedSplitGroupTitles = state.splitGroups
-        selectedLevels = state.levels
-        selectedRawEquipment = state.rawEquipment
-        selectedPrimaryMuscles = state.primaryMuscles
-        selectedSecondaryMuscles = state.secondaryMuscles
-        selectedForces = state.forces
-        selectedMechanics = state.mechanics
-        selectedCategories = state.categories
+        selectedSplitGroupTitles = singleStoredSelection(state.splitGroups)
+        selectedLevels = singleStoredSelection(state.levels)
+        selectedRawEquipment = singleStoredSelection(state.rawEquipment)
+        selectedPrimaryMuscles = singleStoredSelection(state.primaryMuscles)
+        selectedSecondaryMuscles = singleStoredSelection(state.secondaryMuscles)
+        selectedForces = singleStoredSelection(state.forces)
+        selectedMechanics = singleStoredSelection(state.mechanics)
+        selectedCategories = singleStoredSelection(state.categories)
         selectedSort = state.sort
     }
 
@@ -505,7 +505,7 @@ private struct ExerciseLibraryBrowserView: View {
             selectedPrimaryMuscles.removeAll()
             return
         }
-        selectedPrimaryMuscles = selectedPrimaryMuscles.intersection(validOptions)
+        selectedPrimaryMuscles = singleStoredSelection(selectedPrimaryMuscles.intersection(validOptions))
     }
 
     private func targetFilteredPrimaryOptions(_ options: [String]) -> [String] {
@@ -516,7 +516,7 @@ private struct ExerciseLibraryBrowserView: View {
 
     private func normalizeEquipmentFilterSelection() {
         let validOptions = Set(profileRawEquipmentOptions)
-        selectedRawEquipment = selectedRawEquipment.intersection(validOptions)
+        selectedRawEquipment = singleStoredSelection(selectedRawEquipment.intersection(validOptions))
     }
 
     private func datasetStoredSet(_ rawValue: String, allowedValues: [String]) -> Set<String> {
@@ -533,14 +533,9 @@ private struct ExerciseLibraryBrowserView: View {
         return "\(selection.count) selected"
     }
 
-    private func toggledSelection(_ value: String, in selection: Set<String>) -> Set<String> {
-        var next = selection
-        if next.contains(value) {
-            next.remove(value)
-        } else {
-            next.insert(value)
-        }
-        return next
+    private func singleStoredSelection(_ selection: Set<String>) -> Set<String> {
+        guard let value = selection.sorted().first else { return [] }
+        return [value]
     }
 
     private func todayExercise(for item: ExerciseLibraryItem) -> PlannedRoutineExercise? {
@@ -618,7 +613,6 @@ private struct ExerciseLibraryBrowserView: View {
         } label: {
             FilterMenuPill(title: title, value: value, systemImage: systemImage)
         }
-        .menuActionDismissBehavior(.disabled)
         .deltsPressable()
     }
 

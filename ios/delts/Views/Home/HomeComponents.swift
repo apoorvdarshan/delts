@@ -583,8 +583,10 @@ struct EmptyRoutineRow: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.deltsMutedText)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.deltsPanel.opacity(0.94), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -1507,7 +1509,7 @@ struct WorkoutPickerSheet: View {
                         }
                         ForEach(primaryFilterOptions, id: \.self) { muscle in
                             muscleMenuChoice(muscle, muscles: [muscle], isSelected: selectedPrimaryMuscles.contains(muscle)) {
-                                selectedPrimaryMuscles = toggledSelection(muscle, in: selectedPrimaryMuscles)
+                                selectedPrimaryMuscles = [muscle]
                             }
                         }
                     }
@@ -1523,7 +1525,7 @@ struct WorkoutPickerSheet: View {
                         }
                         ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
                             muscleMenuChoice(muscle, muscles: [muscle], isSelected: selectedSecondaryMuscles.contains(muscle)) {
-                                selectedSecondaryMuscles = toggledSelection(muscle, in: selectedSecondaryMuscles)
+                                selectedSecondaryMuscles = [muscle]
                             }
                         }
                     }
@@ -1538,7 +1540,7 @@ struct WorkoutPickerSheet: View {
                     }
                     ForEach(rawEquipmentOptions, id: \.self) { equipment in
                         menuChoice(equipment, isSelected: selectedRawEquipment.contains(equipment)) {
-                            selectedRawEquipment = toggledSelection(equipment, in: selectedRawEquipment)
+                            selectedRawEquipment = [equipment]
                         }
                     }
                 }
@@ -1553,7 +1555,7 @@ struct WorkoutPickerSheet: View {
                     }
                     ForEach(service.availableLevels, id: \.self) { level in
                         menuChoice(level, isSelected: selectedLevels.contains(level)) {
-                            selectedLevels = toggledSelection(level, in: selectedLevels)
+                            selectedLevels = [level]
                         }
                     }
                 }
@@ -1568,7 +1570,7 @@ struct WorkoutPickerSheet: View {
                     }
                     ForEach(service.availableForces, id: \.self) { force in
                         menuChoice(force, isSelected: selectedForces.contains(force)) {
-                            selectedForces = toggledSelection(force, in: selectedForces)
+                            selectedForces = [force]
                         }
                     }
                 }
@@ -1583,7 +1585,7 @@ struct WorkoutPickerSheet: View {
                     }
                     ForEach(service.availableMechanics, id: \.self) { mechanic in
                         menuChoice(mechanic, isSelected: selectedMechanics.contains(mechanic)) {
-                            selectedMechanics = toggledSelection(mechanic, in: selectedMechanics)
+                            selectedMechanics = [mechanic]
                         }
                     }
                 }
@@ -1598,7 +1600,7 @@ struct WorkoutPickerSheet: View {
                     }
                     ForEach(service.availableCategoryCounts) { categoryCount in
                         menuChoice(categoryCount.category, isSelected: selectedCategories.contains(categoryCount.category)) {
-                            selectedCategories = toggledSelection(categoryCount.category, in: selectedCategories)
+                            selectedCategories = [categoryCount.category]
                         }
                     }
                 }
@@ -1652,12 +1654,12 @@ struct WorkoutPickerSheet: View {
             selectedPrimaryMuscles.removeAll()
             return
         }
-        selectedPrimaryMuscles = selectedPrimaryMuscles.intersection(validOptions)
+        selectedPrimaryMuscles = singleStoredSelection(selectedPrimaryMuscles.intersection(validOptions))
     }
 
     private func normalizeEquipmentFilterSelection() {
         let validOptions = Set(rawEquipmentOptions)
-        selectedRawEquipment = selectedRawEquipment.intersection(validOptions)
+        selectedRawEquipment = singleStoredSelection(selectedRawEquipment.intersection(validOptions))
     }
 
     private func selectionTitle(_ selection: Set<String>) -> String {
@@ -1666,14 +1668,9 @@ struct WorkoutPickerSheet: View {
         return "\(selection.count) selected"
     }
 
-    private func toggledSelection(_ value: String, in selection: Set<String>) -> Set<String> {
-        var next = selection
-        if next.contains(value) {
-            next.remove(value)
-        } else {
-            next.insert(value)
-        }
-        return next
+    private func singleStoredSelection(_ selection: Set<String>) -> Set<String> {
+        guard let value = selection.sorted().first else { return [] }
+        return [value]
     }
 
     private func filterMenuPill<Content: View>(
@@ -1687,7 +1684,6 @@ struct WorkoutPickerSheet: View {
         } label: {
             WorkoutPickerFilterPill(title: title, value: value, systemImage: systemImage)
         }
-        .menuActionDismissBehavior(.disabled)
         .deltsPressable()
     }
 
