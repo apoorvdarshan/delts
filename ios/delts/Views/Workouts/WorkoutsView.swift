@@ -1179,6 +1179,7 @@ struct ExerciseLibraryDetailView: View {
             .frame(width: screenWidth, alignment: .top)
         }
         .deltsScreen()
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .contentMargins(.bottom, 104, for: .scrollContent)
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)

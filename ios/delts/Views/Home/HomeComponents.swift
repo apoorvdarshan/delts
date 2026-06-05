@@ -669,20 +669,22 @@ struct PlannedExerciseRow: View {
                 )
             }
 
-            Button(action: startWorkout) {
-                Label(exercise.startedAt == nil ? "Start" : "Open", systemImage: exercise.startedAt == nil ? "play.fill" : "arrow.up.right")
-                    .font(.system(.subheadline, design: .rounded, weight: .black))
-                    .foregroundStyle(Color.deltsOnAccent)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 42)
-                    .background(Color.deltsAccent, in: Capsule())
-                    .overlay {
-                        Capsule()
-                            .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.7)
-                    }
+            if exercise.startedAt == nil {
+                Button(action: startWorkout) {
+                    Label("Start", systemImage: "play.fill")
+                        .font(.system(.subheadline, design: .rounded, weight: .black))
+                        .foregroundStyle(Color.deltsOnAccent)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 42)
+                        .background(Color.deltsAccent, in: Capsule())
+                        .overlay {
+                            Capsule()
+                                .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.7)
+                        }
+                }
+                .buttonStyle(.plain)
+                .deltsPressable()
             }
-            .buttonStyle(.plain)
-            .deltsPressable()
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
