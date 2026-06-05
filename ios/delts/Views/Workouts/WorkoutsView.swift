@@ -1219,9 +1219,8 @@ struct ExerciseLibraryDetailView: View {
 
             if isMetricsPresented {
                 ExerciseHeroMetricOverlay(item: item)
-                    .padding(.top, 62)
-                    .padding(.trailing, 16)
-                    .padding(.leading, 70)
+                    .padding(.horizontal, 18)
+                    .frame(width: width, height: 294, alignment: .center)
                     .transition(.asymmetric(
                         insertion: .move(edge: .trailing).combined(with: .opacity),
                         removal: .move(edge: .trailing).combined(with: .opacity)
@@ -1346,33 +1345,29 @@ private struct ExerciseHeroMetricOverlay: View {
     let item: ExerciseLibraryItem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .center, spacing: 8) {
             HStack(spacing: 8) {
-                metricChip(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill")
-                metricChip(title: "Category", value: item.category, systemImage: "tag")
+                metricButton(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill")
+                metricButton(title: "Category", value: item.category, systemImage: "tag")
             }
 
             HStack(spacing: 8) {
-                metricChip(title: "Force", value: item.force, systemImage: "arrow.left.arrow.right")
-                metricChip(title: "Mechanic", value: item.mechanic, systemImage: "gearshape")
+                metricButton(title: "Force", value: item.force, systemImage: "arrow.left.arrow.right")
+                metricButton(title: "Mechanic", value: item.mechanic, systemImage: "gearshape")
             }
 
-            metricLine(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope")
-            metricLine(title: "Secondary", value: item.secondaryMusclesTitle, systemImage: "scope")
-            metricLine(title: "Equipment", value: item.rawEquipment, systemImage: "dumbbell.fill")
+            HStack(spacing: 8) {
+                metricButton(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope")
+                metricButton(title: "Secondary", value: item.secondaryMusclesTitle, systemImage: "scope")
+            }
+
+            metricButton(title: "Equipment", value: item.rawEquipment, systemImage: "dumbbell.fill")
+                .frame(maxWidth: 230)
         }
-        .padding(12)
-        .frame(maxWidth: 306, alignment: .leading)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .background(Color.deltsBackground.opacity(0.54), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.38), lineWidth: 0.7)
-        }
-        .shadow(color: Color.black.opacity(0.24), radius: 14, x: 0, y: 8)
+        .frame(maxWidth: 330)
     }
 
-    private func metricChip(title: String, value: String, systemImage: String) -> some View {
+    private func metricButton(title: String, value: String, systemImage: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Label(title, systemImage: systemImage)
                 .font(.system(size: 10, weight: .black, design: .rounded))
@@ -1380,38 +1375,24 @@ private struct ExerciseHeroMetricOverlay: View {
                 .lineLimit(1)
 
             Text(value)
-                .font(.system(size: 12, weight: .black, design: .rounded))
+                .font(.system(size: 15, weight: .black, design: .rounded))
                 .foregroundStyle(Color.deltsCharcoal)
                 .lineLimit(1)
-                .minimumScaleFactor(0.74)
+                .minimumScaleFactor(0.64)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 9)
-        .padding(.vertical, 7)
-        .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-
-    private func metricLine(title: String, value: String, systemImage: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: systemImage)
-                .font(.caption.weight(.black))
-                .foregroundStyle(Color.deltsAccent)
-                .frame(width: 18)
-
-            Text(title)
-                .font(.system(size: 11, weight: .black, design: .rounded))
-                .foregroundStyle(Color.deltsMutedText)
-                .frame(width: 64, alignment: .leading)
-
-            Text(value)
-                .font(.system(size: 12, weight: .black, design: .rounded))
-                .foregroundStyle(Color.deltsCharcoal)
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
+        .padding(.horizontal, 13)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.deltsBackground.opacity(0.20))
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .padding(.horizontal, 9)
-        .frame(height: 28)
-        .background(Color.deltsPanel.opacity(0.16), in: Capsule())
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.deltsAccent.opacity(0.40), lineWidth: 0.8)
+        }
+        .shadow(color: Color.black.opacity(0.18), radius: 8, x: 0, y: 4)
     }
 }
 
