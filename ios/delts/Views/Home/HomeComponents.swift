@@ -502,6 +502,7 @@ struct PlannedExerciseRow: View {
     let updateSets: (Int) -> Void
     let updateSetReps: (Int, String) -> Void
     let updateSetRPE: (Int, String) -> Void
+    let toggleDone: () -> Void
     let openDetail: () -> Void
 
     var body: some View {
@@ -542,6 +543,15 @@ struct PlannedExerciseRow: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .layoutPriority(1)
 
+                    if exercise.isDone {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .black))
+                            .foregroundStyle(Color.deltsOnAccent)
+                            .frame(width: 26, height: 26)
+                            .background(Color.deltsAccent, in: Circle())
+                            .accessibilityLabel("Workout done")
+                    }
+
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(Color.deltsMutedText.opacity(0.72))
@@ -560,6 +570,22 @@ struct PlannedExerciseRow: View {
                         .font(.system(.subheadline, design: .rounded, weight: .bold))
                         .foregroundStyle(Color.deltsCharcoal)
                 }
+
+                Button(action: toggleDone) {
+                    Label(exercise.isDone ? "Done" : "Mark done", systemImage: exercise.isDone ? "checkmark.circle.fill" : "circle")
+                        .font(.caption.weight(.heavy))
+                        .foregroundStyle(exercise.isDone ? Color.deltsAccent : Color.deltsMutedText)
+                        .lineLimit(1)
+                        .padding(.horizontal, 10)
+                        .frame(height: 32)
+                        .background(Color.deltsCard.opacity(exercise.isDone ? 0.68 : 0.42), in: Capsule())
+                        .overlay {
+                            Capsule()
+                                .stroke((exercise.isDone ? Color.deltsAccent : Color.deltsHairline).opacity(0.36), lineWidth: 0.6)
+                        }
+                }
+                .buttonStyle(.plain)
+                .deltsPressable()
             }
 
             VStack(spacing: 0) {
@@ -730,6 +756,7 @@ struct GuidedWorkoutSessionView: View {
     let updateSets: (UUID, Int) -> Void
     let updateSetReps: (UUID, Int, String) -> Void
     let updateSetRPE: (UUID, Int, String) -> Void
+    let markDone: (UUID, Bool) -> Void
     let onFinish: () -> Void
     @State private var currentIndex = 0
     @FocusState private var focusedField: PlannedSetFocus?
@@ -900,6 +927,23 @@ struct GuidedWorkoutSessionView: View {
                 .fixedSize()
             }
 
+            Button {
+                markDone(exercise.id, !exercise.isDone)
+            } label: {
+                Label(exercise.isDone ? "Done" : "Mark workout done", systemImage: exercise.isDone ? "checkmark.circle.fill" : "circle")
+                    .font(.subheadline.weight(.heavy))
+                    .foregroundStyle(exercise.isDone ? Color.deltsAccent : Color.deltsMutedText)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 42)
+                    .background(Color.deltsCard.opacity(exercise.isDone ? 0.68 : 0.42), in: Capsule())
+                    .overlay {
+                        Capsule()
+                            .stroke((exercise.isDone ? Color.deltsAccent : Color.deltsHairline).opacity(0.36), lineWidth: 0.7)
+                    }
+            }
+            .buttonStyle(.plain)
+            .deltsPressable()
+
             VStack(spacing: 0) {
                 ForEach(Array(setReps.indices), id: \.self) { index in
                     PlannedSetField(
@@ -963,6 +1007,7 @@ struct GuidedWorkoutSessionView: View {
                 title: isLastExercise ? "Finish Workout" : "Next",
                 systemImage: isLastExercise ? "checkmark.seal.fill" : "arrow.right"
             ) {
+                markCurrentExerciseDone()
                 if isLastExercise {
                     focusedField = nil
                     dismissKeyboard()
@@ -972,6 +1017,11 @@ struct GuidedWorkoutSessionView: View {
                 }
             }
         }
+    }
+
+    private func markCurrentExerciseDone() {
+        guard let currentExercise else { return }
+        markDone(currentExercise.id, true)
     }
 
     private var currentPositionText: String {

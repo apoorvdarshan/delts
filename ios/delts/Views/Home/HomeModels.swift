@@ -63,6 +63,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
     var reps: String = ""
     var setReps: [String] = [""]
     var setRPE: [String] = [""]
+    var isDone: Bool = false
 
     init(item: ExerciseLibraryItem) {
         self.itemID = item.id
@@ -175,6 +176,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         case reps
         case setReps
         case setRPE
+        case isDone
     }
 
     init(from decoder: Decoder) throws {
@@ -192,6 +194,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         reps = try container.decodeIfPresent(String.self, forKey: .reps) ?? ""
         setReps = try container.decodeIfPresent([String].self, forKey: .setReps) ?? []
         setRPE = try container.decodeIfPresent([String].self, forKey: .setRPE) ?? []
+        isDone = try container.decodeIfPresent(Bool.self, forKey: .isDone) ?? false
         normalizeStoredSets()
     }
 
@@ -210,6 +213,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         try container.encode(repsSummary, forKey: .reps)
         try container.encode(normalizedSetReps, forKey: .setReps)
         try container.encode(normalizedSetRPE, forKey: .setRPE)
+        try container.encode(isDone, forKey: .isDone)
     }
 }
 

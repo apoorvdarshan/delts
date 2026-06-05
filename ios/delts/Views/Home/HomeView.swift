@@ -27,6 +27,7 @@ struct HomeView: View {
     @State private var sessionStartedAt: Date?
     @State private var sessionElapsedSeconds = 0
     @State private var isOtherDateTimerDialogPresented = false
+    @State private var isEmptyWorkoutStartDialogPresented = false
     @State private var keyboardHeight: CGFloat = 0
     @State private var selectedDetailItem: ExerciseLibraryItem?
     @State private var isGuidedWorkoutPresented = false
@@ -65,6 +66,10 @@ struct HomeView: View {
                 repsTotal + (Int(value.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0)
             }
         }
+    }
+
+    private var selectedDoneWorkoutCount: Int {
+        selectedExercises.filter(\.isDone).count
     }
 
     private var isSessionTimerRunning: Bool {
@@ -294,6 +299,9 @@ struct HomeView: View {
                                         exercise.setRPE(scale.sanitizedInput(rpe, previousValue: previous), forSet: setIndex)
                                     }
                                 },
+                                toggleDone: {
+                                    updateExercise(exercise.id) { $0.isDone.toggle() }
+                                },
                                 openDetail: {
                                     selectedDetailItem = libraryItem(for: exercise)
                                 }
@@ -322,7 +330,7 @@ struct HomeView: View {
                     HStack(alignment: .center) {
                         Label(selectedDateTitle, systemImage: "dumbbell.fill")
                         Spacer()
-                        Text("\(selectedCompletedSetCount) set\(selectedCompletedSetCount == 1 ? "" : "s") done")
+                        Text("\(selectedDoneWorkoutCount)/\(selectedExercises.count) done")
                             .font(.caption.weight(.bold))
                     }
                     .textCase(nil)
@@ -388,6 +396,9 @@ struct HomeView: View {
                             exercise.setRPE(scale.sanitizedInput(rpe, previousValue: previous), forSet: setIndex)
                         }
                     },
+                    markDone: { exerciseID, isDone in
+                        updateExercise(exerciseID) { $0.isDone = isDone }
+                    },
                     onFinish: finishGuidedWorkout
                 )
             }
@@ -401,6 +412,11 @@ struct HomeView: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Stop or discard the \(activeSessionDateTitle) timer before starting another.")
+            }
+            .alert("Add workouts first", isPresented: $isEmptyWorkoutStartDialogPresented) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Add at least one workout to \(selectedDateTitle) before starting the timer.")
             }
             .sheet(isPresented: $isWorkoutPickerPresented) {
                 WorkoutPickerSheet(
@@ -527,15 +543,20 @@ struct HomeView: View {
     }
 
     private func handleSessionTimerTap() {
-        playTimerClick()
         if isSessionTimerRunning {
+            playTimerClick()
             pauseSessionTimer()
         } else if isSessionTimerPaused {
+            playTimerClick()
             resumeSessionTimer()
             openGuidedWorkoutIfPossible()
         } else if isAnySessionTimerRunning {
+            playTimerClick()
             isOtherDateTimerDialogPresented = true
+        } else if selectedExercises.isEmpty {
+            isEmptyWorkoutStartDialogPresented = true
         } else {
+            playTimerClick()
             startSessionTimer()
             openGuidedWorkoutIfPossible()
         }
@@ -566,6 +587,7 @@ struct HomeView: View {
 
     private func stopSessionTimer() {
         playTimerClick()
+        saveCompletedGuidedWorkout()
         sessionElapsedSeconds = 0
         sessionStartedAt = nil
         sessionDate = nil
@@ -593,9 +615,7 @@ struct HomeView: View {
     }
 
     private func finishGuidedWorkout() {
-        saveCompletedGuidedWorkout()
         isGuidedWorkoutPresented = false
-        stopSessionTimer()
     }
 
     private func saveCompletedGuidedWorkout() {
@@ -613,7 +633,7 @@ struct HomeView: View {
 
                 return CompletedSetLog(
                     setNumber: index + 1,
-                    completed: !trimmedReps.isEmpty || !trimmedRPE.isEmpty,
+                    completed: exercise.isDone || !trimmedReps.isEmpty || !trimmedRPE.isEmpty,
                     weight: "",
                     reps: trimmedReps,
                     rpe: trimmedRPE.isEmpty ? nil : trimmedRPE,
