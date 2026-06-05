@@ -14,6 +14,12 @@ struct WorkoutDurationRangeOption: Hashable, Identifiable {
 
     var title: String {
         if let upperBound {
+            if lowerBound < 60, upperBound < 60 {
+                return "\(lowerBound)-\(upperBound) min"
+            }
+            if lowerBound >= 60, upperBound >= 60 {
+                return "\(hourText(for: lowerBound))-\(hourText(for: upperBound)) hr"
+            }
             return "\(durationText(for: lowerBound))-\(durationText(for: upperBound))"
         }
         return "\(durationText(for: lowerBound))+"
@@ -59,6 +65,14 @@ struct WorkoutDurationRangeOption: Hashable, Identifiable {
         default:
             return "\(minutes) min"
         }
+    }
+
+    private func hourText(for minutes: Int) -> String {
+        let hours = Double(minutes) / 60.0
+        if hours.rounded() == hours {
+            return "\(Int(hours))"
+        }
+        return hours.formatted(.number.precision(.fractionLength(1)))
     }
 }
 
