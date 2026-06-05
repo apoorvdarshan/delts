@@ -4,6 +4,7 @@ import SwiftUI
 import UIKit
 
 struct HomeView: View {
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
     @State private var dayPlans: [String: WorkoutDayPlan] = WorkoutDayPlanStore.load()
     @State private var selectedDate: Date = .now
@@ -28,6 +29,7 @@ struct HomeView: View {
     @State private var isOtherDateTimerDialogPresented = false
     @State private var keyboardHeight: CGFloat = 0
     @State private var selectedDetailItem: ExerciseLibraryItem?
+    @State private var isGuidedWorkoutPresented = false
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
     @AppStorage("profile_show_only_target_primary_filters") private var showOnlyTargetPrimaryFilters = false
@@ -365,6 +367,30 @@ struct HomeView: View {
             .navigationDestination(item: $selectedDetailItem) { item in
                 ExerciseLibraryDetailView(item: item)
             }
+            .navigationDestination(isPresented: $isGuidedWorkoutPresented) {
+                GuidedWorkoutSessionView(
+                    title: selectedDateTitle,
+                    exercises: selectedExercises,
+                    timerStartedAt: selectedTimerStartedAt,
+                    timerElapsedSeconds: selectedTimerElapsedSeconds,
+                    rpeScale: rpeScale,
+                    updateSets: { exerciseID, sets in
+                        updateExercise(exerciseID) { $0.setSetCount(sets) }
+                    },
+                    updateSetReps: { exerciseID, setIndex, reps in
+                        updateExercise(exerciseID) { $0.setReps(reps, forSet: setIndex) }
+                    },
+                    updateSetRPE: { exerciseID, setIndex, rpe in
+                        let scale = rpeScale
+                        updateExercise(exerciseID) { exercise in
+                            let values = exercise.normalizedSetRPE
+                            let previous = values.indices.contains(setIndex) ? values[setIndex] : ""
+                            exercise.setRPE(scale.sanitizedInput(rpe, previousValue: previous), forSet: setIndex)
+                        }
+                    },
+                    onFinish: finishGuidedWorkout
+                )
+            }
             .confirmationDialog("Timer already running", isPresented: $isOtherDateTimerDialogPresented, titleVisibility: .visible) {
                 Button("Go to \(activeSessionDateTitle)") {
                     if let sessionDate {
@@ -506,10 +532,12 @@ struct HomeView: View {
             pauseSessionTimer()
         } else if isSessionTimerPaused {
             resumeSessionTimer()
+            openGuidedWorkoutIfPossible()
         } else if isAnySessionTimerRunning {
             isOtherDateTimerDialogPresented = true
         } else {
             startSessionTimer()
+            openGuidedWorkoutIfPossible()
         }
     }
 
@@ -557,6 +585,59 @@ struct HomeView: View {
     private func playTimerClick() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         AudioServicesPlaySystemSound(1104)
+    }
+
+    private func openGuidedWorkoutIfPossible() {
+        guard !selectedExercises.isEmpty else { return }
+        isGuidedWorkoutPresented = true
+    }
+
+    private func finishGuidedWorkout() {
+        saveCompletedGuidedWorkout()
+        isGuidedWorkoutPresented = false
+        stopSessionTimer()
+    }
+
+    private func saveCompletedGuidedWorkout() {
+        guard !selectedExercises.isEmpty else { return }
+
+        let durationSeconds = max(currentSessionElapsedSeconds, selectedTimerElapsedSeconds)
+        let logs = selectedExercises.map { exercise in
+            let reps = exercise.normalizedSetReps
+            let rpe = exercise.normalizedSetRPE
+            let sets = (0..<max(exercise.sets, 1)).map { index in
+                let repValue = reps.indices.contains(index) ? reps[index] : ""
+                let rpeValue = rpe.indices.contains(index) ? rpe[index] : ""
+                let trimmedReps = repValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                let trimmedRPE = rpeValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                return CompletedSetLog(
+                    setNumber: index + 1,
+                    completed: !trimmedReps.isEmpty || !trimmedRPE.isEmpty,
+                    weight: "",
+                    reps: trimmedReps,
+                    rpe: trimmedRPE.isEmpty ? nil : trimmedRPE,
+                    elapsedSeconds: nil,
+                    completedAt: nil
+                )
+            }
+
+            return CompletedExerciseLog(
+                name: exercise.name,
+                targetMuscle: exercise.primaryMuscles.first ?? "Unspecified",
+                equipment: exercise.rawEquipment,
+                sets: sets
+            )
+        }
+
+        let completedWorkout = CompletedWorkout(
+            title: "\(selectedDateTitle) Workout",
+            durationMinutes: max(1, Int(ceil(Double(durationSeconds) / 60.0))),
+            planSummary: "\(selectedExercises.count) exercise\(selectedExercises.count == 1 ? "" : "s") from Start",
+            exerciseLogs: logs
+        )
+        modelContext.insert(completedWorkout)
+        try? modelContext.save()
     }
 
     private func startSessionLiveActivity(startedAt: Date) {

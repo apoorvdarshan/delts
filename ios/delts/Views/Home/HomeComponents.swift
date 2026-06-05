@@ -721,6 +721,365 @@ private struct PlannedSetSelectionTextField: View {
     }
 }
 
+struct GuidedWorkoutSessionView: View {
+    let title: String
+    let exercises: [PlannedRoutineExercise]
+    let timerStartedAt: Date?
+    let timerElapsedSeconds: Int
+    let rpeScale: RPEScale
+    let updateSets: (UUID, Int) -> Void
+    let updateSetReps: (UUID, Int, String) -> Void
+    let updateSetRPE: (UUID, Int, String) -> Void
+    let onFinish: () -> Void
+    @State private var currentIndex = 0
+    @FocusState private var focusedField: PlannedSetFocus?
+
+    private var currentExercise: PlannedRoutineExercise? {
+        guard exercises.indices.contains(currentIndex) else { return nil }
+        return exercises[currentIndex]
+    }
+
+    private var isLastExercise: Bool {
+        currentIndex >= exercises.count - 1
+    }
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Color.clear
+                        .frame(height: 0)
+                        .id("guided-workout-top")
+
+                    guidedHeader
+
+                    if let exercise = currentExercise {
+                        exerciseHero(exercise)
+                        GuidedWorkoutMetricGrid(exercise: exercise)
+                        guidedSetLogger(exercise)
+                        GuidedInstructionSection(instructions: exercise.instructions)
+                    } else {
+                        ContentUnavailableView(
+                            "No exercises added",
+                            systemImage: "dumbbell.fill",
+                            description: Text("Add workouts to this day before starting.")
+                        )
+                        .frame(maxWidth: .infinity, minHeight: 280)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 14)
+                .padding(.bottom, 118)
+            }
+            .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
+            .onChange(of: currentIndex) {
+                focusedField = nil
+                dismissKeyboard()
+                withAnimation(.snappy) {
+                    proxy.scrollTo("guided-workout-top", anchor: .top)
+                }
+            }
+        }
+        .deltsScreen()
+        .contentMargins(.bottom, 104, for: .scrollContent)
+        .navigationTitle("Workout")
+        .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            if currentExercise != nil {
+                bottomActions
+                    .padding(.horizontal, 20)
+                    .padding(.top, 10)
+                    .padding(.bottom, 6)
+                    .deltsBottomActionBackground()
+            }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    focusedField = nil
+                }
+            }
+        }
+        .onChange(of: exercises.count) {
+            currentIndex = min(currentIndex, max(exercises.count - 1, 0))
+        }
+    }
+
+    private var guidedHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .textCase(.uppercase)
+
+                Text(currentPositionText)
+                    .font(.system(.title2, design: .rounded, weight: .bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+            }
+
+            Spacer(minLength: 12)
+
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("Elapsed")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                    Text(elapsedDisplay(at: context.date))
+                        .font(.headline.monospacedDigit().weight(.bold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                }
+            }
+        }
+    }
+
+    private func exerciseHero(_ exercise: PlannedRoutineExercise) -> some View {
+        ZStack(alignment: .bottomLeading) {
+            AnimatedExerciseVisual(
+                exerciseName: exercise.name,
+                imagePaths: exercise.imagePaths,
+                height: 294,
+                allowsDerivedImageLookup: false
+            )
+
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(0.00),
+                    Color.black.opacity(0.20),
+                    Color.black.opacity(0.76)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(exercise.name)
+                    .font(.system(.title, design: .rounded, weight: .bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.62)
+
+                Text("\(exercise.primaryMuscles.joined(separator: ", ")) - \(exercise.rawEquipment)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.86))
+                    .lineLimit(2)
+            }
+            .padding(16)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(currentPositionText), \(exercise.name)")
+    }
+
+    private func guidedSetLogger(_ exercise: PlannedRoutineExercise) -> some View {
+        let setReps = exercise.normalizedSetReps
+        let setRPE = exercise.normalizedSetRPE
+
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Working Sets")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.deltsCharcoal)
+
+                    Text("Enter reps and optional RPE for each set.")
+                        .font(.caption)
+                        .foregroundStyle(Color.deltsMutedText)
+                }
+
+                Spacer(minLength: 8)
+
+                Stepper(value: Binding(get: { exercise.sets }, set: { updateSets(exercise.id, $0) }), in: 1...12) {
+                    Text("\(exercise.sets) set\(exercise.sets == 1 ? "" : "s")")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .lineLimit(1)
+                }
+                .fixedSize()
+            }
+
+            VStack(spacing: 0) {
+                ForEach(Array(setReps.indices), id: \.self) { index in
+                    PlannedSetField(
+                        exerciseID: exercise.id,
+                        setIndex: index,
+                        rpeScale: rpeScale,
+                        reps: Binding(
+                            get: {
+                                let values = exercise.normalizedSetReps
+                                return values.indices.contains(index) ? values[index] : ""
+                            },
+                            set: { updateSetReps(exercise.id, index, $0) }
+                        ),
+                        rpe: Binding(
+                            get: {
+                                setRPE.indices.contains(index) ? setRPE[index] : ""
+                            },
+                            set: { updateSetRPE(exercise.id, index, $0) }
+                        ),
+                        focusedRepsField: $focusedField
+                    )
+
+                    if index < setReps.count - 1 {
+                        Divider()
+                            .overlay(Color.deltsHairline.opacity(0.5))
+                            .padding(.leading, 64)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.66), lineWidth: 0.8)
+        }
+    }
+
+    private var bottomActions: some View {
+        HStack(spacing: 10) {
+            if currentIndex > 0 {
+                Button {
+                    currentIndex -= 1
+                } label: {
+                    Label("Previous", systemImage: "arrow.left")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(Color.deltsPanel.opacity(0.28), in: Capsule())
+                        .overlay {
+                            Capsule()
+                                .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
+                        }
+                }
+                .deltsPressable()
+            }
+
+            PrimaryButton(
+                title: isLastExercise ? "Finish Workout" : "Next",
+                systemImage: isLastExercise ? "checkmark.seal.fill" : "arrow.right"
+            ) {
+                if isLastExercise {
+                    focusedField = nil
+                    dismissKeyboard()
+                    onFinish()
+                } else {
+                    currentIndex += 1
+                }
+            }
+        }
+    }
+
+    private var currentPositionText: String {
+        guard !exercises.isEmpty else { return "Workout of the day" }
+        return "Exercise \(currentIndex + 1) of \(exercises.count)"
+    }
+
+    private func elapsedDisplay(at date: Date) -> String {
+        let seconds: Int
+        if let timerStartedAt {
+            seconds = timerElapsedSeconds + max(0, Int(date.timeIntervalSince(timerStartedAt)))
+        } else {
+            seconds = timerElapsedSeconds
+        }
+        return ActiveWorkoutViewModel.elapsedDisplay(seconds)
+    }
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
+private struct GuidedWorkoutMetricGrid: View {
+    let exercise: PlannedRoutineExercise
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                guidedMetric(title: "Level", value: exercise.rawLevel, systemImage: "chart.bar.fill")
+                guidedMetric(title: "Category", value: exercise.category, systemImage: "tag")
+            }
+
+            HStack(spacing: 8) {
+                guidedMetric(title: "Primary", value: primaryText, systemImage: "scope")
+                guidedMetric(title: "Equipment", value: exercise.rawEquipment, systemImage: "dumbbell.fill")
+            }
+        }
+    }
+
+    private var primaryText: String {
+        exercise.primaryMuscles.isEmpty ? "Unspecified" : exercise.primaryMuscles.joined(separator: ", ")
+    }
+
+    private func guidedMetric(title: String, value: String, systemImage: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 4) {
+                Image(systemName: systemImage)
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+
+                Text(title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(1)
+            }
+
+            Text(value.isEmpty ? "Unspecified" : value)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .minimumScaleFactor(0.76)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, minHeight: 58, alignment: .topLeading)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
+        .background(Color.deltsPanel.opacity(0.16), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.22), lineWidth: 0.5)
+        }
+    }
+}
+
+private struct GuidedInstructionSection: View {
+    let instructions: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Instructions", systemImage: "list.number")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+
+            if instructions.isEmpty {
+                Text("No instructions available for this exercise.")
+                    .font(.body)
+                    .foregroundStyle(Color.deltsMutedText)
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(Array(instructions.enumerated()), id: \.offset) { index, instruction in
+                        HStack(alignment: .top, spacing: 10) {
+                            Text("\(index + 1)")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(Color.deltsOnAccent)
+                                .frame(width: 24, height: 24)
+                                .background(Color.deltsAccent, in: Circle())
+
+                            Text(instruction)
+                                .font(.body)
+                                .foregroundStyle(Color.deltsMutedText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 struct WorkoutPickerSheet: View {
     @Binding var searchText: String
     @Binding var source: WorkoutPickerSource
