@@ -241,6 +241,26 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         return max(0, Int(completedAt.timeIntervalSince(referenceDate)))
     }
 
+    func setWorkoutElapsedSeconds(forSet index: Int) -> Int? {
+        let completedValues = normalizedSetCompletedAt
+        guard completedValues.indices.contains(index),
+              let startedAt,
+              let completedAt = completedValues[index]
+        else { return nil }
+        return max(0, Int(completedAt.timeIntervalSince(startedAt)))
+    }
+
+    func restSeconds(beforeSet index: Int) -> Int? {
+        let completedValues = normalizedSetCompletedAt
+        guard index > 0,
+              completedValues.indices.contains(index),
+              completedValues.indices.contains(index - 1),
+              let previousCompletedAt = completedValues[index - 1],
+              let currentCompletedAt = completedValues[index]
+        else { return nil }
+        return max(0, Int(currentCompletedAt.timeIntervalSince(previousCompletedAt)))
+    }
+
     private mutating func normalizeStoredSets() {
         setSetCount(sets)
     }

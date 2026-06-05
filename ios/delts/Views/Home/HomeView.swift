@@ -284,9 +284,6 @@ struct HomeView: View {
                             PlannedExerciseRow(
                                 exercise: exercise,
                                 openDetail: {
-                                    selectedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: exercise.id)
-                                },
-                                startWorkout: {
                                     startExercise(exercise.id)
                                     selectedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: exercise.id)
                                 }

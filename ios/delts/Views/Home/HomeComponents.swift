@@ -609,7 +609,6 @@ struct EmptyRoutineRow: View {
 struct PlannedExerciseRow: View {
     let exercise: PlannedRoutineExercise
     let openDetail: () -> Void
-    let startWorkout: () -> Void
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -673,23 +672,6 @@ struct PlannedExerciseRow: View {
                     subtitle: "RPE",
                     systemImage: "gauge.with.dots.needle.bottom.50percent"
                 )
-            }
-
-            if exercise.startedAt == nil {
-                Button(action: startWorkout) {
-                    Label("Start", systemImage: "play.fill")
-                        .font(.system(.subheadline, design: .rounded, weight: .black))
-                        .foregroundStyle(Color.deltsOnAccent)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 42)
-                        .background(Color.deltsAccent, in: Capsule())
-                        .overlay {
-                            Capsule()
-                                .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.7)
-                        }
-                }
-                .buttonStyle(.plain)
-                .deltsPressable()
             }
         }
         .padding(16)
@@ -773,6 +755,7 @@ struct PlannedSetField: View {
     let rpeScale: RPEScale
     @Binding var reps: String
     @Binding var rpe: String
+    var durationSeconds: Int?
     let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
 
     var body: some View {
@@ -804,10 +787,33 @@ struct PlannedSetField: View {
                 focusedRepsField: focusedRepsField
             )
             .frame(maxWidth: .infinity)
+
+            PlannedSetTimeBox(seconds: durationSeconds)
+                .frame(maxWidth: .infinity)
         }
         .padding(.vertical, 7)
         .contentShape(Rectangle())
         .accessibilityHint("Opens set reps and RPE input")
+    }
+}
+
+private struct PlannedSetTimeBox: View {
+    let seconds: Int?
+
+    var body: some View {
+        Text(seconds.map(ActiveWorkoutViewModel.elapsedDisplay) ?? "Time")
+            .font(.system(.subheadline, design: .rounded, weight: .bold).monospacedDigit())
+            .foregroundStyle(seconds == nil ? Color.deltsMutedText.opacity(0.72) : Color.deltsCharcoal)
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
+            .frame(maxWidth: .infinity)
+            .frame(height: 36)
+            .background(Color.deltsCard.opacity(0.74), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .stroke(Color.deltsHairline.opacity(0.4), lineWidth: 0.6)
+            }
+            .accessibilityLabel(seconds.map { "Set time \(ActiveWorkoutViewModel.elapsedDisplay($0))" } ?? "Set time not recorded")
     }
 }
 
@@ -1118,6 +1124,7 @@ struct GuidedWorkoutSessionView: View {
                             },
                             set: { updateSetRPE(exercise.id, index, $0) }
                         ),
+                        durationSeconds: exercise.setWorkoutElapsedSeconds(forSet: index) ?? exercise.setElapsedSeconds(forSet: index),
                         focusedRepsField: $focusedField
                     )
 

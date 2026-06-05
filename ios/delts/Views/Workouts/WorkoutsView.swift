@@ -1255,29 +1255,19 @@ struct ExerciseLibraryDetailView: View {
 
     @ViewBuilder
     private var bottomActions: some View {
-        if let plannedExercise, hasPlannedActions {
+        if plannedExercise != nil, hasPlannedActions {
             HStack(spacing: 10) {
                 WorkoutDetailLiquidActionButton(
-                    title: "Done",
-                    systemImage: plannedExercise.isDone ? "checkmark.circle.fill" : "checkmark",
+                    title: openNext == nil ? "Close" : "Next",
+                    systemImage: openNext == nil ? "xmark" : "arrow.right",
                     prominent: false
                 ) {
-                    markDone?()
                     focusedField = nil
                     dismissKeyboard()
-                    dismiss()
-                }
-
-                if let openNext {
-                    WorkoutDetailLiquidActionButton(
-                        title: "Save & Next",
-                        systemImage: "arrow.right",
-                        prominent: false
-                    ) {
-                        markDone?()
-                        focusedField = nil
-                        dismissKeyboard()
+                    if let openNext {
                         openNext()
+                    } else {
+                        dismiss()
                     }
                 }
             }
@@ -1289,7 +1279,7 @@ struct ExerciseLibraryDetailView: View {
     }
 
     private var hasPlannedActions: Bool {
-        allowsSetEditing || toggleDone != nil || markDone != nil || openNext != nil
+        allowsSetEditing || openNext != nil
     }
 
     private func restBeforeSeconds(for exercise: PlannedRoutineExercise) -> Int? {
@@ -1478,52 +1468,60 @@ private struct ExerciseDetailSetLogSection: View {
                 }
             }
 
-            if let restBeforeSeconds {
-                ExerciseDetailTimingBanner(
-                    title: "Rest before",
-                    value: ActiveWorkoutViewModel.elapsedDisplay(restBeforeSeconds),
-                    systemImage: "timer"
-                )
-            }
-
             VStack(spacing: 0) {
-                ForEach(Array(setReps.indices), id: \.self) { index in
-                    if allowsEditing {
-                        VStack(alignment: .leading, spacing: 2) {
-                            PlannedSetField(
-                                exerciseID: exercise.id,
-                                setIndex: index,
-                                rpeScale: rpeScale,
-                                reps: Binding(
-                                    get: {
-                                        let values = exercise.normalizedSetReps
-                                        return values.indices.contains(index) ? values[index] : ""
-                                    },
-                                    set: { updateSetReps(index, $0) }
-                                ),
-                                rpe: Binding(
-                                    get: {
-                                        let values = exercise.normalizedSetRPE
-                                        return values.indices.contains(index) ? values[index] : ""
-                                    },
-                                    set: { updateSetRPE(index, $0) }
-                                ),
-                                focusedRepsField: focusedField
-                            )
+                if let restBeforeSeconds, restBeforeSeconds > 0 {
+                    ExerciseDetailRestIntervalRow(
+                        title: "Rest from previous workout",
+                        seconds: restBeforeSeconds
+                    )
 
-                            if let elapsedSeconds = exercise.setElapsedSeconds(forSet: index) {
-                                Text(index == 0 ? "Workout time \(ActiveWorkoutViewModel.elapsedDisplay(elapsedSeconds))" : "Rest \(ActiveWorkoutViewModel.elapsedDisplay(elapsedSeconds))")
-                                    .font(.caption2.weight(.bold))
-                                    .foregroundStyle(Color.deltsMutedText)
-                                    .padding(.leading, 64)
-                            }
-                        }
+                    Divider()
+                        .overlay(Color.deltsHairline.opacity(0.5))
+                        .padding(.leading, 64)
+                }
+
+                ForEach(Array(setReps.indices), id: \.self) { index in
+                    if index > 0,
+                       let restSeconds = exercise.restSeconds(beforeSet: index),
+                       restSeconds > 0 {
+                        ExerciseDetailRestIntervalRow(
+                            title: "Rest before Set \(index + 1)",
+                            seconds: restSeconds
+                        )
+
+                        Divider()
+                            .overlay(Color.deltsHairline.opacity(0.5))
+                            .padding(.leading, 64)
+                    }
+
+                    if allowsEditing {
+                        PlannedSetField(
+                            exerciseID: exercise.id,
+                            setIndex: index,
+                            rpeScale: rpeScale,
+                            reps: Binding(
+                                get: {
+                                    let values = exercise.normalizedSetReps
+                                    return values.indices.contains(index) ? values[index] : ""
+                                },
+                                set: { updateSetReps(index, $0) }
+                            ),
+                            rpe: Binding(
+                                get: {
+                                    let values = exercise.normalizedSetRPE
+                                    return values.indices.contains(index) ? values[index] : ""
+                                },
+                                set: { updateSetRPE(index, $0) }
+                            ),
+                            durationSeconds: exercise.setWorkoutElapsedSeconds(forSet: index) ?? exercise.setElapsedSeconds(forSet: index),
+                            focusedRepsField: focusedField
+                        )
                     } else {
                         ExerciseDetailReadOnlySetRow(
                             setIndex: index,
                             reps: setReps.indices.contains(index) ? setReps[index] : "",
                             rpe: setRPE.indices.contains(index) ? setRPE[index] : "",
-                            elapsedSeconds: exercise.setElapsedSeconds(forSet: index)
+                            durationSeconds: exercise.setWorkoutElapsedSeconds(forSet: index) ?? exercise.setElapsedSeconds(forSet: index)
                         )
                     }
 
@@ -1545,31 +1543,26 @@ private struct ExerciseDetailSetLogSection: View {
     }
 }
 
-private struct ExerciseDetailTimingBanner: View {
+private struct ExerciseDetailRestIntervalRow: View {
     let title: String
-    let value: String
-    let systemImage: String
+    let seconds: Int
 
     var body: some View {
         Label {
             HStack(spacing: 6) {
                 Text(title)
-                Text(value)
+                Text(ActiveWorkoutViewModel.elapsedDisplay(seconds))
                     .monospacedDigit()
             }
         } icon: {
-            Image(systemName: systemImage)
+            Image(systemName: "timer")
         }
-        .font(.caption.weight(.bold))
+        .font(.caption2.weight(.bold))
         .foregroundStyle(Color.deltsAccent)
         .padding(.horizontal, 10)
-        .frame(height: 34)
+        .frame(height: 32)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.deltsAccent.opacity(0.12), in: Capsule())
-        .overlay {
-            Capsule()
-                .stroke(Color.deltsAccent.opacity(0.24), lineWidth: 0.6)
-        }
+        .padding(.leading, 64)
     }
 }
 
@@ -1577,7 +1570,7 @@ private struct ExerciseDetailReadOnlySetRow: View {
     let setIndex: Int
     let reps: String
     let rpe: String
-    let elapsedSeconds: Int?
+    let durationSeconds: Int?
 
     var body: some View {
         HStack(spacing: 10) {
@@ -1588,13 +1581,7 @@ private struct ExerciseDetailReadOnlySetRow: View {
 
             readOnlyValue(reps.trimmedValue, placeholder: "Reps")
             readOnlyValue(rpe.trimmedValue, placeholder: "RPE")
-
-            if let elapsedSeconds {
-                Text(ActiveWorkoutViewModel.elapsedDisplay(elapsedSeconds))
-                    .font(.caption.weight(.bold).monospacedDigit())
-                    .foregroundStyle(Color.deltsAccent)
-                    .frame(width: 48, alignment: .trailing)
-            }
+            readOnlyValue(durationSeconds.map(ActiveWorkoutViewModel.elapsedDisplay) ?? "", placeholder: "Time")
         }
         .padding(.vertical, 9)
     }
