@@ -1219,8 +1219,10 @@ struct ExerciseLibraryDetailView: View {
 
             if isMetricsPresented {
                 ExerciseHeroMetricOverlay(item: item)
-                    .padding(.horizontal, 18)
-                    .frame(width: width, height: 294, alignment: .center)
+                    .padding(.top, 8)
+                    .padding(.leading, 24)
+                    .padding(.trailing, 84)
+                    .frame(width: width, height: 294, alignment: .topLeading)
                     .transition(.asymmetric(
                         insertion: .move(edge: .trailing).combined(with: .opacity),
                         removal: .move(edge: .trailing).combined(with: .opacity)
@@ -1345,44 +1347,44 @@ private struct ExerciseHeroMetricOverlay: View {
     let item: ExerciseLibraryItem
 
     var body: some View {
-        VStack(alignment: .center, spacing: 8) {
+        VStack(alignment: .center, spacing: 6) {
             HStack(spacing: 8) {
-                metricButton(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill")
-                metricButton(title: "Category", value: item.category, systemImage: "tag")
+                metricButton(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill", compact: true)
+                metricButton(title: "Category", value: item.category, systemImage: "tag", compact: true)
             }
 
             HStack(spacing: 8) {
-                metricButton(title: "Force", value: item.force, systemImage: "arrow.left.arrow.right")
-                metricButton(title: "Mechanic", value: item.mechanic, systemImage: "gearshape")
+                metricButton(title: "Force", value: item.force, systemImage: "arrow.left.arrow.right", compact: true)
+                metricButton(title: "Mechanic", value: item.mechanic, systemImage: "gearshape", compact: true)
             }
 
-            HStack(spacing: 8) {
-                metricButton(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope")
-                metricButton(title: "Secondary", value: item.secondaryMusclesTitle, systemImage: "scope")
-            }
-
-            metricButton(title: "Equipment", value: item.rawEquipment, systemImage: "dumbbell.fill")
-                .frame(maxWidth: 230)
+            metricButton(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope", compact: false, valueLineLimit: 2)
+            metricButton(title: "Secondary", value: item.secondaryMusclesTitle, systemImage: "scope", compact: false, valueLineLimit: 3)
+            metricButton(title: "Equipment", value: item.rawEquipment, systemImage: "dumbbell.fill", compact: false, valueLineLimit: 2)
         }
-        .frame(maxWidth: 330)
+        .frame(maxWidth: .infinity)
     }
 
-    private func metricButton(title: String, value: String, systemImage: String) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+    private func metricButton(title: String, value: String, systemImage: String, compact: Bool = true, valueLineLimit: Int = 1) -> some View {
+        let valueFontSize: CGFloat = compact ? 15 : (valueLineLimit > 2 ? 13 : 14)
+
+        return VStack(alignment: .leading, spacing: 3) {
             Label(title, systemImage: systemImage)
                 .font(.system(size: 10, weight: .black, design: .rounded))
                 .foregroundStyle(Color.deltsAccent)
                 .lineLimit(1)
 
             Text(value)
-                .font(.system(size: 15, weight: .black, design: .rounded))
+                .font(.system(size: valueFontSize, weight: .black, design: .rounded))
                 .foregroundStyle(Color.deltsCharcoal)
-                .lineLimit(1)
-                .minimumScaleFactor(0.64)
+                .lineLimit(valueLineLimit)
+                .minimumScaleFactor(0.50)
+                .allowsTightening(true)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.horizontal, 13)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, compact ? 6 : 5)
+        .frame(maxWidth: .infinity, minHeight: compact ? 44 : (valueLineLimit > 2 ? 50 : 42), alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color.deltsBackground.opacity(0.20))
