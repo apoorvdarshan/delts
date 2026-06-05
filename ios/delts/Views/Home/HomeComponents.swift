@@ -510,55 +510,50 @@ struct PlannedExerciseRow: View {
         let setRPE = exercise.normalizedSetRPE
 
         VStack(alignment: .leading, spacing: 14) {
-            Button(action: openDetail) {
-                HStack(alignment: .center, spacing: 12) {
-                    AnimatedExerciseVisual(
-                        exerciseName: exercise.name,
-                        imagePaths: exercise.imagePaths,
-                        height: 64,
-                        fillsWidth: false,
-                        allowsDerivedImageLookup: false
-                    )
-                    .frame(width: 64, height: 64)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.deltsHairline.opacity(0.48), lineWidth: 0.7)
+            HStack(alignment: .center, spacing: 12) {
+                Button(action: openDetail) {
+                    HStack(alignment: .center, spacing: 12) {
+                        AnimatedExerciseVisual(
+                            exerciseName: exercise.name,
+                            imagePaths: exercise.imagePaths,
+                            height: 64,
+                            fillsWidth: false,
+                            allowsDerivedImageLookup: false
+                        )
+                        .frame(width: 64, height: 64)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(Color.deltsHairline.opacity(0.48), lineWidth: 0.7)
+                        }
+                        .clipped()
+                        .layoutPriority(0)
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(exercise.name)
+                                .font(.system(.headline, design: .rounded, weight: .semibold))
+                                .foregroundStyle(Color.deltsCharcoal)
+                                .lineLimit(2)
+
+                            Text("\(exercise.primaryMuscles.joined(separator: ", ")) - \(exercise.rawEquipment) - \(exercise.rawLevel)")
+                                .font(.system(.caption, design: .rounded, weight: .semibold))
+                                .foregroundStyle(Color.deltsMutedText)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.72)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .layoutPriority(1)
+
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(Color.deltsMutedText.opacity(0.72))
                     }
-                    .clipped()
-                    .layoutPriority(0)
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(exercise.name)
-                            .font(.system(.headline, design: .rounded, weight: .semibold))
-                            .foregroundStyle(Color.deltsCharcoal)
-                            .lineLimit(2)
-
-                        Text("\(exercise.primaryMuscles.joined(separator: ", ")) - \(exercise.rawEquipment) - \(exercise.rawLevel)")
-                            .font(.system(.caption, design: .rounded, weight: .semibold))
-                            .foregroundStyle(Color.deltsMutedText)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.72)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .layoutPriority(1)
-
-                    if exercise.isDone {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 12, weight: .black))
-                            .foregroundStyle(Color.deltsOnAccent)
-                            .frame(width: 26, height: 26)
-                            .background(Color.deltsAccent, in: Circle())
-                            .accessibilityLabel("Workout done")
-                    }
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(Color.deltsMutedText.opacity(0.72))
+                    .contentShape(Rectangle())
                 }
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+
+                DoneToggleButton(isDone: exercise.isDone, action: toggleDone)
             }
-            .buttonStyle(.plain)
 
             HStack(spacing: 12) {
                 Text("Sets")
@@ -570,22 +565,6 @@ struct PlannedExerciseRow: View {
                         .font(.system(.subheadline, design: .rounded, weight: .bold))
                         .foregroundStyle(Color.deltsCharcoal)
                 }
-
-                Button(action: toggleDone) {
-                    Label(exercise.isDone ? "Done" : "Mark done", systemImage: exercise.isDone ? "checkmark.circle.fill" : "circle")
-                        .font(.caption.weight(.heavy))
-                        .foregroundStyle(exercise.isDone ? Color.deltsAccent : Color.deltsMutedText)
-                        .lineLimit(1)
-                        .padding(.horizontal, 10)
-                        .frame(height: 32)
-                        .background(Color.deltsCard.opacity(exercise.isDone ? 0.68 : 0.42), in: Capsule())
-                        .overlay {
-                            Capsule()
-                                .stroke((exercise.isDone ? Color.deltsAccent : Color.deltsHairline).opacity(0.36), lineWidth: 0.6)
-                        }
-                }
-                .buttonStyle(.plain)
-                .deltsPressable()
             }
 
             VStack(spacing: 0) {
@@ -626,6 +605,28 @@ struct PlannedExerciseRow: View {
                 .stroke(Color.deltsHairline.opacity(0.82), lineWidth: 0.8)
         }
         .shadow(color: Color.black.opacity(0.22), radius: 12, x: 0, y: 7)
+    }
+}
+
+private struct DoneToggleButton: View {
+    let isDone: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "checkmark")
+                .font(.system(size: 14, weight: .black))
+                .foregroundStyle(isDone ? Color.deltsOnAccent : Color.deltsMutedText.opacity(0.62))
+                .frame(width: 34, height: 34)
+                .background(isDone ? Color.deltsAccent : Color.deltsPanel.opacity(0.34), in: Circle())
+                .overlay {
+                    Circle()
+                        .stroke((isDone ? Color.deltsAccent : Color.deltsHairline).opacity(isDone ? 0.34 : 0.72), lineWidth: 0.8)
+                }
+        }
+        .buttonStyle(.plain)
+        .deltsPressable()
+        .accessibilityLabel(isDone ? "Mark workout not done" : "Mark workout done")
     }
 }
 
@@ -930,14 +931,13 @@ struct GuidedWorkoutSessionView: View {
             Button {
                 markDone(exercise.id, !exercise.isDone)
             } label: {
-                Label(exercise.isDone ? "Done" : "Mark workout done", systemImage: exercise.isDone ? "checkmark.circle.fill" : "circle")
-                    .font(.subheadline.weight(.heavy))
-                    .foregroundStyle(exercise.isDone ? Color.deltsAccent : Color.deltsMutedText)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 42)
-                    .background(Color.deltsCard.opacity(exercise.isDone ? 0.68 : 0.42), in: Capsule())
+                Image(systemName: "checkmark")
+                    .font(.system(size: 14, weight: .black))
+                    .foregroundStyle(exercise.isDone ? Color.deltsOnAccent : Color.deltsMutedText.opacity(0.62))
+                    .frame(width: 42, height: 42)
+                    .background(exercise.isDone ? Color.deltsAccent : Color.deltsCard.opacity(0.42), in: Circle())
                     .overlay {
-                        Capsule()
+                        Circle()
                             .stroke((exercise.isDone ? Color.deltsAccent : Color.deltsHairline).opacity(0.36), lineWidth: 0.7)
                     }
             }
