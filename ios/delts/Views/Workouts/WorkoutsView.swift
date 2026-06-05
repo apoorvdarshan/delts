@@ -1262,7 +1262,7 @@ struct ExerciseLibraryDetailView: View {
                 WorkoutDetailLiquidActionButton(
                     title: "Done",
                     systemImage: plannedExercise.isDone ? "checkmark.circle.fill" : "checkmark",
-                    prominent: openNext == nil
+                    prominent: false
                 ) {
                     markDone?()
                     focusedField = nil
@@ -1274,7 +1274,7 @@ struct ExerciseLibraryDetailView: View {
                     WorkoutDetailLiquidActionButton(
                         title: "Save & Next",
                         systemImage: "arrow.right",
-                        prominent: true
+                        prominent: false
                     ) {
                         markDone?()
                         focusedField = nil
