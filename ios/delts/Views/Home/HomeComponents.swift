@@ -120,6 +120,7 @@ struct StartWorkoutHero: View {
     let toggleTimer: () -> Void
     let stopTimer: () -> Void
     let discardTimer: () -> Void
+    let showCalories: () -> Void
 
     var body: some View {
         VStack(spacing: 22) {
@@ -132,7 +133,8 @@ struct StartWorkoutHero: View {
                     isRunning: isTimerRunning,
                     isPaused: isTimerPaused,
                     hasSession: hasTimerSession,
-                    action: toggleTimer
+                    action: toggleTimer,
+                    showCalories: showCalories
                 )
 
                 if isTimerPaused {
@@ -170,36 +172,55 @@ struct HomeSessionTimerButton: View {
     let isPaused: Bool
     let hasSession: Bool
     let action: () -> Void
+    let showCalories: () -> Void
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
-            Button(action: action) {
-                VStack(spacing: 10) {
-                    Image(systemName: isRunning ? "pause.fill" : "play.fill")
-                        .font(.system(size: 30, weight: .black))
-                        .foregroundStyle(Color.white)
-                        .shadow(color: Color.black.opacity(0.52), radius: 2, y: 1)
-                        .frame(height: 34)
+        ZStack(alignment: .topTrailing) {
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                Button(action: action) {
+                    VStack(spacing: 10) {
+                        Image(systemName: isRunning ? "pause.fill" : "play.fill")
+                            .font(.system(size: 30, weight: .black))
+                            .foregroundStyle(Color.white)
+                            .shadow(color: Color.black.opacity(0.52), radius: 2, y: 1)
+                            .frame(height: 34)
 
-                    Text(displayText(at: context.date))
-                        .font(.system(size: 34, weight: .black, design: .rounded))
-                        .foregroundStyle(Color.white)
-                        .contentTransition(.numericText())
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .shadow(color: Color.black.opacity(0.62), radius: 2, y: 1)
+                        Text(displayText(at: context.date))
+                            .font(.system(size: 34, weight: .black, design: .rounded))
+                            .foregroundStyle(Color.white)
+                            .contentTransition(.numericText())
+                            .monospacedDigit()
+                            .lineLimit(1)
+                            .shadow(color: Color.black.opacity(0.62), radius: 2, y: 1)
+                    }
+                    .frame(width: 156, height: 156)
+                    .background {
+                        Image("timer_button_red")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 176, height: 176)
+                            .shadow(color: Color.black.opacity(0.34), radius: 16, y: 8)
+                    }
                 }
-                .frame(width: 156, height: 156)
-                .background {
-                    Image("timer_button_red")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 176, height: 176)
-                        .shadow(color: Color.black.opacity(0.34), radius: 16, y: 8)
-                }
+                .buttonStyle(HomeTimerButtonStyle(isRunning: isRunning))
+                .accessibilityLabel(accessibilityLabel)
             }
-            .buttonStyle(HomeTimerButtonStyle(isRunning: isRunning))
-            .accessibilityLabel(accessibilityLabel)
+
+            Button(action: showCalories) {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 15, weight: .black))
+                    .foregroundStyle(Color.deltsAccent)
+                    .frame(width: 38, height: 38)
+                    .background(Color.deltsBackground.opacity(0.86), in: Circle())
+                    .overlay {
+                        Circle()
+                            .stroke(Color.deltsAccent.opacity(0.36), lineWidth: 0.8)
+                    }
+            }
+            .buttonStyle(.plain)
+            .deltsPressable()
+            .offset(x: 7, y: 9)
+            .accessibilityLabel("Show calories")
         }
     }
 
@@ -216,6 +237,84 @@ struct HomeSessionTimerButton: View {
     private func totalElapsedSeconds(at date: Date) -> Int {
         guard let startedAt else { return elapsedSeconds }
         return elapsedSeconds + max(0, Int(date.timeIntervalSince(startedAt)))
+    }
+}
+
+struct HomeCalorieSummarySheet: View {
+    let elapsedSeconds: Int
+    let workoutCount: Int
+    let setCount: Int
+    let repCount: Int
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("-- kcal")
+                        .font(.system(size: 46, weight: .black, design: .rounded))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .monospacedDigit()
+
+                    Text("Estimated burn")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(20)
+                .background(Color.deltsPanel.opacity(0.36), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.7)
+                }
+
+                HStack(spacing: 10) {
+                    HomeCalorieMetric(title: "Time", value: ActiveWorkoutViewModel.elapsedDisplay(elapsedSeconds), systemImage: "timer")
+                    HomeCalorieMetric(title: "Workouts", value: "\(workoutCount)", systemImage: "dumbbell.fill")
+                }
+
+                HStack(spacing: 10) {
+                    HomeCalorieMetric(title: "Sets", value: "\(setCount)", systemImage: "checklist")
+                    HomeCalorieMetric(title: "Reps", value: "\(repCount)", systemImage: "repeat")
+                }
+
+                Text("Calorie calculation will use workout time, rest time, reps, and RPE.")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Spacer(minLength: 0)
+            }
+            .padding(20)
+            .deltsScreen()
+            .navigationTitle("Calories")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+private struct HomeCalorieMetric: View {
+    let title: String
+    let value: String
+    let systemImage: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Label(title, systemImage: systemImage)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.deltsMutedText)
+
+            Text(value)
+                .font(.headline.weight(.black).monospacedDigit())
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, minHeight: 74, alignment: .leading)
+        .padding(.horizontal, 12)
+        .background(Color.deltsCard.opacity(0.40), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.6)
+        }
     }
 }
 
@@ -497,19 +596,12 @@ struct EmptyRoutineRow: View {
 
 struct PlannedExerciseRow: View {
     let exercise: PlannedRoutineExercise
-    let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
-    let rpeScale: RPEScale
-    let updateSets: (Int) -> Void
-    let updateSetReps: (Int, String) -> Void
-    let updateSetRPE: (Int, String) -> Void
     let toggleDone: () -> Void
     let openDetail: () -> Void
+    let startWorkout: () -> Void
 
     var body: some View {
-        let setReps = exercise.normalizedSetReps
-        let setRPE = exercise.normalizedSetRPE
-
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 12) {
                 Button(action: openDetail) {
                     HStack(alignment: .center, spacing: 12) {
@@ -535,7 +627,7 @@ struct PlannedExerciseRow: View {
                                 .foregroundStyle(Color.deltsCharcoal)
                                 .lineLimit(2)
 
-                            Text("\(exercise.primaryMuscles.joined(separator: ", ")) - \(exercise.rawEquipment) - \(exercise.rawLevel)")
+                            Text("\(exercise.primaryMuscles.joined(separator: ", ")) - \(exercise.rawEquipment)")
                                 .font(.system(.caption, design: .rounded, weight: .semibold))
                                 .foregroundStyle(Color.deltsMutedText)
                                 .lineLimit(1)
@@ -555,47 +647,40 @@ struct PlannedExerciseRow: View {
                 DoneToggleButton(isDone: exercise.isDone, action: toggleDone)
             }
 
-            HStack(spacing: 12) {
-                Text("Sets")
-                    .font(.system(.subheadline, design: .rounded, weight: .bold))
-                    .foregroundStyle(Color.deltsMutedText)
+            HStack(spacing: 10) {
+                PlannedExerciseSummaryPill(
+                    title: "\(exercise.sets)",
+                    subtitle: exercise.sets == 1 ? "set" : "sets",
+                    systemImage: "list.number"
+                )
 
-                Stepper(value: Binding(get: { exercise.sets }, set: updateSets), in: 1...12) {
-                    Text("\(exercise.sets) set\(exercise.sets == 1 ? "" : "s")")
-                        .font(.system(.subheadline, design: .rounded, weight: .bold))
-                        .foregroundStyle(Color.deltsCharcoal)
-                }
+                PlannedExerciseSummaryPill(
+                    title: repsSummaryTitle,
+                    subtitle: "reps",
+                    systemImage: "repeat"
+                )
+
+                PlannedExerciseSummaryPill(
+                    title: rpeSummaryTitle,
+                    subtitle: "RPE",
+                    systemImage: "gauge.with.dots.needle.bottom.50percent"
+                )
             }
 
-            VStack(spacing: 0) {
-                ForEach(Array(setReps.enumerated()), id: \.offset) { index, _ in
-                    PlannedSetField(
-                        exerciseID: exercise.id,
-                        setIndex: index,
-                        rpeScale: rpeScale,
-                        reps: Binding(
-                            get: {
-                                let values = exercise.normalizedSetReps
-                                return values.indices.contains(index) ? values[index] : ""
-                            },
-                            set: { updateSetReps(index, $0) }
-                        ),
-                        rpe: Binding(
-                            get: {
-                                setRPE.indices.contains(index) ? setRPE[index] : ""
-                            },
-                            set: { updateSetRPE(index, $0) }
-                        ),
-                        focusedRepsField: focusedRepsField
-                    )
-
-                    if index < setReps.count - 1 {
-                        Divider()
-                            .overlay(Color.deltsHairline.opacity(0.5))
-                            .padding(.leading, 64)
+            Button(action: startWorkout) {
+                Label(exercise.startedAt == nil ? "Start" : "Open", systemImage: exercise.startedAt == nil ? "play.fill" : "arrow.up.right")
+                    .font(.system(.subheadline, design: .rounded, weight: .black))
+                    .foregroundStyle(Color.deltsOnAccent)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 42)
+                    .background(Color.deltsAccent, in: Capsule())
+                    .overlay {
+                        Capsule()
+                            .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.7)
                     }
-                }
             }
+            .buttonStyle(.plain)
+            .deltsPressable()
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -606,9 +691,66 @@ struct PlannedExerciseRow: View {
         }
         .shadow(color: Color.black.opacity(0.22), radius: 12, x: 0, y: 7)
     }
+
+    private var repsSummaryTitle: String {
+        let values = exercise.normalizedSetReps
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard !values.isEmpty else { return "--" }
+        if Set(values).count == 1 {
+            return values[0]
+        }
+        return "\(values.count)"
+    }
+
+    private var rpeSummaryTitle: String {
+        let values = exercise.normalizedSetRPE
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard !values.isEmpty else { return "--" }
+        if Set(values).count == 1 {
+            return values[0]
+        }
+        return "\(values.count)"
+    }
 }
 
-private struct DoneToggleButton: View {
+private struct PlannedExerciseSummaryPill: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.black))
+                .foregroundStyle(Color.deltsAccent)
+                .frame(width: 16)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.system(.subheadline, design: .rounded, weight: .black).monospacedDigit())
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.74)
+
+                Text(subtitle)
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(1)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
+        .padding(.horizontal, 10)
+        .background(Color.deltsCard.opacity(0.54), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.32), lineWidth: 0.6)
+        }
+    }
+}
+
+struct DoneToggleButton: View {
     let isDone: Bool
     let action: () -> Void
 
@@ -630,7 +772,7 @@ private struct DoneToggleButton: View {
     }
 }
 
-private struct PlannedSetField: View {
+struct PlannedSetField: View {
     let exerciseID: UUID
     let setIndex: Int
     let rpeScale: RPEScale

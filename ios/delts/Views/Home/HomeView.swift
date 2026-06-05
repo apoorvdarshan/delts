@@ -21,15 +21,14 @@ struct HomeView: View {
     @State private var pickerSelectedSort: ExerciseLibrarySort = .name
     @AppStorage("delts.workoutPickerSource") private var workoutPickerSourceRaw = WorkoutPickerSource.dataset.rawValue
     @AppStorage("delts.savedExerciseIDs") private var savedExerciseIDsRaw = ""
-    @FocusState private var focusedRepsField: PlannedSetFocus?
     @State private var sessionDate: Date?
     @State private var sessionDateKey: String?
     @State private var sessionStartedAt: Date?
     @State private var sessionElapsedSeconds = 0
     @State private var isOtherDateTimerDialogPresented = false
     @State private var isEmptyWorkoutStartDialogPresented = false
-    @State private var keyboardHeight: CGFloat = 0
-    @State private var selectedDetailItem: ExerciseLibraryItem?
+    @State private var isCalorieSummaryPresented = false
+    @State private var selectedWorkoutRoute: PlannedWorkoutDetailRoute?
     @State private var isGuidedWorkoutPresented = false
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
@@ -268,7 +267,10 @@ struct HomeView: View {
                         hasTimerSession: hasSelectedSessionTimer,
                         toggleTimer: handleSessionTimerTap,
                         stopTimer: stopSessionTimer,
-                        discardTimer: discardSessionTimer
+                        discardTimer: discardSessionTimer,
+                        showCalories: {
+                            isCalorieSummaryPresented = true
+                        }
                     )
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -283,27 +285,15 @@ struct HomeView: View {
                         ForEach(selectedExercises) { exercise in
                             PlannedExerciseRow(
                                 exercise: exercise,
-                                focusedRepsField: $focusedRepsField,
-                                rpeScale: rpeScale,
-                                updateSets: { sets in
-                                    updateExercise(exercise.id) { $0.setSetCount(sets) }
-                                },
-                                updateSetReps: { setIndex, reps in
-                                    updateExercise(exercise.id) { $0.setReps(reps, forSet: setIndex) }
-                                },
-                                updateSetRPE: { setIndex, rpe in
-                                    let scale = rpeScale
-                                    updateExercise(exercise.id) { exercise in
-                                        let values = exercise.normalizedSetRPE
-                                        let previous = values.indices.contains(setIndex) ? values[setIndex] : ""
-                                        exercise.setRPE(scale.sanitizedInput(rpe, previousValue: previous), forSet: setIndex)
-                                    }
-                                },
                                 toggleDone: {
-                                    updateExercise(exercise.id) { $0.isDone.toggle() }
+                                    updateExercise(exercise.id) { $0.setDone(!$0.isDone) }
                                 },
                                 openDetail: {
-                                    selectedDetailItem = libraryItem(for: exercise)
+                                    selectedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: exercise.id)
+                                },
+                                startWorkout: {
+                                    startExercise(exercise.id)
+                                    selectedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: exercise.id)
                                 }
                             )
                             .id(exercise.id)
@@ -341,7 +331,6 @@ struct HomeView: View {
             .listSectionSpacing(8)
             .contentShape(Rectangle())
             .onTapGesture {
-                focusedRepsField = nil
                 dismissKeyboard()
             }
             .animation(.snappy, value: selectedDate)
@@ -372,8 +361,8 @@ struct HomeView: View {
                     .accessibilityLabel("Add workout")
                 }
             }
-            .navigationDestination(item: $selectedDetailItem) { item in
-                ExerciseLibraryDetailView(item: item)
+            .navigationDestination(item: $selectedWorkoutRoute) { route in
+                plannedWorkoutDetailDestination(route)
             }
             .navigationDestination(isPresented: $isGuidedWorkoutPresented) {
                 GuidedWorkoutSessionView(
@@ -417,6 +406,16 @@ struct HomeView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text("Add at least one workout to \(selectedDateTitle) before starting the timer.")
+            }
+            .sheet(isPresented: $isCalorieSummaryPresented) {
+                HomeCalorieSummarySheet(
+                    elapsedSeconds: currentSessionElapsedSeconds,
+                    workoutCount: selectedExercises.count,
+                    setCount: selectedCompletedSetCount,
+                    repCount: selectedRepCount
+                )
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $isWorkoutPickerPresented) {
                 WorkoutPickerSheet(
@@ -465,44 +464,55 @@ struct HomeView: View {
             .onChange(of: selectedExercises) {
                 updateSessionLiveActivityIfNeeded()
             }
-            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) { notification in
-                updateKeyboardHeight(from: notification)
+            .onReceive(NotificationCenter.default.publisher(for: WorkoutDayPlanStore.didChangeNotification)) { _ in
+                dayPlans = WorkoutDayPlanStore.load()
             }
-            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-                keyboardHeight = 0
             }
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    if focusedRepsField != nil {
-                        HStack {
-                            Spacer()
-                            Button("Done") {
-                                focusedRepsField = nil
-                                dismissKeyboard()
-                            }
-                            .font(.headline.weight(.bold))
-                            .foregroundStyle(Color.deltsAccent)
-                            .padding(.horizontal, 18)
-                            .padding(.vertical, 10)
-                            .background(Color.deltsPanel.opacity(0.72), in: Capsule())
-                            .overlay {
-                                Capsule()
-                                    .stroke(Color.deltsHairline.opacity(0.72), lineWidth: 0.8)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 8)
-                        .transition(.opacity)
+        }
+    }
+
+    @ViewBuilder
+    private func plannedWorkoutDetailDestination(_ route: PlannedWorkoutDetailRoute) -> some View {
+        if let exercise = selectedExercises.first(where: { $0.id == route.exerciseID }) {
+            ExerciseLibraryDetailView(
+                item: detailItem(for: exercise),
+                plannedExercise: exercise,
+                dayExercises: selectedExercises,
+                rpeScale: rpeScale,
+                allowsSetEditing: true,
+                updateSets: { sets in
+                    updateExercise(exercise.id) { $0.setSetCount(sets) }
+                },
+                updateSetReps: { setIndex, reps in
+                    updateExercise(exercise.id) { exercise in
+                        exercise.setReps(reps, forSet: setIndex)
+                        exercise.syncSetCompletionTimestamp(forSet: setIndex)
                     }
-                }
-                .onChange(of: focusedRepsField) { _, field in
-                    guard let field else { return }
-                    scrollFocusedExercise(field.exerciseID, with: proxy, delay: 0.18)
-                }
-                .onChange(of: keyboardHeight) { _, _ in
-                    guard let field = focusedRepsField else { return }
-                    scrollFocusedExercise(field.exerciseID, with: proxy, delay: 0.05)
-                }
-            }
+                },
+                updateSetRPE: { setIndex, rpe in
+                    let scale = rpeScale
+                    updateExercise(exercise.id) { exercise in
+                        let values = exercise.normalizedSetRPE
+                        let previous = values.indices.contains(setIndex) ? values[setIndex] : ""
+                        exercise.setRPE(scale.sanitizedInput(rpe, previousValue: previous), forSet: setIndex)
+                        exercise.syncSetCompletionTimestamp(forSet: setIndex)
+                    }
+                },
+                toggleDone: {
+                    updateExercise(exercise.id) { $0.setDone(!$0.isDone) }
+                },
+                markDone: {
+                    updateExercise(exercise.id) { $0.setDone(true) }
+                },
+                openNext: nextWorkoutAction(after: exercise.id)
+            )
+        } else {
+            ContentUnavailableView(
+                "Workout removed",
+                systemImage: "trash",
+                description: Text("This workout is no longer in this day.")
+            )
+            .deltsScreen()
         }
     }
 
@@ -549,7 +559,6 @@ struct HomeView: View {
         } else if isSessionTimerPaused {
             playTimerClick()
             resumeSessionTimer()
-            openGuidedWorkoutIfPossible()
         } else if isAnySessionTimerRunning {
             playTimerClick()
             isOtherDateTimerDialogPresented = true
@@ -558,7 +567,6 @@ struct HomeView: View {
         } else {
             playTimerClick()
             startSessionTimer()
-            openGuidedWorkoutIfPossible()
         }
     }
 
@@ -637,8 +645,8 @@ struct HomeView: View {
                     weight: "",
                     reps: trimmedReps,
                     rpe: trimmedRPE.isEmpty ? nil : trimmedRPE,
-                    elapsedSeconds: nil,
-                    completedAt: nil
+                    elapsedSeconds: exercise.setElapsedSeconds(forSet: index),
+                    completedAt: exercise.normalizedSetCompletedAt.indices.contains(index) ? exercise.normalizedSetCompletedAt[index] : nil
                 )
             }
 
@@ -698,6 +706,18 @@ struct HomeView: View {
 
     private func libraryItem(for exercise: PlannedRoutineExercise) -> ExerciseLibraryItem? {
         service.exercises.first { $0.id == exercise.itemID }
+    }
+
+    private func detailItem(for exercise: PlannedRoutineExercise) -> ExerciseLibraryItem {
+        libraryItem(for: exercise) ?? ExerciseLibraryItem(
+            id: exercise.itemID,
+            name: exercise.name,
+            rawLevel: exercise.rawLevel,
+            category: exercise.category,
+            rawEquipment: exercise.rawEquipment,
+            primaryMuscles: exercise.primaryMuscles,
+            instructions: exercise.instructions
+        )
     }
 
     private func openWorkoutPicker(_ context: WorkoutPickerContext) {
@@ -781,6 +801,21 @@ struct HomeView: View {
         }
     }
 
+    private func startExercise(_ id: UUID) {
+        updateExercise(id) { $0.start() }
+    }
+
+    private func nextWorkoutAction(after id: UUID) -> (() -> Void)? {
+        guard let index = selectedExercises.firstIndex(where: { $0.id == id }),
+              selectedExercises.indices.contains(index + 1)
+        else { return nil }
+        let nextID = selectedExercises[index + 1].id
+        return {
+            startExercise(nextID)
+            selectedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: nextID)
+        }
+    }
+
     private func updateExercise(_ id: UUID, mutate: (inout PlannedRoutineExercise) -> Void) {
         updateSelectedPlan { plan in
             guard let index = plan.exercises.firstIndex(where: { $0.id == id }) else { return }
@@ -797,25 +832,13 @@ struct HomeView: View {
             dayPlans[selectedDateKey] = plan
         }
         WorkoutDayPlanStore.save(dayPlans)
+        WorkoutDayPlanStore.notifyChanged()
     }
 
     private func dismissKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 
-    private func scrollFocusedExercise(_ id: UUID, with proxy: ScrollViewProxy, delay: TimeInterval) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            withAnimation(.snappy) {
-                proxy.scrollTo(id, anchor: .center)
-            }
-        }
-    }
-
-    private func updateKeyboardHeight(from notification: Notification) {
-        guard let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
-        let screenHeight = UIScreen.main.bounds.height
-        keyboardHeight = max(0, screenHeight - frame.minY)
-    }
 }
 
 private struct WorkoutPickerContextMenuLabel: View {

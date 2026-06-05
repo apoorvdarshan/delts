@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 struct WorkoutsView: View {
     var body: some View {
@@ -18,6 +19,7 @@ private struct ExerciseLibraryBrowserView: View {
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
     @AppStorage("profile_show_only_target_primary_filters") private var showOnlyTargetPrimaryFilters = false
+    @AppStorage(RPEScale.storageKey) private var rpeScaleRaw = RPEScale.strength.rawValue
     @State private var searchText = ""
     @State private var selectedSplitGroupTitles: Set<String> = []
     @State private var selectedLevels: Set<String> = []
@@ -28,8 +30,22 @@ private struct ExerciseLibraryBrowserView: View {
     @State private var selectedMechanics: Set<String> = []
     @State private var selectedCategories: Set<String> = []
     @State private var selectedSort: ExerciseLibrarySort = .name
+    @State private var dayPlans: [String: WorkoutDayPlan] = WorkoutDayPlanStore.load()
+    @State private var startedWorkoutRoute: PlannedWorkoutDetailRoute?
 
     private let service = ExerciseLibraryService.shared
+
+    private var todayKey: String {
+        WorkoutDayPlanStore.key(for: Date())
+    }
+
+    private var todayExercises: [PlannedRoutineExercise] {
+        dayPlans[todayKey]?.exercises ?? []
+    }
+
+    private var rpeScale: RPEScale {
+        RPEScale(rawValue: rpeScaleRaw) ?? .strength
+    }
 
     private var selectedWorkoutSplit: WorkoutSplit {
         profiles.first?.workoutSplit ?? .fullBody
@@ -195,7 +211,16 @@ private struct ExerciseLibraryBrowserView: View {
 
                     ForEach(items) { item in
                         NavigationLink {
-                            ExerciseLibraryDetailView(item: item)
+                            ExerciseLibraryDetailView(
+                                item: item,
+                                plannedExercise: todayExercise(for: item),
+                                dayExercises: todayExercises,
+                                rpeScale: rpeScale,
+                                allowsSetEditing: false,
+                                startToday: {
+                                    startOrOpenTodayWorkout(item)
+                                }
+                            )
                         } label: {
                             ExerciseLibraryRow(item: item)
                         }
@@ -215,8 +240,52 @@ private struct ExerciseLibraryBrowserView: View {
         }
         .deltsScreen()
         .contentMargins(.bottom, 104, for: .scrollContent)
+        .navigationDestination(item: $startedWorkoutRoute) { route in
+            if let exercise = todayExercises.first(where: { $0.id == route.exerciseID }) {
+                ExerciseLibraryDetailView(
+                    item: detailItem(for: exercise),
+                    plannedExercise: exercise,
+                    dayExercises: todayExercises,
+                    rpeScale: rpeScale,
+                    allowsSetEditing: true,
+                    updateSets: { sets in
+                        updateTodayExercise(exercise.id) { $0.setSetCount(sets) }
+                    },
+                    updateSetReps: { setIndex, reps in
+                        updateTodayExercise(exercise.id) { exercise in
+                            exercise.setReps(reps, forSet: setIndex)
+                            exercise.syncSetCompletionTimestamp(forSet: setIndex)
+                        }
+                    },
+                    updateSetRPE: { setIndex, rpe in
+                        let scale = rpeScale
+                        updateTodayExercise(exercise.id) { exercise in
+                            let values = exercise.normalizedSetRPE
+                            let previous = values.indices.contains(setIndex) ? values[setIndex] : ""
+                            exercise.setRPE(scale.sanitizedInput(rpe, previousValue: previous), forSet: setIndex)
+                            exercise.syncSetCompletionTimestamp(forSet: setIndex)
+                        }
+                    },
+                    toggleDone: {
+                        updateTodayExercise(exercise.id) { $0.setDone(!$0.isDone) }
+                    },
+                    markDone: {
+                        updateTodayExercise(exercise.id) { $0.setDone(true) }
+                    },
+                    openNext: nextRouteAction(after: exercise.id)
+                )
+            } else {
+                ContentUnavailableView(
+                    "Workout removed",
+                    systemImage: "trash",
+                    description: Text("This workout is no longer in today's list.")
+                )
+                .deltsScreen()
+            }
+        }
         .onAppear {
             applyFilterState(ExerciseFilterStateStore.load(key: ExerciseFilterStateStore.workoutsKey))
+            dayPlans = WorkoutDayPlanStore.load()
             normalizePrimaryFilterSelection()
             normalizeEquipmentFilterSelection()
         }
@@ -238,6 +307,9 @@ private struct ExerciseLibraryBrowserView: View {
         }
         .onChange(of: datasetRawEquipmentRaw) {
             normalizeEquipmentFilterSelection()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: WorkoutDayPlanStore.didChangeNotification)) { _ in
+            dayPlans = WorkoutDayPlanStore.load()
         }
     }
 
@@ -469,6 +541,70 @@ private struct ExerciseLibraryBrowserView: View {
             next.insert(value)
         }
         return next
+    }
+
+    private func todayExercise(for item: ExerciseLibraryItem) -> PlannedRoutineExercise? {
+        todayExercises.first { $0.itemID == item.id }
+    }
+
+    private func detailItem(for exercise: PlannedRoutineExercise) -> ExerciseLibraryItem {
+        service.exercises.first { $0.id == exercise.itemID } ?? ExerciseLibraryItem(
+            id: exercise.itemID,
+            name: exercise.name,
+            rawLevel: exercise.rawLevel,
+            category: exercise.category,
+            rawEquipment: exercise.rawEquipment,
+            primaryMuscles: exercise.primaryMuscles,
+            instructions: exercise.instructions
+        )
+    }
+
+    private func startOrOpenTodayWorkout(_ item: ExerciseLibraryItem) {
+        var routeID: UUID?
+        updateTodayPlan { plan in
+            if let index = plan.exercises.firstIndex(where: { $0.itemID == item.id }) {
+                plan.exercises[index].start()
+                routeID = plan.exercises[index].id
+            } else {
+                var exercise = PlannedRoutineExercise(item: item)
+                exercise.start()
+                plan.exercises.append(exercise)
+                routeID = exercise.id
+            }
+        }
+        if let routeID {
+            startedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: routeID)
+        }
+    }
+
+    private func updateTodayExercise(_ id: UUID, mutate: (inout PlannedRoutineExercise) -> Void) {
+        updateTodayPlan { plan in
+            guard let index = plan.exercises.firstIndex(where: { $0.id == id }) else { return }
+            mutate(&plan.exercises[index])
+        }
+    }
+
+    private func updateTodayPlan(_ mutate: (inout WorkoutDayPlan) -> Void) {
+        var plan = dayPlans[todayKey] ?? WorkoutDayPlan(dateKey: todayKey)
+        mutate(&plan)
+        if plan.exercises.isEmpty {
+            dayPlans.removeValue(forKey: todayKey)
+        } else {
+            dayPlans[todayKey] = plan
+        }
+        WorkoutDayPlanStore.save(dayPlans)
+        WorkoutDayPlanStore.notifyChanged()
+    }
+
+    private func nextRouteAction(after id: UUID) -> (() -> Void)? {
+        guard let index = todayExercises.firstIndex(where: { $0.id == id }),
+              todayExercises.indices.contains(index + 1)
+        else { return nil }
+        let nextID = todayExercises[index + 1].id
+        return {
+            updateTodayExercise(nextID) { $0.start() }
+            startedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: nextID)
+        }
     }
 
     private func filterMenuPill<Content: View>(
@@ -999,6 +1135,20 @@ private struct LibraryTag: View {
 
 struct ExerciseLibraryDetailView: View {
     let item: ExerciseLibraryItem
+    var plannedExercise: PlannedRoutineExercise?
+    var dayExercises: [PlannedRoutineExercise] = []
+    var rpeScale: RPEScale = .strength
+    var allowsSetEditing = false
+    var startToday: (() -> Void)?
+    var updateSets: ((Int) -> Void)?
+    var updateSetReps: ((Int, String) -> Void)?
+    var updateSetRPE: ((Int, String) -> Void)?
+    var toggleDone: (() -> Void)?
+    var markDone: (() -> Void)?
+    var openNext: (() -> Void)?
+    @Environment(\.dismiss) private var dismiss
+    @State private var isMetricsPresented = false
+    @FocusState private var focusedField: PlannedSetFocus?
 
     var body: some View {
         GeometryReader { geometry in
@@ -1009,10 +1159,18 @@ struct ExerciseLibraryDetailView: View {
 
                 ScrollView(.vertical) {
                     VStack(alignment: .leading, spacing: 24) {
-                        DetailMetricGrid(item: item)
-
-                        Divider()
-                            .overlay(Color.deltsHairline.opacity(0.34))
+                        if let plannedExercise {
+                            ExerciseDetailSetLogSection(
+                                exercise: plannedExercise,
+                                rpeScale: rpeScale,
+                                allowsEditing: allowsSetEditing,
+                                restBeforeSeconds: restBeforeSeconds(for: plannedExercise),
+                                updateSets: { updateSets?($0) },
+                                updateSetReps: { updateSetReps?($0, $1) },
+                                updateSetRPE: { updateSetRPE?($0, $1) },
+                                focusedField: $focusedField
+                            )
+                        }
 
                         DetailInstructionSection(instructions: item.instructions)
                     }
@@ -1029,6 +1187,46 @@ struct ExerciseLibraryDetailView: View {
         .contentMargins(.bottom, 104, for: .scrollContent)
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            bottomActions
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 6)
+                .deltsBottomActionBackground()
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    focusedField = nil
+                    dismissKeyboard()
+                }
+            }
+        }
+        .sheet(isPresented: $isMetricsPresented) {
+            NavigationStack {
+                ScrollView {
+                    DetailMetricGrid(item: item)
+                        .padding(20)
+                        .padding(.bottom, 28)
+                }
+                .scrollIndicators(.hidden)
+                .deltsScreen()
+                .navigationTitle("Details")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Done") {
+                            isMetricsPresented = false
+                        }
+                        .font(.headline.weight(.heavy))
+                        .foregroundStyle(Color.deltsAccent)
+                    }
+                }
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
     }
 
     private func detailHero(width: CGFloat) -> some View {
@@ -1040,9 +1238,263 @@ struct ExerciseLibraryDetailView: View {
         )
         .frame(width: width, height: 294)
         .frame(width: width, height: 294, alignment: .bottomLeading)
+        .overlay(alignment: .topTrailing) {
+            Button {
+                isMetricsPresented = true
+            } label: {
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .frame(width: 44, height: 44)
+                    .background(Color.deltsBackground.opacity(0.82), in: Circle())
+                    .overlay {
+                        Circle()
+                            .stroke(Color.deltsHairline.opacity(0.42), lineWidth: 0.7)
+                    }
+            }
+            .buttonStyle(.plain)
+            .deltsPressable()
+            .padding(.top, 14)
+            .padding(.trailing, 16)
+            .accessibilityLabel("Show exercise details")
+        }
         .clipped()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text("\(item.name) exercise visual"))
+    }
+
+    @ViewBuilder
+    private var bottomActions: some View {
+        if let plannedExercise, hasPlannedActions {
+            HStack(spacing: 10) {
+                DoneToggleButton(isDone: plannedExercise.isDone) {
+                    toggleDone?()
+                }
+
+                PrimaryButton(
+                    title: openNext == nil ? "Done & Close" : "Done & Next",
+                    systemImage: openNext == nil ? "checkmark.seal.fill" : "arrow.right"
+                ) {
+                    markDone?()
+                    focusedField = nil
+                    dismissKeyboard()
+                    if let openNext {
+                        openNext()
+                    } else {
+                        dismiss()
+                    }
+                }
+            }
+        } else if let startToday {
+            PrimaryButton(title: plannedExercise == nil ? "Start Today" : "Open Today", systemImage: plannedExercise == nil ? "play.fill" : "arrow.up.right") {
+                startToday()
+            }
+        }
+    }
+
+    private var hasPlannedActions: Bool {
+        allowsSetEditing || toggleDone != nil || markDone != nil || openNext != nil
+    }
+
+    private func restBeforeSeconds(for exercise: PlannedRoutineExercise) -> Int? {
+        guard let index = dayExercises.firstIndex(where: { $0.id == exercise.id }),
+              index > 0
+        else { return nil }
+        let previous = dayExercises[index - 1]
+        let previousReference = previous.workoutEndReference ?? previous.addedAt
+        let currentReference = exercise.workoutStartReference ?? exercise.addedAt
+        return max(0, Int(currentReference.timeIntervalSince(previousReference)))
+    }
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
+private struct ExerciseDetailSetLogSection: View {
+    let exercise: PlannedRoutineExercise
+    let rpeScale: RPEScale
+    let allowsEditing: Bool
+    let restBeforeSeconds: Int?
+    let updateSets: (Int) -> Void
+    let updateSetReps: (Int, String) -> Void
+    let updateSetRPE: (Int, String) -> Void
+    let focusedField: FocusState<PlannedSetFocus?>.Binding
+
+    var body: some View {
+        let setReps = exercise.normalizedSetReps
+        let setRPE = exercise.normalizedSetRPE
+
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Sets")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.deltsCharcoal)
+
+                    Text(allowsEditing ? "Reps and RPE" : "Read-only log")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                }
+
+                Spacer(minLength: 8)
+
+                if allowsEditing {
+                    Stepper(value: Binding(get: { exercise.sets }, set: updateSets), in: 1...12) {
+                        Text("\(exercise.sets) set\(exercise.sets == 1 ? "" : "s")")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(Color.deltsCharcoal)
+                            .lineLimit(1)
+                    }
+                    .fixedSize()
+                } else {
+                    Text("\(exercise.sets) set\(exercise.sets == 1 ? "" : "s")")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .padding(.horizontal, 10)
+                        .frame(height: 32)
+                        .background(Color.deltsCard.opacity(0.42), in: Capsule())
+                }
+            }
+
+            if let restBeforeSeconds {
+                ExerciseDetailTimingBanner(
+                    title: "Rest before",
+                    value: ActiveWorkoutViewModel.elapsedDisplay(restBeforeSeconds),
+                    systemImage: "timer"
+                )
+            }
+
+            VStack(spacing: 0) {
+                ForEach(Array(setReps.indices), id: \.self) { index in
+                    if allowsEditing {
+                        VStack(alignment: .leading, spacing: 2) {
+                            PlannedSetField(
+                                exerciseID: exercise.id,
+                                setIndex: index,
+                                rpeScale: rpeScale,
+                                reps: Binding(
+                                    get: {
+                                        let values = exercise.normalizedSetReps
+                                        return values.indices.contains(index) ? values[index] : ""
+                                    },
+                                    set: { updateSetReps(index, $0) }
+                                ),
+                                rpe: Binding(
+                                    get: {
+                                        let values = exercise.normalizedSetRPE
+                                        return values.indices.contains(index) ? values[index] : ""
+                                    },
+                                    set: { updateSetRPE(index, $0) }
+                                ),
+                                focusedRepsField: focusedField
+                            )
+
+                            if let elapsedSeconds = exercise.setElapsedSeconds(forSet: index) {
+                                Text(index == 0 ? "Workout time \(ActiveWorkoutViewModel.elapsedDisplay(elapsedSeconds))" : "Rest \(ActiveWorkoutViewModel.elapsedDisplay(elapsedSeconds))")
+                                    .font(.caption2.weight(.bold))
+                                    .foregroundStyle(Color.deltsMutedText)
+                                    .padding(.leading, 64)
+                            }
+                        }
+                    } else {
+                        ExerciseDetailReadOnlySetRow(
+                            setIndex: index,
+                            reps: setReps.indices.contains(index) ? setReps[index] : "",
+                            rpe: setRPE.indices.contains(index) ? setRPE[index] : "",
+                            elapsedSeconds: exercise.setElapsedSeconds(forSet: index)
+                        )
+                    }
+
+                    if index < setReps.count - 1 {
+                        Divider()
+                            .overlay(Color.deltsHairline.opacity(0.5))
+                            .padding(.leading, 64)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.66), lineWidth: 0.8)
+        }
+    }
+}
+
+private struct ExerciseDetailTimingBanner: View {
+    let title: String
+    let value: String
+    let systemImage: String
+
+    var body: some View {
+        Label {
+            HStack(spacing: 6) {
+                Text(title)
+                Text(value)
+                    .monospacedDigit()
+            }
+        } icon: {
+            Image(systemName: systemImage)
+        }
+        .font(.caption.weight(.bold))
+        .foregroundStyle(Color.deltsAccent)
+        .padding(.horizontal, 10)
+        .frame(height: 34)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.deltsAccent.opacity(0.12), in: Capsule())
+        .overlay {
+            Capsule()
+                .stroke(Color.deltsAccent.opacity(0.24), lineWidth: 0.6)
+        }
+    }
+}
+
+private struct ExerciseDetailReadOnlySetRow: View {
+    let setIndex: Int
+    let reps: String
+    let rpe: String
+    let elapsedSeconds: Int?
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text("Set \(setIndex + 1)")
+                .font(.system(.subheadline, design: .rounded, weight: .bold))
+                .foregroundStyle(Color.deltsMutedText)
+                .frame(width: 54, alignment: .leading)
+
+            readOnlyValue(reps.trimmedValue, placeholder: "Reps")
+            readOnlyValue(rpe.trimmedValue, placeholder: "RPE")
+
+            if let elapsedSeconds {
+                Text(ActiveWorkoutViewModel.elapsedDisplay(elapsedSeconds))
+                    .font(.caption.weight(.bold).monospacedDigit())
+                    .foregroundStyle(Color.deltsAccent)
+                    .frame(width: 48, alignment: .trailing)
+            }
+        }
+        .padding(.vertical, 9)
+    }
+
+    private func readOnlyValue(_ value: String, placeholder: String) -> some View {
+        Text(value.isEmpty ? placeholder : value)
+            .font(.system(.subheadline, design: .rounded, weight: .bold).monospacedDigit())
+            .foregroundStyle(value.isEmpty ? Color.deltsMutedText.opacity(0.72) : Color.deltsCharcoal)
+            .frame(maxWidth: .infinity)
+            .frame(height: 36)
+            .background(Color.deltsCard.opacity(0.42), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.6)
+            }
+    }
+}
+
+private extension String {
+    var trimmedValue: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
