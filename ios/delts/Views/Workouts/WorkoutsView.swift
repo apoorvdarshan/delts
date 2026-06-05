@@ -1179,16 +1179,17 @@ struct ExerciseLibraryDetailView: View {
             .frame(width: screenWidth, alignment: .top)
         }
         .deltsScreen()
-        .ignoresSafeArea(.keyboard, edges: .bottom)
         .contentMargins(.bottom, 104, for: .scrollContent)
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
-            bottomActions
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
-                .padding(.bottom, 6)
-                .deltsBottomActionBackground()
+            if focusedField == nil {
+                bottomActions
+                    .padding(.horizontal, 20)
+                    .padding(.top, 10)
+                    .padding(.bottom, 6)
+                    .deltsBottomActionBackground()
+            }
         }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
