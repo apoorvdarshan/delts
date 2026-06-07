@@ -30,6 +30,7 @@ struct HomeView: View {
     @State private var isCalorieSummaryPresented = false
     @State private var selectedWorkoutRoute: PlannedWorkoutDetailRoute?
     @State private var isGuidedWorkoutPresented = false
+    @FocusState private var focusedField: PlannedSetFocus?
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
     @AppStorage("profile_show_only_target_primary_filters") private var showOnlyTargetPrimaryFilters = false
@@ -283,9 +284,25 @@ struct HomeView: View {
                         ForEach(selectedExercises) { exercise in
                             PlannedExerciseRow(
                                 exercise: exercise,
+                                rpeScale: rpeScale,
                                 openDetail: {
                                     selectedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: exercise.id)
-                                }
+                                },
+                                updateSets: { sets in
+                                    updateExercise(exercise.id) { $0.setSetCount(sets) }
+                                },
+                                updateSetReps: { setIndex, reps in
+                                    updateExercise(exercise.id) { $0.setReps(reps, forSet: setIndex) }
+                                },
+                                updateSetRPE: { setIndex, rpe in
+                                    let scale = rpeScale
+                                    updateExercise(exercise.id) { exercise in
+                                        let values = exercise.normalizedSetRPE
+                                        let previous = values.indices.contains(setIndex) ? values[setIndex] : ""
+                                        exercise.setRPE(scale.sanitizedInput(rpe, previousValue: previous), forSet: setIndex)
+                                    }
+                                },
+                                focusedField: $focusedField
                             )
                             .id(exercise.id)
                             .listRowBackground(Color.clear)
@@ -321,10 +338,7 @@ struct HomeView: View {
             .scrollContentBackground(.hidden)
             .background(Color.deltsBackground)
             .listSectionSpacing(8)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                dismissKeyboard()
-            }
+            .scrollDismissesKeyboard(.interactively)
             .animation(.snappy, value: selectedDate)
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
@@ -351,6 +365,13 @@ struct HomeView: View {
                     .font(.title2.weight(.semibold))
                     .tint(Color.deltsAccent)
                     .accessibilityLabel("Add workout")
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        focusedField = nil
+                        dismissKeyboard()
+                    }
                 }
             }
             .navigationDestination(item: $selectedWorkoutRoute) { route in
@@ -469,25 +490,6 @@ struct HomeView: View {
             ExerciseLibraryDetailView(
                 item: detailItem(for: exercise),
                 plannedExercise: exercise,
-                dayExercises: selectedExercises,
-                rpeScale: rpeScale,
-                allowsSetEditing: true,
-                updateSets: { sets in
-                    updateExercise(exercise.id) { $0.setSetCount(sets) }
-                },
-                updateSetReps: { setIndex, reps in
-                    updateExercise(exercise.id) { exercise in
-                        exercise.setReps(reps, forSet: setIndex)
-                    }
-                },
-                updateSetRPE: { setIndex, rpe in
-                    let scale = rpeScale
-                    updateExercise(exercise.id) { exercise in
-                        let values = exercise.normalizedSetRPE
-                        let previous = values.indices.contains(setIndex) ? values[setIndex] : ""
-                        exercise.setRPE(scale.sanitizedInput(rpe, previousValue: previous), forSet: setIndex)
-                    }
-                },
                 toggleDone: {
                     updateExercise(exercise.id) { $0.setDone(!$0.isDone) }
                 },

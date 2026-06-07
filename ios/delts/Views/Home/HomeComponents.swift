@@ -608,10 +608,18 @@ struct EmptyRoutineRow: View {
 
 struct PlannedExerciseRow: View {
     let exercise: PlannedRoutineExercise
+    let rpeScale: RPEScale
     let openDetail: () -> Void
+    let updateSets: (Int) -> Void
+    let updateSetReps: (Int, String) -> Void
+    let updateSetRPE: (Int, String) -> Void
+    let focusedField: FocusState<PlannedSetFocus?>.Binding
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
+        let setReps = exercise.normalizedSetReps
+        let setRPE = exercise.normalizedSetRPE
+
         VStack(alignment: .leading, spacing: 12) {
             Button(action: openDetail) {
                 HStack(alignment: .center, spacing: 12) {
@@ -654,24 +662,53 @@ struct PlannedExerciseRow: View {
             }
             .buttonStyle(.plain)
 
-            HStack(spacing: 10) {
-                PlannedExerciseSummaryPill(
-                    title: "\(exercise.sets)",
-                    subtitle: exercise.sets == 1 ? "set" : "sets",
-                    systemImage: "list.number"
-                )
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .center, spacing: 10) {
+                    Label("Sets", systemImage: "list.number")
+                        .font(.caption.weight(.heavy))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .labelStyle(.titleAndIcon)
 
-                PlannedExerciseSummaryPill(
-                    title: repsSummaryTitle,
-                    subtitle: "reps",
-                    systemImage: "repeat"
-                )
+                    Spacer(minLength: 8)
 
-                PlannedExerciseSummaryPill(
-                    title: rpeSummaryTitle,
-                    subtitle: "RPE",
-                    systemImage: "gauge.with.dots.needle.bottom.50percent"
-                )
+                    Stepper(value: Binding(get: { exercise.sets }, set: updateSets), in: 1...12) {
+                        Text("\(exercise.sets) set\(exercise.sets == 1 ? "" : "s")")
+                            .font(.caption.weight(.heavy))
+                            .foregroundStyle(Color.deltsCharcoal)
+                            .lineLimit(1)
+                    }
+                    .fixedSize()
+                }
+
+                VStack(spacing: 0) {
+                    ForEach(Array(setReps.indices), id: \.self) { index in
+                        PlannedSetField(
+                            exerciseID: exercise.id,
+                            setIndex: index,
+                            rpeScale: rpeScale,
+                            reps: Binding(
+                                get: {
+                                    let values = exercise.normalizedSetReps
+                                    return values.indices.contains(index) ? values[index] : ""
+                                },
+                                set: { updateSetReps(index, $0) }
+                            ),
+                            rpe: Binding(
+                                get: {
+                                    setRPE.indices.contains(index) ? setRPE[index] : ""
+                                },
+                                set: { updateSetRPE(index, $0) }
+                            ),
+                            focusedRepsField: focusedField
+                        )
+
+                        if index < setReps.count - 1 {
+                            Divider()
+                                .overlay(Color.deltsHairline.opacity(0.5))
+                                .padding(.leading, 64)
+                        }
+                    }
+                }
             }
         }
         .padding(16)
@@ -686,66 +723,6 @@ struct PlannedExerciseRow: View {
 
     private var shadowColor: Color {
         colorScheme == .light ? .clear : Color.black.opacity(0.22)
-    }
-
-    private var repsSummaryTitle: String {
-        let values = exercise.normalizedSetReps
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-        guard !values.isEmpty else { return "--" }
-        if Set(values).count == 1 {
-            return values[0]
-        }
-        return "\(values.count)"
-    }
-
-    private var rpeSummaryTitle: String {
-        let values = exercise.normalizedSetRPE
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-        guard !values.isEmpty else { return "--" }
-        if Set(values).count == 1 {
-            return values[0]
-        }
-        return "\(values.count)"
-    }
-}
-
-private struct PlannedExerciseSummaryPill: View {
-    let title: String
-    let subtitle: String
-    let systemImage: String
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: systemImage)
-                .font(.caption.weight(.black))
-                .foregroundStyle(Color.deltsAccent)
-                .frame(width: 16)
-
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(title)
-                    .font(.system(.subheadline, design: .rounded, weight: .black).monospacedDigit())
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-
-                Text(subtitle)
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-            }
-            .lineLimit(1)
-            .minimumScaleFactor(0.72)
-        }
-        .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
-        .padding(.horizontal, 10)
-        .background(Color.deltsCard.opacity(0.54), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.32), lineWidth: 0.6)
-        }
     }
 }
 

@@ -19,7 +19,6 @@ private struct ExerciseLibraryBrowserView: View {
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
     @AppStorage("profile_show_only_target_primary_filters") private var showOnlyTargetPrimaryFilters = false
-    @AppStorage(RPEScale.storageKey) private var rpeScaleRaw = RPEScale.strength.rawValue
     @State private var searchText = ""
     @State private var selectedSplitGroupTitles: Set<String> = []
     @State private var selectedLevels: Set<String> = []
@@ -41,10 +40,6 @@ private struct ExerciseLibraryBrowserView: View {
 
     private var todayExercises: [PlannedRoutineExercise] {
         dayPlans[todayKey]?.exercises ?? []
-    }
-
-    private var rpeScale: RPEScale {
-        RPEScale(rawValue: rpeScaleRaw) ?? .strength
     }
 
     private var selectedWorkoutSplit: WorkoutSplit {
@@ -214,9 +209,6 @@ private struct ExerciseLibraryBrowserView: View {
                             ExerciseLibraryDetailView(
                                 item: item,
                                 plannedExercise: todayExercise(for: item),
-                                dayExercises: todayExercises,
-                                rpeScale: rpeScale,
-                                allowsSetEditing: false,
                                 startToday: {
                                     startOrOpenTodayWorkout(item)
                                 }
@@ -245,25 +237,6 @@ private struct ExerciseLibraryBrowserView: View {
                 ExerciseLibraryDetailView(
                     item: detailItem(for: exercise),
                     plannedExercise: exercise,
-                    dayExercises: todayExercises,
-                    rpeScale: rpeScale,
-                    allowsSetEditing: true,
-                    updateSets: { sets in
-                        updateTodayExercise(exercise.id) { $0.setSetCount(sets) }
-                    },
-                    updateSetReps: { setIndex, reps in
-                        updateTodayExercise(exercise.id) { exercise in
-                            exercise.setReps(reps, forSet: setIndex)
-                        }
-                    },
-                    updateSetRPE: { setIndex, rpe in
-                        let scale = rpeScale
-                        updateTodayExercise(exercise.id) { exercise in
-                            let values = exercise.normalizedSetRPE
-                            let previous = values.indices.contains(setIndex) ? values[setIndex] : ""
-                            exercise.setRPE(scale.sanitizedInput(rpe, previousValue: previous), forSet: setIndex)
-                        }
-                    },
                     toggleDone: {
                         updateTodayExercise(exercise.id) { $0.setDone(!$0.isDone) }
                     },
@@ -1125,19 +1098,12 @@ private struct LibraryTag: View {
 struct ExerciseLibraryDetailView: View {
     let item: ExerciseLibraryItem
     var plannedExercise: PlannedRoutineExercise?
-    var dayExercises: [PlannedRoutineExercise] = []
-    var rpeScale: RPEScale = .strength
-    var allowsSetEditing = false
     var startToday: (() -> Void)?
-    var updateSets: ((Int) -> Void)?
-    var updateSetReps: ((Int, String) -> Void)?
-    var updateSetRPE: ((Int, String) -> Void)?
     var toggleDone: (() -> Void)?
     var markDone: (() -> Void)?
     var openNext: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
     @State private var isMetricsPresented = false
-    @FocusState private var focusedField: PlannedSetFocus?
 
     var body: some View {
         GeometryReader { geometry in
@@ -1150,18 +1116,6 @@ struct ExerciseLibraryDetailView: View {
                             .frame(width: screenWidth, height: 294)
 
                         VStack(alignment: .leading, spacing: 24) {
-                            if let plannedExercise {
-                                ExerciseDetailSetLogSection(
-                                    exercise: plannedExercise,
-                                    rpeScale: rpeScale,
-                                    allowsEditing: allowsSetEditing,
-                                    updateSets: { updateSets?($0) },
-                                    updateSetReps: { updateSetReps?($0, $1) },
-                                    updateSetRPE: { updateSetRPE?($0, $1) },
-                                    focusedField: $focusedField
-                                )
-                            }
-
                             DetailInstructionSection(instructions: item.instructions)
                         }
                         .padding(.horizontal, 20)
@@ -1183,22 +1137,11 @@ struct ExerciseLibraryDetailView: View {
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
-            if focusedField == nil {
-                bottomActions
-                    .padding(.horizontal, 20)
-                    .padding(.top, 10)
-                    .padding(.bottom, 6)
-                    .deltsBottomActionBackground()
-            }
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") {
-                    focusedField = nil
-                    dismissKeyboard()
-                }
-            }
+            bottomActions
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 6)
+                .deltsBottomActionBackground()
         }
     }
 
@@ -1263,8 +1206,6 @@ struct ExerciseLibraryDetailView: View {
                     prominent: false
                 ) {
                     markDone?()
-                    focusedField = nil
-                    dismissKeyboard()
                     dismiss()
                 }
 
@@ -1275,8 +1216,6 @@ struct ExerciseLibraryDetailView: View {
                         prominent: false
                     ) {
                         markDone?()
-                        focusedField = nil
-                        dismissKeyboard()
                         openNext()
                     }
                 }
@@ -1289,11 +1228,7 @@ struct ExerciseLibraryDetailView: View {
     }
 
     private var hasPlannedActions: Bool {
-        allowsSetEditing || toggleDone != nil || markDone != nil || openNext != nil
-    }
-
-    private func dismissKeyboard() {
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        toggleDone != nil || markDone != nil || openNext != nil
     }
 }
 
@@ -1419,138 +1354,6 @@ private struct ExerciseHeroMetricOverlay: View {
                 .stroke(strokeColor, lineWidth: 0.8)
         }
         .shadow(color: colorScheme == .light ? .clear : Color.black.opacity(0.18), radius: colorScheme == .light ? 0 : 8, x: 0, y: colorScheme == .light ? 0 : 4)
-    }
-}
-
-private struct ExerciseDetailSetLogSection: View {
-    let exercise: PlannedRoutineExercise
-    let rpeScale: RPEScale
-    let allowsEditing: Bool
-    let updateSets: (Int) -> Void
-    let updateSetReps: (Int, String) -> Void
-    let updateSetRPE: (Int, String) -> Void
-    let focusedField: FocusState<PlannedSetFocus?>.Binding
-
-    var body: some View {
-        let setReps = exercise.normalizedSetReps
-        let setRPE = exercise.normalizedSetRPE
-
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .center, spacing: 12) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Sets")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(Color.deltsCharcoal)
-
-                    Text(allowsEditing ? "Reps and RPE" : "Read-only log")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.deltsMutedText)
-                }
-
-                Spacer(minLength: 8)
-
-                if allowsEditing {
-                    Stepper(value: Binding(get: { exercise.sets }, set: updateSets), in: 1...12) {
-                        Text("\(exercise.sets) set\(exercise.sets == 1 ? "" : "s")")
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(Color.deltsCharcoal)
-                            .lineLimit(1)
-                    }
-                    .fixedSize()
-                } else {
-                    Text("\(exercise.sets) set\(exercise.sets == 1 ? "" : "s")")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(Color.deltsCharcoal)
-                        .padding(.horizontal, 10)
-                        .frame(height: 32)
-                        .background(Color.deltsCard.opacity(0.42), in: Capsule())
-                }
-            }
-
-            VStack(spacing: 0) {
-                ForEach(Array(setReps.indices), id: \.self) { index in
-                    if allowsEditing {
-                        PlannedSetField(
-                            exerciseID: exercise.id,
-                            setIndex: index,
-                            rpeScale: rpeScale,
-                            reps: Binding(
-                                get: {
-                                    let values = exercise.normalizedSetReps
-                                    return values.indices.contains(index) ? values[index] : ""
-                                },
-                                set: { updateSetReps(index, $0) }
-                            ),
-                            rpe: Binding(
-                                get: {
-                                    let values = exercise.normalizedSetRPE
-                                    return values.indices.contains(index) ? values[index] : ""
-                                },
-                                set: { updateSetRPE(index, $0) }
-                            ),
-                            focusedRepsField: focusedField
-                        )
-                    } else {
-                        ExerciseDetailReadOnlySetRow(
-                            setIndex: index,
-                            reps: setReps.indices.contains(index) ? setReps[index] : "",
-                            rpe: setRPE.indices.contains(index) ? setRPE[index] : ""
-                        )
-                    }
-
-                    if index < setReps.count - 1 {
-                        Divider()
-                            .overlay(Color.deltsHairline.opacity(0.5))
-                            .padding(.leading, 64)
-                    }
-                }
-            }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.deltsPanel, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.66), lineWidth: 0.8)
-        }
-    }
-}
-
-private struct ExerciseDetailReadOnlySetRow: View {
-    let setIndex: Int
-    let reps: String
-    let rpe: String
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Text("Set \(setIndex + 1)")
-                .font(.system(.subheadline, design: .rounded, weight: .bold))
-                .foregroundStyle(Color.deltsMutedText)
-                .frame(width: 54, alignment: .leading)
-
-            readOnlyValue(reps.trimmedValue, placeholder: "Reps")
-            readOnlyValue(rpe.trimmedValue, placeholder: "RPE")
-        }
-        .padding(.vertical, 9)
-    }
-
-    private func readOnlyValue(_ value: String, placeholder: String) -> some View {
-        Text(value.isEmpty ? placeholder : value)
-            .font(.system(.subheadline, design: .rounded, weight: .bold).monospacedDigit())
-            .foregroundStyle(value.isEmpty ? Color.deltsMutedText.opacity(0.72) : Color.deltsCharcoal)
-            .frame(maxWidth: .infinity)
-            .frame(height: 36)
-            .background(Color.deltsCard.opacity(0.42), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.6)
-            }
-    }
-}
-
-private extension String {
-    var trimmedValue: String {
-        trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
