@@ -168,6 +168,7 @@ struct ProgressTabView: View {
                 title: "Weight",
                 unit: usesImperialUnits ? "lb" : "kg",
                 values: filteredWeightPoints,
+                range: selectedRange,
                 currentValue: profiles.first.map { displayWeight($0.currentWeightKG) } ?? filteredWeightPoints.last?.value,
                 goalValue: effectiveGoalWeightKG.map(displayWeight),
                 goalText: nil,
@@ -182,6 +183,7 @@ struct ProgressTabView: View {
                 title: "Body Fat",
                 unit: "%",
                 values: filteredBodyFatPoints,
+                range: selectedRange,
                 currentValue: currentBodyFatValue,
                 goalValue: nil,
                 goalText: goalBodyFatText,
@@ -488,6 +490,23 @@ private enum ProgressRange: String, CaseIterable, Identifiable {
         return workouts.filter { $0.date >= startDate }
     }
 
+    var graphPointLimit: Int? {
+        switch self {
+        case .week:
+            return nil
+        case .month:
+            return 14
+        case .threeMonths:
+            return 16
+        case .sixMonths:
+            return 18
+        case .year:
+            return 20
+        case .all:
+            return 22
+        }
+    }
+
     var averagePeriodDays: Double? {
         switch self {
         case .week: return 7
@@ -641,6 +660,7 @@ private struct ProgressMetricCard: View {
     let title: String
     let unit: String
     let values: [ProgressMetricPoint]
+    let range: ProgressRange
     let currentValue: Double?
     let goalValue: Double?
     let goalText: String?
@@ -666,6 +686,10 @@ private struct ProgressMetricCard: View {
     private var averageValue: Double? {
         guard !values.isEmpty else { return displayedCurrentValue }
         return values.reduce(0) { $0 + $1.value } / Double(values.count)
+    }
+
+    private var graphValues: [ProgressMetricPoint] {
+        Self.reducedGraphValues(from: values, limit: range.graphPointLimit)
     }
 
     var body: some View {
@@ -695,7 +719,7 @@ private struct ProgressMetricCard: View {
                 MetricStatTile(title: "Average", value: averageValue.map(formatted) ?? "--")
             }
 
-            MetricLineGraph(points: values, unit: unit, goalValue: goalValue)
+            MetricLineGraph(points: graphValues, unit: unit, goalValue: goalValue)
                 .frame(height: 222)
         }
         .padding(18)
@@ -719,6 +743,40 @@ private struct ProgressMetricCard: View {
             return "\(sign)\(String(format: "%.1f%%", value))"
         }
         return "\(sign)\(String(format: "%.1f %@", value, unit))"
+    }
+
+    private static func reducedGraphValues(from values: [ProgressMetricPoint], limit: Int?) -> [ProgressMetricPoint] {
+        let sortedValues = values.sorted { $0.date < $1.date }
+        guard let limit,
+              sortedValues.count > limit,
+              limit > 2
+        else { return sortedValues }
+
+        let middleValues = Array(sortedValues.dropFirst().dropLast())
+        guard !middleValues.isEmpty else { return sortedValues }
+
+        let bucketCount = max(limit - 2, 1)
+        var reducedValues = [sortedValues[0]]
+
+        for bucket in 0..<bucketCount {
+            let startIndex = bucket * middleValues.count / bucketCount
+            let endIndex = (bucket + 1) * middleValues.count / bucketCount
+            guard startIndex < endIndex else { continue }
+
+            let bucketValues = middleValues[startIndex..<endIndex]
+            let average = bucketValues.reduce(0) { $0 + $1.value } / Double(bucketValues.count)
+            let midpointIndex = bucketValues.startIndex + bucketValues.count / 2
+
+            reducedValues.append(
+                ProgressMetricPoint(
+                    date: middleValues[midpointIndex].date,
+                    value: average
+                )
+            )
+        }
+
+        reducedValues.append(sortedValues[sortedValues.count - 1])
+        return reducedValues
     }
 }
 
@@ -752,6 +810,8 @@ private struct MetricLineGraph: View {
 
     private let axisWidth: CGFloat = 36
     private let dateLabelHeight: CGFloat = 30
+    private var lineWidth: CGFloat { points.count > 18 ? 2.8 : 3.2 }
+    private var pointSize: CGFloat { points.count > 18 ? 7 : 9 }
 
     var body: some View {
         GeometryReader { proxy in
@@ -783,7 +843,7 @@ private struct MetricLineGraph: View {
                 Path { path in
                     guard !points.isEmpty else { return }
                     for index in points.indices {
-                        let x = xPosition(for: index, plotWidth: plotWidth)
+                        let x = xPosition(for: points[index], index: index, plotWidth: plotWidth)
                         let y = yPosition(for: points[index].value, plotHeight: plotHeight, domain: domain, spread: spread)
                         if index == points.startIndex {
                             path.move(to: CGPoint(x: x, y: y))
@@ -792,14 +852,14 @@ private struct MetricLineGraph: View {
                         }
                     }
                 }
-                .stroke(Color.deltsAccent, style: StrokeStyle(lineWidth: 3.2, lineCap: .round, lineJoin: .round))
+                .stroke(Color.deltsAccent, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
 
                 ForEach(points.indices, id: \.self) { index in
-                    let x = xPosition(for: index, plotWidth: plotWidth)
+                    let x = xPosition(for: points[index], index: index, plotWidth: plotWidth)
                     let y = yPosition(for: points[index].value, plotHeight: plotHeight, domain: domain, spread: spread)
                     Circle()
                         .fill(Color.deltsAccent)
-                        .frame(width: 9, height: 9)
+                        .frame(width: pointSize, height: pointSize)
                         .position(x: x, y: y)
                 }
 
@@ -821,7 +881,7 @@ private struct MetricLineGraph: View {
                         .minimumScaleFactor(0.72)
                         .frame(width: 54)
                         .position(
-                            x: xPosition(for: index, plotWidth: plotWidth),
+                            x: xPosition(for: points[index], index: index, plotWidth: plotWidth),
                             y: plotHeight + dateLabelHeight * 0.64
                         )
                 }
@@ -856,8 +916,17 @@ private struct MetricLineGraph: View {
         return indices
     }
 
-    private func xPosition(for index: Int, plotWidth: CGFloat) -> CGFloat {
-        points.count == 1 ? plotWidth / 2 : CGFloat(index) / CGFloat(points.count - 1) * plotWidth
+    private func xPosition(for point: ProgressMetricPoint, index: Int, plotWidth: CGFloat) -> CGFloat {
+        guard let firstDate = points.first?.date,
+              let lastDate = points.last?.date
+        else { return plotWidth / 2 }
+
+        let duration = lastDate.timeIntervalSince(firstDate)
+        guard duration > 0 else {
+            return points.count == 1 ? plotWidth / 2 : CGFloat(index) / CGFloat(points.count - 1) * plotWidth
+        }
+
+        return CGFloat(point.date.timeIntervalSince(firstDate) / duration) * plotWidth
     }
 
     private func yPosition(
