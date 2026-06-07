@@ -254,7 +254,6 @@ private struct ExerciseLibraryBrowserView: View {
                     updateSetReps: { setIndex, reps in
                         updateTodayExercise(exercise.id) { exercise in
                             exercise.setReps(reps, forSet: setIndex)
-                            exercise.syncSetCompletionTimestamp(forSet: setIndex)
                         }
                     },
                     updateSetRPE: { setIndex, rpe in
@@ -263,7 +262,6 @@ private struct ExerciseLibraryBrowserView: View {
                             let values = exercise.normalizedSetRPE
                             let previous = values.indices.contains(setIndex) ? values[setIndex] : ""
                             exercise.setRPE(scale.sanitizedInput(rpe, previousValue: previous), forSet: setIndex)
-                            exercise.syncSetCompletionTimestamp(forSet: setIndex)
                         }
                     },
                     toggleDone: {
@@ -558,11 +556,9 @@ private struct ExerciseLibraryBrowserView: View {
         var routeID: UUID?
         updateTodayPlan { plan in
             if let index = plan.exercises.firstIndex(where: { $0.itemID == item.id }) {
-                plan.exercises[index].start()
                 routeID = plan.exercises[index].id
             } else {
-                var exercise = PlannedRoutineExercise(item: item)
-                exercise.start()
+                let exercise = PlannedRoutineExercise(item: item)
                 plan.exercises.append(exercise)
                 routeID = exercise.id
             }
@@ -597,7 +593,6 @@ private struct ExerciseLibraryBrowserView: View {
         else { return nil }
         let nextID = todayExercises[index + 1].id
         return {
-            updateTodayExercise(nextID) { $0.start() }
             startedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: nextID)
         }
     }
@@ -1148,34 +1143,39 @@ struct ExerciseLibraryDetailView: View {
         GeometryReader { geometry in
             let screenWidth = geometry.size.width
 
-            ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 0) {
-                    detailHero(width: screenWidth)
+            ZStack(alignment: .top) {
+                ScrollView(.vertical) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Color.clear
+                            .frame(width: screenWidth, height: 294)
 
-                    VStack(alignment: .leading, spacing: 24) {
-                        if let plannedExercise {
-                            ExerciseDetailSetLogSection(
-                                exercise: plannedExercise,
-                                rpeScale: rpeScale,
-                                allowsEditing: allowsSetEditing,
-                                restBeforeSeconds: restBeforeSeconds(for: plannedExercise),
-                                updateSets: { updateSets?($0) },
-                                updateSetReps: { updateSetReps?($0, $1) },
-                                updateSetRPE: { updateSetRPE?($0, $1) },
-                                focusedField: $focusedField
-                            )
+                        VStack(alignment: .leading, spacing: 24) {
+                            if let plannedExercise {
+                                ExerciseDetailSetLogSection(
+                                    exercise: plannedExercise,
+                                    rpeScale: rpeScale,
+                                    allowsEditing: allowsSetEditing,
+                                    updateSets: { updateSets?($0) },
+                                    updateSetReps: { updateSetReps?($0, $1) },
+                                    updateSetRPE: { updateSetRPE?($0, $1) },
+                                    focusedField: $focusedField
+                                )
+                            }
+
+                            DetailInstructionSection(instructions: item.instructions)
                         }
-
-                        DetailInstructionSection(instructions: item.instructions)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 24)
+                        .padding(.bottom, 112)
+                        .frame(width: screenWidth, alignment: .leading)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 24)
-                    .padding(.bottom, 112)
-                    .frame(width: screenWidth, alignment: .leading)
                 }
+                .scrollIndicators(.hidden)
+                .scrollDismissesKeyboard(.interactively)
+
+                detailHero(width: screenWidth)
+                    .zIndex(1)
             }
-            .scrollIndicators(.hidden)
-            .scrollDismissesKeyboard(.interactively)
             .frame(width: screenWidth, alignment: .top)
         }
         .deltsScreen()
@@ -1290,16 +1290,6 @@ struct ExerciseLibraryDetailView: View {
 
     private var hasPlannedActions: Bool {
         allowsSetEditing || toggleDone != nil || markDone != nil || openNext != nil
-    }
-
-    private func restBeforeSeconds(for exercise: PlannedRoutineExercise) -> Int? {
-        guard let index = dayExercises.firstIndex(where: { $0.id == exercise.id }),
-              index > 0
-        else { return nil }
-        let previous = dayExercises[index - 1]
-        let previousReference = previous.workoutEndReference ?? previous.addedAt
-        let currentReference = exercise.workoutStartReference ?? exercise.addedAt
-        return max(0, Int(currentReference.timeIntervalSince(previousReference)))
     }
 
     private func dismissKeyboard() {
@@ -1436,7 +1426,6 @@ private struct ExerciseDetailSetLogSection: View {
     let exercise: PlannedRoutineExercise
     let rpeScale: RPEScale
     let allowsEditing: Bool
-    let restBeforeSeconds: Int?
     let updateSets: (Int) -> Void
     let updateSetReps: (Int, String) -> Void
     let updateSetRPE: (Int, String) -> Void
@@ -1479,31 +1468,7 @@ private struct ExerciseDetailSetLogSection: View {
             }
 
             VStack(spacing: 0) {
-                if let restBeforeSeconds, restBeforeSeconds > 0 {
-                    ExerciseDetailRestIntervalRow(
-                        title: "Rest from previous workout",
-                        seconds: restBeforeSeconds
-                    )
-
-                    Divider()
-                        .overlay(Color.deltsHairline.opacity(0.5))
-                        .padding(.leading, 64)
-                }
-
                 ForEach(Array(setReps.indices), id: \.self) { index in
-                    if index > 0,
-                       let restSeconds = exercise.restSeconds(beforeSet: index),
-                       restSeconds > 0 {
-                        ExerciseDetailRestIntervalRow(
-                            title: "Rest before Set \(index + 1)",
-                            seconds: restSeconds
-                        )
-
-                        Divider()
-                            .overlay(Color.deltsHairline.opacity(0.5))
-                            .padding(.leading, 64)
-                    }
-
                     if allowsEditing {
                         PlannedSetField(
                             exerciseID: exercise.id,
@@ -1523,15 +1488,13 @@ private struct ExerciseDetailSetLogSection: View {
                                 },
                                 set: { updateSetRPE(index, $0) }
                             ),
-                            durationSeconds: exercise.setWorkoutElapsedSeconds(forSet: index) ?? exercise.setElapsedSeconds(forSet: index),
                             focusedRepsField: focusedField
                         )
                     } else {
                         ExerciseDetailReadOnlySetRow(
                             setIndex: index,
                             reps: setReps.indices.contains(index) ? setReps[index] : "",
-                            rpe: setRPE.indices.contains(index) ? setRPE[index] : "",
-                            durationSeconds: exercise.setWorkoutElapsedSeconds(forSet: index) ?? exercise.setElapsedSeconds(forSet: index)
+                            rpe: setRPE.indices.contains(index) ? setRPE[index] : ""
                         )
                     }
 
@@ -1553,34 +1516,10 @@ private struct ExerciseDetailSetLogSection: View {
     }
 }
 
-private struct ExerciseDetailRestIntervalRow: View {
-    let title: String
-    let seconds: Int
-
-    var body: some View {
-        Label {
-            HStack(spacing: 6) {
-                Text(title)
-                Text(ActiveWorkoutViewModel.elapsedDisplay(seconds))
-                    .monospacedDigit()
-            }
-        } icon: {
-            Image(systemName: "timer")
-        }
-        .font(.caption2.weight(.bold))
-        .foregroundStyle(Color.deltsAccent)
-        .padding(.horizontal, 10)
-        .frame(height: 32)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, 64)
-    }
-}
-
 private struct ExerciseDetailReadOnlySetRow: View {
     let setIndex: Int
     let reps: String
     let rpe: String
-    let durationSeconds: Int?
 
     var body: some View {
         HStack(spacing: 10) {
@@ -1591,7 +1530,6 @@ private struct ExerciseDetailReadOnlySetRow: View {
 
             readOnlyValue(reps.trimmedValue, placeholder: "Reps")
             readOnlyValue(rpe.trimmedValue, placeholder: "RPE")
-            readOnlyValue(durationSeconds.map(ActiveWorkoutViewModel.elapsedDisplay) ?? "", placeholder: "Time")
         }
         .padding(.vertical, 9)
     }

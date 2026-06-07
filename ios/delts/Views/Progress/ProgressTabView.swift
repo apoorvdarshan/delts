@@ -1115,23 +1115,6 @@ private struct WorkoutHistoryRow: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.deltsMutedText)
 
-            let stamps = workout.exerciseLogs
-                .flatMap(\.sets)
-                .compactMap(\.elapsedSeconds)
-                .prefix(4)
-
-            if !stamps.isEmpty {
-                HStack(spacing: 8) {
-                    ForEach(Array(stamps), id: \.self) { seconds in
-                        Text(ActiveWorkoutViewModel.elapsedDisplay(seconds))
-                            .font(.caption2.monospacedDigit().weight(.bold))
-                            .foregroundStyle(Color.deltsSecondaryAccent)
-                            .padding(.horizontal, 8)
-                            .frame(height: 26)
-                            .background(Color.deltsSecondaryAccent.opacity(0.10), in: Capsule())
-                    }
-                }
-            }
         }
         .padding(14)
         .background(Color.deltsPanel.opacity(0.20), in: RoundedRectangle(cornerRadius: 18, style: .continuous))

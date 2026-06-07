@@ -10,8 +10,6 @@ final class ActiveWorkoutViewModel: ObservableObject {
     @Published var weightInputs: [[String]]
     @Published var repInputs: [[String]]
     @Published var rpeInputs: [[String]]
-    @Published var setElapsedSeconds: [[Int?]]
-    @Published var setCompletionDates: [[Date?]]
 
     init(plan: WorkoutPlan, startIndex: Int = 0) {
         self.plan = plan
@@ -24,8 +22,6 @@ final class ActiveWorkoutViewModel: ObservableObject {
             Array(repeating: exercise.reps.components(separatedBy: "-").last ?? exercise.reps, count: max(exercise.sets, 1))
         }
         self.rpeInputs = sortedExercises.map { Array(repeating: "", count: max($0.sets, 1)) }
-        self.setElapsedSeconds = sortedExercises.map { Array(repeating: nil, count: max($0.sets, 1)) }
-        self.setCompletionDates = sortedExercises.map { Array(repeating: nil, count: max($0.sets, 1)) }
     }
 
     var exercises: [WorkoutExercise] {
@@ -52,26 +48,11 @@ final class ActiveWorkoutViewModel: ObservableObject {
         else { return }
 
         completedSets[currentExerciseIndex][setIndex].toggle()
-        if completedSets[currentExerciseIndex][setIndex] {
-            let completedAt = Date()
-            setCompletionDates[currentExerciseIndex][setIndex] = completedAt
-            setElapsedSeconds[currentExerciseIndex][setIndex] = Int(completedAt.timeIntervalSince(startedAt))
-        } else {
-            setCompletionDates[currentExerciseIndex][setIndex] = nil
-            setElapsedSeconds[currentExerciseIndex][setIndex] = nil
-        }
     }
 
     func nextExercise() {
         guard !isLastExercise else { return }
         currentExerciseIndex += 1
-    }
-
-    func setElapsedDisplay(exerciseIndex: Int, setIndex: Int) -> String? {
-        guard let seconds = setElapsedSeconds[safe: exerciseIndex]?[safe: setIndex] ?? nil else {
-            return nil
-        }
-        return Self.elapsedDisplay(seconds)
     }
 
     func makeCompletedWorkout(finishedAt: Date = Date()) -> CompletedWorkout {
@@ -83,9 +64,7 @@ final class ActiveWorkoutViewModel: ObservableObject {
                     completed: completedSets[safe: exerciseIndex]?[safe: setIndex] ?? false,
                     weight: weightInputs[safe: exerciseIndex]?[safe: setIndex] ?? "",
                     reps: repInputs[safe: exerciseIndex]?[safe: setIndex] ?? "",
-                    rpe: normalizedRPEInput(exerciseIndex: exerciseIndex, setIndex: setIndex),
-                    elapsedSeconds: setElapsedSeconds[safe: exerciseIndex]?[safe: setIndex] ?? nil,
-                    completedAt: setCompletionDates[safe: exerciseIndex]?[safe: setIndex] ?? nil
+                    rpe: normalizedRPEInput(exerciseIndex: exerciseIndex, setIndex: setIndex)
                 )
             }
 

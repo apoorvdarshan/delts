@@ -15,8 +15,6 @@ struct ActiveWorkoutView: View {
     @StateObject private var viewModel: ActiveWorkoutViewModel
     @FocusState private var focusedField: ActiveWorkoutLogField?
     @AppStorage(RPEScale.storageKey) private var rpeScaleRaw = RPEScale.strength.rawValue
-    @State private var restSecondsRemaining = 0
-    @State private var restTimerRunning = false
     @State private var now = Date()
 
     init(plan: WorkoutPlan, startIndex: Int = 0) {
@@ -30,7 +28,6 @@ struct ActiveWorkoutView: View {
                     activeHeader
                     exerciseSection(exercise)
                     setLogger(for: exercise)
-                    restStrip(exercise)
                 } else {
                     emptyState
                 }
@@ -61,22 +58,6 @@ struct ActiveWorkoutView: View {
             }
         }
         .animation(.easeInOut(duration: 0.22), value: viewModel.currentExerciseIndex)
-        .onChange(of: viewModel.currentExerciseIndex) {
-            resetRestTimer()
-        }
-        .task(id: restTimerRunning) {
-            guard restTimerRunning else { return }
-
-            while restSecondsRemaining > 0 && !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
-                guard !Task.isCancelled else { return }
-                restSecondsRemaining -= 1
-            }
-
-            if restSecondsRemaining <= 0 {
-                restTimerRunning = false
-            }
-        }
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
@@ -180,74 +161,6 @@ struct ActiveWorkoutView: View {
             }
         }
         .background(isSetComplete(setIndex) ? Color.deltsSecondaryAccent.opacity(0.08) : Color.clear)
-    }
-
-    private func restStrip(_ exercise: WorkoutExercise) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: "timer")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.deltsSecondaryAccent)
-                .frame(width: 32, height: 32)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Rest")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                Text("Between sets")
-                    .font(.caption)
-                    .foregroundStyle(Color.deltsMutedText)
-            }
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 8) {
-                Text(restTimerText(defaultSeconds: exercise.restSeconds))
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .monospacedDigit()
-
-                HStack(spacing: 8) {
-                    Button {
-                        toggleRestTimer(defaultSeconds: exercise.restSeconds)
-                    } label: {
-                        Label(restTimerRunning ? "Pause" : restSecondsRemaining > 0 ? "Resume" : "Start", systemImage: restTimerRunning ? "pause.fill" : "play.fill")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(Color.deltsOnAccent)
-                            .lineLimit(1)
-                            .padding(.vertical, 7)
-                            .padding(.horizontal, 10)
-                            .background(Color.deltsAccent, in: Capsule())
-                    }
-                    .deltsPressable()
-
-                    if restSecondsRemaining > 0 {
-                        Button {
-                            resetRestTimer()
-                        } label: {
-                            Image(systemName: "arrow.counterclockwise")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(Color.deltsSecondaryAccent)
-                                .frame(width: 34, height: 30)
-                                .background(Color.deltsPanel.opacity(0.34), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                        .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
-                                }
-                        }
-                        .deltsPressable()
-                        .accessibilityLabel("Reset rest timer")
-                    }
-                }
-            }
-        }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 2)
-        .overlay(alignment: .top) {
-            stripSeparator
-        }
-        .overlay(alignment: .bottom) {
-            stripSeparator
-        }
     }
 
     @ViewBuilder
@@ -402,16 +315,12 @@ struct ActiveWorkoutView: View {
                 exerciseMetric(title: "Sets", value: "\(exercise.sets)", systemImage: "number")
                 stripSeparator
                 exerciseMetric(title: "Reps", value: exercise.reps, systemImage: "repeat", tint: .deltsInferno)
-                stripSeparator
-                exerciseMetric(title: "Rest", value: exercise.restDisplay, systemImage: "timer", tint: .deltsSecondaryAccent)
             }
         } else {
             HStack(spacing: 0) {
                 exerciseMetric(title: "Sets", value: "\(exercise.sets)", systemImage: "number")
                 metricDivider
                 exerciseMetric(title: "Reps", value: exercise.reps, systemImage: "repeat", tint: .deltsInferno)
-                metricDivider
-                exerciseMetric(title: "Rest", value: exercise.restDisplay, systemImage: "timer", tint: .deltsSecondaryAccent)
             }
         }
     }
@@ -479,16 +388,8 @@ struct ActiveWorkoutView: View {
     }
 
     private func setStamp(_ setIndex: Int) -> some View {
-        VStack(spacing: 5) {
-            setNumberBadge(setIndex)
-            if let elapsed = viewModel.setElapsedDisplay(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex) {
-                Text(elapsed)
-                    .font(.caption2.monospacedDigit().weight(.bold))
-                    .foregroundStyle(Color.deltsSecondaryAccent)
-                    .lineLimit(1)
-            }
-        }
-        .frame(width: 48)
+        setNumberBadge(setIndex)
+            .frame(width: 48)
     }
 
     @ViewBuilder
@@ -694,30 +595,9 @@ struct ActiveWorkoutView: View {
 
     private func goToNextExercise() {
         focusedField = nil
-        resetRestTimer()
         withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
             viewModel.nextExercise()
         }
-    }
-
-    private func toggleRestTimer(defaultSeconds: Int) {
-        guard defaultSeconds > 0 else { return }
-        if restSecondsRemaining <= 0 {
-            restSecondsRemaining = defaultSeconds
-        }
-        restTimerRunning.toggle()
-    }
-
-    private func resetRestTimer() {
-        restTimerRunning = false
-        restSecondsRemaining = 0
-    }
-
-    private func restTimerText(defaultSeconds: Int) -> String {
-        let seconds = restSecondsRemaining > 0 ? restSecondsRemaining : defaultSeconds
-        let minutes = seconds / 60
-        let remainder = seconds % 60
-        return String(format: "%d:%02d", minutes, remainder)
     }
 
     private func completedSetCount(for exercise: WorkoutExercise) -> Int {

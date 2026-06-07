@@ -284,7 +284,6 @@ struct HomeView: View {
                             PlannedExerciseRow(
                                 exercise: exercise,
                                 openDetail: {
-                                    startExercise(exercise.id)
                                     selectedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: exercise.id)
                                 }
                             )
@@ -479,7 +478,6 @@ struct HomeView: View {
                 updateSetReps: { setIndex, reps in
                     updateExercise(exercise.id) { exercise in
                         exercise.setReps(reps, forSet: setIndex)
-                        exercise.syncSetCompletionTimestamp(forSet: setIndex)
                     }
                 },
                 updateSetRPE: { setIndex, rpe in
@@ -488,7 +486,6 @@ struct HomeView: View {
                         let values = exercise.normalizedSetRPE
                         let previous = values.indices.contains(setIndex) ? values[setIndex] : ""
                         exercise.setRPE(scale.sanitizedInput(rpe, previousValue: previous), forSet: setIndex)
-                        exercise.syncSetCompletionTimestamp(forSet: setIndex)
                     }
                 },
                 toggleDone: {
@@ -637,9 +634,7 @@ struct HomeView: View {
                     completed: exercise.isDone || !trimmedReps.isEmpty || !trimmedRPE.isEmpty,
                     weight: "",
                     reps: trimmedReps,
-                    rpe: trimmedRPE.isEmpty ? nil : trimmedRPE,
-                    elapsedSeconds: exercise.setElapsedSeconds(forSet: index),
-                    completedAt: exercise.normalizedSetCompletedAt.indices.contains(index) ? exercise.normalizedSetCompletedAt[index] : nil
+                    rpe: trimmedRPE.isEmpty ? nil : trimmedRPE
                 )
             }
 
@@ -799,17 +794,12 @@ struct HomeView: View {
         }
     }
 
-    private func startExercise(_ id: UUID) {
-        updateExercise(id) { $0.start() }
-    }
-
     private func nextWorkoutAction(after id: UUID) -> (() -> Void)? {
         guard let index = selectedExercises.firstIndex(where: { $0.id == id }),
               selectedExercises.indices.contains(index + 1)
         else { return nil }
         let nextID = selectedExercises[index + 1].id
         return {
-            startExercise(nextID)
             selectedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: nextID)
         }
     }

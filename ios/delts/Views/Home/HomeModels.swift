@@ -69,10 +69,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
     var reps: String = ""
     var setReps: [String] = [""]
     var setRPE: [String] = [""]
-    var setCompletedAt: [Date?] = [nil]
     var addedAt: Date = Date()
-    var startedAt: Date?
-    var completedAt: Date?
     var isDone: Bool = false
 
     init(item: ExerciseLibraryItem) {
@@ -102,34 +99,6 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         return values
     }
 
-    var normalizedSetCompletedAt: [Date?] {
-        let count = max(sets, 1)
-        var values = setCompletedAt
-        if values.count < count {
-            values.append(contentsOf: Array(repeating: nil, count: count - values.count))
-        }
-        if values.count > count {
-            values = Array(values.prefix(count))
-        }
-        return values
-    }
-
-    var firstSetCompletedAt: Date? {
-        normalizedSetCompletedAt.compactMap(\.self).first
-    }
-
-    var lastSetCompletedAt: Date? {
-        normalizedSetCompletedAt.compactMap(\.self).last
-    }
-
-    var workoutStartReference: Date? {
-        startedAt ?? firstSetCompletedAt
-    }
-
-    var workoutEndReference: Date? {
-        completedAt ?? lastSetCompletedAt
-    }
-
     private func normalizedValues(_ storedValues: [String], fallback: String) -> [String] {
         let count = max(sets, 1)
         var values = storedValues
@@ -153,23 +122,17 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         let clampedCount = min(max(count, 1), 12)
         var repValues = normalizedSetReps
         var rpeValues = normalizedSetRPE
-        var completedValues = normalizedSetCompletedAt
         if repValues.count < clampedCount {
             repValues.append(contentsOf: Array(repeating: "", count: clampedCount - repValues.count))
         }
         if rpeValues.count < clampedCount {
             rpeValues.append(contentsOf: Array(repeating: "", count: clampedCount - rpeValues.count))
         }
-        if completedValues.count < clampedCount {
-            completedValues.append(contentsOf: Array(repeating: nil, count: clampedCount - completedValues.count))
-        }
         repValues = Array(repValues.prefix(clampedCount))
         rpeValues = Array(rpeValues.prefix(clampedCount))
-        completedValues = Array(completedValues.prefix(clampedCount))
         sets = clampedCount
         setReps = repValues
         setRPE = rpeValues
-        setCompletedAt = completedValues
         reps = Self.summary(for: repValues)
     }
 
@@ -188,77 +151,8 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         setRPE = values
     }
 
-    mutating func start(at date: Date = Date()) {
-        if startedAt == nil {
-            startedAt = date
-        }
-    }
-
-    mutating func setDone(_ isDone: Bool, at date: Date = Date()) {
+    mutating func setDone(_ isDone: Bool) {
         self.isDone = isDone
-        if isDone {
-            start(at: date)
-            completedAt = date
-        } else {
-            completedAt = nil
-        }
-    }
-
-    mutating func syncSetCompletionTimestamp(forSet index: Int, at date: Date = Date()) {
-        var completedValues = normalizedSetCompletedAt
-        guard completedValues.indices.contains(index) else { return }
-
-        let reps = normalizedSetReps
-        let rpe = normalizedSetRPE
-        let repsValue = reps.indices.contains(index) ? reps[index].trimmingCharacters(in: .whitespacesAndNewlines) : ""
-        let rpeValue = rpe.indices.contains(index) ? rpe[index].trimmingCharacters(in: .whitespacesAndNewlines) : ""
-        let hasLoggedSet = !repsValue.isEmpty || !rpeValue.isEmpty
-
-        if hasLoggedSet {
-            start(at: date)
-            if completedValues[index] == nil {
-                completedValues[index] = date
-            }
-        } else {
-            completedValues[index] = nil
-        }
-        setCompletedAt = completedValues
-    }
-
-    func setElapsedSeconds(forSet index: Int) -> Int? {
-        let completedValues = normalizedSetCompletedAt
-        guard completedValues.indices.contains(index),
-              let completedAt = completedValues[index]
-        else { return nil }
-
-        let referenceDate: Date?
-        if index == 0 {
-            referenceDate = startedAt
-        } else {
-            referenceDate = completedValues[index - 1]
-        }
-        guard let referenceDate else { return nil }
-        return max(0, Int(completedAt.timeIntervalSince(referenceDate)))
-    }
-
-    func setWorkoutElapsedSeconds(forSet index: Int) -> Int? {
-        let completedValues = normalizedSetCompletedAt
-        guard completedValues.indices.contains(index),
-              let startedAt,
-              let completedAt = completedValues[index]
-        else { return nil }
-        return max(0, Int(completedAt.timeIntervalSince(startedAt)))
-    }
-
-    func restSeconds(beforeSet index: Int) -> Int? {
-        let completedValues = normalizedSetCompletedAt
-        guard index > 0,
-              completedValues.indices.contains(index),
-              completedValues.indices.contains(index - 1),
-              let previousCompletedAt = completedValues[index - 1],
-              let currentCompletedAt = completedValues[index]
-        else { return nil }
-        return max(0, Int(currentCompletedAt.timeIntervalSince(previousCompletedAt)))
     }
 
     private mutating func normalizeStoredSets() {
@@ -293,10 +187,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         case reps
         case setReps
         case setRPE
-        case setCompletedAt
         case addedAt
-        case startedAt
-        case completedAt
         case isDone
     }
 
@@ -315,10 +206,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         reps = try container.decodeIfPresent(String.self, forKey: .reps) ?? ""
         setReps = try container.decodeIfPresent([String].self, forKey: .setReps) ?? []
         setRPE = try container.decodeIfPresent([String].self, forKey: .setRPE) ?? []
-        setCompletedAt = try container.decodeIfPresent([Date?].self, forKey: .setCompletedAt) ?? []
         addedAt = try container.decodeIfPresent(Date.self, forKey: .addedAt) ?? Date()
-        startedAt = try container.decodeIfPresent(Date.self, forKey: .startedAt)
-        completedAt = try container.decodeIfPresent(Date.self, forKey: .completedAt)
         isDone = try container.decodeIfPresent(Bool.self, forKey: .isDone) ?? false
         normalizeStoredSets()
     }
@@ -338,10 +226,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         try container.encode(repsSummary, forKey: .reps)
         try container.encode(normalizedSetReps, forKey: .setReps)
         try container.encode(normalizedSetRPE, forKey: .setRPE)
-        try container.encode(normalizedSetCompletedAt, forKey: .setCompletedAt)
         try container.encode(addedAt, forKey: .addedAt)
-        try container.encodeIfPresent(startedAt, forKey: .startedAt)
-        try container.encodeIfPresent(completedAt, forKey: .completedAt)
         try container.encode(isDone, forKey: .isDone)
     }
 }
