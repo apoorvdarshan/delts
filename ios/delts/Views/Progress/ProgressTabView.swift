@@ -582,6 +582,12 @@ private struct ProgressMetricPoint: Identifiable, Hashable {
     let value: Double
 }
 
+private struct MetricDateTick: Identifiable {
+    let id: Int
+    let date: Date
+    let xRatio: CGFloat
+}
+
 private struct ProgressEmptyState: View {
     let text: String
 
@@ -760,13 +766,13 @@ private struct MetricLineGraph: View {
             let plotHeight = max(size.height - dateLabelHeight, 1)
             let domain = yDomain
             let spread = max(domain.max - domain.min, 1)
-            let dateTicks = dateTickIndices(for: plotWidth)
+            let xAxisTicks = dateTicks
 
             ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Color.deltsCard.opacity(0.42))
 
-                MetricGraphGrid(verticalLineCount: max(dateTicks.count, 2))
+                MetricGraphGrid(verticalLineCount: max(xAxisTicks.count, 2))
                     .frame(width: plotWidth, height: plotHeight)
 
                 if let goalValue {
@@ -814,16 +820,15 @@ private struct MetricLineGraph: View {
                         .position(x: plotWidth + axisWidth / 2 + 4, y: y)
                 }
 
-                ForEach(dateTicks, id: \.self) { index in
-                    let x = xPosition(for: points[index], index: index, plotWidth: plotWidth)
-                    Text(dateLabel(for: points[index].date))
+                ForEach(xAxisTicks) { tick in
+                    Text(dateLabel(for: tick.date))
                         .font(.caption.weight(.bold))
                         .foregroundStyle(Color.deltsMutedText)
                         .lineLimit(1)
                         .minimumScaleFactor(0.64)
                         .frame(width: dateLabelWidth)
                         .position(
-                            x: dateLabelXPosition(for: x, plotWidth: plotWidth),
+                            x: dateLabelXPosition(for: tick.xRatio * plotWidth, plotWidth: plotWidth),
                             y: plotHeight + dateLabelHeight * 0.62
                         )
                 }
@@ -844,66 +849,20 @@ private struct MetricLineGraph: View {
         return (minValue - padding, maxValue + padding)
     }
 
-    private func dateTickIndices(for plotWidth: CGFloat) -> [Int] {
+    private var dateTicks: [MetricDateTick] {
         guard !points.isEmpty else { return [] }
-        guard points.count > 1 else { return [0] }
-
-        let minimumTickSpacing = dateLabelWidth + 10
-        let widthBasedTicks = max(2, Int((plotWidth - dateLabelWidth) / minimumTickSpacing) + 1)
-        let maxAxisTicks = usesMonthYearDateLabels ? 4 : 5
-        let desiredTickCount = min(points.count, maxAxisTicks, widthBasedTicks)
         let firstDate = points[0].date
         let lastDate = points[points.count - 1].date
-        let duration = lastDate.timeIntervalSince(firstDate)
-        guard duration > 0 else { return Array(points.indices.prefix(desiredTickCount)) }
+        let duration = max(lastDate.timeIntervalSince(firstDate), 0)
 
-        func nearestIndex(to targetOffset: TimeInterval) -> Int {
-            var nearestIndex = 0
-            var nearestDistance = TimeInterval.greatestFiniteMagnitude
-
-            for index in points.indices {
-                let offset = points[index].date.timeIntervalSince(firstDate)
-                let distance = abs(offset - targetOffset)
-                if distance < nearestDistance {
-                    nearestDistance = distance
-                    nearestIndex = index
-                }
-            }
-
-            return nearestIndex
+        return (0..<4).map { index in
+            let ratio = CGFloat(index) / 3
+            return MetricDateTick(
+                id: index,
+                date: firstDate.addingTimeInterval(duration * Double(ratio)),
+                xRatio: ratio
+            )
         }
-
-        let candidates = (0..<desiredTickCount).map { tick in
-            let targetOffset = duration * Double(tick) / Double(desiredTickCount - 1)
-            return nearestIndex(to: targetOffset)
-        }
-
-        var indices: [Int] = []
-
-        func labelX(for index: Int) -> CGFloat {
-            let x = xPosition(for: points[index], index: index, plotWidth: plotWidth)
-            return dateLabelXPosition(for: x, plotWidth: plotWidth)
-        }
-
-        func canPlace(_ index: Int) -> Bool {
-            !indices.contains(index) && indices.allSatisfy { abs(labelX(for: index) - labelX(for: $0)) >= minimumTickSpacing }
-        }
-
-        for candidate in candidates {
-            if canPlace(candidate) {
-                indices.append(candidate)
-            }
-        }
-
-        let lastIndex = points.count - 1
-        if !indices.contains(lastIndex) {
-            while let conflictIndex = indices.lastIndex(where: { abs(labelX(for: lastIndex) - labelX(for: $0)) < minimumTickSpacing }) {
-                indices.remove(at: conflictIndex)
-            }
-            indices.append(lastIndex)
-        }
-
-        return indices.sorted()
     }
 
     private var usesMonthYearDateLabels: Bool {
