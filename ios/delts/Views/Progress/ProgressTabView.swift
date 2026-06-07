@@ -81,7 +81,6 @@ struct ProgressTabView: View {
                 ProgressBodyFatRangeSheet(
                     title: "Log Body Fat",
                     initialValue: latestBodyFat ?? profiles.first?.currentBodyFatPercentage ?? 0,
-                    initialIsExact: currentBodyFatIsExact,
                     sex: profiles.first?.gender ?? "Male"
                 ) { value, isExact in
                     logBodyFat(value, isExact: isExact)
@@ -1236,10 +1235,29 @@ private struct ProgressMassWheelSheet: View {
 private struct ProgressBodyFatRangeSheet: View {
     let title: String
     let initialValue: Double
-    let initialIsExact: Bool
     let sex: String
     let save: (Double, Bool) -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var usesExactValue: Bool
+    @State private var whole: Int
+    @State private var decimal: Int
+
+    init(
+        title: String,
+        initialValue: Double,
+        sex: String,
+        save: @escaping (Double, Bool) -> Void
+    ) {
+        self.title = title
+        self.initialValue = initialValue
+        self.sex = sex
+        self.save = save
+
+        let parts = progressDecimalParts(for: initialValue, range: 0...60)
+        _usesExactValue = State(initialValue: false)
+        _whole = State(initialValue: parts.whole)
+        _decimal = State(initialValue: parts.decimal)
+    }
 
     private var selectedRange: ProgressBodyFatRange {
         ProgressBodyFatRange.matching(initialValue, sex: sex)
@@ -1249,27 +1267,37 @@ private struct ProgressBodyFatRangeSheet: View {
         ProgressBodyFatRange.options(for: sex)
     }
 
+    private var exactValue: Double {
+        Double(whole) + (Double(decimal) / 10)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    ProgressBodyFatExactSetter(initialValue: initialValue) { exactValue in
-                        save(exactValue, true)
-                        dismiss()
-                    }
+                    ProgressBodyFatModeToggle(isExactMode: $usesExactValue)
 
-                    ForEach(ranges) { range in
-                        Button {
-                            save(range.storedValue, false)
-                            dismiss()
-                        } label: {
-                            ProgressBodyFatRangeCard(
-                                range: range,
-                                sex: sex,
-                                isSelected: !initialIsExact && range.id == selectedRange.id
-                            )
+                    if usesExactValue {
+                        ProgressBodyFatExactWheelPicker(
+                            whole: $whole,
+                            decimal: $decimal,
+                            selectedValue: exactValue
+                        )
+                        .transition(.opacity)
+                    } else {
+                        ForEach(ranges) { range in
+                            Button {
+                                save(range.storedValue, false)
+                                dismiss()
+                            } label: {
+                                ProgressBodyFatRangeCard(
+                                    range: range,
+                                    sex: sex,
+                                    isSelected: range.id == selectedRange.id
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -1282,6 +1310,9 @@ private struct ProgressBodyFatRangeSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
+                        if usesExactValue {
+                            save(exactValue, true)
+                        }
                         dismiss()
                     }
                     .font(.headline.weight(.bold))
@@ -1294,47 +1325,53 @@ private struct ProgressBodyFatRangeSheet: View {
     }
 }
 
-private struct ProgressBodyFatExactSetter: View {
-    let save: (Double) -> Void
-    @State private var whole: Int
-    @State private var decimal: Int
-
-    init(initialValue: Double, save: @escaping (Double) -> Void) {
-        self.save = save
-        let parts = progressDecimalParts(for: initialValue, range: 0...60)
-        _whole = State(initialValue: parts.whole)
-        _decimal = State(initialValue: parts.decimal)
-    }
-
-    private var selectedValue: Double {
-        Double(whole) + (Double(decimal) / 10)
-    }
+private struct ProgressBodyFatModeToggle: View {
+    @Binding var isExactMode: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline) {
-                Label("Exact", systemImage: "number")
-                    .font(.headline.weight(.heavy))
-                    .foregroundStyle(Color.deltsCharcoal)
+        Toggle(isOn: $isExactMode) {
+            Label("Exact value", systemImage: "number")
+                .font(.headline.weight(.heavy))
+                .foregroundStyle(Color.deltsCharcoal)
+        }
+        .toggleStyle(.switch)
+        .tint(Color.deltsAccent)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(Color.deltsPanel.opacity(0.24), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.6)
+        }
+    }
+}
 
-                Spacer()
+private struct ProgressBodyFatExactWheelPicker: View {
+    @Binding var whole: Int
+    @Binding var decimal: Int
+    let selectedValue: Double
 
-                Text("\(progressFormatDecimal(selectedValue))%")
-                    .font(.title3.monospacedDigit().weight(.heavy))
-                    .foregroundStyle(Color.deltsAccent)
-            }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("\(progressFormatDecimal(selectedValue))%")
+                .font(.title2.monospacedDigit().weight(.bold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .frame(maxWidth: .infinity, alignment: .center)
 
             HStack(spacing: 10) {
                 ProgressWheelColumn(title: "Whole", selection: $whole, values: Array(0...60)) { "\($0)" }
                 ProgressWheelColumn(title: "Decimal", selection: $decimal, values: Array(0...9)) { ".\($0)" }
-            }
-            .frame(height: 138)
 
-            PrimaryButton(title: "Set exact", systemImage: "checkmark") {
-                save(selectedValue)
+                Text("%")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .frame(width: 48)
             }
+            .frame(height: 190)
         }
-        .padding(12)
+        .padding(.top, 18)
+        .padding(.horizontal, 14)
+        .padding(.bottom, 18)
         .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 22, style: .continuous)

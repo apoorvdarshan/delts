@@ -1476,6 +1476,21 @@ private struct ProfileBodyFatRangeSheet: View {
     @Binding var isExact: Bool
     let sex: String
     @Environment(\.dismiss) private var dismiss
+    @State private var usesExactValue: Bool
+    @State private var whole: Int
+    @State private var decimal: Int
+
+    init(title: String, selection: Binding<Double>, isExact: Binding<Bool>, sex: String) {
+        self.title = title
+        _selection = selection
+        _isExact = isExact
+        self.sex = sex
+
+        let parts = profileDecimalParts(for: selection.wrappedValue, range: 0...60)
+        _usesExactValue = State(initialValue: false)
+        _whole = State(initialValue: parts.whole)
+        _decimal = State(initialValue: parts.decimal)
+    }
 
     private var selectedRange: ProfileBodyFatRange {
         ProfileBodyFatRange.matching(selection, sex: sex)
@@ -1485,29 +1500,38 @@ private struct ProfileBodyFatRangeSheet: View {
         ProfileBodyFatRange.options(for: sex)
     }
 
+    private var exactValue: Double {
+        Double(whole) + (Double(decimal) / 10)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    ProfileBodyFatExactSetter(initialValue: selection) { exactValue in
-                        selection = exactValue
-                        isExact = true
-                        dismiss()
-                    }
+                    ProfileBodyFatModeToggle(isExactMode: $usesExactValue)
 
-                    ForEach(ranges) { range in
-                        Button {
-                            selection = range.storedValue
-                            isExact = false
-                            dismiss()
-                        } label: {
-                            ProfileBodyFatRangeCard(
-                                range: range,
-                                sex: sex,
-                                isSelected: !isExact && range.id == selectedRange.id
-                            )
+                    if usesExactValue {
+                        ProfileBodyFatExactWheelPicker(
+                            whole: $whole,
+                            decimal: $decimal,
+                            selectedValue: exactValue
+                        )
+                        .transition(.opacity)
+                    } else {
+                        ForEach(ranges) { range in
+                            Button {
+                                selection = range.storedValue
+                                isExact = false
+                                dismiss()
+                            } label: {
+                                ProfileBodyFatRangeCard(
+                                    range: range,
+                                    sex: sex,
+                                    isSelected: range.id == selectedRange.id
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -1520,6 +1544,10 @@ private struct ProfileBodyFatRangeSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
+                        if usesExactValue {
+                            selection = exactValue
+                            isExact = true
+                        }
                         dismiss()
                     }
                     .font(.headline.weight(.bold))
@@ -1532,50 +1560,53 @@ private struct ProfileBodyFatRangeSheet: View {
     }
 }
 
-private struct ProfileBodyFatExactSetter: View {
-    let initialValue: Double
-    let save: (Double) -> Void
-
-    @State private var whole: Int
-    @State private var decimal: Int
-
-    init(initialValue: Double, save: @escaping (Double) -> Void) {
-        self.initialValue = initialValue
-        self.save = save
-        let parts = profileDecimalParts(for: initialValue, range: 0...60)
-        _whole = State(initialValue: parts.whole)
-        _decimal = State(initialValue: parts.decimal)
-    }
-
-    private var selectedValue: Double {
-        Double(whole) + (Double(decimal) / 10)
-    }
+private struct ProfileBodyFatModeToggle: View {
+    @Binding var isExactMode: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline) {
-                Label("Exact", systemImage: "number")
-                    .font(.headline.weight(.heavy))
-                    .foregroundStyle(Color.deltsCharcoal)
+        Toggle(isOn: $isExactMode) {
+            Label("Exact value", systemImage: "number")
+                .font(.headline.weight(.heavy))
+                .foregroundStyle(Color.deltsCharcoal)
+        }
+        .toggleStyle(.switch)
+        .tint(Color.deltsAccent)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(Color.deltsPanel.opacity(0.24), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.6)
+        }
+    }
+}
 
-                Spacer()
+private struct ProfileBodyFatExactWheelPicker: View {
+    @Binding var whole: Int
+    @Binding var decimal: Int
+    let selectedValue: Double
 
-                Text("\(profileFormatDecimal(selectedValue))%")
-                    .font(.title3.monospacedDigit().weight(.heavy))
-                    .foregroundStyle(Color.deltsAccent)
-            }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("\(profileFormatDecimal(selectedValue))%")
+                .font(.title2.monospacedDigit().weight(.bold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .frame(maxWidth: .infinity, alignment: .center)
 
             HStack(spacing: 10) {
                 ProfileWheelColumn(title: "Whole", selection: $whole, values: Array(0...60)) { "\($0)" }
                 ProfileWheelColumn(title: "Decimal", selection: $decimal, values: Array(0...9)) { ".\($0)" }
-            }
-            .frame(height: 138)
 
-            PrimaryButton(title: "Set exact", systemImage: "checkmark") {
-                save(selectedValue)
+                Text("%")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .frame(width: 48)
             }
+            .frame(height: 190)
         }
-        .padding(12)
+        .padding(.top, 18)
+        .padding(.horizontal, 14)
+        .padding(.bottom, 18)
         .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
