@@ -281,16 +281,20 @@ struct HomeView: View {
                             PlannedExerciseRow(
                                 exercise: exercise,
                                 rpeScale: rpeScale,
+                                isLoggingEnabled: isSessionTimerRunning,
                                 openDetail: {
                                     selectedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: exercise.id)
                                 },
                                 updateSets: { sets in
+                                    guard isSessionTimerRunning else { return }
                                     updateExercise(exercise.id) { $0.setSetCount(sets) }
                                 },
                                 updateSetReps: { setIndex, reps in
+                                    guard isSessionTimerRunning else { return }
                                     updateExercise(exercise.id) { $0.setReps(reps, forSet: setIndex) }
                                 },
                                 updateSetRPE: { setIndex, rpe in
+                                    guard isSessionTimerRunning else { return }
                                     let scale = rpeScale
                                     updateExercise(exercise.id) { exercise in
                                         let values = exercise.normalizedSetRPE
@@ -380,13 +384,17 @@ struct HomeView: View {
                     timerStartedAt: selectedTimerStartedAt,
                     timerElapsedSeconds: selectedTimerElapsedSeconds,
                     rpeScale: rpeScale,
+                    isLoggingEnabled: isSessionTimerRunning,
                     updateSets: { exerciseID, sets in
+                        guard isSessionTimerRunning else { return }
                         updateExercise(exerciseID) { $0.setSetCount(sets) }
                     },
                     updateSetReps: { exerciseID, setIndex, reps in
+                        guard isSessionTimerRunning else { return }
                         updateExercise(exerciseID) { $0.setReps(reps, forSet: setIndex) }
                     },
                     updateSetRPE: { exerciseID, setIndex, rpe in
+                        guard isSessionTimerRunning else { return }
                         let scale = rpeScale
                         updateExercise(exerciseID) { exercise in
                             let values = exercise.normalizedSetRPE
@@ -395,6 +403,7 @@ struct HomeView: View {
                         }
                     },
                     markDone: { exerciseID, isDone in
+                        guard isSessionTimerRunning else { return }
                         updateExercise(exerciseID) { $0.isDone = isDone }
                     },
                     onFinish: finishGuidedWorkout
@@ -462,6 +471,11 @@ struct HomeView: View {
             }
             .onChange(of: selectedExercises) {
                 updateSessionLiveActivityIfNeeded()
+            }
+            .onChange(of: isSessionTimerRunning) { _, isRunning in
+                guard !isRunning else { return }
+                focusedField = nil
+                dismissKeyboard()
             }
             .onReceive(NotificationCenter.default.publisher(for: WorkoutDayPlanStore.didChangeNotification)) { _ in
                 dayPlans = WorkoutDayPlanStore.load()

@@ -510,6 +510,7 @@ struct EmptyRoutineRow: View {
 struct PlannedExerciseRow: View {
     let exercise: PlannedRoutineExercise
     let rpeScale: RPEScale
+    let isLoggingEnabled: Bool
     let openDetail: () -> Void
     let updateSets: (Int) -> Void
     let updateSetReps: (Int, String) -> Void
@@ -575,10 +576,12 @@ struct PlannedExerciseRow: View {
                     Stepper(value: Binding(get: { exercise.sets }, set: updateSets), in: 1...12) {
                         Text("\(exercise.sets) set\(exercise.sets == 1 ? "" : "s")")
                             .font(.caption.weight(.heavy))
-                            .foregroundStyle(Color.deltsCharcoal)
+                            .foregroundStyle(isLoggingEnabled ? Color.deltsCharcoal : Color.deltsMutedText.opacity(0.70))
                             .lineLimit(1)
                     }
                     .fixedSize()
+                    .disabled(!isLoggingEnabled)
+                    .opacity(isLoggingEnabled ? 1 : 0.54)
                 }
 
                 VStack(spacing: 0) {
@@ -587,6 +590,7 @@ struct PlannedExerciseRow: View {
                             exerciseID: exercise.id,
                             setIndex: index,
                             rpeScale: rpeScale,
+                            isEnabled: isLoggingEnabled,
                             reps: Binding(
                                 get: {
                                     let values = exercise.normalizedSetReps
@@ -611,6 +615,7 @@ struct PlannedExerciseRow: View {
                     }
                 }
             }
+            .opacity(isLoggingEnabled ? 1 : 0.62)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -631,6 +636,7 @@ struct PlannedSetField: View {
     let exerciseID: UUID
     let setIndex: Int
     let rpeScale: RPEScale
+    let isEnabled: Bool
     @Binding var reps: String
     @Binding var rpe: String
     let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
@@ -652,6 +658,7 @@ struct PlannedSetField: View {
                 text: $reps,
                 keyboardType: .numberPad,
                 focus: repsFocus,
+                isEnabled: isEnabled,
                 focusedRepsField: focusedRepsField
             )
             .frame(maxWidth: .infinity)
@@ -661,6 +668,7 @@ struct PlannedSetField: View {
                 text: $rpe,
                 keyboardType: rpeScale.allowsDecimalInput ? .decimalPad : .numberPad,
                 focus: rpeFocus,
+                isEnabled: isEnabled,
                 focusedRepsField: focusedRepsField
             )
             .frame(maxWidth: .infinity)
@@ -676,6 +684,7 @@ private struct PlannedSetValueField: View {
     @Binding var text: String
     let keyboardType: UIKeyboardType
     let focus: PlannedSetFocus
+    let isEnabled: Bool
     let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
 
     var body: some View {
@@ -686,6 +695,7 @@ private struct PlannedSetValueField: View {
                     text: $text,
                     keyboardType: keyboardType,
                     focus: focus,
+                    isEnabled: isEnabled,
                     focusedRepsField: focusedRepsField
                 )
             } else {
@@ -694,11 +704,13 @@ private struct PlannedSetValueField: View {
         }
         .padding(.horizontal, 10)
         .frame(height: 36)
-        .background(Color.deltsCard.opacity(0.74), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .background(Color.deltsCard.opacity(isEnabled ? 0.74 : 0.38), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.4), lineWidth: 0.6)
+                .stroke(Color.deltsHairline.opacity(isEnabled ? 0.4 : 0.24), lineWidth: 0.6)
         }
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : 0.62)
     }
 
     private var baseTextField: some View {
@@ -706,7 +718,7 @@ private struct PlannedSetValueField: View {
             .keyboardType(keyboardType)
             .textFieldStyle(.plain)
             .font(.system(.subheadline, design: .rounded, weight: .bold).monospacedDigit())
-            .foregroundStyle(Color.deltsCharcoal)
+            .foregroundStyle(isEnabled ? Color.deltsCharcoal : Color.deltsMutedText.opacity(0.72))
             .multilineTextAlignment(.center)
             .focused(focusedRepsField, equals: focus)
     }
@@ -718,6 +730,7 @@ private struct PlannedSetSelectionTextField: View {
     @Binding var text: String
     let keyboardType: UIKeyboardType
     let focus: PlannedSetFocus
+    let isEnabled: Bool
     let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
     @State private var selection: TextSelection?
 
@@ -726,7 +739,7 @@ private struct PlannedSetSelectionTextField: View {
             .keyboardType(keyboardType)
             .textFieldStyle(.plain)
             .font(.system(.subheadline, design: .rounded, weight: .bold).monospacedDigit())
-            .foregroundStyle(Color.deltsCharcoal)
+            .foregroundStyle(isEnabled ? Color.deltsCharcoal : Color.deltsMutedText.opacity(0.72))
             .multilineTextAlignment(.center)
             .focused(focusedRepsField, equals: focus)
             .onTapGesture {
@@ -751,6 +764,7 @@ struct GuidedWorkoutSessionView: View {
     let timerStartedAt: Date?
     let timerElapsedSeconds: Int
     let rpeScale: RPEScale
+    let isLoggingEnabled: Bool
     let updateSets: (UUID, Int) -> Void
     let updateSetReps: (UUID, Int, String) -> Void
     let updateSetRPE: (UUID, Int, String) -> Void
@@ -829,6 +843,11 @@ struct GuidedWorkoutSessionView: View {
         }
         .onChange(of: exercises.count) {
             currentIndex = min(currentIndex, max(exercises.count - 1, 0))
+        }
+        .onChange(of: isLoggingEnabled) { _, enabled in
+            guard !enabled else { return }
+            focusedField = nil
+            dismissKeyboard()
         }
     }
 
@@ -920,10 +939,12 @@ struct GuidedWorkoutSessionView: View {
                 Stepper(value: Binding(get: { exercise.sets }, set: { updateSets(exercise.id, $0) }), in: 1...12) {
                     Text("\(exercise.sets) set\(exercise.sets == 1 ? "" : "s")")
                         .font(.subheadline.weight(.bold))
-                        .foregroundStyle(Color.deltsCharcoal)
+                        .foregroundStyle(isLoggingEnabled ? Color.deltsCharcoal : Color.deltsMutedText.opacity(0.70))
                         .lineLimit(1)
                 }
                 .fixedSize()
+                .disabled(!isLoggingEnabled)
+                .opacity(isLoggingEnabled ? 1 : 0.54)
             }
 
             Button {
@@ -958,6 +979,8 @@ struct GuidedWorkoutSessionView: View {
             }
             .buttonStyle(.plain)
             .deltsPressable()
+            .disabled(!isLoggingEnabled)
+            .opacity(isLoggingEnabled ? 1 : 0.58)
 
             VStack(spacing: 0) {
                 ForEach(Array(setReps.indices), id: \.self) { index in
@@ -965,6 +988,7 @@ struct GuidedWorkoutSessionView: View {
                         exerciseID: exercise.id,
                         setIndex: index,
                         rpeScale: rpeScale,
+                        isEnabled: isLoggingEnabled,
                         reps: Binding(
                             get: {
                                 let values = exercise.normalizedSetReps
@@ -1036,6 +1060,7 @@ struct GuidedWorkoutSessionView: View {
 
     private func markCurrentExerciseDone() {
         guard let currentExercise else { return }
+        guard isLoggingEnabled else { return }
         markDone(currentExercise.id, true)
     }
 
