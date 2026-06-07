@@ -6,12 +6,13 @@ import UIKit
 struct ProfileView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
+    @ObservedObject var updateChecker: AppUpdateChecker
 
     var body: some View {
         NavigationStack {
             Group {
                 if let profile = profiles.first {
-                    ProfileEditorView(profile: profile)
+                    ProfileEditorView(profile: profile, updateChecker: updateChecker)
                 } else {
                     ProfileLoadingView()
                 }
@@ -42,6 +43,7 @@ private enum MeasurementSystem: String, CaseIterable, Hashable {
 private struct ProfileEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var profile: UserProfile
+    @ObservedObject var updateChecker: AppUpdateChecker
     @AppStorage("profile_height_measurement_system") private var heightMeasurementSystemRaw = MeasurementSystem.metric.rawValue
     @AppStorage("profile_weight_measurement_system") private var weightMeasurementSystemRaw = MeasurementSystem.metric.rawValue
     @AppStorage("profile_custom_workout_split") private var customWorkoutSplit = ""
@@ -78,6 +80,7 @@ private struct ProfileEditorView: View {
                 goalSection
                 scheduleSection
                 strengthSection
+                AboutSettingsSection(updateChecker: updateChecker)
             }
             .padding(.horizontal, 20)
             .padding(.top, 10)

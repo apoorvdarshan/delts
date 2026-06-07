@@ -53,13 +53,9 @@ struct ContentView: View {
                 .tabItem { Label(DeltsTab.progress.title, systemImage: DeltsTab.progress.systemImage) }
                 .tag(DeltsTab.progress)
 
-            ProfileView()
+            ProfileView(updateChecker: updateChecker)
                 .tabItem { Label(DeltsTab.profile.title, systemImage: DeltsTab.profile.systemImage) }
                 .tag(DeltsTab.profile)
-
-            AboutView(updateChecker: updateChecker)
-                .tabItem { Label(DeltsTab.about.title, systemImage: DeltsTab.about.systemImage) }
-                .tag(DeltsTab.about)
                 .badge(updateChecker.isUpdateAvailable ? Text("") : nil)
         }
     }
@@ -197,7 +193,6 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
     case workouts
     case progress
     case profile
-    case about
 
     var id: String { rawValue }
 
@@ -223,7 +218,6 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
         case .workouts: return "Workouts"
         case .progress: return "Progress"
         case .profile: return "Setting"
-        case .about: return "About"
         }
     }
 
@@ -233,7 +227,6 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
         case .workouts: return "list.clipboard.fill"
         case .progress: return "chart.line.uptrend.xyaxis"
         case .profile: return "gearshape.fill"
-        case .about: return "info.circle.fill"
         }
     }
 }

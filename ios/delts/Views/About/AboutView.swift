@@ -4,15 +4,32 @@ import SwiftUI
 import UIKit
 
 struct AboutView: View {
+    @ObservedObject var updateChecker: AppUpdateChecker
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                AboutSettingsSection(updateChecker: updateChecker)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 14)
+                    .padding(.bottom, 120)
+            }
+            .deltsScreen()
+            .navigationTitle("About")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
+        }
+    }
+}
+
+struct AboutSettingsSection: View {
     @Environment(\.openURL) private var openURL
     @ObservedObject var updateChecker: AppUpdateChecker
     @State private var isWhatsNewExpanded = false
     @State private var activeAlert: AboutAlert?
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 18) {
                     AboutSection(title: "Release") {
                         AboutRowStack {
                             AboutActionRow(
@@ -177,15 +194,6 @@ struct AboutView: View {
                             }
                         }
                     }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 14)
-                .padding(.bottom, 120)
-            }
-            .deltsScreen()
-            .navigationTitle("About")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar(.hidden, for: .navigationBar)
         }
         .alert(item: $activeAlert) { alert in
             switch alert {
@@ -573,7 +581,7 @@ private struct AboutWhatsNewInlineContent: View {
         ),
         AboutWhatsNewItem(
             title: "About section",
-            detail: "App updates, support, social, legal, and feedback actions now live outside Profile."
+            detail: "App updates, support, social, legal, and feedback actions now live in Settings."
         )
     ]
 
