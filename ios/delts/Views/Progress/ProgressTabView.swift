@@ -138,28 +138,29 @@ struct ProgressTabView: View {
     }
 
     private var rangePicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 9) {
-                ForEach(ProgressRange.allCases) { range in
-                    Button {
-                        selectedRange = range
-                    } label: {
-                        Text(range.title)
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(selectedRange == range ? Color.deltsOnAccent : Color.deltsCharcoal)
-                            .padding(.horizontal, 14)
-                            .frame(height: 40)
-                            .background(selectedRange == range ? Color.deltsAccent : Color.deltsPanel.opacity(0.24), in: Capsule())
-                            .overlay {
-                                Capsule()
-                                    .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
-                            }
-                    }
-                    .deltsPressable()
+        HStack(spacing: 6) {
+            ForEach(ProgressRange.allCases) { range in
+                Button {
+                    selectedRange = range
+                } label: {
+                    Text(range.title)
+                        .font(.footnote.weight(.heavy))
+                        .foregroundStyle(selectedRange == range ? Color.deltsOnAccent : Color.deltsCharcoal)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 38)
+                        .background(selectedRange == range ? Color.deltsAccent : Color.deltsPanel.opacity(0.24), in: Capsule())
+                        .overlay {
+                            Capsule()
+                                .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
+                        }
                 }
+                .buttonStyle(.plain)
+                .deltsPressable()
             }
-            .padding(.horizontal, 1)
         }
+        .frame(maxWidth: .infinity)
     }
 
     private var metricGraphs: some View {
@@ -820,12 +821,13 @@ private struct MetricLineGraph: View {
             let plotHeight = max(size.height - dateLabelHeight, 1)
             let domain = yDomain
             let spread = max(domain.max - domain.min, 1)
+            let dateTicks = dateTickIndices(for: plotWidth)
 
             ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Color.deltsCard.opacity(0.42))
 
-                MetricGraphGrid(verticalLineCount: max(dateTickIndices.count, 2))
+                MetricGraphGrid(verticalLineCount: max(dateTicks.count, 2))
                     .frame(width: plotWidth, height: plotHeight)
 
                 if let goalValue {
@@ -873,7 +875,8 @@ private struct MetricLineGraph: View {
                         .position(x: plotWidth + axisWidth / 2 + 4, y: y)
                 }
 
-                ForEach(dateTickIndices, id: \.self) { index in
+                ForEach(dateTicks, id: \.self) { index in
+                    let x = xPosition(for: points[index], index: index, plotWidth: plotWidth)
                     Text(points[index].date.formatted(.dateTime.month(.abbreviated).day()))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.deltsMutedText)
@@ -881,7 +884,7 @@ private struct MetricLineGraph: View {
                         .minimumScaleFactor(0.72)
                         .frame(width: 54)
                         .position(
-                            x: xPosition(for: points[index], index: index, plotWidth: plotWidth),
+                            x: dateLabelXPosition(for: x, plotWidth: plotWidth),
                             y: plotHeight + dateLabelHeight * 0.64
                         )
                 }
@@ -902,18 +905,53 @@ private struct MetricLineGraph: View {
         return (minValue - padding, maxValue + padding)
     }
 
-    private var dateTickIndices: [Int] {
+    private func dateTickIndices(for plotWidth: CGFloat) -> [Int] {
         guard !points.isEmpty else { return [] }
-        let maxTicks = 6
-        guard points.count > maxTicks else { return Array(points.indices) }
+        guard points.count > 1 else { return [0] }
+
+        let labelMinSpacing: CGFloat = 58
+        let maxTicks = max(2, min(5, Int(plotWidth / labelMinSpacing) + 1))
         var indices: [Int] = []
-        for tick in 0..<maxTicks {
+
+        func labelX(for index: Int) -> CGFloat {
+            let x = xPosition(for: points[index], index: index, plotWidth: plotWidth)
+            return dateLabelXPosition(for: x, plotWidth: plotWidth)
+        }
+
+        func appendIfSeparated(_ index: Int) {
+            guard indices.last != index else { return }
+            if let previousIndex = indices.last {
+                guard abs(labelX(for: index) - labelX(for: previousIndex)) >= labelMinSpacing else { return }
+            }
+            indices.append(index)
+        }
+
+        appendIfSeparated(0)
+
+        for tick in 1..<(maxTicks - 1) {
             let index = Int((Double(tick) * Double(points.count - 1) / Double(maxTicks - 1)).rounded())
-            if indices.last != index {
-                indices.append(index)
+            appendIfSeparated(index)
+        }
+
+        let lastIndex = points.count - 1
+        if let previousIndex = indices.last,
+           previousIndex != lastIndex {
+            if abs(labelX(for: lastIndex) - labelX(for: previousIndex)) < labelMinSpacing {
+                if indices.count > 1 {
+                    indices[indices.count - 1] = lastIndex
+                }
+            } else {
+                indices.append(lastIndex)
             }
         }
+
         return indices
+    }
+
+    private func dateLabelXPosition(for x: CGFloat, plotWidth: CGFloat) -> CGFloat {
+        let halfLabelWidth: CGFloat = 27
+        guard plotWidth > halfLabelWidth * 2 else { return plotWidth / 2 }
+        return min(max(x, halfLabelWidth), plotWidth - halfLabelWidth)
     }
 
     private func xPosition(for point: ProgressMetricPoint, index: Int, plotWidth: CGFloat) -> CGFloat {
