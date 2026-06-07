@@ -118,7 +118,6 @@ struct ProgressTabView: View {
     private var selectedSectionContent: some View {
         switch selectedSection {
         case .body:
-            metricActions
             metricGraphs
             bodyLogButton
         case .history:
@@ -135,20 +134,6 @@ struct ProgressTabView: View {
             selectedSection
         } set: { newValue in
             selectedSectionRaw = newValue.rawValue
-        }
-    }
-
-    private var metricActions: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 10) {
-                MetricActionButton(title: "Log Weight", systemImage: "scalemass.fill") {
-                    isLoggingWeight = true
-                }
-                MetricActionButton(title: "Log Body Fat", systemImage: "percent") {
-                    isLoggingBodyFat = true
-                }
-            }
-
         }
     }
 
@@ -180,14 +165,17 @@ struct ProgressTabView: View {
     private var metricGraphs: some View {
         VStack(alignment: .leading, spacing: 14) {
             ProgressMetricCard(
-                title: "Body Weight",
+                title: "Weight",
                 unit: usesImperialUnits ? "lb" : "kg",
                 values: filteredWeightPoints,
                 currentValue: profiles.first.map { displayWeight($0.currentWeightKG) } ?? filteredWeightPoints.last?.value,
                 goalValue: effectiveGoalWeightKG.map(displayWeight),
                 goalText: nil,
-                averagePeriodTitle: selectedRange.title,
-                averagePeriodDays: selectedRange.averagePeriodDays
+                actionTitle: "Log Weight",
+                actionSystemImage: "plus.circle.fill",
+                onLog: {
+                    isLoggingWeight = true
+                }
             )
 
             ProgressMetricCard(
@@ -197,8 +185,11 @@ struct ProgressTabView: View {
                 currentValue: currentBodyFatValue,
                 goalValue: nil,
                 goalText: goalBodyFatText,
-                averagePeriodTitle: selectedRange.title,
-                averagePeriodDays: selectedRange.averagePeriodDays
+                actionTitle: "Log Body Fat",
+                actionSystemImage: "plus.circle.fill",
+                onLog: {
+                    isLoggingBodyFat = true
+                }
             )
         }
     }
@@ -604,28 +595,6 @@ private struct ProgressMetricPoint: Identifiable, Hashable {
     let value: Double
 }
 
-private struct MetricActionButton: View {
-    let title: String
-    let systemImage: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.headline.weight(.bold))
-                .foregroundStyle(Color.deltsCharcoal)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(Color.deltsPanel.opacity(0.28), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 17, style: .continuous)
-                        .stroke(Color.deltsHairline.opacity(0.32), lineWidth: 0.5)
-                }
-        }
-        .deltsPressable()
-    }
-}
-
 private struct ProgressSectionHeader: View {
     let title: String
     let subtitle: String
@@ -675,58 +644,65 @@ private struct ProgressMetricCard: View {
     let currentValue: Double?
     let goalValue: Double?
     let goalText: String?
-    let averagePeriodTitle: String
-    let averagePeriodDays: Double?
+    let actionTitle: String
+    let actionSystemImage: String
+    let onLog: () -> Void
 
     private var latestValue: Double? {
         values.last?.value
     }
 
-    private var averageChangeValue: Double? {
-        guard let first = values.first,
-              let last = values.last,
-              first.date != last.date
+    private var displayedCurrentValue: Double? {
+        currentValue ?? latestValue
+    }
+
+    private var netChangeValue: Double? {
+        guard let first = values.first?.value,
+              let last = latestValue
         else { return nil }
-        let elapsedDays = max(last.date.timeIntervalSince(first.date) / 86_400, 1)
-        let periodDays = averagePeriodDays ?? elapsedDays
-        return (last.value - first.value) / elapsedDays * periodDays
+        return last - first
+    }
+
+    private var averageValue: Double? {
+        guard !values.isEmpty else { return displayedCurrentValue }
+        return values.reduce(0) { $0 + $1.value } / Double(values.count)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(Color.deltsCharcoal)
-                    Text(values.count <= 1 ? "Current profile value" : "\(values.count) entries")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.deltsMutedText)
-                }
+                Text(title)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
 
                 Spacer()
 
-                if let latestValue {
-                    Text(formatted(latestValue))
-                        .font(.title3.monospacedDigit().weight(.bold))
-                        .foregroundStyle(Color.deltsCharcoal)
+                Button(action: onLog) {
+                    Label(actionTitle, systemImage: actionSystemImage)
+                        .font(.headline.weight(.heavy))
+                        .foregroundStyle(Color.deltsAccent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.76)
                 }
+                .buttonStyle(.plain)
+                .deltsPressable()
             }
 
-            HStack(spacing: 8) {
-                MetricStatTile(title: "Current", value: currentValue.map(formatted) ?? "--")
+            HStack(spacing: 10) {
+                MetricStatTile(title: "Current", value: displayedCurrentValue.map(formatted) ?? "--")
                 MetricStatTile(title: "Goal", value: goalText ?? goalValue.map(formatted) ?? "--")
-                MetricStatTile(title: "Avg Δ / \(averagePeriodTitle)", value: averageChangeValue.map(formattedSigned) ?? "--")
+                MetricStatTile(title: "Net Change", value: netChangeValue.map(formattedSigned) ?? "--")
+                MetricStatTile(title: "Average", value: averageValue.map(formatted) ?? "--")
             }
 
-            MetricLineGraph(points: values.map(\.value))
-                .frame(height: 150)
+            MetricLineGraph(points: values, unit: unit, goalValue: goalValue)
+                .frame(height: 222)
         }
-        .padding(16)
-        .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(18)
+        .background(Color.deltsPanel.opacity(0.30), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.6)
         }
     }
 
@@ -751,44 +727,64 @@ private struct MetricStatTile: View {
     let value: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(spacing: 4) {
+            Text(value)
+                .font(.headline.monospacedDigit().weight(.black))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+                .minimumScaleFactor(0.62)
+
             Text(title)
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(Color.deltsMutedText)
                 .lineLimit(1)
-                .minimumScaleFactor(0.72)
-            Text(value)
-                .font(.caption.monospacedDigit().weight(.heavy))
-                .foregroundStyle(Color.deltsCharcoal)
-                .lineLimit(1)
-                .minimumScaleFactor(0.64)
+                .minimumScaleFactor(0.62)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 10)
-        .frame(height: 48)
-        .background(Color.deltsPanel.opacity(0.20), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .frame(maxWidth: .infinity)
+        .frame(height: 46)
     }
 }
 
 private struct MetricLineGraph: View {
-    let points: [Double]
+    let points: [ProgressMetricPoint]
+    let unit: String
+    let goalValue: Double?
+
+    private let axisWidth: CGFloat = 36
+    private let dateLabelHeight: CGFloat = 30
 
     var body: some View {
         GeometryReader { proxy in
             let size = proxy.size
-            let minValue = points.min() ?? 0
-            let maxValue = points.max() ?? 1
-            let spread = max(maxValue - minValue, 1)
+            let plotWidth = max(size.width - axisWidth, 1)
+            let plotHeight = max(size.height - dateLabelHeight, 1)
+            let domain = yDomain
+            let spread = max(domain.max - domain.min, 1)
 
-            ZStack {
+            ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Color.deltsCard.opacity(0.42))
+
+                MetricGraphGrid(verticalLineCount: max(dateTickIndices.count, 2))
+                    .frame(width: plotWidth, height: plotHeight)
+
+                if let goalValue {
+                    let y = yPosition(for: goalValue, plotHeight: plotHeight, domain: domain, spread: spread)
+                    Path { path in
+                        path.move(to: CGPoint(x: 0, y: y))
+                        path.addLine(to: CGPoint(x: plotWidth, y: y))
+                    }
+                    .stroke(
+                        Color.deltsAccent.opacity(0.60),
+                        style: StrokeStyle(lineWidth: 1.6, lineCap: .round, dash: [7, 7])
+                    )
+                }
 
                 Path { path in
                     guard !points.isEmpty else { return }
                     for index in points.indices {
-                        let x = points.count == 1 ? size.width / 2 : CGFloat(index) / CGFloat(points.count - 1) * size.width
-                        let y = size.height - CGFloat((points[index] - minValue) / spread) * (size.height - 18) - 9
+                        let x = xPosition(for: index, plotWidth: plotWidth)
+                        let y = yPosition(for: points[index].value, plotHeight: plotHeight, domain: domain, spread: spread)
                         if index == points.startIndex {
                             path.move(to: CGPoint(x: x, y: y))
                         } else {
@@ -796,18 +792,141 @@ private struct MetricLineGraph: View {
                         }
                     }
                 }
-                .stroke(Color.deltsAccent, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+                .stroke(Color.deltsAccent, style: StrokeStyle(lineWidth: 3.2, lineCap: .round, lineJoin: .round))
 
                 ForEach(points.indices, id: \.self) { index in
-                    let x = points.count == 1 ? size.width / 2 : CGFloat(index) / CGFloat(points.count - 1) * size.width
-                    let y = size.height - CGFloat((points[index] - minValue) / spread) * (size.height - 18) - 9
+                    let x = xPosition(for: index, plotWidth: plotWidth)
+                    let y = yPosition(for: points[index].value, plotHeight: plotHeight, domain: domain, spread: spread)
                     Circle()
-                        .fill(Color.deltsSecondaryAccent)
-                        .frame(width: 8, height: 8)
+                        .fill(Color.deltsAccent)
+                        .frame(width: 9, height: 9)
                         .position(x: x, y: y)
+                }
+
+                ForEach(0..<3, id: \.self) { index in
+                    let value = axisValue(at: index, domain: domain)
+                    let y = yPosition(for: value, plotHeight: plotHeight, domain: domain, spread: spread)
+                    Text(axisLabel(for: value))
+                        .font(.caption.monospacedDigit().weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .frame(width: axisWidth, alignment: .leading)
+                        .position(x: plotWidth + axisWidth / 2 + 4, y: y)
+                }
+
+                ForEach(dateTickIndices, id: \.self) { index in
+                    Text(points[index].date.formatted(.dateTime.month(.abbreviated).day()))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .frame(width: 54)
+                        .position(
+                            x: xPosition(for: index, plotWidth: plotWidth),
+                            y: plotHeight + dateLabelHeight * 0.64
+                        )
                 }
             }
         }
+    }
+
+    private var yDomain: (min: Double, max: Double) {
+        var values = points.map(\.value)
+        if let goalValue {
+            values.append(goalValue)
+        }
+        guard let minValue = values.min(), let maxValue = values.max() else {
+            return (0, 1)
+        }
+        let spread = max(maxValue - minValue, unit == "%" ? 1 : 2)
+        let padding = spread * 0.16
+        return (minValue - padding, maxValue + padding)
+    }
+
+    private var dateTickIndices: [Int] {
+        guard !points.isEmpty else { return [] }
+        let maxTicks = 6
+        guard points.count > maxTicks else { return Array(points.indices) }
+        var indices: [Int] = []
+        for tick in 0..<maxTicks {
+            let index = Int((Double(tick) * Double(points.count - 1) / Double(maxTicks - 1)).rounded())
+            if indices.last != index {
+                indices.append(index)
+            }
+        }
+        return indices
+    }
+
+    private func xPosition(for index: Int, plotWidth: CGFloat) -> CGFloat {
+        points.count == 1 ? plotWidth / 2 : CGFloat(index) / CGFloat(points.count - 1) * plotWidth
+    }
+
+    private func yPosition(
+        for value: Double,
+        plotHeight: CGFloat,
+        domain: (min: Double, max: Double),
+        spread: Double
+    ) -> CGFloat {
+        plotHeight - CGFloat((value - domain.min) / spread) * plotHeight
+    }
+
+    private func axisValue(at index: Int, domain: (min: Double, max: Double)) -> Double {
+        switch index {
+        case 0:
+            return domain.max
+        case 1:
+            return (domain.max + domain.min) / 2
+        default:
+            return domain.min
+        }
+    }
+
+    private func axisLabel(for value: Double) -> String {
+        if unit == "%" {
+            return String(format: "%.0f", value)
+        }
+        if abs(value.rounded() - value) < 0.05 {
+            return String(format: "%.0f", value)
+        }
+        return String(format: "%.1f", value)
+    }
+}
+
+private struct MetricGraphGrid: View {
+    private let horizontalLineCount = 5
+    let verticalLineCount: Int
+
+    var body: some View {
+        GeometryReader { proxy in
+            let size = proxy.size
+
+            ZStack {
+                ForEach(0..<horizontalLineCount, id: \.self) { index in
+                    let y = CGFloat(index) / CGFloat(horizontalLineCount - 1) * size.height
+                    Path { path in
+                        path.move(to: CGPoint(x: 0, y: y))
+                        path.addLine(to: CGPoint(x: size.width, y: y))
+                    }
+                    .stroke(
+                        Color.deltsHairline.opacity(index == horizontalLineCount - 1 ? 0.34 : 0.20),
+                        lineWidth: index == horizontalLineCount - 1 ? 0.9 : 0.55
+                    )
+                }
+
+                ForEach(0..<verticalLineCount, id: \.self) { index in
+                    let denominator = max(verticalLineCount - 1, 1)
+                    let x = CGFloat(index) / CGFloat(denominator) * size.width
+                    Path { path in
+                        path.move(to: CGPoint(x: x, y: 0))
+                        path.addLine(to: CGPoint(x: x, y: size.height))
+                    }
+                    .stroke(
+                        Color.deltsHairline.opacity(0.22),
+                        style: StrokeStyle(lineWidth: 0.7, dash: [3, 4])
+                    )
+                }
+            }
+        }
+        .allowsHitTesting(false)
     }
 }
 
