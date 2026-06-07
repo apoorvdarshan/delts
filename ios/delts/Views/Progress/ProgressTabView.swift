@@ -4,14 +4,12 @@ import UIKit
 
 struct ProgressTabView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \CompletedWorkout.date, order: .reverse) private var workouts: [CompletedWorkout]
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
     @AppStorage("profile_weight_measurement_system") private var measurementSystemRaw = "metric"
     @AppStorage("apple_health_enabled") private var appleHealthEnabled = false
     @AppStorage("profile_goal_weight_kg") private var goalWeightKG = 0.0
     @AppStorage("profile_current_body_fat_is_exact") private var currentBodyFatIsExact = false
     @AppStorage("profile_goal_body_fat_is_exact") private var goalBodyFatIsExact = false
-    @AppStorage("progress_selected_section") private var selectedSectionRaw = ProgressSection.body.rawValue
     @State private var selectedRange: ProgressRange = .month
     @State private var snapshots: [ProgressMetricSnapshot] = ProgressMetricStore.load()
     @State private var isLoggingWeight = false
@@ -21,10 +19,6 @@ struct ProgressTabView: View {
 
     private var filteredSnapshots: [ProgressMetricSnapshot] {
         selectedRange.filter(snapshots).sorted { $0.date < $1.date }
-    }
-
-    private var filteredWorkouts: [CompletedWorkout] {
-        selectedRange.filter(workouts)
     }
 
     private var filteredWeightPoints: [ProgressMetricPoint] {
@@ -45,9 +39,9 @@ struct ProgressTabView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
-                    sectionPicker
                     rangePicker
-                    selectedSectionContent
+                    metricGraphs
+                    bodyLogButton
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
@@ -101,39 +95,6 @@ struct ProgressTabView: View {
                     delete: deleteSnapshot
                 )
             }
-        }
-    }
-
-    private var sectionPicker: some View {
-        Picker("Progress section", selection: selectedSectionBinding) {
-            ForEach(ProgressSection.allCases) { section in
-                Text(section.title).tag(section)
-            }
-        }
-        .pickerStyle(.segmented)
-        .tint(Color.deltsAccent)
-    }
-
-    @ViewBuilder
-    private var selectedSectionContent: some View {
-        switch selectedSection {
-        case .body:
-            metricGraphs
-            bodyLogButton
-        case .history:
-            workoutHistory
-        }
-    }
-
-    private var selectedSection: ProgressSection {
-        ProgressSection(storedValue: selectedSectionRaw)
-    }
-
-    private var selectedSectionBinding: Binding<ProgressSection> {
-        Binding {
-            selectedSection
-        } set: { newValue in
-            selectedSectionRaw = newValue.rawValue
         }
     }
 
@@ -234,27 +195,6 @@ struct ProgressTabView: View {
         }
         .buttonStyle(.plain)
         .deltsPressable()
-    }
-
-    @ViewBuilder
-    private var workoutHistory: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            ProgressSectionHeader(
-                title: "Workout History",
-                subtitle: filteredWorkouts.isEmpty ? "No sessions in \(selectedRange.title.lowercased())" : "\(filteredWorkouts.count) session\(filteredWorkouts.count == 1 ? "" : "s") in \(selectedRange.title.lowercased())",
-                systemImage: "figure.strengthtraining.traditional"
-            )
-
-            if filteredWorkouts.isEmpty {
-                ProgressEmptyState(text: "No completed workouts in this range.")
-            } else {
-                VStack(spacing: 12) {
-                    ForEach(filteredWorkouts) { workout in
-                        WorkoutHistoryRow(workout: workout)
-                    }
-                }
-            }
-        }
     }
 
     private func recordCurrentSnapshot() {
@@ -423,31 +363,6 @@ struct ProgressTabView: View {
     }
 }
 
-private enum ProgressSection: String, CaseIterable, Identifiable {
-    case body
-    case history
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .body:
-            return "Body"
-        case .history:
-            return "History"
-        }
-    }
-
-    init(storedValue: String) {
-        switch storedValue {
-        case Self.history.rawValue, "workouts":
-            self = .history
-        default:
-            self = .body
-        }
-    }
-}
-
 private enum ProgressRange: String, CaseIterable, Identifiable {
     case week
     case month
@@ -484,11 +399,6 @@ private enum ProgressRange: String, CaseIterable, Identifiable {
     func filter(_ snapshots: [ProgressMetricSnapshot]) -> [ProgressMetricSnapshot] {
         guard let startDate else { return snapshots }
         return snapshots.filter { $0.date >= startDate }
-    }
-
-    func filter(_ workouts: [CompletedWorkout]) -> [CompletedWorkout] {
-        guard let startDate else { return workouts }
-        return workouts.filter { $0.date >= startDate }
     }
 
     var graphPointLimit: Int? {
@@ -613,35 +523,6 @@ private struct ProgressMetricPoint: Identifiable, Hashable {
     var id: Date { date }
     let date: Date
     let value: Double
-}
-
-private struct ProgressSectionHeader: View {
-    let title: String
-    let subtitle: String
-    let systemImage: String
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.system(size: 19, weight: .bold))
-                .foregroundStyle(Color.deltsAccent)
-                .frame(width: 38, height: 38)
-                .background(Color.deltsAccent.opacity(0.12), in: Circle())
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                Text(subtitle)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-            }
-
-            Spacer(minLength: 0)
-        }
-    }
 }
 
 private struct ProgressEmptyState: View {
@@ -1309,44 +1190,6 @@ private struct MetricEditField: View {
                         .foregroundStyle(Color.deltsMutedText)
                         .padding(.trailing, 14)
                 }
-        }
-    }
-}
-
-private struct WorkoutHistoryRow: View {
-    let workout: CompletedWorkout
-
-    private var setCount: Int {
-        workout.exerciseLogs.reduce(0) { total, log in
-            total + log.sets.filter(\.completed).count
-        }
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(workout.title)
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(2)
-
-                Spacer()
-
-                Text("\(workout.durationMinutes)m")
-                    .font(.subheadline.monospacedDigit().weight(.bold))
-                    .foregroundStyle(Color.deltsAccent)
-            }
-
-            Text("\(workout.date.formatted(date: .abbreviated, time: .shortened)) - \(setCount) set\(setCount == 1 ? "" : "s")")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.deltsMutedText)
-
-        }
-        .padding(14)
-        .background(Color.deltsPanel.opacity(0.20), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
         }
     }
 }
