@@ -10,6 +10,7 @@ struct ProgressTabView: View {
     @AppStorage("profile_goal_weight_kg") private var goalWeightKG = 0.0
     @AppStorage("profile_current_body_fat_is_exact") private var currentBodyFatIsExact = false
     @AppStorage("profile_goal_body_fat_is_exact") private var goalBodyFatIsExact = false
+    @AppStorage("progress_selected_metric") private var selectedMetricRaw = ProgressMetricKind.weight.rawValue
     @State private var selectedRange: ProgressRange = .month
     @State private var snapshots: [ProgressMetricSnapshot] = ProgressMetricStore.load()
     @State private var isLoggingWeight = false
@@ -39,8 +40,9 @@ struct ProgressTabView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
+                    metricPicker
                     rangePicker
-                    metricGraphs
+                    selectedMetricGraph
                     bodyLogButton
                 }
                 .padding(.horizontal, 20)
@@ -98,6 +100,28 @@ struct ProgressTabView: View {
         }
     }
 
+    private var metricPicker: some View {
+        Picker("Progress metric", selection: selectedMetricBinding) {
+            ForEach(ProgressMetricKind.allCases) { metric in
+                Text(metric.title).tag(metric)
+            }
+        }
+        .pickerStyle(.segmented)
+        .tint(Color.deltsAccent)
+    }
+
+    private var selectedMetric: ProgressMetricKind {
+        ProgressMetricKind(storedValue: selectedMetricRaw)
+    }
+
+    private var selectedMetricBinding: Binding<ProgressMetricKind> {
+        Binding {
+            selectedMetric
+        } set: { newValue in
+            selectedMetricRaw = newValue.rawValue
+        }
+    }
+
     private var rangePicker: some View {
         HStack(spacing: 6) {
             ForEach(ProgressRange.allCases) { range in
@@ -124,38 +148,48 @@ struct ProgressTabView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private var metricGraphs: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            ProgressMetricCard(
-                title: "Weight",
-                unit: usesImperialUnits ? "lb" : "kg",
-                values: filteredWeightPoints,
-                range: selectedRange,
-                currentValue: profiles.first.map { displayWeight($0.currentWeightKG) } ?? filteredWeightPoints.last?.value,
-                goalValue: effectiveGoalWeightKG.map(displayWeight),
-                goalText: nil,
-                actionTitle: "Log Weight",
-                actionSystemImage: "plus.circle.fill",
-                onLog: {
-                    isLoggingWeight = true
-                }
-            )
-
-            ProgressMetricCard(
-                title: "Body Fat",
-                unit: "%",
-                values: filteredBodyFatPoints,
-                range: selectedRange,
-                currentValue: currentBodyFatValue,
-                goalValue: nil,
-                goalText: goalBodyFatText,
-                actionTitle: "Log Body Fat",
-                actionSystemImage: "plus.circle.fill",
-                onLog: {
-                    isLoggingBodyFat = true
-                }
-            )
+    @ViewBuilder
+    private var selectedMetricGraph: some View {
+        switch selectedMetric {
+        case .weight:
+            weightMetricCard
+        case .bodyFat:
+            bodyFatMetricCard
         }
+    }
+
+    private var weightMetricCard: some View {
+        ProgressMetricCard(
+            title: "Weight",
+            unit: usesImperialUnits ? "lb" : "kg",
+            values: filteredWeightPoints,
+            range: selectedRange,
+            currentValue: profiles.first.map { displayWeight($0.currentWeightKG) } ?? filteredWeightPoints.last?.value,
+            goalValue: effectiveGoalWeightKG.map(displayWeight),
+            goalText: nil,
+            actionTitle: "Log Weight",
+            actionSystemImage: "plus.circle.fill",
+            onLog: {
+                isLoggingWeight = true
+            }
+        )
+    }
+
+    private var bodyFatMetricCard: some View {
+        ProgressMetricCard(
+            title: "Body Fat",
+            unit: "%",
+            values: filteredBodyFatPoints,
+            range: selectedRange,
+            currentValue: currentBodyFatValue,
+            goalValue: nil,
+            goalText: goalBodyFatText,
+            actionTitle: "Log Body Fat",
+            actionSystemImage: "plus.circle.fill",
+            onLog: {
+                isLoggingBodyFat = true
+            }
+        )
     }
 
     private var bodyLogButton: some View {
@@ -430,6 +464,26 @@ private enum ProgressRange: String, CaseIterable, Identifiable {
     }
 }
 
+private enum ProgressMetricKind: String, CaseIterable, Identifiable {
+    case weight
+    case bodyFat
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .weight:
+            return "Weight"
+        case .bodyFat:
+            return "Body Fat"
+        }
+    }
+
+    init(storedValue: String) {
+        self = ProgressMetricKind(rawValue: storedValue) ?? .weight
+    }
+}
+
 struct ProgressMetricSnapshot: Codable, Identifiable, Hashable {
     var id: UUID = UUID()
     var date: Date
@@ -691,7 +745,8 @@ private struct MetricLineGraph: View {
     let goalValue: Double?
 
     private let axisWidth: CGFloat = 36
-    private let dateLabelHeight: CGFloat = 30
+    private let dateLabelHeight: CGFloat = 44
+    private let dateLabelWidth: CGFloat = 56
     private var lineWidth: CGFloat { points.count > 18 ? 2.8 : 3.2 }
     private var pointSize: CGFloat { points.count > 18 ? 7 : 9 }
 
@@ -756,17 +811,18 @@ private struct MetricLineGraph: View {
                         .position(x: plotWidth + axisWidth / 2 + 4, y: y)
                 }
 
-                ForEach(dateTicks, id: \.self) { index in
+                ForEach(dateTicks.indices, id: \.self) { tickPosition in
+                    let index = dateTicks[tickPosition]
                     let x = xPosition(for: points[index], index: index, plotWidth: plotWidth)
-                    Text(points[index].date.formatted(.dateTime.month(.abbreviated).day()))
-                        .font(.caption.weight(.semibold))
+                    Text(dateLabel(for: points[index].date))
+                        .font(.caption2.weight(.bold))
                         .foregroundStyle(Color.deltsMutedText)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.72)
-                        .frame(width: 54)
+                        .minimumScaleFactor(0.68)
+                        .frame(width: dateLabelWidth)
                         .position(
                             x: dateLabelXPosition(for: x, plotWidth: plotWidth),
-                            y: plotHeight + dateLabelHeight * 0.64
+                            y: plotHeight + dateLabelYPosition(for: tickPosition, totalTicks: dateTicks.count)
                         )
                 }
             }
@@ -790,49 +846,48 @@ private struct MetricLineGraph: View {
         guard !points.isEmpty else { return [] }
         guard points.count > 1 else { return [0] }
 
-        let labelMinSpacing: CGFloat = 58
-        let maxTicks = max(2, min(5, Int(plotWidth / labelMinSpacing) + 1))
+        let minimumTickSpacing = usesMonthYearDateLabels ? dateLabelWidth * 0.70 : dateLabelWidth * 0.58
+        let maxAxisTicks = usesMonthYearDateLabels ? 6 : 7
+        let widthBasedTicks = max(2, Int(plotWidth / minimumTickSpacing))
+        let maxTicks = min(points.count, maxAxisTicks, widthBasedTicks)
         var indices: [Int] = []
 
-        func labelX(for index: Int) -> CGFloat {
-            let x = xPosition(for: points[index], index: index, plotWidth: plotWidth)
-            return dateLabelXPosition(for: x, plotWidth: plotWidth)
-        }
-
-        func appendIfSeparated(_ index: Int) {
+        func appendIfUnique(_ index: Int) {
             guard indices.last != index else { return }
-            if let previousIndex = indices.last {
-                guard abs(labelX(for: index) - labelX(for: previousIndex)) >= labelMinSpacing else { return }
-            }
             indices.append(index)
         }
 
-        appendIfSeparated(0)
-
-        for tick in 1..<(maxTicks - 1) {
+        for tick in 0..<maxTicks {
             let index = Int((Double(tick) * Double(points.count - 1) / Double(maxTicks - 1)).rounded())
-            appendIfSeparated(index)
-        }
-
-        let lastIndex = points.count - 1
-        if let previousIndex = indices.last,
-           previousIndex != lastIndex {
-            if abs(labelX(for: lastIndex) - labelX(for: previousIndex)) < labelMinSpacing {
-                if indices.count > 1 {
-                    indices[indices.count - 1] = lastIndex
-                }
-            } else {
-                indices.append(lastIndex)
-            }
+            appendIfUnique(index)
         }
 
         return indices
     }
 
+    private var usesMonthYearDateLabels: Bool {
+        guard let firstDate = points.first?.date,
+              let lastDate = points.last?.date
+        else { return false }
+        return !Calendar.current.isDate(firstDate, equalTo: lastDate, toGranularity: .year)
+    }
+
+    private func dateLabel(for date: Date) -> String {
+        if usesMonthYearDateLabels {
+            return date.formatted(.dateTime.month(.abbreviated).year(.twoDigits))
+        }
+        return date.formatted(.dateTime.month(.abbreviated).day())
+    }
+
     private func dateLabelXPosition(for x: CGFloat, plotWidth: CGFloat) -> CGFloat {
-        let halfLabelWidth: CGFloat = 27
+        let halfLabelWidth = dateLabelWidth / 2
         guard plotWidth > halfLabelWidth * 2 else { return plotWidth / 2 }
         return min(max(x, halfLabelWidth), plotWidth - halfLabelWidth)
+    }
+
+    private func dateLabelYPosition(for tickPosition: Int, totalTicks: Int) -> CGFloat {
+        guard totalTicks > 4 else { return dateLabelHeight * 0.58 }
+        return tickPosition.isMultiple(of: 2) ? dateLabelHeight * 0.36 : dateLabelHeight * 0.80
     }
 
     private func xPosition(for point: ProgressMetricPoint, index: Int, plotWidth: CGFloat) -> CGFloat {
@@ -895,8 +950,8 @@ private struct MetricGraphGrid: View {
                         path.addLine(to: CGPoint(x: size.width, y: y))
                     }
                     .stroke(
-                        Color.deltsHairline.opacity(index == horizontalLineCount - 1 ? 0.34 : 0.20),
-                        lineWidth: index == horizontalLineCount - 1 ? 0.9 : 0.55
+                        Color.deltsHairline.opacity(index == horizontalLineCount - 1 ? 0.56 : 0.34),
+                        lineWidth: index == horizontalLineCount - 1 ? 1.0 : 0.7
                     )
                 }
 
@@ -908,8 +963,8 @@ private struct MetricGraphGrid: View {
                         path.addLine(to: CGPoint(x: x, y: size.height))
                     }
                     .stroke(
-                        Color.deltsHairline.opacity(0.22),
-                        style: StrokeStyle(lineWidth: 0.7, dash: [3, 4])
+                        Color.deltsHairline.opacity(0.38),
+                        style: StrokeStyle(lineWidth: 0.85, dash: [3, 4])
                     )
                 }
             }
