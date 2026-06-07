@@ -29,18 +29,8 @@ private struct ExerciseLibraryBrowserView: View {
     @State private var selectedMechanics: Set<String> = []
     @State private var selectedCategories: Set<String> = []
     @State private var selectedSort: ExerciseLibrarySort = .name
-    @State private var dayPlans: [String: WorkoutDayPlan] = WorkoutDayPlanStore.load()
-    @State private var startedWorkoutRoute: PlannedWorkoutDetailRoute?
 
     private let service = ExerciseLibraryService.shared
-
-    private var todayKey: String {
-        WorkoutDayPlanStore.key(for: Date())
-    }
-
-    private var todayExercises: [PlannedRoutineExercise] {
-        dayPlans[todayKey]?.exercises ?? []
-    }
 
     private var selectedWorkoutSplit: WorkoutSplit {
         profiles.first?.workoutSplit ?? .fullBody
@@ -206,13 +196,7 @@ private struct ExerciseLibraryBrowserView: View {
 
                     ForEach(items) { item in
                         NavigationLink {
-                            ExerciseLibraryDetailView(
-                                item: item,
-                                plannedExercise: todayExercise(for: item),
-                                startToday: {
-                                    startOrOpenTodayWorkout(item)
-                                }
-                            )
+                            ExerciseLibraryDetailView(item: item)
                         } label: {
                             ExerciseLibraryRow(item: item)
                         }
@@ -232,31 +216,8 @@ private struct ExerciseLibraryBrowserView: View {
         }
         .deltsScreen()
         .contentMargins(.bottom, 104, for: .scrollContent)
-        .navigationDestination(item: $startedWorkoutRoute) { route in
-            if let exercise = todayExercises.first(where: { $0.id == route.exerciseID }) {
-                ExerciseLibraryDetailView(
-                    item: detailItem(for: exercise),
-                    plannedExercise: exercise,
-                    toggleDone: {
-                        updateTodayExercise(exercise.id) { $0.setDone(!$0.isDone) }
-                    },
-                    markDone: {
-                        updateTodayExercise(exercise.id) { $0.setDone(true) }
-                    },
-                    openNext: nextRouteAction(after: exercise.id)
-                )
-            } else {
-                ContentUnavailableView(
-                    "Workout removed",
-                    systemImage: "trash",
-                    description: Text("This workout is no longer in today's list.")
-                )
-                .deltsScreen()
-            }
-        }
         .onAppear {
             applyFilterState(ExerciseFilterStateStore.load(key: ExerciseFilterStateStore.workoutsKey))
-            dayPlans = WorkoutDayPlanStore.load()
             normalizePrimaryFilterSelection()
             normalizeEquipmentFilterSelection()
         }
@@ -278,9 +239,6 @@ private struct ExerciseLibraryBrowserView: View {
         }
         .onChange(of: datasetRawEquipmentRaw) {
             normalizeEquipmentFilterSelection()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: WorkoutDayPlanStore.didChangeNotification)) { _ in
-            dayPlans = WorkoutDayPlanStore.load()
         }
     }
 
@@ -507,67 +465,6 @@ private struct ExerciseLibraryBrowserView: View {
     private func singleStoredSelection(_ selection: Set<String>) -> Set<String> {
         guard let value = selection.sorted().first else { return [] }
         return [value]
-    }
-
-    private func todayExercise(for item: ExerciseLibraryItem) -> PlannedRoutineExercise? {
-        todayExercises.first { $0.itemID == item.id }
-    }
-
-    private func detailItem(for exercise: PlannedRoutineExercise) -> ExerciseLibraryItem {
-        service.exercises.first { $0.id == exercise.itemID } ?? ExerciseLibraryItem(
-            id: exercise.itemID,
-            name: exercise.name,
-            rawLevel: exercise.rawLevel,
-            category: exercise.category,
-            rawEquipment: exercise.rawEquipment,
-            primaryMuscles: exercise.primaryMuscles,
-            instructions: exercise.instructions
-        )
-    }
-
-    private func startOrOpenTodayWorkout(_ item: ExerciseLibraryItem) {
-        var routeID: UUID?
-        updateTodayPlan { plan in
-            if let index = plan.exercises.firstIndex(where: { $0.itemID == item.id }) {
-                routeID = plan.exercises[index].id
-            } else {
-                let exercise = PlannedRoutineExercise(item: item)
-                plan.exercises.append(exercise)
-                routeID = exercise.id
-            }
-        }
-        if let routeID {
-            startedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: routeID)
-        }
-    }
-
-    private func updateTodayExercise(_ id: UUID, mutate: (inout PlannedRoutineExercise) -> Void) {
-        updateTodayPlan { plan in
-            guard let index = plan.exercises.firstIndex(where: { $0.id == id }) else { return }
-            mutate(&plan.exercises[index])
-        }
-    }
-
-    private func updateTodayPlan(_ mutate: (inout WorkoutDayPlan) -> Void) {
-        var plan = dayPlans[todayKey] ?? WorkoutDayPlan(dateKey: todayKey)
-        mutate(&plan)
-        if plan.exercises.isEmpty {
-            dayPlans.removeValue(forKey: todayKey)
-        } else {
-            dayPlans[todayKey] = plan
-        }
-        WorkoutDayPlanStore.save(dayPlans)
-        WorkoutDayPlanStore.notifyChanged()
-    }
-
-    private func nextRouteAction(after id: UUID) -> (() -> Void)? {
-        guard let index = todayExercises.firstIndex(where: { $0.id == id }),
-              todayExercises.indices.contains(index + 1)
-        else { return nil }
-        let nextID = todayExercises[index + 1].id
-        return {
-            startedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: nextID)
-        }
     }
 
     private func filterMenuPill<Content: View>(
@@ -1097,12 +994,6 @@ private struct LibraryTag: View {
 
 struct ExerciseLibraryDetailView: View {
     let item: ExerciseLibraryItem
-    var plannedExercise: PlannedRoutineExercise?
-    var startToday: (() -> Void)?
-    var toggleDone: (() -> Void)?
-    var markDone: (() -> Void)?
-    var openNext: (() -> Void)?
-    @Environment(\.dismiss) private var dismiss
     @State private var isMetricsPresented = false
 
     var body: some View {
@@ -1120,7 +1011,7 @@ struct ExerciseLibraryDetailView: View {
                         }
                         .padding(.horizontal, 20)
                         .padding(.top, 24)
-                        .padding(.bottom, 112)
+                        .padding(.bottom, 40)
                         .frame(width: screenWidth, alignment: .leading)
                     }
                 }
@@ -1133,16 +1024,8 @@ struct ExerciseLibraryDetailView: View {
             .frame(width: screenWidth, alignment: .top)
         }
         .deltsScreen()
-        .contentMargins(.bottom, 104, for: .scrollContent)
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
-        .safeAreaInset(edge: .bottom) {
-            bottomActions
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
-                .padding(.bottom, 6)
-                .deltsBottomActionBackground()
-        }
     }
 
     private func detailHero(width: CGFloat) -> some View {
@@ -1196,101 +1079,6 @@ struct ExerciseLibraryDetailView: View {
         .accessibilityLabel(Text("\(item.name) exercise visual"))
     }
 
-    @ViewBuilder
-    private var bottomActions: some View {
-        if let plannedExercise, hasPlannedActions {
-            HStack(spacing: 10) {
-                WorkoutDetailLiquidActionButton(
-                    title: "Done",
-                    systemImage: plannedExercise.isDone ? "checkmark.circle.fill" : "checkmark",
-                    prominent: false
-                ) {
-                    markDone?()
-                    dismiss()
-                }
-
-                if let openNext {
-                    WorkoutDetailLiquidActionButton(
-                        title: "Save & Next",
-                        systemImage: "arrow.right",
-                        prominent: false
-                    ) {
-                        markDone?()
-                        openNext()
-                    }
-                }
-            }
-        } else if let startToday {
-            PrimaryButton(title: plannedExercise == nil ? "Start Today" : "Open Today", systemImage: plannedExercise == nil ? "play.fill" : "arrow.up.right") {
-                startToday()
-            }
-        }
-    }
-
-    private var hasPlannedActions: Bool {
-        toggleDone != nil || markDone != nil || openNext != nil
-    }
-}
-
-private struct WorkoutDetailLiquidActionButton: View {
-    let title: String
-    let systemImage: String
-    let prominent: Bool
-    let action: () -> Void
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.headline.weight(.black))
-                .lineLimit(1)
-                .minimumScaleFactor(0.76)
-                .foregroundStyle(labelColor)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background {
-                    Capsule(style: .continuous)
-                        .fill(fillColor)
-                }
-                .overlay {
-                    Capsule(style: .continuous)
-                        .stroke(strokeColor, lineWidth: colorScheme == .light ? 0.9 : (prominent ? 1.1 : 0.7))
-                }
-                .shadow(color: shadowColor, radius: colorScheme == .light ? 0 : (prominent ? 12 : 8), x: 0, y: colorScheme == .light ? 0 : 6)
-        }
-        .deltsLiquidBarSurface(cornerRadius: 28)
-        .buttonStyle(.plain)
-        .deltsPressable()
-        .accessibilityLabel(title)
-    }
-
-    private var labelColor: Color {
-        if colorScheme == .light {
-            return prominent ? Color.deltsCharcoal : Color.deltsSecondaryAccent
-        }
-        return prominent ? Color.deltsCharcoal : Color.deltsAccent
-    }
-
-    private var fillColor: Color {
-        if colorScheme == .light {
-            return prominent ? Color.deltsAccent.opacity(0.34) : Color.deltsPanel.opacity(0.64)
-        }
-        return prominent ? Color.deltsAccent.opacity(0.28) : Color.deltsPanel.opacity(0.16)
-    }
-
-    private var strokeColor: Color {
-        if colorScheme == .light {
-            return Color.deltsSecondaryAccent.opacity(0.42)
-        }
-        return prominent ? Color.deltsAccent.opacity(0.70) : Color.deltsHairline.opacity(0.46)
-    }
-
-    private var shadowColor: Color {
-        if colorScheme == .light {
-            return .clear
-        }
-        return prominent ? Color.deltsAccent.opacity(0.18) : Color.black.opacity(0.10)
-    }
 }
 
 private struct ExerciseHeroMetricOverlay: View {

@@ -488,15 +488,7 @@ struct HomeView: View {
     private func plannedWorkoutDetailDestination(_ route: PlannedWorkoutDetailRoute) -> some View {
         if let exercise = selectedExercises.first(where: { $0.id == route.exerciseID }) {
             ExerciseLibraryDetailView(
-                item: detailItem(for: exercise),
-                plannedExercise: exercise,
-                toggleDone: {
-                    updateExercise(exercise.id) { $0.setDone(!$0.isDone) }
-                },
-                markDone: {
-                    updateExercise(exercise.id) { $0.setDone(true) }
-                },
-                openNext: nextWorkoutAction(after: exercise.id)
+                item: detailItem(for: exercise)
             )
         } else {
             ContentUnavailableView(
@@ -793,16 +785,6 @@ struct HomeView: View {
     private func removeExercise(_ id: UUID) {
         updateSelectedPlan { plan in
             plan.exercises.removeAll { $0.id == id }
-        }
-    }
-
-    private func nextWorkoutAction(after id: UUID) -> (() -> Void)? {
-        guard let index = selectedExercises.firstIndex(where: { $0.id == id }),
-              selectedExercises.indices.contains(index + 1)
-        else { return nil }
-        let nextID = selectedExercises[index + 1].id
-        return {
-            selectedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: nextID)
         }
     }
 
