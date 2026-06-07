@@ -1595,6 +1595,114 @@ struct WorkoutPickerSheet: View {
     }
 }
 
+struct CopyFromDaySheet: View {
+    let days: [CopyableWorkoutDay]
+    let targetTitle: String
+    let onCopy: (CopyableWorkoutDay) -> Void
+    let onClose: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if days.isEmpty {
+                    ContentUnavailableView("No previous workouts", systemImage: "calendar.badge.exclamationmark")
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                } else {
+                    ForEach(days) { day in
+                        CopyFromDayRow(day: day) {
+                            onCopy(day)
+                        }
+                        .listRowBackground(Color.deltsPanel.opacity(0.24))
+                        .listRowSeparatorTint(Color.deltsHairline.opacity(0.28))
+                    }
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .listStyle(.plain)
+            .background(Color.deltsBackground)
+            .navigationTitle("Copy to \(targetTitle)")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done", action: onClose)
+                        .font(.headline.weight(.heavy))
+                        .foregroundStyle(Color.deltsAccent)
+                }
+            }
+        }
+    }
+}
+
+private struct CopyFromDayRow: View {
+    let day: CopyableWorkoutDay
+    let onCopy: () -> Void
+
+    private var workoutNames: String {
+        let names = day.exercises.prefix(3).map(\.name).joined(separator: ", ")
+        let remaining = day.exercises.count - 3
+        guard remaining > 0 else { return names }
+        return "\(names) + \(remaining)"
+    }
+
+    var body: some View {
+        Button(action: onCopy) {
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: "calendar")
+                    .font(.headline.weight(.black))
+                    .foregroundStyle(Color.deltsAccent)
+                    .frame(width: 38, height: 38)
+                    .background(Color.deltsCard.opacity(0.60), in: Circle())
+                    .overlay {
+                        Circle()
+                            .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.7)
+                    }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(dayTitle)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .lineLimit(1)
+
+                    Text(workoutNames)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .lineLimit(2)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("\(day.exercises.count)")
+                        .font(.system(.title3, design: .rounded, weight: .black).monospacedDigit())
+                        .foregroundStyle(Color.deltsAccent)
+
+                    Text(day.exercises.count == 1 ? "workout" : "workouts")
+                        .font(.caption2.weight(.heavy))
+                        .foregroundStyle(Color.deltsMutedText)
+                }
+
+                Image(systemName: "plus")
+                    .font(.caption.weight(.black))
+                    .foregroundStyle(Color.deltsOnAccent)
+                    .frame(width: 28, height: 28)
+                    .background(Color.deltsAccent, in: Circle())
+            }
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var dayTitle: String {
+        if Calendar.current.isDateInToday(day.date) {
+            return "Today"
+        }
+        if Calendar.current.isDateInYesterday(day.date) {
+            return "Yesterday"
+        }
+        return day.date.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
+    }
+}
+
 private struct WorkoutPickerFilterPill: View {
     let title: String
     let value: String

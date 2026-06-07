@@ -10,6 +10,7 @@ struct HomeView: View {
     @State private var selectedDate: Date = .now
     @State private var exerciseSearch = ""
     @State private var isWorkoutPickerPresented = false
+    @State private var isCopyFromDayPresented = false
     @State private var workoutPickerContext = WorkoutPickerContext.all
     @State private var pickerSelectedLevels: Set<String> = []
     @State private var pickerSelectedRawEquipment: Set<String> = []
@@ -116,6 +117,19 @@ struct HomeView: View {
 
     private var savedExerciseIDs: Set<String> {
         Set(savedExerciseIDsRaw.split(separator: "|").map(String.init))
+    }
+
+    private var copyableWorkoutDays: [CopyableWorkoutDay] {
+        let selectedStart = Calendar.current.startOfDay(for: selectedDate)
+        return dayPlans.compactMap { key, plan in
+            guard key != selectedDateKey,
+                  !plan.exercises.isEmpty,
+                  let date = WorkoutDayPlanStore.date(for: key),
+                  Calendar.current.startOfDay(for: date) < selectedStart
+            else { return nil }
+            return CopyableWorkoutDay(dateKey: key, date: date, exercises: plan.exercises)
+        }
+        .sorted { $0.date > $1.date }
     }
 
     private var workoutPickerSource: WorkoutPickerSource {
@@ -351,6 +365,11 @@ struct HomeView: View {
                             } label: {
                                 WorkoutPickerContextMenuLabel(context: .saved)
                             }
+                            Button {
+                                isCopyFromDayPresented = true
+                            } label: {
+                                Label("Copy from day", systemImage: "calendar.badge.plus")
+                            }
                             ForEach(addWorkoutContexts) { context in
                                 Button {
                                     openWorkoutPicker(context)
@@ -454,6 +473,21 @@ struct HomeView: View {
                     }
                 )
                 .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $isCopyFromDayPresented) {
+                CopyFromDaySheet(
+                    days: copyableWorkoutDays,
+                    targetTitle: selectedDateTitle,
+                    onCopy: { day in
+                        copyWorkouts(from: day)
+                        isCopyFromDayPresented = false
+                    },
+                    onClose: {
+                        isCopyFromDayPresented = false
+                    }
+                )
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
             }
             .onChange(of: workoutPickerFilterState) { _, state in
@@ -730,6 +764,18 @@ struct HomeView: View {
             ids.insert(id)
         }
         savedExerciseIDsRaw = ids.sorted().joined(separator: "|")
+    }
+
+    private func copyWorkouts(from day: CopyableWorkoutDay) {
+        let copiedExercises = day.exercises.enumerated().map { index, exercise in
+            exercise.copiedForNewDay(addedAt: Date().addingTimeInterval(TimeInterval(index)))
+        }
+        guard !copiedExercises.isEmpty else { return }
+
+        updateSelectedPlan { plan in
+            let existingItemIDs = Set(plan.exercises.map(\.itemID))
+            plan.exercises.append(contentsOf: copiedExercises.filter { !existingItemIDs.contains($0.itemID) })
+        }
     }
 
     private func resetWorkoutPickerFilters() {

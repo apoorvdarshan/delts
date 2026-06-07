@@ -44,6 +44,14 @@ struct PlannedWorkoutDetailRoute: Identifiable, Hashable {
     var id: UUID { exerciseID }
 }
 
+struct CopyableWorkoutDay: Identifiable, Hashable {
+    var dateKey: String
+    var date: Date
+    var exercises: [PlannedRoutineExercise]
+
+    var id: String { dateKey }
+}
+
 struct PlannedSetFocus: Hashable {
     enum Field: Hashable {
         case reps
@@ -155,6 +163,18 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         self.isDone = isDone
     }
 
+    func copiedForNewDay(addedAt: Date = Date()) -> PlannedRoutineExercise {
+        var copy = self
+        copy.id = UUID()
+        copy.addedAt = addedAt
+        copy.isDone = false
+        copy.sets = 1
+        copy.reps = ""
+        copy.setReps = [""]
+        copy.setRPE = [""]
+        return copy
+    }
+
     private mutating func normalizeStoredSets() {
         setSetCount(sets)
     }
@@ -244,6 +264,12 @@ enum WorkoutDayPlanStore {
             components.month ?? 0,
             components.day ?? 0
         )
+    }
+
+    static func date(for key: String) -> Date? {
+        let parts = key.split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3 else { return nil }
+        return Calendar.current.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
     }
 
     static func load() -> [String: WorkoutDayPlan] {
