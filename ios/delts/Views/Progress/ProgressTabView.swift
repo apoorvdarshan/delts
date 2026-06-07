@@ -66,25 +66,25 @@ struct ProgressTabView: View {
                 recordCurrentSnapshot()
             }
             .sheet(isPresented: $isLoggingWeight) {
-                MetricValueLogSheet(
+                ProgressMassWheelSheet(
                     title: "Log Weight",
-                    valueTitle: "Weight",
-                    initialValue: displayWeight(profiles.first?.currentWeightKG ?? latestWeightKg ?? 0),
-                    unit: usesImperialUnits ? "lb" : "kg",
-                    keyboardType: .decimalPad
-                ) { value in
-                    logWeight(displayValue: value)
+                    initialKilograms: profiles.first?.currentWeightKG ?? latestWeightKg ?? 0,
+                    initialSystem: ProgressMeasurementSystem(storedValue: measurementSystemRaw),
+                    metricRange: 30...250,
+                    imperialRange: 66...551
+                ) { kilograms, system in
+                    measurementSystemRaw = system.rawValue
+                    logWeight(kg: kilograms)
                 }
             }
             .sheet(isPresented: $isLoggingBodyFat) {
-                MetricValueLogSheet(
+                ProgressBodyFatRangeSheet(
                     title: "Log Body Fat",
-                    valueTitle: "Body fat",
                     initialValue: latestBodyFat ?? profiles.first?.currentBodyFatPercentage ?? 0,
-                    unit: "%",
-                    keyboardType: .decimalPad
-                ) { value in
-                    logBodyFat(value)
+                    initialIsExact: currentBodyFatIsExact,
+                    sex: profiles.first?.gender ?? "Male"
+                ) { value, isExact in
+                    logBodyFat(value, isExact: isExact)
                 }
             }
             .sheet(isPresented: $isShowingBodyLogs) {
@@ -306,7 +306,10 @@ struct ProgressTabView: View {
     }
 
     private func logWeight(displayValue: Double) {
-        let weightKg = weightKg(fromDisplayValue: displayValue)
+        logWeight(kg: weightKg(fromDisplayValue: displayValue))
+    }
+
+    private func logWeight(kg weightKg: Double) {
         let date = Date()
         snapshots = ProgressMetricStore.record(weightKg: weightKg, bodyFat: nil, date: date, in: snapshots)
         let snapshotID = snapshotID(for: date)
@@ -318,11 +321,11 @@ struct ProgressTabView: View {
         }
     }
 
-    private func logBodyFat(_ bodyFat: Double) {
+    private func logBodyFat(_ bodyFat: Double, isExact: Bool = true) {
         let date = Date()
-        snapshots = ProgressMetricStore.record(weightKg: nil, bodyFat: bodyFat, bodyFatIsExact: true, date: date, in: snapshots)
+        snapshots = ProgressMetricStore.record(weightKg: nil, bodyFat: bodyFat, bodyFatIsExact: isExact, date: date, in: snapshots)
         let snapshotID = snapshotID(for: date)
-        updateProfile(weightKg: nil, bodyFat: bodyFat)
+        updateProfile(weightKg: nil, bodyFat: bodyFat, bodyFatIsExact: isExact)
         if appleHealthEnabled {
             Task {
                 try? await healthKit.saveBodyFat(percent: bodyFat, date: date, snapshotID: snapshotID)
@@ -334,7 +337,7 @@ struct ProgressTabView: View {
         let previous = snapshots.first { $0.id == updated.id } ?? updated
         snapshots = ProgressMetricStore.update(updated, in: snapshots)
         if isLatestSnapshot(updated) {
-            updateProfile(weightKg: updated.weightKg, bodyFat: updated.bodyFat)
+            updateProfile(weightKg: updated.weightKg, bodyFat: updated.bodyFat, bodyFatIsExact: updated.bodyFatIsExact)
         }
         if appleHealthEnabled {
             Task {
@@ -357,14 +360,14 @@ struct ProgressTabView: View {
         }
     }
 
-    private func updateProfile(weightKg: Double?, bodyFat: Double?) {
+    private func updateProfile(weightKg: Double?, bodyFat: Double?, bodyFatIsExact: Bool? = nil) {
         guard let profile = profiles.first else { return }
         if let weightKg {
             profile.currentWeightKG = weightKg
         }
         if let bodyFat {
             profile.currentBodyFatPercentage = bodyFat
-            currentBodyFatIsExact = true
+            currentBodyFatIsExact = bodyFatIsExact ?? true
         }
         profile.updatedAt = Date()
         try? modelContext.save()
@@ -385,7 +388,7 @@ struct ProgressTabView: View {
             let imported = try await healthKit.importAllSnapshots()
             snapshots = ProgressMetricStore.merge(imported, into: snapshots)
             if let latestImportedBodyFat = snapshots.sorted(by: { $0.date < $1.date }).last(where: { $0.bodyFat != nil && $0.bodyFatIsExact == true })?.bodyFat {
-                updateProfile(weightKg: nil, bodyFat: latestImportedBodyFat)
+                updateProfile(weightKg: nil, bodyFat: latestImportedBodyFat, bodyFatIsExact: true)
             }
         } catch {
             return
@@ -745,8 +748,8 @@ private struct MetricLineGraph: View {
     let goalValue: Double?
 
     private let axisWidth: CGFloat = 36
-    private let dateLabelHeight: CGFloat = 44
-    private let dateLabelWidth: CGFloat = 56
+    private let dateLabelHeight: CGFloat = 32
+    private var dateLabelWidth: CGFloat { usesMonthYearDateLabels ? 66 : 56 }
     private var lineWidth: CGFloat { points.count > 18 ? 2.8 : 3.2 }
     private var pointSize: CGFloat { points.count > 18 ? 7 : 9 }
 
@@ -811,18 +814,17 @@ private struct MetricLineGraph: View {
                         .position(x: plotWidth + axisWidth / 2 + 4, y: y)
                 }
 
-                ForEach(dateTicks.indices, id: \.self) { tickPosition in
-                    let index = dateTicks[tickPosition]
+                ForEach(dateTicks, id: \.self) { index in
                     let x = xPosition(for: points[index], index: index, plotWidth: plotWidth)
                     Text(dateLabel(for: points[index].date))
-                        .font(.caption2.weight(.bold))
+                        .font(.caption.weight(.bold))
                         .foregroundStyle(Color.deltsMutedText)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.68)
+                        .minimumScaleFactor(0.64)
                         .frame(width: dateLabelWidth)
                         .position(
                             x: dateLabelXPosition(for: x, plotWidth: plotWidth),
-                            y: plotHeight + dateLabelYPosition(for: tickPosition, totalTicks: dateTicks.count)
+                            y: plotHeight + dateLabelHeight * 0.62
                         )
                 }
             }
@@ -846,23 +848,62 @@ private struct MetricLineGraph: View {
         guard !points.isEmpty else { return [] }
         guard points.count > 1 else { return [0] }
 
-        let minimumTickSpacing = usesMonthYearDateLabels ? dateLabelWidth * 0.70 : dateLabelWidth * 0.58
-        let maxAxisTicks = usesMonthYearDateLabels ? 6 : 7
-        let widthBasedTicks = max(2, Int(plotWidth / minimumTickSpacing))
-        let maxTicks = min(points.count, maxAxisTicks, widthBasedTicks)
+        let minimumTickSpacing = dateLabelWidth + 10
+        let widthBasedTicks = max(2, Int((plotWidth - dateLabelWidth) / minimumTickSpacing) + 1)
+        let maxAxisTicks = usesMonthYearDateLabels ? 4 : 5
+        let desiredTickCount = min(points.count, maxAxisTicks, widthBasedTicks)
+        let firstDate = points[0].date
+        let lastDate = points[points.count - 1].date
+        let duration = lastDate.timeIntervalSince(firstDate)
+        guard duration > 0 else { return Array(points.indices.prefix(desiredTickCount)) }
+
+        func nearestIndex(to targetOffset: TimeInterval) -> Int {
+            var nearestIndex = 0
+            var nearestDistance = TimeInterval.greatestFiniteMagnitude
+
+            for index in points.indices {
+                let offset = points[index].date.timeIntervalSince(firstDate)
+                let distance = abs(offset - targetOffset)
+                if distance < nearestDistance {
+                    nearestDistance = distance
+                    nearestIndex = index
+                }
+            }
+
+            return nearestIndex
+        }
+
+        let candidates = (0..<desiredTickCount).map { tick in
+            let targetOffset = duration * Double(tick) / Double(desiredTickCount - 1)
+            return nearestIndex(to: targetOffset)
+        }
+
         var indices: [Int] = []
 
-        func appendIfUnique(_ index: Int) {
-            guard indices.last != index else { return }
-            indices.append(index)
+        func labelX(for index: Int) -> CGFloat {
+            let x = xPosition(for: points[index], index: index, plotWidth: plotWidth)
+            return dateLabelXPosition(for: x, plotWidth: plotWidth)
         }
 
-        for tick in 0..<maxTicks {
-            let index = Int((Double(tick) * Double(points.count - 1) / Double(maxTicks - 1)).rounded())
-            appendIfUnique(index)
+        func canPlace(_ index: Int) -> Bool {
+            !indices.contains(index) && indices.allSatisfy { abs(labelX(for: index) - labelX(for: $0)) >= minimumTickSpacing }
         }
 
-        return indices
+        for candidate in candidates {
+            if canPlace(candidate) {
+                indices.append(candidate)
+            }
+        }
+
+        let lastIndex = points.count - 1
+        if !indices.contains(lastIndex) {
+            while let conflictIndex = indices.lastIndex(where: { abs(labelX(for: lastIndex) - labelX(for: $0)) < minimumTickSpacing }) {
+                indices.remove(at: conflictIndex)
+            }
+            indices.append(lastIndex)
+        }
+
+        return indices.sorted()
     }
 
     private var usesMonthYearDateLabels: Bool {
@@ -874,20 +915,15 @@ private struct MetricLineGraph: View {
 
     private func dateLabel(for date: Date) -> String {
         if usesMonthYearDateLabels {
-            return date.formatted(.dateTime.month(.abbreviated).year(.twoDigits))
+            return Self.monthYearFormatter.string(from: date)
         }
-        return date.formatted(.dateTime.month(.abbreviated).day())
+        return Self.monthDayFormatter.string(from: date)
     }
 
     private func dateLabelXPosition(for x: CGFloat, plotWidth: CGFloat) -> CGFloat {
         let halfLabelWidth = dateLabelWidth / 2
         guard plotWidth > halfLabelWidth * 2 else { return plotWidth / 2 }
         return min(max(x, halfLabelWidth), plotWidth - halfLabelWidth)
-    }
-
-    private func dateLabelYPosition(for tickPosition: Int, totalTicks: Int) -> CGFloat {
-        guard totalTicks > 4 else { return dateLabelHeight * 0.58 }
-        return tickPosition.isMultiple(of: 2) ? dateLabelHeight * 0.36 : dateLabelHeight * 0.80
     }
 
     private func xPosition(for point: ProgressMetricPoint, index: Int, plotWidth: CGFloat) -> CGFloat {
@@ -932,6 +968,20 @@ private struct MetricLineGraph: View {
         }
         return String(format: "%.1f", value)
     }
+
+    private static let monthDayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale.autoupdatingCurrent
+        formatter.setLocalizedDateFormatFromTemplate("MMM d")
+        return formatter
+    }()
+
+    private static let monthYearFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale.autoupdatingCurrent
+        formatter.dateFormat = "MMM ''yy"
+        return formatter
+    }()
 }
 
 private struct MetricGraphGrid: View {
@@ -1092,73 +1142,384 @@ private struct BodyLogSheet: View {
     }
 }
 
-private struct MetricValueLogSheet: View {
-    @Environment(\.dismiss) private var dismiss
+private enum ProgressMeasurementSystem: String, CaseIterable, Hashable {
+    case metric
+    case imperial
+
+    var title: String {
+        switch self {
+        case .metric:
+            return "Metric"
+        case .imperial:
+            return "Imperial"
+        }
+    }
+
+    init(storedValue: String) {
+        self = ProgressMeasurementSystem(rawValue: storedValue) ?? .metric
+    }
+}
+
+private struct ProgressMassWheelSheet: View {
     let title: String
-    let valueTitle: String
-    let unit: String
-    let keyboardType: UIKeyboardType
-    let save: (Double) -> Void
-    @State private var rawValue: String
+    let metricRange: ClosedRange<Int>
+    let imperialRange: ClosedRange<Int>
+    let save: (Double, ProgressMeasurementSystem) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedSystem: ProgressMeasurementSystem
+    @State private var whole: Int
+    @State private var decimal: Int
 
     init(
         title: String,
-        valueTitle: String,
-        initialValue: Double,
-        unit: String,
-        keyboardType: UIKeyboardType,
-        save: @escaping (Double) -> Void
+        initialKilograms: Double,
+        initialSystem: ProgressMeasurementSystem,
+        metricRange: ClosedRange<Int>,
+        imperialRange: ClosedRange<Int>,
+        save: @escaping (Double, ProgressMeasurementSystem) -> Void
     ) {
+        let initialDisplayValue = initialSystem == .metric ? initialKilograms : initialKilograms * 2.2046226218
+        let parts = progressDecimalParts(for: initialDisplayValue, range: initialSystem == .metric ? metricRange : imperialRange)
         self.title = title
-        self.valueTitle = valueTitle
-        self.unit = unit
-        self.keyboardType = keyboardType
+        self.metricRange = metricRange
+        self.imperialRange = imperialRange
         self.save = save
-        _rawValue = State(initialValue: initialValue > 0 ? String(format: "%.1f", initialValue) : "")
+        _selectedSystem = State(initialValue: initialSystem)
+        _whole = State(initialValue: parts.whole)
+        _decimal = State(initialValue: parts.decimal)
     }
 
-    private var parsedValue: Double? {
-        Double(rawValue.replacingOccurrences(of: ",", with: "."))
+    private var unit: String {
+        selectedSystem == .metric ? "kg" : "lb"
+    }
+
+    private var wholeOptions: [Int] {
+        Array(selectedSystem == .metric ? metricRange : imperialRange)
+    }
+
+    private var selectedDisplayValue: Double {
+        Double(whole) + (Double(decimal) / 10)
+    }
+
+    private var selectedKilograms: Double {
+        selectedSystem == .metric ? selectedDisplayValue : selectedDisplayValue / 2.2046226218
+    }
+
+    private var systemBinding: Binding<ProgressMeasurementSystem> {
+        Binding {
+            selectedSystem
+        } set: { newSystem in
+            let kilograms = selectedKilograms
+            selectedSystem = newSystem
+            setDisplayValue(newSystem == .metric ? kilograms : kilograms * 2.2046226218)
+        }
     }
 
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 18) {
-                TextField(valueTitle, text: $rawValue)
-                    .keyboardType(keyboardType)
-                    .textFieldStyle(.plain)
+                Picker("Unit", selection: systemBinding) {
+                    ForEach(ProgressMeasurementSystem.allCases, id: \.self) { system in
+                        Text(system.title).tag(system)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Text("\(progressFormatDecimal(selectedDisplayValue)) \(unit)")
                     .font(.title2.monospacedDigit().weight(.bold))
                     .foregroundStyle(Color.deltsCharcoal)
-                    .padding(.horizontal, 14)
-                    .frame(height: 56)
-                    .background(Color.deltsPanel.opacity(0.30), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .overlay(alignment: .trailing) {
-                        Text(unit)
-                            .font(.headline.weight(.bold))
-                            .foregroundStyle(Color.deltsMutedText)
-                            .padding(.trailing, 14)
-                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
 
-                PrimaryButton(title: "Save", systemImage: "checkmark") {
-                    guard let parsedValue else { return }
-                    save(parsedValue)
-                    dismiss()
+                HStack(spacing: 10) {
+                    ProgressWheelColumn(title: "Whole", selection: $whole, values: wholeOptions) { "\($0)" }
+                    ProgressWheelColumn(title: "Decimal", selection: $decimal, values: Array(0...9)) { ".\($0)" }
+
+                    Text(unit)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .frame(width: 48)
                 }
-                .disabled(parsedValue == nil)
-
-                Spacer()
+                .frame(height: 190)
             }
-            .padding(20)
-            .deltsScreen()
+            .padding(.top, 18)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 18)
+            .background(DeltsBackground())
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        save(selectedKilograms, selectedSystem)
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                }
             }
         }
+        .presentationDetents([.height(420), .medium])
+        .presentationDragIndicator(.visible)
     }
+
+    private func setDisplayValue(_ value: Double) {
+        let range = selectedSystem == .metric ? metricRange : imperialRange
+        let parts = progressDecimalParts(for: value, range: range)
+        whole = parts.whole
+        decimal = parts.decimal
+    }
+}
+
+private struct ProgressBodyFatRangeSheet: View {
+    let title: String
+    let initialValue: Double
+    let initialIsExact: Bool
+    let sex: String
+    let save: (Double, Bool) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    private var selectedRange: ProgressBodyFatRange {
+        ProgressBodyFatRange.matching(initialValue, sex: sex)
+    }
+
+    private var ranges: [ProgressBodyFatRange] {
+        ProgressBodyFatRange.options(for: sex)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    ProgressBodyFatExactSetter(initialValue: initialValue) { exactValue in
+                        save(exactValue, true)
+                        dismiss()
+                    }
+
+                    ForEach(ranges) { range in
+                        Button {
+                            save(range.storedValue, false)
+                            dismiss()
+                        } label: {
+                            ProgressBodyFatRangeCard(
+                                range: range,
+                                sex: sex,
+                                isSelected: !initialIsExact && range.id == selectedRange.id
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 14)
+                .padding(.bottom, 28)
+            }
+            .background(DeltsBackground())
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+private struct ProgressBodyFatExactSetter: View {
+    let save: (Double) -> Void
+    @State private var whole: Int
+    @State private var decimal: Int
+
+    init(initialValue: Double, save: @escaping (Double) -> Void) {
+        self.save = save
+        let parts = progressDecimalParts(for: initialValue, range: 0...60)
+        _whole = State(initialValue: parts.whole)
+        _decimal = State(initialValue: parts.decimal)
+    }
+
+    private var selectedValue: Double {
+        Double(whole) + (Double(decimal) / 10)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline) {
+                Label("Exact", systemImage: "number")
+                    .font(.headline.weight(.heavy))
+                    .foregroundStyle(Color.deltsCharcoal)
+
+                Spacer()
+
+                Text("\(progressFormatDecimal(selectedValue))%")
+                    .font(.title3.monospacedDigit().weight(.heavy))
+                    .foregroundStyle(Color.deltsAccent)
+            }
+
+            HStack(spacing: 10) {
+                ProgressWheelColumn(title: "Whole", selection: $whole, values: Array(0...60)) { "\($0)" }
+                ProgressWheelColumn(title: "Decimal", selection: $decimal, values: Array(0...9)) { ".\($0)" }
+            }
+            .frame(height: 138)
+
+            PrimaryButton(title: "Set exact", systemImage: "checkmark") {
+                save(selectedValue)
+            }
+        }
+        .padding(12)
+        .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.deltsAccent.opacity(0.28), lineWidth: 1)
+        }
+    }
+}
+
+private struct ProgressBodyFatRangeCard: View {
+    let range: ProgressBodyFatRange
+    let sex: String
+    let isSelected: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ZStack(alignment: .topTrailing) {
+                Image(range.assetName(for: sex))
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 158)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(Color.deltsAccent)
+                        .padding(10)
+                        .shadow(color: .black.opacity(0.35), radius: 8, x: 0, y: 2)
+                }
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(range.title)
+                    .font(.title2.weight(.heavy))
+                    .foregroundStyle(Color.deltsCharcoal)
+
+                Text(range.summary)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(isSelected ? Color.deltsAccent.opacity(0.18) : Color.deltsPanel.opacity(0.74))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(isSelected ? Color.deltsAccent.opacity(0.72) : Color.deltsMutedText.opacity(0.12), lineWidth: 1)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(range.title), \(range.summary)")
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
+    }
+}
+
+private struct ProgressBodyFatRange: Identifiable {
+    let id: String
+    let title: String
+    let lowerBound: Double
+    let upperBound: Double?
+    let storedValue: Double
+    let summary: String
+
+    private static let ranges: [ProgressBodyFatRange] = [
+        ProgressBodyFatRange(id: "06_09", title: "6-9%", lowerBound: 6, upperBound: 9, storedValue: 8, summary: "Very lean"),
+        ProgressBodyFatRange(id: "10_13", title: "10-13%", lowerBound: 10, upperBound: 13, storedValue: 12, summary: "Lean"),
+        ProgressBodyFatRange(id: "14_17", title: "14-17%", lowerBound: 14, upperBound: 17, storedValue: 16, summary: "Fit"),
+        ProgressBodyFatRange(id: "18_22", title: "18-22%", lowerBound: 18, upperBound: 22, storedValue: 20, summary: "Average"),
+        ProgressBodyFatRange(id: "23_27", title: "23-27%", lowerBound: 23, upperBound: 27, storedValue: 25, summary: "Soft"),
+        ProgressBodyFatRange(id: "28_32", title: "28-32%", lowerBound: 28, upperBound: 32, storedValue: 30, summary: "Fuller"),
+        ProgressBodyFatRange(id: "33_plus", title: "33%+", lowerBound: 33, upperBound: nil, storedValue: 36, summary: "High")
+    ]
+
+    static func options(for sex: String) -> [ProgressBodyFatRange] {
+        ranges
+    }
+
+    static func matching(_ value: Double, sex: String) -> ProgressBodyFatRange {
+        let ranges = options(for: sex)
+        let roundedValue = value.rounded()
+        if let exactRange = ranges.first(where: { range in
+            guard roundedValue >= range.lowerBound else { return false }
+            return roundedValue <= (range.upperBound ?? .greatestFiniteMagnitude)
+        }) {
+            return exactRange
+        }
+        return roundedValue < (ranges.first?.lowerBound ?? 0) ? ranges[0] : ranges[ranges.count - 1]
+    }
+
+    func assetName(for sex: String) -> String {
+        let normalizedSex = sex.localizedCaseInsensitiveContains("female") ? "female" : "male"
+        return "bodyfat_\(normalizedSex)_\(id)"
+    }
+}
+
+private struct ProgressWheelColumn: View {
+    let title: String
+    @Binding var selection: Int
+    let values: [Int]
+    let label: (Int) -> String
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(title)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.deltsMutedText)
+
+            Picker(title, selection: $selection) {
+                ForEach(values, id: \.self) { value in
+                    Text(label(value))
+                        .font(.title3.monospacedDigit().weight(.semibold))
+                        .tag(value)
+                }
+            }
+            .pickerStyle(.wheel)
+            .labelsHidden()
+        }
+        .frame(maxWidth: .infinity)
+        .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
+        }
+    }
+}
+
+private func progressFormatDecimal(_ value: Double) -> String {
+    value.formatted(.number.precision(.fractionLength(1)))
+}
+
+private func progressDecimalParts(for value: Double, range: ClosedRange<Int>) -> (whole: Int, decimal: Int) {
+    let minimumTenths = range.lowerBound * 10
+    let maximumTenths = (range.upperBound * 10) + 9
+    let roundedTenths = Int((value * 10).rounded())
+    let tenths = min(max(roundedTenths, minimumTenths), maximumTenths)
+    let whole = min(max(tenths / 10, range.lowerBound), range.upperBound)
+    let decimal = tenths % 10
+    return (whole, decimal)
 }
 
 private struct MetricSnapshotEditSheet: View {
