@@ -1476,6 +1476,7 @@ private struct ProfileBodyFatRangeSheet: View {
     @Binding var isExact: Bool
     let sex: String
     @Environment(\.dismiss) private var dismiss
+    @State private var draftSelection: Double
     @State private var usesExactValue: Bool
     @State private var whole: Int
     @State private var decimal: Int
@@ -1487,13 +1488,14 @@ private struct ProfileBodyFatRangeSheet: View {
         self.sex = sex
 
         let parts = profileDecimalParts(for: selection.wrappedValue, range: 0...60)
+        _draftSelection = State(initialValue: selection.wrappedValue)
         _usesExactValue = State(initialValue: isExact.wrappedValue)
         _whole = State(initialValue: parts.whole)
         _decimal = State(initialValue: parts.decimal)
     }
 
     private var selectedRange: ProfileBodyFatRange {
-        ProfileBodyFatRange.matching(selection, sex: sex)
+        ProfileBodyFatRange.matching(draftSelection, sex: sex)
     }
 
     private var ranges: [ProfileBodyFatRange] {
@@ -1504,20 +1506,11 @@ private struct ProfileBodyFatRangeSheet: View {
         Double(whole) + (Double(decimal) / 10)
     }
 
-    private var modeBinding: Binding<Bool> {
-        Binding {
-            usesExactValue
-        } set: { newValue in
-            usesExactValue = newValue
-            isExact = newValue
-        }
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    ProfileBodyFatModeToggle(isExactMode: modeBinding)
+                    ProfileBodyFatModeToggle(isExactMode: $usesExactValue)
 
                     if usesExactValue {
                         ProfileBodyFatExactWheelPicker(
@@ -1529,9 +1522,7 @@ private struct ProfileBodyFatRangeSheet: View {
                     } else {
                         ForEach(ranges) { range in
                             Button {
-                                selection = range.storedValue
-                                isExact = false
-                                dismiss()
+                                draftSelection = range.storedValue
                             } label: {
                                 ProfileBodyFatRangeCard(
                                     range: range,
@@ -1551,11 +1542,20 @@ private struct ProfileBodyFatRangeSheet: View {
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
+                    Button("Save") {
                         if usesExactValue {
                             selection = exactValue
                             isExact = true
+                        } else {
+                            selection = draftSelection
+                            isExact = false
                         }
                         dismiss()
                     }
