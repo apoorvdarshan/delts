@@ -120,7 +120,6 @@ struct StartWorkoutHero: View {
     let toggleTimer: () -> Void
     let stopTimer: () -> Void
     let discardTimer: () -> Void
-    let showCalories: () -> Void
 
     var body: some View {
         VStack(spacing: 22) {
@@ -133,8 +132,7 @@ struct StartWorkoutHero: View {
                     isRunning: isTimerRunning,
                     isPaused: isTimerPaused,
                     hasSession: hasTimerSession,
-                    action: toggleTimer,
-                    showCalories: showCalories
+                    action: toggleTimer
                 )
 
                 if isTimerPaused {
@@ -172,55 +170,36 @@ struct HomeSessionTimerButton: View {
     let isPaused: Bool
     let hasSession: Bool
     let action: () -> Void
-    let showCalories: () -> Void
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                Button(action: action) {
-                    VStack(spacing: 10) {
-                        Image(systemName: isRunning ? "pause.fill" : "play.fill")
-                            .font(.system(size: 30, weight: .black))
-                            .foregroundStyle(Color.white)
-                            .shadow(color: Color.black.opacity(0.52), radius: 2, y: 1)
-                            .frame(height: 34)
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            Button(action: action) {
+                VStack(spacing: 10) {
+                    Image(systemName: isRunning ? "pause.fill" : "play.fill")
+                        .font(.system(size: 30, weight: .black))
+                        .foregroundStyle(Color.white)
+                        .shadow(color: Color.black.opacity(0.52), radius: 2, y: 1)
+                        .frame(height: 34)
 
-                        Text(displayText(at: context.date))
-                            .font(.system(size: 34, weight: .black, design: .rounded))
-                            .foregroundStyle(Color.white)
-                            .contentTransition(.numericText())
-                            .monospacedDigit()
-                            .lineLimit(1)
-                            .shadow(color: Color.black.opacity(0.62), radius: 2, y: 1)
-                    }
-                    .frame(width: 156, height: 156)
-                    .background {
-                        Image("timer_button_red")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 176, height: 176)
-                            .shadow(color: Color.black.opacity(0.34), radius: 16, y: 8)
-                    }
+                    Text(displayText(at: context.date))
+                        .font(.system(size: 34, weight: .black, design: .rounded))
+                        .foregroundStyle(Color.white)
+                        .contentTransition(.numericText())
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .shadow(color: Color.black.opacity(0.62), radius: 2, y: 1)
                 }
-                .buttonStyle(HomeTimerButtonStyle(isRunning: isRunning))
-                .accessibilityLabel(accessibilityLabel)
+                .frame(width: 156, height: 156)
+                .background {
+                    Image("timer_button_red")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 176, height: 176)
+                        .shadow(color: Color.black.opacity(0.34), radius: 16, y: 8)
+                }
             }
-
-            Button(action: showCalories) {
-                Image(systemName: "flame.fill")
-                    .font(.system(size: 15, weight: .black))
-                    .foregroundStyle(Color.deltsAccent)
-                    .frame(width: 38, height: 38)
-                    .background(Color.deltsBackground.opacity(0.86), in: Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(Color.deltsAccent.opacity(0.36), lineWidth: 0.8)
-                    }
-            }
-            .buttonStyle(.plain)
-            .deltsPressable()
-            .offset(x: 7, y: 9)
-            .accessibilityLabel("Show calories")
+            .buttonStyle(HomeTimerButtonStyle(isRunning: isRunning))
+            .accessibilityLabel(accessibilityLabel)
         }
     }
 
@@ -237,84 +216,6 @@ struct HomeSessionTimerButton: View {
     private func totalElapsedSeconds(at date: Date) -> Int {
         guard let startedAt else { return elapsedSeconds }
         return elapsedSeconds + max(0, Int(date.timeIntervalSince(startedAt)))
-    }
-}
-
-struct HomeCalorieSummarySheet: View {
-    let elapsedSeconds: Int
-    let workoutCount: Int
-    let setCount: Int
-    let repCount: Int
-
-    var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("-- kcal")
-                        .font(.system(size: 46, weight: .black, design: .rounded))
-                        .foregroundStyle(Color.deltsCharcoal)
-                        .monospacedDigit()
-
-                    Text("Estimated burn")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(Color.deltsMutedText)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(20)
-                .background(Color.deltsPanel.opacity(0.36), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.7)
-                }
-
-                HStack(spacing: 10) {
-                    HomeCalorieMetric(title: "Time", value: ActiveWorkoutViewModel.elapsedDisplay(elapsedSeconds), systemImage: "timer")
-                    HomeCalorieMetric(title: "Workouts", value: "\(workoutCount)", systemImage: "dumbbell.fill")
-                }
-
-                HStack(spacing: 10) {
-                    HomeCalorieMetric(title: "Sets", value: "\(setCount)", systemImage: "checklist")
-                    HomeCalorieMetric(title: "Reps", value: "\(repCount)", systemImage: "repeat")
-                }
-
-                Text("Calorie calculation will use workout time, rest time, reps, and RPE.")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Spacer(minLength: 0)
-            }
-            .padding(20)
-            .deltsScreen()
-            .navigationTitle("Calories")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-}
-
-private struct HomeCalorieMetric: View {
-    let title: String
-    let value: String
-    let systemImage: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Label(title, systemImage: systemImage)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(Color.deltsMutedText)
-
-            Text(value)
-                .font(.headline.weight(.black).monospacedDigit())
-                .foregroundStyle(Color.deltsCharcoal)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity, minHeight: 74, alignment: .leading)
-        .padding(.horizontal, 12)
-        .background(Color.deltsCard.opacity(0.40), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.6)
-        }
     }
 }
 

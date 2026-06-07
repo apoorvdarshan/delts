@@ -27,7 +27,6 @@ struct HomeView: View {
     @State private var sessionElapsedSeconds = 0
     @State private var isOtherDateTimerDialogPresented = false
     @State private var isEmptyWorkoutStartDialogPresented = false
-    @State private var isCalorieSummaryPresented = false
     @State private var selectedWorkoutRoute: PlannedWorkoutDetailRoute?
     @State private var isGuidedWorkoutPresented = false
     @FocusState private var focusedField: PlannedSetFocus?
@@ -264,10 +263,7 @@ struct HomeView: View {
                         hasTimerSession: hasSelectedSessionTimer,
                         toggleTimer: handleSessionTimerTap,
                         stopTimer: stopSessionTimer,
-                        discardTimer: discardSessionTimer,
-                        showCalories: {
-                            isCalorieSummaryPresented = true
-                        }
+                        discardTimer: discardSessionTimer
                     )
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -419,16 +415,6 @@ struct HomeView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text("Add at least one workout to \(selectedDateTitle) before starting the timer.")
-            }
-            .sheet(isPresented: $isCalorieSummaryPresented) {
-                HomeCalorieSummarySheet(
-                    elapsedSeconds: currentSessionElapsedSeconds,
-                    workoutCount: selectedExercises.count,
-                    setCount: selectedCompletedSetCount,
-                    repCount: selectedRepCount
-                )
-                .presentationDetents([.medium])
-                .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $isWorkoutPickerPresented) {
                 WorkoutPickerSheet(
