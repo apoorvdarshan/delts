@@ -17,7 +17,7 @@ struct ProfileView: View {
                     ProfileLoadingView()
                 }
             }
-            .navigationTitle("Setting")
+            .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .onDisappear {
                 try? modelContext.save()
@@ -76,10 +76,12 @@ private struct ProfileEditorView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                identitySection
-                goalSection
-                scheduleSection
+                personalDetailsSection
+                bodyMetricsSection
+                trainingGoalsSection
+                workoutPreferencesSection
                 strengthSection
+                appPreferencesSection
                 AboutSettingsSection(updateChecker: updateChecker)
             }
             .padding(.horizontal, 20)
@@ -106,10 +108,10 @@ private struct ProfileEditorView: View {
         }
     }
 
-    private var identitySection: some View {
+    private var personalDetailsSection: some View {
         ProfileSection(
-            title: "About",
-            subtitle: "Basic details used to shape plans.",
+            title: "Personal Details",
+            subtitle: "Basic profile details used to shape plans.",
             systemImage: "person.text.rectangle"
         ) {
             ProfileRowStack {
@@ -131,9 +133,19 @@ private struct ProfileEditorView: View {
                     system: heightMeasurementSystemBinding,
                     centimeters: heightBinding
                 )
-                ProfileDivider()
+            }
+        }
+    }
+
+    private var bodyMetricsSection: some View {
+        ProfileSection(
+            title: "Body Metrics",
+            subtitle: "Current body data, targets, and health sync.",
+            systemImage: "figure.arms.open"
+        ) {
+            ProfileRowStack {
                 ProfileWeightPickerRow(
-                    title: "Weight",
+                    title: "Current weight",
                     systemImage: "scalemass",
                     system: weightMeasurementSystemBinding,
                     kilograms: weightBinding
@@ -166,14 +178,6 @@ private struct ProfileEditorView: View {
                     Toggle("", isOn: appleHealthBinding)
                         .labelsHidden()
                 }
-                ProfileDivider()
-                ProfileMenuPicker(
-                    title: "Appearance",
-                    systemImage: "circle.lefthalf.filled",
-                    selection: appAppearanceBinding,
-                    options: AppAppearance.allCases,
-                    label: { $0.title }
-                )
             }
         }
     }
@@ -206,10 +210,10 @@ private struct ProfileEditorView: View {
         }
     }
 
-    private var goalSection: some View {
+    private var trainingGoalsSection: some View {
         ProfileSection(
-            title: "Goals & Constraints",
-            subtitle: "Training targets, focus, and limits before plans are generated.",
+            title: "Training Goals",
+            subtitle: "Targets, focus areas, and limits before plans are generated.",
             systemImage: "scope"
         ) {
             ProfileRowStack {
@@ -266,10 +270,10 @@ private struct ProfileEditorView: View {
         }
     }
 
-    private var scheduleSection: some View {
+    private var workoutPreferencesSection: some View {
         ProfileSection(
-            title: "Workout Setup",
-            subtitle: "Tune how training fits into the week.",
+            title: "Workout Preferences",
+            subtitle: "How training should fit into the week.",
             systemImage: "calendar.badge.clock"
         ) {
             ProfileRowStack {
@@ -279,6 +283,14 @@ private struct ProfileEditorView: View {
                     selection: frequencyBinding,
                     options: frequencyOptions,
                     label: { "\($0) days/week" }
+                )
+                ProfileDivider()
+                ProfileMenuPicker(
+                    title: "Workout duration",
+                    systemImage: "timer",
+                    selection: durationRangeBinding,
+                    options: WorkoutDurationRangeOption.options,
+                    label: { $0.title }
                 )
                 ProfileDivider()
                 ProfileToggleRow(
@@ -302,14 +314,6 @@ private struct ProfileEditorView: View {
                     )
                 }
                 ProfileDivider()
-                ProfileMenuPicker(
-                    title: "Workout duration",
-                    systemImage: "timer",
-                    selection: durationRangeBinding,
-                    options: WorkoutDurationRangeOption.options,
-                    label: { $0.title }
-                )
-                ProfileDivider()
                 ProfileRPEScalePickerRow(
                     title: "RPE scale",
                     systemImage: "gauge.medium",
@@ -330,8 +334,8 @@ private struct ProfileEditorView: View {
 
     private var strengthSection: some View {
         ProfileSection(
-            title: "1RM Numbers",
-            subtitle: "Optional strength anchors for load guidance.",
+            title: "Strength Numbers",
+            subtitle: "Optional 1RM anchors for load guidance.",
             systemImage: "scalemass.fill"
         ) {
             ProfileRowStack {
@@ -365,6 +369,24 @@ private struct ProfileEditorView: View {
                     assetImageName: "one_rm_icon_overhead_press",
                     system: weightMeasurementSystemBinding,
                     value: overheadPressBinding
+                )
+            }
+        }
+    }
+
+    private var appPreferencesSection: some View {
+        ProfileSection(
+            title: "App Preferences",
+            subtitle: "Display options for Delts.",
+            systemImage: "gearshape.fill"
+        ) {
+            ProfileRowStack {
+                ProfileMenuPicker(
+                    title: "Appearance",
+                    systemImage: "circle.lefthalf.filled",
+                    selection: appAppearanceBinding,
+                    options: AppAppearance.allCases,
+                    label: { $0.title }
                 )
             }
         }

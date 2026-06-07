@@ -217,7 +217,7 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
         case .home: return "Home"
         case .workouts: return "Workouts"
         case .progress: return "Progress"
-        case .profile: return "Setting"
+        case .profile: return "Settings"
         }
     }
 

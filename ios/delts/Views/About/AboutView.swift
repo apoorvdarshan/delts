@@ -80,33 +80,24 @@ struct AboutSettingsSection: View {
                         }
                     }
 
-                    AboutSection(title: "Community") {
+                    AboutSection(title: "Feedback") {
                         AboutRowStack {
                             AboutActionRow(
-                                title: "Support on Ko-fi",
-                                systemImage: "cup.and.saucer.fill",
-                                value: "apoorvdarshan",
-                                tint: .deltsSecondaryAccent
+                                title: "Report an Issue",
+                                systemImage: "exclamationmark.bubble.fill",
+                                value: "GitHub",
+                                tint: .red
                             ) {
-                                open(AboutLinks.kofiURL)
+                                open(AboutLinks.githubIssueURL)
                             }
                             AboutDivider()
                             AboutActionRow(
-                                title: "Open Source",
-                                systemImage: "curlybraces.square.fill",
-                                value: "Repo soon",
+                                title: "Request a Feature",
+                                systemImage: "lightbulb.fill",
+                                value: "GitHub",
                                 tint: .deltsSecondaryAccent
                             ) {
-                                activeAlert = .placeholder(.openSource)
-                            }
-                            AboutDivider()
-                            AboutActionRow(
-                                title: "Product Hunt",
-                                systemImage: "paperplane.fill",
-                                value: "Coming soon",
-                                tint: .deltsSecondaryAccent
-                            ) {
-                                activeAlert = .placeholder(.productHunt)
+                                open(AboutLinks.githubFeatureURL)
                             }
                         }
                     }
@@ -151,24 +142,33 @@ struct AboutSettingsSection: View {
                         }
                     }
 
-                    AboutSection(title: "Feedback") {
+                    AboutSection(title: "Support & Links") {
                         AboutRowStack {
                             AboutActionRow(
-                                title: "Report an Issue",
-                                systemImage: "exclamationmark.bubble.fill",
-                                value: "GitHub",
-                                tint: .red
+                                title: "Support on Ko-fi",
+                                systemImage: "cup.and.saucer.fill",
+                                value: "apoorvdarshan",
+                                tint: .deltsSecondaryAccent
                             ) {
-                                open(AboutLinks.githubIssueURL)
+                                open(AboutLinks.kofiURL)
                             }
                             AboutDivider()
                             AboutActionRow(
-                                title: "Request a Feature",
-                                systemImage: "lightbulb.fill",
-                                value: "GitHub",
+                                title: "Open Source",
+                                systemImage: "curlybraces.square.fill",
+                                value: "Repo soon",
                                 tint: .deltsSecondaryAccent
                             ) {
-                                open(AboutLinks.githubFeatureURL)
+                                activeAlert = .placeholder(.openSource)
+                            }
+                            AboutDivider()
+                            AboutActionRow(
+                                title: "Product Hunt",
+                                systemImage: "paperplane.fill",
+                                value: "Coming soon",
+                                tint: .deltsSecondaryAccent
+                            ) {
+                                activeAlert = .placeholder(.productHunt)
                             }
                         }
                     }
