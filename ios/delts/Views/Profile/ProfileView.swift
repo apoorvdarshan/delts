@@ -1487,7 +1487,7 @@ private struct ProfileBodyFatRangeSheet: View {
         self.sex = sex
 
         let parts = profileDecimalParts(for: selection.wrappedValue, range: 0...60)
-        _usesExactValue = State(initialValue: false)
+        _usesExactValue = State(initialValue: isExact.wrappedValue)
         _whole = State(initialValue: parts.whole)
         _decimal = State(initialValue: parts.decimal)
     }
@@ -1504,11 +1504,20 @@ private struct ProfileBodyFatRangeSheet: View {
         Double(whole) + (Double(decimal) / 10)
     }
 
+    private var modeBinding: Binding<Bool> {
+        Binding {
+            usesExactValue
+        } set: { newValue in
+            usesExactValue = newValue
+            isExact = newValue
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    ProfileBodyFatModeToggle(isExactMode: $usesExactValue)
+                    ProfileBodyFatModeToggle(isExactMode: modeBinding)
 
                     if usesExactValue {
                         ProfileBodyFatExactWheelPicker(

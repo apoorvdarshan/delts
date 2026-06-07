@@ -81,6 +81,7 @@ struct ProgressTabView: View {
                 ProgressBodyFatRangeSheet(
                     title: "Log Body Fat",
                     initialValue: latestBodyFat ?? profiles.first?.currentBodyFatPercentage ?? 0,
+                    initialIsExact: currentBodyFatIsExact,
                     sex: profiles.first?.gender ?? "Male"
                 ) { value, isExact in
                     logBodyFat(value, isExact: isExact)
@@ -1245,6 +1246,7 @@ private struct ProgressBodyFatRangeSheet: View {
     init(
         title: String,
         initialValue: Double,
+        initialIsExact: Bool,
         sex: String,
         save: @escaping (Double, Bool) -> Void
     ) {
@@ -1254,7 +1256,7 @@ private struct ProgressBodyFatRangeSheet: View {
         self.save = save
 
         let parts = progressDecimalParts(for: initialValue, range: 0...60)
-        _usesExactValue = State(initialValue: false)
+        _usesExactValue = State(initialValue: initialIsExact)
         _whole = State(initialValue: parts.whole)
         _decimal = State(initialValue: parts.decimal)
     }
