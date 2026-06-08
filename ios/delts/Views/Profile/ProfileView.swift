@@ -1395,7 +1395,8 @@ private struct ProfileWeightPickerRow: View {
                     initialKilograms: kilograms,
                     initialSystem: system,
                     metricRange: 30...250,
-                    imperialRange: 66...551
+                    imperialRange: 66...551,
+                    confirmationTitle: "Save"
                 ) { newKilograms, newSystem in
                     system = newSystem
                     kilograms = newKilograms
@@ -1868,6 +1869,7 @@ private struct ProfileMassWheelSheet: View {
     let title: String
     let metricRange: ClosedRange<Int>
     let imperialRange: ClosedRange<Int>
+    let confirmationTitle: String
     let onSave: (Double, MeasurementSystem) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -1881,6 +1883,7 @@ private struct ProfileMassWheelSheet: View {
         initialSystem: MeasurementSystem,
         metricRange: ClosedRange<Int>,
         imperialRange: ClosedRange<Int>,
+        confirmationTitle: String = "Done",
         onSave: @escaping (Double, MeasurementSystem) -> Void
     ) {
         let initialDisplayValue = initialSystem == .metric ? initialKilograms : initialKilograms * 2.2046226218
@@ -1888,6 +1891,7 @@ private struct ProfileMassWheelSheet: View {
         self.title = title
         self.metricRange = metricRange
         self.imperialRange = imperialRange
+        self.confirmationTitle = confirmationTitle
         self.onSave = onSave
         _selectedSystem = State(initialValue: initialSystem)
         _whole = State(initialValue: parts.whole)
@@ -1960,7 +1964,7 @@ private struct ProfileMassWheelSheet: View {
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
+                    Button(confirmationTitle) {
                         onSave(selectedKilograms, selectedSystem)
                         dismiss()
                     }
