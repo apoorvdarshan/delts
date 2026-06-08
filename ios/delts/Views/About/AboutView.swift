@@ -25,7 +25,6 @@ struct AboutView: View {
 struct AboutSettingsSection: View {
     @Environment(\.openURL) private var openURL
     @ObservedObject var updateChecker: AppUpdateChecker
-    @State private var isWhatsNewExpanded = false
     @State private var activeAlert: AboutAlert?
 
     var body: some View {
@@ -39,25 +38,6 @@ struct AboutSettingsSection: View {
                                 tint: .deltsSecondaryAccent
                             ) {
                                 checkForUpdates()
-                            }
-                            AboutDivider()
-                            AboutExpandableActionRow(
-                                title: "What's New",
-                                systemImage: "sparkles",
-                                value: isWhatsNewExpanded ? "Hide" : "Show",
-                                tint: .deltsSecondaryAccent,
-                                isExpanded: isWhatsNewExpanded
-                            ) {
-                                withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
-                                    isWhatsNewExpanded.toggle()
-                                }
-                            }
-                            if isWhatsNewExpanded {
-                                AboutDivider()
-                                AboutWhatsNewInlineContent()
-                                    .padding(.top, 4)
-                                    .padding(.bottom, 12)
-                                    .transition(.opacity.combined(with: .move(edge: .top)))
                             }
                             AboutDivider()
                             AboutActionRow(
@@ -211,18 +191,10 @@ struct AboutSettingsSection: View {
 
     private var appVersionText: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
-
-        switch (version?.isEmpty == false ? version : nil, build?.isEmpty == false ? build : nil) {
-        case let (.some(version), .some(build)):
-            return "\(version) (\(build))"
-        case let (.some(version), .none):
+        if let version, !version.isEmpty {
             return version
-        case let (.none, .some(build)):
-            return "Build \(build)"
-        case (.none, .none):
-            return "Unavailable"
         }
+        return "Unavailable"
     }
 
     private func requestAppReview() {
@@ -449,36 +421,6 @@ private struct AboutActionRow: View {
     }
 }
 
-private struct AboutExpandableActionRow: View {
-    let title: String
-    let systemImage: String
-    let value: String
-    let tint: Color
-    let isExpanded: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            AboutFieldRow(title: title, systemImage: systemImage, tint: tint) {
-                HStack(spacing: 7) {
-                    Text(value)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Color.deltsMutedText)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
-                        .multilineTextAlignment(.trailing)
-
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(Color.deltsMutedText.opacity(0.72))
-                }
-                .frame(minWidth: 72, maxWidth: 180, minHeight: 38, alignment: .trailing)
-            }
-        }
-        .deltsPressable()
-    }
-}
-
 private struct AboutFieldRow<Content: View>: View {
     let title: String
     let systemImage: String
@@ -566,69 +508,6 @@ private struct AboutValueLabel: View {
             }
         }
         .frame(minWidth: 72, maxWidth: 180, minHeight: 38, alignment: .trailing)
-    }
-}
-
-private struct AboutWhatsNewInlineContent: View {
-    private let items = [
-        AboutWhatsNewItem(
-            title: "Workout timer controls",
-            detail: "Pause, resume, stop, and discard now live directly in the Start tab."
-        ),
-        AboutWhatsNewItem(
-            title: "Live Activity timer",
-            detail: "The timer notification shows the Delts logo, day, timer, and workout stats."
-        ),
-        AboutWhatsNewItem(
-            title: "About section",
-            detail: "App updates, support, social, legal, and feedback actions now live in Settings."
-        )
-    ]
-
-    var body: some View {
-        VStack(spacing: 10) {
-            ForEach(items) { item in
-                AboutWhatsNewRow(item: item)
-            }
-        }
-        .padding(.leading, 48)
-    }
-}
-
-private struct AboutWhatsNewItem: Identifiable {
-    let id = UUID()
-    let title: String
-    let detail: String
-}
-
-private struct AboutWhatsNewRow: View {
-    let item: AboutWhatsNewItem
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.title3.weight(.bold))
-                .foregroundStyle(Color.deltsSecondaryAccent)
-                .frame(width: 28, height: 28)
-
-            VStack(alignment: .leading, spacing: 5) {
-                Text(item.title)
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.deltsCharcoal)
-
-                Text(item.detail)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.deltsHairline.opacity(0.26), lineWidth: 0.6)
-        }
     }
 }
 
