@@ -1322,7 +1322,7 @@ private struct ProgressBodyFatRangeSheet: View {
                 }
             }
         }
-        .presentationDetents([.height(420), .medium])
+        .presentationDetents(usesExactValue ? [.height(420), .medium] : [.large])
         .presentationDragIndicator(.visible)
     }
 }
