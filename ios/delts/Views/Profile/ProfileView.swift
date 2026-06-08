@@ -50,6 +50,7 @@ private struct ProfileEditorView: View {
     @AppStorage("profile_selected_goals") private var selectedGoalRawValues = ""
     @AppStorage("profile_extra_issues") private var extraIssues = ""
     @AppStorage(AppAppearance.storageKey) private var appAppearanceRaw = AppAppearance.system.rawValue
+    @AppStorage(DeltsTheme.storageKey) private var deltsThemeRaw = DeltsTheme.lime.rawValue
     @AppStorage(RPEScale.storageKey) private var rpeScaleRaw = RPEScale.strength.rawValue
     @AppStorage("profile_dataset_level") private var datasetLevelRaw = ""
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
@@ -199,6 +200,15 @@ private struct ProfileEditorView: View {
             AppAppearance(rawValue: appAppearanceRaw) ?? .system
         } set: { newValue in
             appAppearanceRaw = newValue.rawValue
+        }
+    }
+
+    private var deltsThemeBinding: Binding<DeltsTheme> {
+        Binding {
+            DeltsTheme(rawValue: deltsThemeRaw) ?? .lime
+        } set: { newValue in
+            deltsThemeRaw = newValue.rawValue
+            DeltsTheme.applyAppIcon(for: newValue)
         }
     }
 
@@ -381,6 +391,8 @@ private struct ProfileEditorView: View {
             systemImage: "gearshape.fill"
         ) {
             ProfileRowStack {
+                ProfileThemePickerRow(selection: deltsThemeBinding)
+                ProfileDivider()
                 ProfileMenuPicker(
                     title: "Appearance",
                     systemImage: "circle.lefthalf.filled",
@@ -2235,6 +2247,105 @@ private struct ProfileMenuValueLabel: View {
                 .foregroundStyle(Color.deltsMutedText)
         }
         .frame(minWidth: 72, maxWidth: 178, minHeight: 38, alignment: .trailing)
+    }
+}
+
+private struct ProfileThemePickerRow: View {
+    @Binding var selection: DeltsTheme
+
+    private var columns: [GridItem] {
+        DeltsTheme.allCases.map { _ in GridItem(.flexible(), spacing: 8) }
+    }
+
+    var body: some View {
+        ProfileControlBlock(title: "Theme", systemImage: "paintpalette.fill") {
+            LazyVGrid(columns: columns, spacing: 8) {
+                ForEach(DeltsTheme.allCases) { theme in
+                    Button {
+                        withAnimation(.easeOut(duration: 0.16)) {
+                            selection = theme
+                        }
+                    } label: {
+                        ProfileThemeOptionTile(
+                            theme: theme,
+                            isSelected: selection == theme
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .deltsPressable()
+                }
+            }
+        }
+    }
+}
+
+private struct ProfileThemeOptionTile: View {
+    let theme: DeltsTheme
+    let isSelected: Bool
+
+    var body: some View {
+        VStack(spacing: 7) {
+            ZStack(alignment: .topTrailing) {
+                DeltsThemeIconPreview(theme: theme)
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(theme.previewColor)
+                        .background(Color.black.opacity(0.86), in: Circle())
+                        .offset(x: 4, y: -4)
+                }
+            }
+
+            Text(theme.title)
+                .font(.caption2.weight(.heavy))
+                .foregroundStyle(isSelected ? Color.deltsCharcoal : Color.deltsMutedText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 4)
+        .frame(maxWidth: .infinity, minHeight: 82)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(isSelected ? theme.previewColor.opacity(0.16) : Color.deltsPanel.opacity(0.20))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(isSelected ? theme.previewColor.opacity(0.78) : Color.deltsHairline.opacity(0.26), lineWidth: isSelected ? 1.2 : 0.6)
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(theme.title)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
+    }
+}
+
+private struct DeltsThemeIconPreview: View {
+    let theme: DeltsTheme
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.black)
+
+            Capsule(style: .continuous)
+                .fill(theme.previewColor)
+                .frame(width: 24, height: 13)
+                .rotationEffect(.degrees(-34))
+                .offset(x: -5, y: -6)
+
+            Capsule(style: .continuous)
+                .fill(theme.previewColor)
+                .frame(width: 28, height: 14)
+                .rotationEffect(.degrees(58))
+                .offset(x: 5, y: 7)
+        }
+        .frame(width: 42, height: 42)
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.white.opacity(0.10), lineWidth: 0.6)
+        }
     }
 }
 

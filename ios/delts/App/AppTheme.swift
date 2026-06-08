@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum AppAppearance: String, CaseIterable, Identifiable, Hashable {
     case system
@@ -36,6 +37,104 @@ enum AppAppearance: String, CaseIterable, Identifiable, Hashable {
 
     static var usesDarkerPalette: Bool {
         current == .darker
+    }
+}
+
+enum DeltsTheme: String, CaseIterable, Identifiable, Hashable {
+    case lime
+    case cyan
+    case pink
+    case amber
+    case violet
+
+    static let storageKey = "delts_theme"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .lime: return "Lime"
+        case .cyan: return "Cyan"
+        case .pink: return "Pink"
+        case .amber: return "Amber"
+        case .violet: return "Violet"
+        }
+    }
+
+    var alternateIconName: String? {
+        switch self {
+        case .lime: return nil
+        case .cyan: return "AppIconCyan"
+        case .pink: return "AppIconPink"
+        case .amber: return "AppIconAmber"
+        case .violet: return "AppIconViolet"
+        }
+    }
+
+    var previewColor: Color {
+        Color(uiColor: accentUIColor(for: .dark))
+    }
+
+    static var current: DeltsTheme {
+        DeltsTheme(rawValue: UserDefaults.standard.string(forKey: storageKey) ?? "") ?? .lime
+    }
+
+    @MainActor
+    static func applyAppIcon(for theme: DeltsTheme) {
+        guard UIApplication.shared.supportsAlternateIcons else { return }
+        guard UIApplication.shared.alternateIconName != theme.alternateIconName else { return }
+
+        UIApplication.shared.setAlternateIconName(theme.alternateIconName)
+    }
+
+    func accentUIColor(for style: UIUserInterfaceStyle) -> UIColor {
+        switch (self, style) {
+        case (.lime, .light):
+            return UIColor(red: 0.374, green: 0.565, blue: 0.075, alpha: 1)
+        case (.lime, _):
+            return UIColor(red: 0.70, green: 0.94, blue: 0.26, alpha: 1)
+        case (.cyan, .light):
+            return UIColor(red: 0.000, green: 0.478, blue: 0.620, alpha: 1)
+        case (.cyan, _):
+            return UIColor(red: 0.140, green: 0.870, blue: 0.960, alpha: 1)
+        case (.pink, .light):
+            return UIColor(red: 0.780, green: 0.100, blue: 0.340, alpha: 1)
+        case (.pink, _):
+            return UIColor(red: 1.000, green: 0.330, blue: 0.570, alpha: 1)
+        case (.amber, .light):
+            return UIColor(red: 0.700, green: 0.370, blue: 0.020, alpha: 1)
+        case (.amber, _):
+            return UIColor(red: 1.000, green: 0.710, blue: 0.180, alpha: 1)
+        case (.violet, .light):
+            return UIColor(red: 0.420, green: 0.260, blue: 0.780, alpha: 1)
+        case (.violet, _):
+            return UIColor(red: 0.660, green: 0.540, blue: 1.000, alpha: 1)
+        }
+    }
+
+    func secondaryUIColor(for style: UIUserInterfaceStyle) -> UIColor {
+        switch (self, style) {
+        case (.lime, .light):
+            return UIColor(red: 0.192, green: 0.494, blue: 0.280, alpha: 1)
+        case (.lime, _):
+            return UIColor(red: 0.35, green: 0.78, blue: 0.52, alpha: 1)
+        case (.cyan, .light):
+            return UIColor(red: 0.060, green: 0.400, blue: 0.640, alpha: 1)
+        case (.cyan, _):
+            return UIColor(red: 0.250, green: 0.720, blue: 0.880, alpha: 1)
+        case (.pink, .light):
+            return UIColor(red: 0.600, green: 0.120, blue: 0.330, alpha: 1)
+        case (.pink, _):
+            return UIColor(red: 1.000, green: 0.540, blue: 0.720, alpha: 1)
+        case (.amber, .light):
+            return UIColor(red: 0.560, green: 0.300, blue: 0.060, alpha: 1)
+        case (.amber, _):
+            return UIColor(red: 0.920, green: 0.560, blue: 0.160, alpha: 1)
+        case (.violet, .light):
+            return UIColor(red: 0.300, green: 0.380, blue: 0.760, alpha: 1)
+        case (.violet, _):
+            return UIColor(red: 0.560, green: 0.700, blue: 1.000, alpha: 1)
+        }
     }
 }
 
@@ -96,17 +195,13 @@ extension Color {
     }
     static var deltsAccent: Color {
         Color(uiColor: UIColor { traits in
-            traits.userInterfaceStyle == .dark
-                ? UIColor(red: 0.70, green: 0.94, blue: 0.26, alpha: 1)
-                : UIColor(red: 0.374, green: 0.565, blue: 0.075, alpha: 1)
+            DeltsTheme.current.accentUIColor(for: traits.userInterfaceStyle)
         })
     }
 
     static var deltsSecondaryAccent: Color {
         Color(uiColor: UIColor { traits in
-            traits.userInterfaceStyle == .dark
-                ? UIColor(red: 0.35, green: 0.78, blue: 0.52, alpha: 1)
-                : UIColor(red: 0.192, green: 0.494, blue: 0.280, alpha: 1)
+            DeltsTheme.current.secondaryUIColor(for: traits.userInterfaceStyle)
         })
     }
 

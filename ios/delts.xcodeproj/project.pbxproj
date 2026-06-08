@@ -378,6 +378,7 @@
 			baseConfigurationReference = BAE99A802FC0B00000559E0F /* Base.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconCyan AppIconPink AppIconAmber AppIconViolet";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = delts/delts.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -423,6 +424,7 @@
 			baseConfigurationReference = BAE99A802FC0B00000559E0F /* Base.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconCyan AppIconPink AppIconAmber AppIconViolet";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = delts/delts.entitlements;
 				CODE_SIGN_STYLE = Automatic;

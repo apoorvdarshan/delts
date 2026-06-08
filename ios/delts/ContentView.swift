@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var selectedTab: DeltsTab = .initialTab
     @StateObject private var updateChecker = AppUpdateChecker()
     @AppStorage(AppAppearance.storageKey) private var appAppearanceRaw = AppAppearance.system.rawValue
+    @AppStorage(DeltsTheme.storageKey) private var deltsThemeRaw = DeltsTheme.lime.rawValue
 
     private var appAppearance: AppAppearance {
         AppAppearance(rawValue: appAppearanceRaw) ?? .system
@@ -23,7 +24,7 @@ struct ContentView: View {
         rootView
             .tint(Color.deltsAccent)
             .preferredColorScheme(appAppearance.preferredColorScheme)
-            .id(appAppearanceRaw)
+            .id("\(appAppearanceRaw)-\(deltsThemeRaw)")
             .task {
                 ensureDefaultProfile()
                 await updateChecker.checkForUpdatesIfNeeded()
