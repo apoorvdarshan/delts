@@ -5,6 +5,7 @@ import UIKit
 struct ProgressTabView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
+    @Query(sort: \CompletedWorkout.date, order: .reverse) private var completedWorkouts: [CompletedWorkout]
     @AppStorage("profile_weight_measurement_system") private var measurementSystemRaw = "metric"
     @AppStorage("apple_health_enabled") private var appleHealthEnabled = false
     @AppStorage("profile_goal_weight_kg") private var goalWeightKG = 0.0
@@ -41,9 +42,13 @@ struct ProgressTabView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
                     metricPicker
-                    rangePicker
-                    selectedMetricGraph
-                    bodyLogButton
+                    if selectedMetric == .history {
+                        workoutHistorySection
+                    } else {
+                        rangePicker
+                        selectedMetricGraph
+                        bodyLogButton
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
@@ -155,6 +160,33 @@ struct ProgressTabView: View {
             weightMetricCard
         case .bodyFat:
             bodyFatMetricCard
+        case .history:
+            EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private var workoutHistorySection: some View {
+        if completedWorkouts.isEmpty {
+            ProgressHistoryEmptyCard()
+        } else {
+            VStack(spacing: 12) {
+                ForEach(completedWorkouts) { workout in
+                    WorkoutHistoryCard(
+                        workout: workout,
+                        onDelete: { deleteCompletedWorkout(workout) }
+                    )
+                }
+            }
+        }
+    }
+
+    private func deleteCompletedWorkout(_ workout: CompletedWorkout) {
+        let id = workout.id
+        modelContext.delete(workout)
+        try? modelContext.save()
+        if appleHealthEnabled {
+            Task { try? await healthKit.deleteWorkout(id: id) }
         }
     }
 
@@ -470,6 +502,7 @@ private enum ProgressRange: String, CaseIterable, Identifiable {
 private enum ProgressMetricKind: String, CaseIterable, Identifiable {
     case weight
     case bodyFat
+    case history
 
     var id: String { rawValue }
 
@@ -479,11 +512,149 @@ private enum ProgressMetricKind: String, CaseIterable, Identifiable {
             return "Weight"
         case .bodyFat:
             return "Body Fat"
+        case .history:
+            return "History"
         }
     }
 
     init(storedValue: String) {
         self = ProgressMetricKind(rawValue: storedValue) ?? .weight
+    }
+}
+
+private struct WorkoutHistoryCard: View {
+    let workout: CompletedWorkout
+    let onDelete: () -> Void
+    @State private var showDeleteConfirm = false
+
+    private var dateText: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d · h:mm a"
+        return formatter.string(from: workout.date)
+    }
+
+    private var burnText: String {
+        if let kcal = workout.caloriesBurned { return "\(kcal) kcal" }
+        return "-- kcal"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(dateText)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                    Text(workout.title)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                }
+
+                Spacer(minLength: 0)
+
+                Menu {
+                    Button(role: .destructive) {
+                        showDeleteConfirm = true
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .frame(width: 32, height: 32)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel("Workout options")
+            }
+
+            HStack(spacing: 0) {
+                HistoryMetric(icon: "clock.fill", value: "\(workout.durationMinutes) min", label: "Time")
+                HistoryMetricDivider()
+                HistoryMetric(
+                    icon: "flame.fill",
+                    value: burnText,
+                    label: "Burn",
+                    tint: workout.caloriesBurned != nil ? .deltsAccent : .deltsMutedText
+                )
+                HistoryMetricDivider()
+                HistoryMetric(icon: "dumbbell.fill", value: "\(workout.exerciseLogs.count)", label: "Moves")
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
+        }
+        .confirmationDialog("Delete this workout?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Delete", role: .destructive, action: onDelete)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Removes it from History and Apple Health.")
+        }
+    }
+}
+
+private struct HistoryMetric: View {
+    let icon: String
+    let value: String
+    let label: String
+    var tint: Color = .deltsAccent
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(tint)
+            Text(value)
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(label)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Color.deltsMutedText)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct HistoryMetricDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(Color.deltsHairline.opacity(0.34))
+            .frame(width: 0.5, height: 36)
+            .padding(.horizontal, 4)
+    }
+}
+
+private struct ProgressHistoryEmptyCard: View {
+    var body: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 26, weight: .semibold))
+                .foregroundStyle(Color.deltsMutedText)
+            Text("No workout history yet")
+                .font(.headline.weight(.bold))
+                .foregroundStyle(Color.deltsCharcoal)
+            Text("Finish a session with the timer on Home and it shows here with time taken and calories burned.")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.deltsMutedText)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 36)
+        .padding(.horizontal, 18)
+        .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.deltsHairline.opacity(0.28), lineWidth: 0.5)
+        }
     }
 }
 

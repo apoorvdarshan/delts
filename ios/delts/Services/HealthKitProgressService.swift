@@ -21,7 +21,10 @@ final class HealthKitProgressService: ObservableObject {
             throw HealthKitProgressError.unavailable
         }
 
-        let types: Set<HKSampleType> = [bodyMass, bodyFat]
+        var types: Set<HKSampleType> = [bodyMass, bodyFat, HKWorkoutType.workoutType()]
+        if let activeEnergy = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) {
+            types.insert(activeEnergy)
+        }
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             store.requestAuthorization(toShare: types, read: types) { success, error in
                 if let error {
@@ -125,6 +128,68 @@ final class HealthKitProgressService: ObservableObject {
             }
         }
         return uniqueSamples.count
+    }
+
+    /// Writes a completed strength workout (with active energy) to Apple Health.
+    /// The CompletedWorkout id is stored in metadata so it can be deleted later.
+    func saveWorkout(id: UUID, start: Date, end: Date, calories: Int) async throws {
+        guard isAvailable else { throw HealthKitProgressError.unavailable }
+
+        let configuration = HKWorkoutConfiguration()
+        configuration.activityType = .functionalStrengthTraining
+
+        let builder = HKWorkoutBuilder(healthStore: store, configuration: configuration, device: .local())
+        try await builder.beginCollection(at: start)
+        try await builder.addMetadata([HKMetadataKeyExternalUUID: id.uuidString])
+
+        if calories > 0, let energyType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) {
+            let quantity = HKQuantity(unit: .kilocalorie(), doubleValue: Double(calories))
+            let sample = HKQuantitySample(type: energyType, quantity: quantity, start: start, end: end)
+            try await builder.addSamples([sample])
+        }
+
+        try await builder.endCollection(at: end)
+        _ = try await builder.finishWorkout()
+    }
+
+    /// Removes the Apple Health workout(s) this app wrote for the given id.
+    func deleteWorkout(id: UUID) async throws {
+        guard isAvailable else { throw HealthKitProgressError.unavailable }
+
+        let predicate = HKQuery.predicateForObjects(withMetadataKey: HKMetadataKeyExternalUUID, allowedValues: [id.uuidString])
+        let workouts = try await workoutSamples(predicate: predicate)
+            .filter { $0.sourceRevision.source.bundleIdentifier == Bundle.main.bundleIdentifier }
+        guard !workouts.isEmpty else { return }
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            store.delete(workouts) { success, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if success {
+                    continuation.resume()
+                } else {
+                    continuation.resume(throwing: HealthKitProgressError.denied)
+                }
+            }
+        }
+    }
+
+    private func workoutSamples(predicate: NSPredicate?) async throws -> [HKWorkout] {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[HKWorkout], Error>) in
+            let query = HKSampleQuery(
+                sampleType: .workoutType(),
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: nil
+            ) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: samples as? [HKWorkout] ?? [])
+                }
+            }
+            store.execute(query)
+        }
     }
 
     private func quantitySamples(for type: HKQuantityType, predicate: NSPredicate? = nil) async throws -> [HKQuantitySample] {

@@ -49,6 +49,7 @@ final class CompletedWorkout: Identifiable {
     var date: Date
     var durationMinutes: Int
     var planSummary: String
+    var caloriesBurned: Int?
     var exercisesData: String
 
     init(
@@ -57,6 +58,7 @@ final class CompletedWorkout: Identifiable {
         date: Date = Date(),
         durationMinutes: Int,
         planSummary: String,
+        caloriesBurned: Int? = nil,
         exerciseLogs: [CompletedExerciseLog]
     ) {
         self.id = id
@@ -64,6 +66,7 @@ final class CompletedWorkout: Identifiable {
         self.date = date
         self.durationMinutes = durationMinutes
         self.planSummary = planSummary
+        self.caloriesBurned = caloriesBurned
         self.exercisesData = Self.encode(exerciseLogs)
     }
 

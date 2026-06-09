@@ -38,6 +38,8 @@ struct HomeView: View {
 
     private let service = ExerciseLibraryService.shared
     private let calorieService = CalorieEstimateService()
+    @StateObject private var healthKit = HealthKitProgressService()
+    @AppStorage("apple_health_enabled") private var appleHealthEnabled = false
     @State private var burnByDateKey: [String: Int] = WorkoutBurnStore.load()
     @State private var estimatingBurnDateKeys: Set<String> = []
 
@@ -697,12 +699,13 @@ struct HomeView: View {
         modelContext.insert(completedWorkout)
         try? modelContext.save()
 
-        estimateBurn(dateKey: selectedDateKey, exercises: selectedExercises, durationMinutes: durationMinutes)
+        estimateBurn(workout: completedWorkout, dateKey: selectedDateKey, exercises: selectedExercises, durationMinutes: durationMinutes)
     }
 
     /// On Stop, ask Gemini to estimate calories burned from the session
-    /// (duration + exercises/sets/reps/RPE) and the person's bio data.
-    private func estimateBurn(dateKey: String, exercises: [PlannedRoutineExercise], durationMinutes: Int) {
+    /// (duration + exercises/sets/reps/RPE) and the person's bio data, store it on
+    /// the completed workout, show it in the Burn stat, and write it to Apple Health.
+    private func estimateBurn(workout: CompletedWorkout, dateKey: String, exercises: [PlannedRoutineExercise], durationMinutes: Int) {
         guard GeminiConfig.isAIEnabled, !exercises.isEmpty else { return }
 
         let profile = profiles.first
@@ -717,6 +720,8 @@ struct HomeView: View {
 
         estimatingBurnDateKeys.insert(dateKey)
         let service = calorieService
+        let healthEnabled = appleHealthEnabled
+        let healthKit = healthKit
 
         Task { @MainActor in
             do {
@@ -725,8 +730,17 @@ struct HomeView: View {
                     exercises: exercises,
                     bio: bio
                 )
+                workout.caloriesBurned = kcal
+                try? modelContext.save()
                 burnByDateKey[dateKey] = kcal
                 WorkoutBurnStore.save(burnByDateKey)
+
+                if healthEnabled {
+                    let end = workout.date
+                    let start = end.addingTimeInterval(-Double(durationMinutes * 60))
+                    try? await healthKit.requestAccess()
+                    try? await healthKit.saveWorkout(id: workout.id, start: start, end: end, calories: kcal)
+                }
             } catch {
                 // Leave the burn unset on failure; the stat stays "-- kcal".
             }
