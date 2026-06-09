@@ -124,7 +124,6 @@ struct StartWorkoutHero: View {
     var isEstimatingBurn: Bool = false
 
     private var calorieBurnText: String {
-        if isEstimatingBurn { return "…" }
         if let burnKcal { return "\(burnKcal) kcal" }
         return "-- kcal"
     }
@@ -163,7 +162,8 @@ struct StartWorkoutHero: View {
                 workoutCount: workoutCount,
                 repCount: repCount,
                 calorieBurnText: calorieBurnText,
-                calorieBurnActive: burnKcal != nil
+                calorieBurnActive: burnKcal != nil,
+                calorieBurnLoading: isEstimatingBurn
             )
         }
         .frame(maxWidth: .infinity)
@@ -386,6 +386,7 @@ struct HomeSessionStatsStrip: View {
     let repCount: Int
     let calorieBurnText: String
     var calorieBurnActive: Bool = false
+    var calorieBurnLoading: Bool = false
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -421,7 +422,8 @@ struct HomeSessionStatsStrip: View {
                 label: "Burn",
                 value: calorieBurnText,
                 systemImage: "flame.fill",
-                isActive: calorieBurnActive
+                isActive: calorieBurnActive,
+                isLoading: calorieBurnLoading
             )
         }
         .frame(maxWidth: .infinity)
@@ -454,13 +456,14 @@ struct HomeMetricCard: View {
     let value: String
     let systemImage: String
     let isActive: Bool
+    var isLoading: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 4) {
                 Image(systemName: systemImage)
                     .font(.system(size: 11, weight: .heavy))
-                    .foregroundStyle(isActive ? Color.deltsAccent : Color.deltsMutedText.opacity(0.72))
+                    .foregroundStyle(isActive || isLoading ? Color.deltsAccent : Color.deltsMutedText.opacity(0.72))
                     .frame(width: 14, height: 14)
 
                 Text(label)
@@ -470,12 +473,24 @@ struct HomeMetricCard: View {
                     .minimumScaleFactor(0.7)
             }
 
-            Text(value)
-                .font(.system(size: 24, weight: .black, design: .rounded))
-                .foregroundStyle(isActive ? Color.deltsAccent : Color.deltsCharcoal)
-                .contentTransition(.numericText())
-                .minimumScaleFactor(0.5)
-                .lineLimit(1)
+            if isLoading {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(Color.deltsAccent)
+                    Text("kcal")
+                        .font(.system(size: 14, weight: .black, design: .rounded))
+                        .foregroundStyle(Color.deltsMutedText)
+                }
+                .frame(height: 29, alignment: .leading)
+            } else {
+                Text(value)
+                    .font(.system(size: 24, weight: .black, design: .rounded))
+                    .foregroundStyle(isActive ? Color.deltsAccent : Color.deltsCharcoal)
+                    .contentTransition(.numericText())
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+            }
         }
         .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
         .padding(.horizontal, 7)

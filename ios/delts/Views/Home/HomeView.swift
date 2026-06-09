@@ -629,21 +629,11 @@ struct HomeView: View {
     private func stopSessionTimer() {
         playTimerClick()
         saveCompletedHomeWorkout()
-        clearDayPlan(forKey: selectedDateKey)
         sessionElapsedSeconds = 0
         sessionStartedAt = nil
         sessionDate = nil
         sessionDateKey = nil
         endSessionLiveActivity()
-    }
-
-    /// After a session ends, clear that date's planned workouts (already saved to
-    /// History) so the next same-day session starts from a clean slate.
-    private func clearDayPlan(forKey key: String) {
-        guard dayPlans[key] != nil else { return }
-        dayPlans[key] = nil
-        WorkoutDayPlanStore.save(dayPlans)
-        WorkoutDayPlanStore.notifyChanged()
     }
 
     private func discardSessionTimer() {

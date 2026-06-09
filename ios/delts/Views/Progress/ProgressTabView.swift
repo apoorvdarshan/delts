@@ -583,6 +583,19 @@ private struct WorkoutHistoryCard: View {
                 )
                 InlineStat(icon: "dumbbell.fill", text: movesText)
             }
+
+            if !workout.exerciseLogs.isEmpty {
+                Rectangle()
+                    .fill(Color.deltsHairline.opacity(0.22))
+                    .frame(height: 0.5)
+                    .padding(.top, 1)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(workout.exerciseLogs) { exercise in
+                        HistoryExerciseRow(exercise: exercise)
+                    }
+                }
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -617,6 +630,69 @@ private struct InlineStat: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
+    }
+}
+
+private struct HistoryExerciseRow: View {
+    let exercise: CompletedExerciseLog
+
+    private var contextText: String {
+        [exercise.targetMuscle, exercise.equipment]
+            .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+            .joined(separator: " · ")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(exercise.name)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Spacer(minLength: 0)
+                if !contextText.isEmpty {
+                    Text(contextText)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .lineLimit(1)
+                }
+            }
+
+            ForEach(exercise.sets) { set in
+                HStack(spacing: 8) {
+                    Text("Set \(set.setNumber)")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .frame(width: 42, alignment: .leading)
+
+                    Text(setSummary(set))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: set.completed ? "checkmark.circle.fill" : "circle")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(set.completed ? Color.deltsAccent : Color.deltsMutedText.opacity(0.5))
+                }
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.deltsPanel.opacity(0.16), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func setSummary(_ set: CompletedSetLog) -> String {
+        var parts: [String] = []
+        let reps = set.reps.trimmingCharacters(in: .whitespaces)
+        if !reps.isEmpty { parts.append("\(reps) reps") }
+        if let rpe = set.rpe?.trimmingCharacters(in: .whitespaces), !rpe.isEmpty {
+            parts.append("RPE \(rpe)")
+        }
+        return parts.isEmpty ? "—" : parts.joined(separator: " · ")
     }
 }
 
