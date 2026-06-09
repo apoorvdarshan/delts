@@ -92,6 +92,7 @@ struct CoachView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollDismissesKeyboard(.interactively)
+            .simultaneousGesture(TapGesture().onEnded { inputFocused = false })
             .onChange(of: viewModel.messages.count) { scrollToEnd(proxy) }
             .onChange(of: viewModel.isSending) { scrollToEnd(proxy) }
         }
