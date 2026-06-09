@@ -97,6 +97,15 @@ struct CoachView: View {
             .simultaneousGesture(TapGesture().onEnded { inputFocused = false })
             .onChange(of: viewModel.messages.count) { scrollToEnd(proxy) }
             .onChange(of: viewModel.isSending) { scrollToEnd(proxy) }
+            .onChange(of: inputFocused) { _, focused in
+                guard focused else { return }
+                // Keep the latest message visible above the keyboard. Re-scroll
+                // once the keyboard finishes animating in so it lands correctly.
+                scrollToEnd(proxy)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    scrollToEnd(proxy)
+                }
+            }
         }
     }
 
