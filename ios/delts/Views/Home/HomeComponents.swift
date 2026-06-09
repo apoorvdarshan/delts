@@ -120,6 +120,14 @@ struct StartWorkoutHero: View {
     let toggleTimer: () -> Void
     let stopTimer: () -> Void
     let discardTimer: () -> Void
+    var burnKcal: Int? = nil
+    var isEstimatingBurn: Bool = false
+
+    private var calorieBurnText: String {
+        if isEstimatingBurn { return "…" }
+        if let burnKcal { return "\(burnKcal) kcal" }
+        return "-- kcal"
+    }
 
     var body: some View {
         VStack(spacing: 22) {
@@ -154,7 +162,8 @@ struct StartWorkoutHero: View {
                 setCount: setCount,
                 workoutCount: workoutCount,
                 repCount: repCount,
-                calorieBurnText: "-- kcal"
+                calorieBurnText: calorieBurnText,
+                calorieBurnActive: burnKcal != nil
             )
         }
         .frame(maxWidth: .infinity)
@@ -376,6 +385,7 @@ struct HomeSessionStatsStrip: View {
     let workoutCount: Int
     let repCount: Int
     let calorieBurnText: String
+    var calorieBurnActive: Bool = false
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -411,7 +421,7 @@ struct HomeSessionStatsStrip: View {
                 label: "Burn",
                 value: calorieBurnText,
                 systemImage: "flame.fill",
-                isActive: false
+                isActive: calorieBurnActive
             )
         }
         .frame(maxWidth: .infinity)

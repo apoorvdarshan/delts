@@ -37,6 +37,9 @@ struct HomeView: View {
     @AppStorage(RPEScale.storageKey) private var rpeScaleRaw = RPEScale.strength.rawValue
 
     private let service = ExerciseLibraryService.shared
+    private let calorieService = CalorieEstimateService()
+    @State private var burnByDateKey: [String: Int] = WorkoutBurnStore.load()
+    @State private var estimatingBurnDateKeys: Set<String> = []
 
     private var selectedDateKey: String {
         WorkoutDayPlanStore.key(for: selectedDate)
@@ -94,6 +97,14 @@ struct HomeView: View {
 
     private var selectedTimerElapsedSeconds: Int {
         isSelectedSessionDate ? sessionElapsedSeconds : 0
+    }
+
+    private var selectedBurnKcal: Int? {
+        burnByDateKey[selectedDateKey]
+    }
+
+    private var isEstimatingSelectedBurn: Bool {
+        estimatingBurnDateKeys.contains(selectedDateKey)
     }
 
     private var selectedWorkoutSplit: WorkoutSplit {
@@ -277,7 +288,9 @@ struct HomeView: View {
                         hasTimerSession: hasSelectedSessionTimer,
                         toggleTimer: handleSessionTimerTap,
                         stopTimer: stopSessionTimer,
-                        discardTimer: discardSessionTimer
+                        discardTimer: discardSessionTimer,
+                        burnKcal: selectedBurnKcal,
+                        isEstimatingBurn: isEstimatingSelectedBurn
                     )
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -674,14 +687,51 @@ struct HomeView: View {
             )
         }
 
+        let durationMinutes = max(1, Int(ceil(Double(durationSeconds) / 60.0)))
         let completedWorkout = CompletedWorkout(
             title: "\(selectedDateTitle) Workout",
-            durationMinutes: max(1, Int(ceil(Double(durationSeconds) / 60.0))),
+            durationMinutes: durationMinutes,
             planSummary: "\(selectedExercises.count) exercise\(selectedExercises.count == 1 ? "" : "s") from Start",
             exerciseLogs: logs
         )
         modelContext.insert(completedWorkout)
         try? modelContext.save()
+
+        estimateBurn(dateKey: selectedDateKey, exercises: selectedExercises, durationMinutes: durationMinutes)
+    }
+
+    /// On Stop, ask Gemini to estimate calories burned from the session
+    /// (duration + exercises/sets/reps/RPE) and the person's bio data.
+    private func estimateBurn(dateKey: String, exercises: [PlannedRoutineExercise], durationMinutes: Int) {
+        guard GeminiConfig.isAIEnabled, !exercises.isEmpty else { return }
+
+        let profile = profiles.first
+        let bio = CalorieEstimateService.Bio(
+            gender: profile?.gender ?? "Unknown",
+            age: profile?.age ?? 0,
+            heightCM: profile?.heightCM ?? 0,
+            weightKG: profile?.currentWeightKG ?? 0,
+            bodyFatPercentage: profile?.currentBodyFatPercentage ?? 0,
+            experience: profile?.experienceLevel.title ?? "Intermediate"
+        )
+
+        estimatingBurnDateKeys.insert(dateKey)
+        let service = calorieService
+
+        Task { @MainActor in
+            do {
+                let kcal = try await service.estimate(
+                    durationMinutes: durationMinutes,
+                    exercises: exercises,
+                    bio: bio
+                )
+                burnByDateKey[dateKey] = kcal
+                WorkoutBurnStore.save(burnByDateKey)
+            } catch {
+                // Leave the burn unset on failure; the stat stays "-- kcal".
+            }
+            estimatingBurnDateKeys.remove(dateKey)
+        }
     }
 
     private func startSessionLiveActivity(startedAt: Date) {
