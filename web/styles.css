@@ -109,7 +109,7 @@ a {
   inset: 0;
   background:
     linear-gradient(90deg, rgba(5, 8, 5, 0.98) 0%, rgba(5, 8, 5, 0.74) 48%, rgba(5, 8, 5, 0.22) 100%),
-    image-set(url("/assets/app-icon-lime.png") 1x);
+    image-set(url("assets/app-icon-lime.png") 1x);
   background-repeat: no-repeat;
   background-position: right -10vw center;
   background-size: min(74vw, 820px);
@@ -436,7 +436,6 @@ section {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 18px;
 }
 
 .theme-row img {
@@ -484,12 +483,6 @@ section {
 .page-header h1 {
   font-size: clamp(3.2rem, 9vw, 7rem);
   line-height: 0.92;
-}
-
-.page-return {
-  margin-top: 26px;
-  color: var(--lime);
-  font-weight: 900;
 }
 
 .policy {
@@ -602,3 +595,4 @@ section {
     border-radius: 22px;
   }
 }
+
