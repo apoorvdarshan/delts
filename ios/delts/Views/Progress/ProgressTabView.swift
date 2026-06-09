@@ -170,7 +170,7 @@ struct ProgressTabView: View {
         if completedWorkouts.isEmpty {
             ProgressHistoryEmptyCard()
         } else {
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 ForEach(completedWorkouts) { workout in
                     WorkoutHistoryCard(
                         workout: workout,
@@ -538,21 +538,25 @@ private struct WorkoutHistoryCard: View {
         return "-- kcal"
     }
 
+    private var movesText: String {
+        let count = workout.exerciseLogs.count
+        return "\(count) \(count == 1 ? "move" : "moves")"
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 8) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(dateText)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.deltsMutedText)
-                    Text(workout.title)
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(Color.deltsCharcoal)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.8)
-                }
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(workout.title)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
                 Spacer(minLength: 0)
+
+                Text(dateText)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
 
                 Menu {
                     Button(role: .destructive) {
@@ -562,32 +566,30 @@ private struct WorkoutHistoryCard: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(Color.deltsMutedText)
-                        .frame(width: 32, height: 32)
+                        .frame(width: 26, height: 26)
                         .contentShape(Rectangle())
                 }
                 .accessibilityLabel("Workout options")
             }
 
-            HStack(spacing: 0) {
-                HistoryMetric(icon: "clock.fill", value: "\(workout.durationMinutes) min", label: "Time")
-                HistoryMetricDivider()
-                HistoryMetric(
+            HStack(spacing: 14) {
+                InlineStat(icon: "clock.fill", text: "\(workout.durationMinutes) min")
+                InlineStat(
                     icon: "flame.fill",
-                    value: burnText,
-                    label: "Burn",
+                    text: burnText,
                     tint: workout.caloriesBurned != nil ? .deltsAccent : .deltsMutedText
                 )
-                HistoryMetricDivider()
-                HistoryMetric(icon: "dumbbell.fill", value: "\(workout.exerciseLogs.count)", label: "Moves")
+                InlineStat(icon: "dumbbell.fill", text: movesText)
             }
         }
-        .padding(16)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
         }
         .confirmationDialog("Delete this workout?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
@@ -599,36 +601,22 @@ private struct WorkoutHistoryCard: View {
     }
 }
 
-private struct HistoryMetric: View {
+private struct InlineStat: View {
     let icon: String
-    let value: String
-    let label: String
+    let text: String
     var tint: Color = .deltsAccent
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        HStack(spacing: 5) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .bold))
+                .font(.caption2.weight(.bold))
                 .foregroundStyle(tint)
-            Text(value)
-                .font(.subheadline.weight(.bold))
+            Text(text)
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.deltsCharcoal)
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Text(label)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(Color.deltsMutedText)
+                .minimumScaleFactor(0.8)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-private struct HistoryMetricDivider: View {
-    var body: some View {
-        Rectangle()
-            .fill(Color.deltsHairline.opacity(0.34))
-            .frame(width: 0.5, height: 36)
-            .padding(.horizontal, 4)
     }
 }
 
