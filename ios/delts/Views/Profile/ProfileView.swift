@@ -2325,27 +2325,15 @@ private struct DeltsThemeIconPreview: View {
     let theme: DeltsTheme
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.black)
-
-            Capsule(style: .continuous)
-                .fill(theme.previewColor)
-                .frame(width: 24, height: 13)
-                .rotationEffect(.degrees(-34))
-                .offset(x: -5, y: -6)
-
-            Capsule(style: .continuous)
-                .fill(theme.previewColor)
-                .frame(width: 28, height: 14)
-                .rotationEffect(.degrees(58))
-                .offset(x: 5, y: 7)
-        }
-        .frame(width: 42, height: 42)
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 0.6)
-        }
+        Image(theme.previewAssetName)
+            .resizable()
+            .scaledToFill()
+            .frame(width: 42, height: 42)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.white.opacity(0.10), lineWidth: 0.6)
+            }
     }
 }
 

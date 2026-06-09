@@ -71,6 +71,16 @@ enum DeltsTheme: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
+    var previewAssetName: String {
+        switch self {
+        case .lime: return "theme_icon_lime"
+        case .cyan: return "theme_icon_cyan"
+        case .pink: return "theme_icon_pink"
+        case .amber: return "theme_icon_amber"
+        case .violet: return "theme_icon_violet"
+        }
+    }
+
     var previewColor: Color {
         Color(uiColor: accentUIColor(for: .dark))
     }
