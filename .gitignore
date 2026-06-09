@@ -16,3 +16,4 @@ build/
 
 # Local downloaded dataset/media samples for manual inspection.
 downloads/
+.vercel
