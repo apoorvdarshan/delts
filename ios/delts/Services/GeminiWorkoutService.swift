@@ -1,7 +1,6 @@
 import Foundation
 
 enum GeminiWorkoutError: LocalizedError {
-    case missingAPIKey
     case invalidURL
     case invalidResponse
     case invalidJSON
@@ -9,7 +8,6 @@ enum GeminiWorkoutError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .missingAPIKey: return "Gemini API key is missing."
         case .invalidURL: return "Gemini URL could not be created."
         case .invalidResponse: return "Gemini returned an invalid response."
         case .invalidJSON: return "Gemini returned JSON that could not be parsed."
@@ -26,14 +24,9 @@ final class GeminiWorkoutService {
         equipment: Set<Equipment>,
         durationRange: WorkoutDurationRangeOption
     ) async throws -> WorkoutPlan {
-        guard let apiKey = GeminiConfig.apiKey else {
-            throw GeminiWorkoutError.missingAPIKey
-        }
-
-        var components = URLComponents(string: "https://generativelanguage.googleapis.com/v1beta/models/\(GeminiConfig.modelName):generateContent")
-        components?.queryItems = [URLQueryItem(name: "key", value: apiKey)]
-
-        guard let url = components?.url else {
+        // Requests go through the delts.fit proxy; the API key lives server-side
+        // as a Vercel env var and is never embedded in the app.
+        guard let url = GeminiConfig.proxyURL else {
             throw GeminiWorkoutError.invalidURL
         }
 

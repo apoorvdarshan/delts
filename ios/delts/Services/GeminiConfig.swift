@@ -3,27 +3,20 @@ import Foundation
 enum GeminiConfig {
     static let modelName = "gemini-2.5-flash"
 
-    static var apiKey: String? {
-        normalizedAPIKey(Bundle.main.object(forInfoDictionaryKey: "GEMINI_API_KEY") as? String)
-            ?? bundledSecretAPIKey
-    }
-
-    static var hasAPIKey: Bool {
-        apiKey != nil
-    }
-
-    private static var bundledSecretAPIKey: String? {
-        guard let url = Bundle.main.url(forResource: "Secrets", withExtension: "plist"),
-              let data = try? Data(contentsOf: url),
-              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-              let values = plist as? [String: Any] else {
-            return nil
+    /// All Gemini access is routed through the delts.fit server-side proxy, which
+    /// holds the API key as a Vercel environment variable. The app never ships a key.
+    /// Override at runtime (e.g. for local testing) with a `GEMINI_PROXY_URL` entry
+    /// in Info.plist; otherwise the production proxy is used.
+    static let proxyURL: URL? = {
+        if let override = (Bundle.main.object(forInfoDictionaryKey: "GEMINI_PROXY_URL") as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+           !override.isEmpty,
+           let url = URL(string: override) {
+            return url
         }
-        return normalizedAPIKey(values["GEMINI_API_KEY"] as? String)
-    }
+        return URL(string: "https://delts.fit/api/gemini")
+    }()
 
-    private static func normalizedAPIKey(_ value: String?) -> String? {
-        let trimmedValue = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return trimmedValue.isEmpty ? nil : trimmedValue
-    }
+    /// AI features are available whenever the proxy endpoint is configured.
+    static var isAIEnabled: Bool { proxyURL != nil }
 }

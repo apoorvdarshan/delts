@@ -3,11 +3,16 @@ DerivedData/
 *.xcuserdata/
 xcuserdata/
 
-# Local Gemini key file. Copy ios/Secrets.example.xcconfig to this path
-# and set GEMINI_API_KEY there. Never commit real API keys.
+# Secrets never belong in the app or the repo. The Gemini key lives only as a
+# Vercel env var behind the delts.fit proxy (web/api/gemini.js). These patterns
+# stay as a safety net so any stray local secrets file can't be committed.
 ios/Secrets.xcconfig
 ios/**/Secrets.xcconfig
 ios/**/Secrets.plist
+
+# Build artifacts (Xcode DerivedData, archives, IPAs). Never commit binaries —
+# they previously bundled the key. Re-export OTA/Ad-Hoc builds locally as needed.
+build/
 
 # Local downloaded dataset/media samples for manual inspection.
 downloads/

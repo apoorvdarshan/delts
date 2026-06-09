@@ -97,7 +97,7 @@ final class PlanViewModel: ObservableObject {
         let activeProfile = profile ?? UserProfile.defaultProfile()
         let equipment = selectedEquipment.isEmpty ? activeProfile.availableEquipment : selectedEquipment
 
-        if GeminiConfig.hasAPIKey {
+        if GeminiConfig.isAIEnabled {
             do {
                 return try await geminiService.generateWorkout(
                     profile: activeProfile,
@@ -110,7 +110,7 @@ final class PlanViewModel: ObservableObject {
                 statusMessage = "AI generation failed. Built an offline plan instead."
             }
         } else {
-            statusMessage = "Offline plan generated. Add a Gemini key locally to enable AI."
+            statusMessage = "Offline plan generated from your profile."
         }
 
         return localGenerator.generate(
