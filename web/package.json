@@ -1,0 +1,9 @@
+{
+  "name": "delts-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static marketing, privacy, and terms site for Delts.",
+  "scripts": {
+    "start": "python3 -m http.server 3000"
+  }
+}
