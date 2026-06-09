@@ -16,7 +16,8 @@ struct deltsApp: App {
             Exercise.self,
             WorkoutPlan.self,
             WorkoutExercise.self,
-            CompletedWorkout.self
+            CompletedWorkout.self,
+            CoachMessageRecord.self
         ])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

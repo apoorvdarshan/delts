@@ -8,11 +8,19 @@ struct CoachMessage: Identifiable {
         case model
     }
 
-    let id = UUID()
+    let id: UUID
     let role: Role
     var text: String
     var image: UIImage?
-    var isError: Bool = false
+    var isError: Bool
+
+    init(id: UUID = UUID(), role: Role, text: String, image: UIImage? = nil, isError: Bool = false) {
+        self.id = id
+        self.role = role
+        self.text = text
+        self.image = image
+        self.isError = isError
+    }
 }
 
 enum CoachServiceError: LocalizedError {
@@ -105,11 +113,14 @@ final class CoachService {
         return text
     }
 
-    /// Downscale + JPEG-compress so multimodal payloads stay small.
-    static func encodedJPEG(_ image: UIImage, maxDimension: CGFloat = 1024) -> String? {
+    /// Downscale + JPEG-compress so multimodal payloads (and stored history) stay small.
+    static func jpegData(_ image: UIImage, maxDimension: CGFloat = 1024) -> Data? {
         let resized = resize(image, maxDimension: maxDimension)
-        guard let data = resized.jpegData(compressionQuality: 0.6) else { return nil }
-        return data.base64EncodedString()
+        return resized.jpegData(compressionQuality: 0.6)
+    }
+
+    static func encodedJPEG(_ image: UIImage, maxDimension: CGFloat = 1024) -> String? {
+        jpegData(image, maxDimension: maxDimension)?.base64EncodedString()
     }
 
     private static func resize(_ image: UIImage, maxDimension: CGFloat) -> UIImage {

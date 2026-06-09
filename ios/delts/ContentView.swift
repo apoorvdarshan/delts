@@ -246,6 +246,7 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
             Exercise.self,
             WorkoutPlan.self,
             WorkoutExercise.self,
-            CompletedWorkout.self
+            CompletedWorkout.self,
+            CoachMessageRecord.self
         ], inMemory: true)
 }

@@ -5,6 +5,7 @@ import SwiftUI
 import UIKit
 
 struct CoachView: View {
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
     @Query(sort: \CompletedWorkout.date, order: .reverse) private var completedWorkouts: [CompletedWorkout]
 
@@ -40,6 +41,7 @@ struct CoachView: View {
                     }
                 }
                 .safeAreaInset(edge: .bottom) { inputBar }
+                .onAppear { viewModel.configure(modelContext: modelContext) }
                 .photosPicker(isPresented: $showPhotosPicker, selection: $photoItem, matching: .images)
                 .fullScreenCover(isPresented: $showCamera) {
                     CoachCameraPicker { image in
