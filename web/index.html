@@ -3,284 +3,361 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Delts - Gym workouts, timer, and body progress</title>
-    <meta name="description" content="Delts is an iPhone workout planner with daily workouts, a focused timer, set logging, RPE, progress charts, Apple Health sync, and custom themes.">
-    <meta name="theme-color" content="#05070a">
-    <meta property="og:title" content="Delts - Gym workouts, timer, and body progress">
-    <meta property="og:description" content="Plan the session, hit the red timer, log the real sets, and watch progress without turning your workout into admin work.">
+    <title>Delts — Session timer, set logging, body progress</title>
+    <meta name="description" content="Delts is an iPhone gym app built around the red session timer. Plan workouts, log sets, reps and RPE, and track weight and body fat over time.">
+    <meta name="theme-color" content="#070907">
+    <meta property="og:title" content="Delts — Session timer, set logging, body progress">
+    <meta property="og:description" content="Start the timer, train, log the real work, review the trend. A gym app built around the red session timer.">
     <meta property="og:type" content="website">
     <meta property="og:image" content="assets/app-icon-lime.png">
     <meta name="twitter:card" content="summary_large_image">
-    <link rel="icon" href="assets/app-icon-lime.png">
+    <link rel="icon" href="assets/app-icon-lime.png" data-favicon>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <header class="topbar" data-topbar>
-      <div class="site-shell topbar-inner">
+    <div class="scan-progress" data-progress aria-hidden="true"></div>
+    <div class="cursor-ring" data-cursor aria-hidden="true"></div>
+
+    <header class="hud-nav" data-nav>
+      <div class="shell hud-nav__in">
         <a class="brand" href="index.html" aria-label="Delts home">
-          <img src="assets/app-icon-lime.png" alt="">
+          <img src="assets/app-icon-lime.png" alt="" data-brand>
           <span>Delts</span>
         </a>
-        <nav class="nav-links" aria-label="Primary">
+        <nav class="hud-nav__links" aria-label="Primary">
           <a href="#features">Features</a>
-          <a href="#product">Product</a>
-          <a href="#privacy">Privacy</a>
-          <a href="terms.html">Terms</a>
-          <a class="nav-cta" href="#download">Get the app</a>
+          <a href="#flow">Flow</a>
+          <a href="#themes">Themes</a>
+          <a href="privacy.html">Privacy</a>
+          <a class="nav-cta" href="#get">Get the app</a>
         </nav>
       </div>
     </header>
 
     <main>
-      <section class="hero" aria-labelledby="hero-title">
-        <div class="hero-glyph" aria-hidden="true">
-          <img src="assets/app-icon-lime.png" alt="">
-        </div>
-        <div class="site-shell hero-content">
-          <span class="eyebrow pill reveal">iPhone workout command center</span>
-          <h1 id="hero-title" class="reveal">Delts</h1>
-          <p class="hero-copy reveal">Plan the session, hit the red timer, log the real sets, and watch weight and body fat progress without turning your workout into admin work.</p>
-          <div class="hero-actions reveal">
-            <button class="button primary" type="button" data-scroll-target="#features">Explore features <span class="arrow" aria-hidden="true">→</span></button>
-            <a class="button" href="privacy.html">Read privacy</a>
+      <!-- HERO -->
+      <section class="hero">
+        <div class="shell">
+          <div class="hero__top">
+            <span class="tag"><span class="live-dot"></span> REC — Session timer</span>
+            <span>SYS / iPhone &middot; v1.0 &middot; 04 TABS</span>
           </div>
-          <div class="hero-meta reveal">
-            <span>No account needed</span>
-            <span>Optional Apple Health</span>
-            <span>Built for iPhone</span>
+
+          <h1 class="hero__title" aria-label="Delts">
+            <span class="ch">D</span><span class="ch">E</span><span class="ch">L</span><span class="ch">T</span><span class="ch ch--hot">S</span>
+          </h1>
+
+          <div class="hero__lower">
+            <div>
+              <p class="hero__lead">A gym app built around the red start button. Plan the session, hit the timer, log the real sets, and watch weight and body fat move — without turning training into admin.</p>
+              <div class="hero__cta">
+                <button class="btn btn--solid" type="button" data-scroll="#features">Explore features <span class="arr" aria-hidden="true">→</span></button>
+                <a class="btn" href="privacy.html">Read privacy</a>
+              </div>
+            </div>
+
+            <div class="timer-card reveal">
+              <div class="timer-card__top">
+                <span class="timer-card__rec"><span class="live-dot"></span> Recording</span>
+                <span>Today</span>
+              </div>
+              <div class="timer-card__time" data-clock>00:00</div>
+              <div class="timer-card__foot">
+                <span>Workouts <b>4</b></span>
+                <span>Sets <b>0</b></span>
+                <span>RPE <b>—</b></span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <div class="site-shell quick-stats reveal reveal-group" aria-label="App highlights">
-        <div class="stat-card">
-          <strong data-count="4">4</strong>
-          <span>core workout tabs for home, library, progress, and settings.</span>
-        </div>
-        <div class="stat-card">
-          <strong data-count="2">2</strong>
-          <span>body metrics tracked with clear goal lines.</span>
-        </div>
-        <div class="stat-card">
-          <strong data-count="5">5</strong>
-          <span>theme and app icon color options.</span>
-        </div>
-        <div class="stat-card">
-          <strong data-count="0">0</strong>
-          <span>accounts required to start using the app.</span>
+      <!-- MARQUEE -->
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee__track" data-marquee>
+          <span>Daily workouts</span><span>Session timer</span><span>RPE logging</span><span>Progress charts</span><span>Apple Health</span><span>Custom themes</span><span>Exercise library</span>
+          <span>Daily workouts</span><span>Session timer</span><span>RPE logging</span><span>Progress charts</span><span>Apple Health</span><span>Custom themes</span><span>Exercise library</span>
         </div>
       </div>
 
-      <section id="features" class="site-shell" aria-labelledby="features-title">
-        <div class="section-heading reveal">
-          <span class="eyebrow">What Delts does</span>
-          <h2 id="features-title">A gym app built around the session timer.</h2>
-          <p>Delts treats the red start button as the workout source of truth. Add workouts, start the timer, log the work, and keep the rest quiet.</p>
-        </div>
-        <div class="feature-grid reveal reveal-group">
-          <article class="feature-card">
-            <span class="glow" aria-hidden="true"></span>
-            <span class="number">01</span>
-            <div>
-              <h3>Daily workout board</h3>
-              <p>Build today from the exercise library, saved workouts, or copied days. Cards show sets, reps, RPE, and the muscle/equipment context at a glance.</p>
+      <!-- TELEMETRY -->
+      <section style="padding-top: clamp(56px,7vw,90px); padding-bottom: 0;">
+        <div class="shell">
+          <div class="telemetry reveal stagger">
+            <div class="telemetry__cell">
+              <span class="idx">[ 01 ]</span>
+              <span class="num" data-count="4">4</span>
+              <span class="lbl">core tabs: home, library, progress, settings.</span>
             </div>
-          </article>
-          <article class="feature-card">
-            <span class="glow" aria-hidden="true"></span>
-            <span class="number">02</span>
-            <div>
-              <h3>Workout timer</h3>
-              <p>The main red timer starts and ends the workout, drives session timing, and supports a focused Live Activity timer on iPhone.</p>
+            <div class="telemetry__cell">
+              <span class="idx">[ 02 ]</span>
+              <span class="num" data-count="2">2</span>
+              <span class="lbl">body metrics tracked with clear goal lines.</span>
             </div>
-          </article>
-          <article class="feature-card">
-            <span class="glow" aria-hidden="true"></span>
-            <span class="number">03</span>
-            <div>
-              <h3>Set, rep, and RPE logging</h3>
-              <p>Log reps and effort only while the workout is active, with support for strength RPE and CR10-style effort tracking.</p>
+            <div class="telemetry__cell">
+              <span class="idx">[ 03 ]</span>
+              <span class="num" data-count="5">5</span>
+              <span class="lbl">theme and app-icon color options.</span>
             </div>
-          </article>
-          <article class="feature-card">
-            <span class="glow" aria-hidden="true"></span>
-            <span class="number">04</span>
-            <div>
-              <h3>Exercise library</h3>
-              <p>Browse exercises by target muscles, equipment, level, and split. Detail pages keep the exercise image visible while instructions scroll.</p>
+            <div class="telemetry__cell">
+              <span class="idx">[ 04 ]</span>
+              <span class="num" data-count="0">0</span>
+              <span class="lbl">accounts required to start training.</span>
             </div>
-          </article>
-          <article class="feature-card">
-            <span class="glow" aria-hidden="true"></span>
-            <span class="number">05</span>
-            <div>
-              <h3>Progress charts</h3>
-              <p>Track weight and body fat with weekly, monthly, 3M, 6M, 1Y, and all-time ranges, visible grid lines, averages, net change, and goals.</p>
-            </div>
-          </article>
-          <article class="feature-card">
-            <span class="glow" aria-hidden="true"></span>
-            <span class="number">06</span>
-            <div>
-              <h3>Apple Health sync</h3>
-              <p>Optional HealthKit access can import and save body weight and body fat logs when the user grants permission.</p>
-            </div>
-          </article>
-          <article class="feature-card">
-            <span class="glow" aria-hidden="true"></span>
-            <span class="number">07</span>
-            <div>
-              <h3>Body composition pickers</h3>
-              <p>Choose exact body fat numbers or visual ranges, with separate preferences for current and goal body fat.</p>
-            </div>
-          </article>
-          <article class="feature-card">
-            <span class="glow" aria-hidden="true"></span>
-            <span class="number">08</span>
-            <div>
-              <h3>Personalized preferences</h3>
-              <p>Set height, weight, training goal, target muscles, issues, frequency, duration range, split, equipment, and optional 1RM anchors.</p>
-            </div>
-          </article>
-          <article class="feature-card">
-            <span class="glow" aria-hidden="true"></span>
-            <span class="number">09</span>
-            <div>
-              <h3>Custom themes and icons</h3>
-              <p>Switch between Lime, Cyan, Pink, Amber, and Violet. The app tint and Home Screen icon change from the same setting.</p>
-            </div>
-          </article>
+          </div>
         </div>
       </section>
 
-      <section id="product" class="site-shell" aria-labelledby="product-title">
-        <div class="product-strip">
-          <div class="phone-stage reveal" aria-label="Delts app preview">
-            <div class="phone">
-              <div class="phone-header">
-                <span>Today</span>
-                <span>4 workouts</span>
-              </div>
-              <div class="timer-button">0:00</div>
-              <div class="mini-panel">
-                <div class="mini-grid">
-                  <span><strong>0</strong>Sets</span>
-                  <span><strong>4</strong>Workouts</span>
-                  <span><strong>0</strong>Reps</span>
-                  <span><strong>--</strong>Burn</span>
-                </div>
-                <div class="workout-row">
-                  <img class="workout-thumb" src="assets/app-icon-lime.png" alt="">
-                  <div>
-                    <b>Ab Crunch Machine</b>
-                    <small>Abdominals - Machine</small>
-                  </div>
-                </div>
-                <div class="workout-row">
-                  <img class="workout-thumb" src="assets/app-icon-cyan.png" alt="">
-                  <div>
-                    <b>90/90 Hamstring</b>
-                    <small>Hamstrings - Body Only</small>
-                  </div>
-                </div>
-                <div class="workout-row">
-                  <img class="workout-thumb" src="assets/app-icon-pink.png" alt="">
-                  <div>
-                    <b>Adductor/Groin</b>
-                    <small>Adductors - Unspecified</small>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <!-- FEATURES -->
+      <section id="features">
+        <div class="shell">
+          <div class="sec-head reveal">
+            <span class="tag">[ 01 / Capabilities ]</span>
+            <h2>Built around<br>the timer</h2>
+            <p>Delts treats the red start button as the source of truth. Add workouts, start the timer, log the work, and keep the rest quiet.</p>
           </div>
 
-          <div class="detail-stack">
-            <div class="section-heading reveal">
-              <span class="eyebrow">The flow</span>
-              <h2 id="product-title">Start, train, log, review.</h2>
-              <p>The homepage keeps workout setup visible, the detail view keeps instructions and exercise images close, and progress keeps the long-term signal readable.</p>
+          <div class="spec reveal">
+            <div class="spec__row">
+              <span class="spec__idx">01</span>
+              <h3 class="spec__title">Daily workout board</h3>
+              <p class="spec__desc">Build today from the exercise library, saved workouts, or copied days. Cards show sets, reps, RPE, and muscle/equipment context at a glance.</p>
+              <span class="spec__meta">HOME</span>
             </div>
-            <article class="callout reveal">
-              <h3>Focused workout state</h3>
-              <p>Editing set data is tied to an active timer. That keeps planned workouts separate from performed work.</p>
-            </article>
-            <article class="callout reveal">
-              <h3>Readable progress</h3>
-              <p>Weight and body fat charts use a visible grid, exact four x-axis dates per range, and year labels when long ranges cross years.</p>
-            </article>
-            <article class="callout reveal">
-              <h3>Theme-linked identity</h3>
-              <p>Theme color and app icon stay matched, with real icon previews in Settings.</p>
-              <div class="theme-row" aria-label="Theme icon options">
-                <img src="assets/app-icon-lime.png" alt="Lime Delts icon">
-                <img src="assets/app-icon-cyan.png" alt="Cyan Delts icon">
-                <img src="assets/app-icon-pink.png" alt="Pink Delts icon">
-                <img src="assets/app-icon-amber.png" alt="Amber Delts icon">
-                <img src="assets/app-icon-violet.png" alt="Violet Delts icon">
-              </div>
-            </article>
+            <div class="spec__row">
+              <span class="spec__idx">02</span>
+              <h3 class="spec__title">Workout timer</h3>
+              <p class="spec__desc">The main red timer starts and ends the workout, drives session timing, and supports a focused Live Activity timer on iPhone.</p>
+              <span class="spec__meta">TIMER</span>
+            </div>
+            <div class="spec__row">
+              <span class="spec__idx">03</span>
+              <h3 class="spec__title">Set, rep & RPE logging</h3>
+              <p class="spec__desc">Log reps and effort only while the workout is active, with support for strength RPE and CR10-style effort tracking.</p>
+              <span class="spec__meta">LOG</span>
+            </div>
+            <div class="spec__row">
+              <span class="spec__idx">04</span>
+              <h3 class="spec__title">Exercise library</h3>
+              <p class="spec__desc">Browse exercises by target muscles, equipment, level, and split. Detail pages keep the image pinned while instructions scroll.</p>
+              <span class="spec__meta">LIBRARY</span>
+            </div>
+            <div class="spec__row">
+              <span class="spec__idx">05</span>
+              <h3 class="spec__title">Progress charts</h3>
+              <p class="spec__desc">Track weight and body fat across week, month, 3M, 6M, 1Y, and all-time, with visible grid lines, averages, net change, and goals.</p>
+              <span class="spec__meta">PROGRESS</span>
+            </div>
+            <div class="spec__row">
+              <span class="spec__idx">06</span>
+              <h3 class="spec__title">Apple Health sync</h3>
+              <p class="spec__desc">Optional HealthKit access can import and save body weight and body fat logs when you grant permission.</p>
+              <span class="spec__meta">HEALTH</span>
+            </div>
+            <div class="spec__row">
+              <span class="spec__idx">07</span>
+              <h3 class="spec__title">Body composition pickers</h3>
+              <p class="spec__desc">Choose exact body fat numbers or visual ranges, with separate preferences for current and goal body fat.</p>
+              <span class="spec__meta">BODY</span>
+            </div>
+            <div class="spec__row">
+              <span class="spec__idx">08</span>
+              <h3 class="spec__title">Personalized setup</h3>
+              <p class="spec__desc">Set height, weight, training goal, target muscles, issues, frequency, duration range, split, equipment, and optional 1RM anchors.</p>
+              <span class="spec__meta">PROFILE</span>
+            </div>
+            <div class="spec__row">
+              <span class="spec__idx">09</span>
+              <h3 class="spec__title">Custom themes & icons</h3>
+              <p class="spec__desc">Switch between Lime, Cyan, Pink, Amber, and Violet. The app tint and Home Screen icon change from one setting.</p>
+              <span class="spec__meta">THEME</span>
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="privacy" class="site-shell" aria-labelledby="privacy-title">
-        <div class="section-heading reveal">
-          <span class="eyebrow">Privacy and control</span>
-          <h2 id="privacy-title">No account required. Health access is optional.</h2>
-          <p>Delts is designed around local workout planning and logging. Apple Health access is permission-based and can be turned off by the user.</p>
-        </div>
-        <div class="legal-grid reveal reveal-group">
-          <article class="legal-card">
-            <h3>Privacy Policy</h3>
-            <p>Explains what the app stores, how optional HealthKit sync works, and how to contact support.</p>
-            <p><a href="privacy.html">Open privacy policy <span aria-hidden="true">→</span></a></p>
-          </article>
-          <article class="legal-card">
-            <h3>Terms</h3>
-            <p>Explains acceptable use, fitness disclaimers, app availability, and support contact points.</p>
-            <p><a href="terms.html">Open terms <span aria-hidden="true">→</span></a></p>
-          </article>
+      <!-- FLOW -->
+      <section id="flow">
+        <div class="shell">
+          <div class="sec-head reveal">
+            <span class="tag">[ 02 / The loop ]</span>
+            <h2>Start. Train.<br>Log. Review.</h2>
+            <p>The home screen keeps setup visible, the detail view keeps instructions close, and progress keeps the long-term signal readable.</p>
+          </div>
+
+          <div class="flow">
+            <div class="stage reveal" aria-label="Delts app preview">
+              <div class="phone">
+                <div class="phone__bar"><span>09:41</span><span>Today · 4</span></div>
+                <div class="phone__timer" data-clock-2>0:00</div>
+                <div class="phone__panel">
+                  <div class="phone__metrics">
+                    <span><strong>0</strong>Sets</span>
+                    <span><strong>4</strong>Work</span>
+                    <span><strong>0</strong>Reps</span>
+                    <span><strong>—</strong>Burn</span>
+                  </div>
+                  <div class="phone__row">
+                    <img src="assets/app-icon-lime.png" alt="">
+                    <div><b>Ab Crunch Machine</b><small>Abdominals · Machine</small></div>
+                  </div>
+                  <div class="phone__row">
+                    <img src="assets/app-icon-cyan.png" alt="">
+                    <div><b>90/90 Hamstring</b><small>Hamstrings · Body only</small></div>
+                  </div>
+                  <div class="phone__row">
+                    <img src="assets/app-icon-pink.png" alt="">
+                    <div><b>Adductor / Groin</b><small>Adductors · Unspecified</small></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stepper reveal stagger">
+              <div class="step">
+                <span class="step__no">01</span>
+                <div>
+                  <h3>Start the session</h3>
+                  <p>The red button records start and end time. Editing set data is tied to an active timer, so planned workouts stay separate from performed work.</p>
+                </div>
+              </div>
+              <div class="step">
+                <span class="step__no">02</span>
+                <div>
+                  <h3>Log what you did</h3>
+                  <p>Add sets, reps, and RPE inline while the timer runs. The board shows live totals as the session builds.</p>
+                </div>
+              </div>
+              <div class="step">
+                <span class="step__no">03</span>
+                <div>
+                  <h3>Review the trend</h3>
+                  <p>Weight and body fat charts use a visible grid, four x-axis dates per range, and year labels when long ranges cross years.</p>
+                </div>
+              </div>
+              <div class="step">
+                <span class="step__no">04</span>
+                <div>
+                  <h3>Make it yours</h3>
+                  <p>Theme color and app icon stay matched, with real icon previews in Settings. Copy a previous day to start a session fast.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section class="site-shell" aria-labelledby="docs-title">
-        <div class="section-heading reveal">
-          <span class="eyebrow">Open project docs</span>
-          <h2 id="docs-title">Built with contributor and security docs.</h2>
-          <p>The repo now includes README, contributing, security, and App Store listing notes for development and submission workflows.</p>
-        </div>
-        <div class="doc-grid reveal reveal-group">
-          <article class="doc-card">
-            <h3>Support</h3>
-            <p>For product questions, contact apoorvdarshan@gmail.com or ad13dtu@gmail.com.</p>
-          </article>
-          <article class="doc-card">
-            <h3>Source</h3>
-            <p>The iOS app and website live in the same repository, with the static site under <code>web/</code>.</p>
-          </article>
+      <!-- THEMES -->
+      <section id="themes">
+        <div class="shell">
+          <div class="themes__inner reveal">
+            <div class="themes__head">
+              <div>
+                <span class="tag">[ 03 / Identity ]</span>
+                <h2>Pick your signal</h2>
+              </div>
+              <span class="themes__hint">Tap a color — it retints this page too</span>
+            </div>
+            <div class="swatches" data-swatches>
+              <button class="swatch active" type="button" data-accent="#c6f24e" data-icon="assets/app-icon-lime.png"><img src="assets/app-icon-lime.png" alt="Lime icon"><span>Lime</span></button>
+              <button class="swatch" type="button" data-accent="#3fe0f0" data-icon="assets/app-icon-cyan.png"><img src="assets/app-icon-cyan.png" alt="Cyan icon"><span>Cyan</span></button>
+              <button class="swatch" type="button" data-accent="#ff5e9c" data-icon="assets/app-icon-pink.png"><img src="assets/app-icon-pink.png" alt="Pink icon"><span>Pink</span></button>
+              <button class="swatch" type="button" data-accent="#ffb02e" data-icon="assets/app-icon-amber.png"><img src="assets/app-icon-amber.png" alt="Amber icon"><span>Amber</span></button>
+              <button class="swatch" type="button" data-accent="#b196ff" data-icon="assets/app-icon-violet.png"><img src="assets/app-icon-violet.png" alt="Violet icon"><span>Violet</span></button>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section id="download" class="site-shell" aria-labelledby="cta-title">
-        <div class="cta-band reveal">
-          <span class="eyebrow pill" style="justify-content:center;">Coming to iPhone</span>
-          <h2 id="cta-title" style="margin-top:18px;">Train with less admin, more signal.</h2>
-          <p>Delts keeps the workout in one place: start the timer, log what you actually did, and let the charts tell the story over weeks and months.</p>
-          <div class="hero-actions">
-            <a class="button primary" href="privacy.html">Read privacy <span class="arrow" aria-hidden="true">→</span></a>
-            <a class="button" href="terms.html">View terms</a>
+      <!-- PRIVACY -->
+      <section id="privacy">
+        <div class="shell">
+          <div class="sec-head reveal">
+            <span class="tag">[ 04 / Control ]</span>
+            <h2>No account.<br>Health optional.</h2>
+            <p>Delts is designed around local workout planning and logging. Apple Health access is permission-based and can be turned off by you at any time.</p>
+          </div>
+          <div class="cards reveal stagger">
+            <article class="card">
+              <span class="tag">DOC · PRIVACY</span>
+              <h3>Privacy policy</h3>
+              <p>What the app stores, how optional HealthKit sync works, and how to reach support.</p>
+              <a class="lnk" href="privacy.html">Open policy <span aria-hidden="true">→</span></a>
+            </article>
+            <article class="card">
+              <span class="tag">DOC · TERMS</span>
+              <h3>Terms</h3>
+              <p>Acceptable use, fitness disclaimers, app availability, and support contacts.</p>
+              <a class="lnk" href="terms.html">Open terms <span aria-hidden="true">→</span></a>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- DOCS -->
+      <section style="padding-top: 0;">
+        <div class="shell">
+          <div class="rule reveal" style="margin-bottom: 32px;">PROJECT // OPEN DOCS</div>
+          <div class="cards reveal stagger">
+            <article class="card">
+              <span class="tag">SUPPORT</span>
+              <h3>Talk to us</h3>
+              <p>For product questions, contact apoorvdarshan@gmail.com or ad13dtu@gmail.com.</p>
+            </article>
+            <article class="card">
+              <span class="tag">SOURCE</span>
+              <h3>One repo</h3>
+              <p>The iOS app and this website live together. The static site sits under <code>web/</code>, alongside README, contributing, and security notes.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <section id="get">
+        <div class="shell">
+          <div class="cta reveal">
+            <span class="tag" style="display:inline-flex;align-items:center;gap:10px;"><span class="live-dot"></span> Coming to iPhone</span>
+            <h2>Hit the button</h2>
+            <p>Less admin, more signal. Start the timer, log the real work, and let the charts tell the story over weeks and months.</p>
+            <div class="hero__cta">
+              <a class="btn btn--solid" href="privacy.html">Read privacy <span class="arr" aria-hidden="true">→</span></a>
+              <a class="btn" href="terms.html">View terms</a>
+            </div>
           </div>
         </div>
       </section>
     </main>
 
-    <footer class="footer">
-      <div class="site-shell footer-inner">
-        <span>&copy; <span data-year>2026</span> Delts.</span>
-        <span><a href="privacy.html">Privacy</a> / <a href="terms.html">Terms</a></span>
+    <footer class="foot">
+      <div class="shell">
+        <div class="foot__top">
+          <div class="foot__brand">
+            Delts
+            <p>A gym app built around the red session timer. Plan, train, log, and track body progress on iPhone.</p>
+          </div>
+          <div class="foot__col">
+            <h4>Navigate</h4>
+            <a href="#features">Features</a>
+            <a href="#flow">The flow</a>
+            <a href="#themes">Themes</a>
+            <a href="#get">Get the app</a>
+          </div>
+          <div class="foot__col">
+            <h4>Legal & support</h4>
+            <a href="privacy.html">Privacy policy</a>
+            <a href="terms.html">Terms</a>
+            <span>apoorvdarshan@gmail.com</span>
+            <span>ad13dtu@gmail.com</span>
+          </div>
+        </div>
+        <div class="foot__bar">
+          <span>&copy; <span data-year>2026</span> Delts</span>
+          <span>Built for iPhone · 28.59°N 77.06°E</span>
+        </div>
       </div>
     </footer>
 

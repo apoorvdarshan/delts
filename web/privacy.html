@@ -3,23 +3,26 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Privacy Policy - Delts</title>
-    <meta name="description" content="Privacy Policy for Delts.">
-    <meta name="theme-color" content="#05070a">
-    <link rel="icon" href="assets/app-icon-lime.png">
+    <title>Privacy Policy — Delts</title>
+    <meta name="description" content="Privacy Policy for Delts, an iPhone workout planning and tracking app.">
+    <meta name="theme-color" content="#070907">
+    <link rel="icon" href="assets/app-icon-lime.png" data-favicon>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <header class="topbar" data-topbar>
-      <div class="site-shell topbar-inner">
+    <div class="scan-progress" data-progress aria-hidden="true"></div>
+    <div class="cursor-ring" data-cursor aria-hidden="true"></div>
+
+    <header class="hud-nav" data-nav>
+      <div class="shell hud-nav__in">
         <a class="brand" href="index.html" aria-label="Delts home">
-          <img src="assets/app-icon-lime.png" alt="">
+          <img src="assets/app-icon-lime.png" alt="" data-brand>
           <span>Delts</span>
         </a>
-        <nav class="nav-links" aria-label="Primary">
+        <nav class="hud-nav__links" aria-label="Primary">
           <a href="index.html#features">Features</a>
           <a href="terms.html">Terms</a>
           <a class="nav-cta" href="index.html">Home</a>
@@ -27,49 +30,64 @@
       </div>
     </header>
 
-    <main class="site-shell page-main">
-      <header class="page-header reveal">
-        <span class="eyebrow pill">Last updated June 9, 2026</span>
-        <h1>Privacy Policy</h1>
+    <main class="shell doc-main">
+      <header class="doc-head reveal">
+        <span class="tag"><span class="live-dot"></span> DOC // PRIVACY · Updated June 9, 2026</span>
+        <h1>Privacy<br>Policy</h1>
       </header>
 
-      <div class="policy reveal reveal-group">
+      <div class="policy reveal stagger">
         <article>
-          <h2>Overview</h2>
-          <p>Delts is an iPhone workout planning and tracking app. This policy explains the information handled by the app and the choices available to users. This document is informational and should be reviewed before publication.</p>
+          <span class="pno">01</span>
+          <div>
+            <h2>Overview</h2>
+            <p>Delts is an iPhone workout planning and tracking app. This policy explains the information handled by the app and the choices available to users. This document is informational and should be reviewed before publication.</p>
+          </div>
         </article>
-
         <article>
-          <h2>Information you enter</h2>
-          <p>Delts can store workout plans, selected exercises, sets, reps, RPE, workout timing, body weight, body fat, profile preferences, training goals, target muscles, issues, equipment preferences, and app settings such as appearance and theme.</p>
+          <span class="pno">02</span>
+          <div>
+            <h2>Information you enter</h2>
+            <p>Delts can store workout plans, selected exercises, sets, reps, RPE, workout timing, body weight, body fat, profile preferences, training goals, target muscles, issues, equipment preferences, and app settings such as appearance and theme.</p>
+          </div>
         </article>
-
         <article>
-          <h2>Apple Health</h2>
-          <p>Apple Health access is optional. If you grant permission, Delts can read and write supported body weight and body fat records. You can revoke Health access in iOS Settings at any time.</p>
+          <span class="pno">03</span>
+          <div>
+            <h2>Apple Health</h2>
+            <p>Apple Health access is optional. If you grant permission, Delts can read and write supported body weight and body fat records. You can revoke Health access in iOS Settings at any time.</p>
+          </div>
         </article>
-
         <article>
-          <h2>Accounts, analytics, and ads</h2>
-          <p>Delts does not require an account for the core app experience. The app is not designed around third-party advertising. If analytics, crash reporting, cloud sync, or subscriptions are added later, this policy should be updated before release.</p>
+          <span class="pno">04</span>
+          <div>
+            <h2>Accounts, analytics, and ads</h2>
+            <p>Delts does not require an account for the core app experience. The app is not designed around third-party advertising. If analytics, crash reporting, cloud sync, or subscriptions are added later, this policy should be updated before release.</p>
+          </div>
         </article>
-
         <article>
-          <h2>Support contacts</h2>
-          <p>For privacy questions, contact apoorvdarshan@gmail.com or ad13dtu@gmail.com.</p>
+          <span class="pno">05</span>
+          <div>
+            <h2>Support contacts</h2>
+            <p>For privacy questions, contact apoorvdarshan@gmail.com or ad13dtu@gmail.com.</p>
+          </div>
         </article>
-
         <article>
-          <h2>Changes</h2>
-          <p>This policy may be updated when app behavior changes. The date above should be updated when a new policy is published.</p>
+          <span class="pno">06</span>
+          <div>
+            <h2>Changes</h2>
+            <p>This policy may be updated when app behavior changes. The date above should be updated when a new policy is published.</p>
+          </div>
         </article>
       </div>
     </main>
 
-    <footer class="footer">
-      <div class="site-shell footer-inner">
-        <span>&copy; <span data-year>2026</span> Delts.</span>
-        <span><a href="index.html">Home</a> / <a href="terms.html">Terms</a></span>
+    <footer class="foot">
+      <div class="shell">
+        <div class="foot__bar">
+          <span>&copy; <span data-year>2026</span> Delts</span>
+          <span><a href="index.html">Home</a> · <a href="terms.html">Terms</a></span>
+        </div>
       </div>
     </footer>
     <script src="site.js"></script>
