@@ -11,7 +11,7 @@
 const GEMINI_MODELS_ENDPOINT =
   "https://generativelanguage.googleapis.com/v1beta/models";
 
-const MAX_BODY_BYTES = 64 * 1024; // guard against oversized prompts
+const MAX_BODY_BYTES = 6 * 1024 * 1024; // allow image attachments (base64)
 
 module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -58,6 +58,15 @@ module.exports = async (req, res) => {
   const payload = { contents: body.contents };
   if (body.generationConfig && typeof body.generationConfig === "object") {
     payload.generationConfig = body.generationConfig;
+  }
+  if (body.systemInstruction && typeof body.systemInstruction === "object") {
+    payload.systemInstruction = body.systemInstruction;
+  }
+  if (Array.isArray(body.tools)) {
+    payload.tools = body.tools;
+  }
+  if (body.toolConfig && typeof body.toolConfig === "object") {
+    payload.toolConfig = body.toolConfig;
   }
 
   const url = `${GEMINI_MODELS_ENDPOINT}/${encodeURIComponent(

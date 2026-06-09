@@ -50,6 +50,10 @@ struct ContentView: View {
                 .tabItem { Label(DeltsTab.workouts.title, systemImage: DeltsTab.workouts.systemImage) }
                 .tag(DeltsTab.workouts)
 
+            CoachView()
+                .tabItem { Label(DeltsTab.coach.title, systemImage: DeltsTab.coach.systemImage) }
+                .tag(DeltsTab.coach)
+
             ProgressTabView()
                 .tabItem { Label(DeltsTab.progress.title, systemImage: DeltsTab.progress.systemImage) }
                 .tag(DeltsTab.progress)
@@ -192,6 +196,7 @@ private enum DeltsPreviewWorkoutFactory {
 private enum DeltsTab: String, CaseIterable, Identifiable {
     case home
     case workouts
+    case coach
     case progress
     case profile
 
@@ -217,6 +222,7 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
         switch self {
         case .home: return "Home"
         case .workouts: return "Workouts"
+        case .coach: return "Coach"
         case .progress: return "Progress"
         case .profile: return "Settings"
         }
@@ -226,6 +232,7 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
         switch self {
         case .home: return "house.fill"
         case .workouts: return "list.clipboard.fill"
+        case .coach: return "bubble.left.and.text.bubble.right.fill"
         case .progress: return "chart.line.uptrend.xyaxis"
         case .profile: return "gearshape.fill"
         }
