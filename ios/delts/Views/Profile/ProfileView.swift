@@ -40,10 +40,22 @@ private enum MeasurementSystem: String, CaseIterable, Hashable {
     }
 }
 
-private struct ProfileEditorView: View {
+enum ProfileSectionKind: CaseIterable {
+    case personalDetails
+    case bodyMetrics
+    case trainingGoals
+    case workoutPreferences
+    case strength
+    case appPreferences
+    case about
+}
+
+struct ProfileEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var profile: UserProfile
-    @ObservedObject var updateChecker: AppUpdateChecker
+    var updateChecker: AppUpdateChecker?
+    var sections: Set<ProfileSectionKind> = Set(ProfileSectionKind.allCases)
+    var embedded: Bool = false
     @AppStorage("profile_height_measurement_system") private var heightMeasurementSystemRaw = MeasurementSystem.metric.rawValue
     @AppStorage("profile_weight_measurement_system") private var weightMeasurementSystemRaw = MeasurementSystem.metric.rawValue
     @AppStorage("profile_custom_workout_split") private var customWorkoutSplit = ""
@@ -75,25 +87,23 @@ private struct ProfileEditorView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                personalDetailsSection
-                bodyMetricsSection
-                trainingGoalsSection
-                workoutPreferencesSection
-                strengthSection
-                appPreferencesSection
-                AboutSettingsSection(updateChecker: updateChecker)
+        Group {
+            if embedded {
+                sectionStack
+            } else {
+                ScrollView {
+                    sectionStack
+                        .padding(.horizontal, 20)
+                        .padding(.top, 10)
+                        .padding(.bottom, 18)
+                }
+                .deltsScreen()
+                .contentMargins(.bottom, 110, for: .scrollContent)
+                .scrollDismissesKeyboard(.interactively)
+                .tint(Color.deltsAccent)
+                .toolbar(.hidden, for: .navigationBar)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            .padding(.bottom, 18)
         }
-        .deltsScreen()
-        .contentMargins(.bottom, 110, for: .scrollContent)
-        .scrollDismissesKeyboard(.interactively)
-        .tint(Color.deltsAccent)
-        .toolbar(.hidden, for: .navigationBar)
         .background(ProfileKeyboardDismissTapInstaller())
         .fullScreenCover(isPresented: $isSelectingTargetMuscles) {
             ProfileTargetMuscleSelectionSheet(
@@ -106,6 +116,21 @@ private struct ProfileEditorView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("When enabled, exercise filters only show moves whose primary target matches your selected target muscles.")
+        }
+    }
+
+    @ViewBuilder
+    private var sectionStack: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            if sections.contains(.personalDetails) { personalDetailsSection }
+            if sections.contains(.bodyMetrics) { bodyMetricsSection }
+            if sections.contains(.trainingGoals) { trainingGoalsSection }
+            if sections.contains(.workoutPreferences) { workoutPreferencesSection }
+            if sections.contains(.strength) { strengthSection }
+            if sections.contains(.appPreferences) { appPreferencesSection }
+            if sections.contains(.about), let updateChecker {
+                AboutSettingsSection(updateChecker: updateChecker)
+            }
         }
     }
 

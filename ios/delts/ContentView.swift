@@ -15,6 +15,7 @@ struct ContentView: View {
     @StateObject private var updateChecker = AppUpdateChecker()
     @AppStorage(AppAppearance.storageKey) private var appAppearanceRaw = AppAppearance.system.rawValue
     @AppStorage(DeltsTheme.storageKey) private var deltsThemeRaw = DeltsTheme.lime.rawValue
+    @AppStorage("delts_onboarding_complete") private var onboardingComplete = false
 
     private var appAppearance: AppAppearance {
         AppAppearance(rawValue: appAppearanceRaw) ?? .system
@@ -35,9 +36,20 @@ struct ContentView: View {
     private var rootView: some View {
         if let scene = DeltsLaunchScene.initialScene {
             launchScene(scene)
+        } else if !onboardingComplete && !skipsOnboardingForLaunchArgs {
+            OnboardingView()
         } else {
             tabRoot
         }
+    }
+
+    private var skipsOnboardingForLaunchArgs: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--delts-tab") || arguments.contains("--delts-skip-onboarding") {
+            return true
+        }
+        let environment = ProcessInfo.processInfo.environment
+        return environment["DELTS_INITIAL_TAB"] != nil || environment["DELTS_SKIP_ONBOARDING"] != nil
     }
 
     private var tabRoot: some View {
