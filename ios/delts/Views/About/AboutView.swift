@@ -30,23 +30,35 @@ struct AboutSettingsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
                     AboutSection(title: "Built by") {
-                        AboutRowStack {
-                            AboutActionRow(
-                                title: "Apoorv Darshan",
-                                systemImage: "person.fill",
-                                value: "Creator",
-                                tint: .deltsSecondaryAccent
-                            ) {
-                                open(AboutLinks.xProfileURL)
+                        VStack(spacing: 14) {
+                            AboutRowStack {
+                                AboutActionRow(
+                                    title: "Apoorv Darshan",
+                                    systemImage: "person.fill",
+                                    value: "Creator",
+                                    tint: .deltsSecondaryAccent
+                                ) {
+                                    open(AboutLinks.xProfileURL)
+                                }
                             }
-                            AboutDivider()
-                            AboutActionRow(
-                                title: "ACE Certified Personal Trainer",
-                                systemImage: "checkmark.seal.fill",
-                                value: "Verify",
-                                tint: .deltsAccent
-                            ) {
-                                open(AboutLinks.aceCredentialURL)
+
+                            VStack(spacing: 10) {
+                                Image("ACEBadge")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 104, height: 104)
+                                    .accessibilityLabel("ACE Certified Personal Trainer")
+
+                                Text("ACE Certified Personal Trainer")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Color.deltsMutedText)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                    .stroke(Color.deltsHairline.opacity(0.22), lineWidth: 0.5)
                             }
                         }
                     }
@@ -315,7 +327,6 @@ private enum AboutLinks {
     static let githubFeatureURL = URL(string: "https://github.com/apoorvdarshan/delts/issues/new?labels=enhancement")
     static let kofiURL = URL(string: "https://ko-fi.com/apoorvdarshan")
     static let xProfileURL = URL(string: "https://x.com/apoorvdarshan")
-    static let aceCredentialURL = URL(string: "https://credentials.acefitness.org/d23fcb24-899b-4588-be1b-93298a039289")
 }
 
 private enum AboutPlaceholder: Identifiable {
