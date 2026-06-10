@@ -228,13 +228,11 @@ struct CoachView: View {
             showPaywall = true
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: premium.coachTasteRemaining > 0 ? "sparkles" : "lock.fill")
+                Image(systemName: "lock.fill")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Color.deltsAccent)
 
-                Text(premium.coachTasteRemaining > 0
-                     ? "\(premium.coachTasteRemaining) free message\(premium.coachTasteRemaining == 1 ? "" : "s") left"
-                     : "Unlock unlimited Coach")
+                Text("Coach is a Premium feature")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Color.deltsCharcoal)
 
@@ -344,11 +342,7 @@ struct CoachView: View {
             return
         }
         inputFocused = false
-        viewModel.send(contextProvider: buildContext) {
-            // Consume the free taste only when the Coach actually replied, so
-            // network failures never burn the lifetime allowance.
-            PremiumStore.shared.consumeCoachTaste()
-        }
+        viewModel.send(contextProvider: buildContext)
     }
 
     private func buildContext() -> String {

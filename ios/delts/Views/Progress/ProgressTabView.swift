@@ -187,9 +187,7 @@ struct ProgressTabView: View {
                         WorkoutHistoryCard(
                             workout: workout,
                             isEstimating: burnEstimator.isEstimating(workout.id),
-                            isBurnLocked: workout.caloriesBurned == nil
-                                && !premium.isSubscribed
-                                && !burnEstimator.isEstimating(workout.id),
+                            isBurnLocked: !premium.isSubscribed,
                             onBurnLockedTap: { isPaywallPresented = true },
                             onDelete: { deleteCompletedWorkout(workout) }
                         )

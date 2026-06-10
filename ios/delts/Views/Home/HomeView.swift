@@ -295,7 +295,7 @@ struct HomeView: View {
                         discardTimer: discardSessionTimer,
                         burnKcal: selectedBurnKcal,
                         isEstimatingBurn: isEstimatingSelectedBurn,
-                        burnLocked: selectedBurnKcal == nil && !isEstimatingSelectedBurn && !premium.canEstimateCalories,
+                        burnLocked: !premium.isSubscribed,
                         onBurnTap: { isPaywallPresented = true }
                     )
                     .listRowBackground(Color.clear)
@@ -714,8 +714,8 @@ struct HomeView: View {
     /// the completed workout, show it in the Burn stat, and write it to Apple Health.
     private func estimateBurn(workout: CompletedWorkout, dateKey: String, exercises: [PlannedRoutineExercise], durationMinutes: Int) {
         guard GeminiConfig.isAIEnabled, !exercises.isEmpty else { return }
-        // Premium feature: requires a subscription or a remaining free taste.
-        guard premium.canEstimateCalories else { return }
+        // Calorie estimates are premium-only.
+        guard premium.isSubscribed else { return }
 
         let profile = profiles.first
         let bio = CalorieEstimateService.Bio(
@@ -756,7 +756,6 @@ struct HomeView: View {
                 try? modelContext.save()
                 burnByDateKey[dateKey] = kcal
                 WorkoutBurnStore.save(burnByDateKey)
-                PremiumStore.shared.consumeCalorieTaste()
 
                 if healthEnabled {
                     let end = workout.date
