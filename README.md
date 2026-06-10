@@ -2,6 +2,12 @@
 
 Delts is an iPhone workout planner and tracking app focused on a simple training flow: add workouts, start the red timer, log performed sets, and review body progress.
 
+## Built By
+
+<img src="web/assets/ace-cpt-badge.png" alt="ACE Certified Personal Trainer" width="96">
+
+Delts is built by **Apoorv Darshan, ACE Certified Personal Trainer** — the training flow, RPE handling, and progress tracking reflect how a coach actually programs and tracks training.
+
 ## Highlights
 
 - Daily workout board with exercise cards, sets, reps, RPE, muscles, and equipment.
