@@ -1,4 +1,24 @@
+<div align="center">
+
+<img src="web/assets/delts-glyph.png" width="120" alt="Delts logo">
+
 # Delts
+
+**Train with the red button.**
+
+Plan workouts, time sessions, log sets and RPE, and track body progress — with an AI coach built in.
+
+![iOS](https://img.shields.io/badge/iOS-17%2B-blue?logo=apple)
+![Swift](https://img.shields.io/badge/swift-5-F05138?logo=swift&logoColor=white)
+![UI](https://img.shields.io/badge/UI-SwiftUI-7950F2)
+![AI](https://img.shields.io/badge/AI%20coach-Gemini-4E9BFA)
+![License](https://img.shields.io/badge/license-MIT-green)
+[![Website](https://img.shields.io/badge/website-delts.fit-B8F957)](https://delts.fit)
+![App Store](https://img.shields.io/badge/App%20Store-coming%20soon-black?logo=apple)
+
+</div>
+
+---
 
 Delts is an iPhone workout planner and tracking app focused on a simple training flow: add workouts, start the red timer, log performed sets, and review body progress.
 
