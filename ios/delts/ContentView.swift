@@ -11,6 +11,14 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        // Re-show onboarding on demand (testing) without touching any user data.
+        if ProcessInfo.processInfo.arguments.contains("--delts-show-onboarding") {
+            UserDefaults.standard.set(false, forKey: "delts_onboarding_complete")
+        }
+    }
+
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
     @State private var selectedTab: DeltsTab = .initialTab
     @StateObject private var updateChecker = AppUpdateChecker()
