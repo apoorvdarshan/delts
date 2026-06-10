@@ -18,6 +18,7 @@ struct ProgressTabView: View {
     @State private var isLoggingBodyFat = false
     @State private var isShowingBodyLogs = false
     @StateObject private var healthKit = HealthKitProgressService()
+    @ObservedObject private var burnEstimator = BurnEstimator.shared
 
     private var filteredSnapshots: [ProgressMetricSnapshot] {
         selectedRange.filter(snapshots).sorted { $0.date < $1.date }
@@ -174,6 +175,7 @@ struct ProgressTabView: View {
                 ForEach(completedWorkouts) { workout in
                     WorkoutHistoryCard(
                         workout: workout,
+                        isEstimating: burnEstimator.isEstimating(workout.id),
                         onDelete: { deleteCompletedWorkout(workout) }
                     )
                 }
@@ -524,8 +526,8 @@ private enum ProgressMetricKind: String, CaseIterable, Identifiable {
 
 private struct WorkoutHistoryCard: View {
     let workout: CompletedWorkout
+    var isEstimating: Bool = false
     let onDelete: () -> Void
-    @State private var showDeleteConfirm = false
 
     private var dateText: String {
         let formatter = DateFormatter()
@@ -559,9 +561,7 @@ private struct WorkoutHistoryCard: View {
                     .foregroundStyle(Color.deltsMutedText)
 
                 Menu {
-                    Button(role: .destructive) {
-                        showDeleteConfirm = true
-                    } label: {
+                    Button(role: .destructive, action: onDelete) {
                         Label("Delete", systemImage: "trash")
                     }
                 } label: {
@@ -579,7 +579,8 @@ private struct WorkoutHistoryCard: View {
                 InlineStat(
                     icon: "flame.fill",
                     text: burnText,
-                    tint: workout.caloriesBurned != nil ? .deltsAccent : .deltsMutedText
+                    tint: (workout.caloriesBurned != nil || isEstimating) ? .deltsAccent : .deltsMutedText,
+                    isLoading: isEstimating
                 )
                 InlineStat(icon: "dumbbell.fill", text: movesText)
             }
@@ -605,12 +606,6 @@ private struct WorkoutHistoryCard: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(Color.deltsHairline.opacity(0.30), lineWidth: 0.5)
         }
-        .confirmationDialog("Delete this workout?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-            Button("Delete", role: .destructive, action: onDelete)
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Removes it from History and Apple Health.")
-        }
     }
 }
 
@@ -618,17 +613,27 @@ private struct InlineStat: View {
     let icon: String
     let text: String
     var tint: Color = .deltsAccent
+    var isLoading: Bool = false
 
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: icon)
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(tint)
-            Text(text)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.deltsCharcoal)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+            if isLoading {
+                ProgressView()
+                    .controlSize(.mini)
+                    .tint(tint)
+                Text("kcal")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+            } else {
+                Text(text)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
         }
     }
 }

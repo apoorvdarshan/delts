@@ -719,17 +719,30 @@ struct HomeView: View {
         )
 
         estimatingBurnDateKeys.insert(dateKey)
+        BurnEstimator.shared.begin(workout.id)
         let service = calorieService
         let healthEnabled = appleHealthEnabled
         let healthKit = healthKit
 
         Task { @MainActor in
-            do {
-                let kcal = try await service.estimate(
-                    durationMinutes: durationMinutes,
-                    exercises: exercises,
-                    bio: bio
-                )
+            // Retry a couple times so a transient Gemini hiccup doesn't drop the estimate.
+            var kcal: Int?
+            for attempt in 0..<3 {
+                do {
+                    kcal = try await service.estimate(
+                        durationMinutes: durationMinutes,
+                        exercises: exercises,
+                        bio: bio
+                    )
+                    break
+                } catch {
+                    if attempt < 2 {
+                        try? await Task.sleep(nanoseconds: 1_500_000_000)
+                    }
+                }
+            }
+
+            if let kcal {
                 workout.caloriesBurned = kcal
                 try? modelContext.save()
                 burnByDateKey[dateKey] = kcal
@@ -741,10 +754,11 @@ struct HomeView: View {
                     try? await healthKit.requestAccess()
                     try? await healthKit.saveWorkout(id: workout.id, start: start, end: end, calories: kcal)
                 }
-            } catch {
-                // Leave the burn unset on failure; the stat stays "-- kcal".
             }
+            // Leave the burn unset on failure; the stat stays "-- kcal".
+
             estimatingBurnDateKeys.remove(dateKey)
+            BurnEstimator.shared.end(workout.id)
         }
     }
 
