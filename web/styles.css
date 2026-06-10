@@ -267,13 +267,13 @@ img { display: block; }
 /* Section scaffolding + HUD ticks                                    */
 /* ------------------------------------------------------------------ */
 
-section { padding: clamp(80px, 11vw, 150px) 0; position: relative; }
+section { padding: clamp(52px, 7vw, 92px) 0; position: relative; }
 
 .sec-head {
   display: grid;
-  gap: 18px;
+  gap: 14px;
   max-width: 760px;
-  margin-bottom: 56px;
+  margin-bottom: 36px;
 }
 .sec-head .tag { display: inline-flex; align-items: center; gap: 10px; }
 .sec-head h2 {
@@ -309,7 +309,7 @@ section { padding: clamp(80px, 11vw, 150px) 0; position: relative; }
 /* HERO                                                               */
 /* ------------------------------------------------------------------ */
 
-.hero { padding-top: clamp(48px, 7vw, 90px); padding-bottom: 0; overflow: hidden; }
+.hero { padding-top: clamp(36px, 5vw, 64px); padding-bottom: 0; overflow: hidden; }
 
 .hero__top {
   display: flex;
@@ -328,7 +328,7 @@ section { padding: clamp(80px, 11vw, 150px) 0; position: relative; }
   margin: clamp(20px, 3vw, 38px) 0 0;
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: clamp(5.5rem, 25vw, 23rem);
+  font-size: clamp(5rem, 21vw, 18rem);
   line-height: 0.78;
   letter-spacing: -0.02em;
   text-transform: uppercase;
@@ -352,7 +352,7 @@ section { padding: clamp(80px, 11vw, 150px) 0; position: relative; }
   grid-template-columns: 1.4fr 1fr;
   gap: 40px;
   align-items: end;
-  padding: 36px 0 clamp(60px, 8vw, 110px);
+  padding: 28px 0 clamp(44px, 6vw, 72px);
   border-top: 1px solid var(--line);
   margin-top: clamp(20px, 3vw, 40px);
 }
@@ -719,7 +719,7 @@ section { padding: clamp(80px, 11vw, 150px) 0; position: relative; }
   background:
     radial-gradient(110% 140% at 50% 0%, var(--glow), transparent 55%),
     var(--bg-card);
-  padding: clamp(56px, 9vw, 110px) 28px;
+  padding: clamp(44px, 7vw, 80px) 28px;
   overflow: hidden;
 }
 .cta h2 {
@@ -730,6 +730,39 @@ section { padding: clamp(80px, 11vw, 150px) 0; position: relative; }
 }
 .cta p { margin: 22px auto 0; max-width: 50ch; color: var(--ink-dim); font-size: 1.1rem; }
 .cta .hero__cta { justify-content: center; margin-top: 34px; }
+
+/* social chips (CTA band) */
+.social-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 999px;
+  transition: border-color 0.25s, color 0.25s, transform 0.25s var(--ease);
+}
+
+a.chip:hover {
+  color: var(--accent);
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+}
+
+.chip--soon { opacity: 0.55; cursor: default; }
 
 /* ------------------------------------------------------------------ */
 /* Legal pages                                                        */
