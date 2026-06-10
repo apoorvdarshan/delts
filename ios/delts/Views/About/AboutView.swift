@@ -105,19 +105,19 @@ struct AboutSettingsSection: View {
                             AboutActionRow(
                                 title: "Instagram",
                                 systemImage: "camera.fill",
-                                value: "Coming soon",
+                                value: "@delts.fit",
                                 tint: .deltsSecondaryAccent
                             ) {
-                                activeAlert = .placeholder(.instagram)
+                                open(AboutLinks.instagramURL)
                             }
                             AboutDivider()
                             AboutActionRow(
                                 title: "LinkedIn",
                                 systemImage: "person.crop.square.filled.and.at.rectangle",
-                                value: "Coming soon",
+                                value: "Delts",
                                 tint: .deltsSecondaryAccent
                             ) {
-                                activeAlert = .placeholder(.linkedIn)
+                                open(AboutLinks.linkedInURL)
                             }
                         }
                     }
@@ -327,14 +327,14 @@ private enum AboutLinks {
     static let githubFeatureURL = URL(string: "https://github.com/apoorvdarshan/delts/issues/new?labels=enhancement")
     static let kofiURL = URL(string: "https://ko-fi.com/apoorvdarshan")
     static let xProfileURL = URL(string: "https://x.com/apoorvdarshan")
+    static let instagramURL = URL(string: "https://www.instagram.com/delts.fit")
+    static let linkedInURL = URL(string: "https://www.linkedin.com/company/delts")
 }
 
 private enum AboutPlaceholder: Identifiable {
     case share
     case openSource
     case productHunt
-    case instagram
-    case linkedIn
     case privacy
     case terms
 
@@ -347,8 +347,6 @@ private enum AboutPlaceholder: Identifiable {
         case .share: return "Share Delts"
         case .openSource: return "Open Source"
         case .productHunt: return "Product Hunt"
-        case .instagram: return "Instagram"
-        case .linkedIn: return "LinkedIn"
         case .privacy: return "Privacy Policy"
         case .terms: return "Terms"
         }
@@ -362,10 +360,6 @@ private enum AboutPlaceholder: Identifiable {
             return "The repository is private for now. This row is ready for the public open-source repo link later."
         case .productHunt:
             return "The Product Hunt launch link will be added when it is ready."
-        case .instagram:
-            return "The Instagram profile link will be added later."
-        case .linkedIn:
-            return "The LinkedIn profile link will be added later."
         case .privacy:
             return "This will open delts.fit/privacy after the website is configured."
         case .terms:

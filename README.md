@@ -15,6 +15,9 @@ Plan workouts, time sessions, log sets and RPE, and track body progress — with
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![Website](https://img.shields.io/badge/website-delts.fit-B8F957)](https://delts.fit)
 [![App Store](https://img.shields.io/badge/App%20Store-coming%20soon-black?logo=apple)](https://apps.apple.com/app/id6778653288)
+[![Instagram](https://img.shields.io/badge/Instagram-%40delts.fit-E4405F?logo=instagram&logoColor=white)](https://www.instagram.com/delts.fit)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Delts-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/company/delts)
+[![TrustMRR](https://img.shields.io/badge/TrustMRR-listed-22C55E)](https://trustmrr.com/startup/delts-workout-tracker)
 
 </div>
 
@@ -84,6 +87,12 @@ For support or project questions:
 
 - apoorvdarshan@gmail.com
 - ad13dtu@gmail.com
+
+Follow Delts:
+
+- Instagram: [@delts.fit](https://www.instagram.com/delts.fit)
+- LinkedIn: [Delts](https://www.linkedin.com/company/delts)
+- TrustMRR: [Delts - Workout Tracker](https://trustmrr.com/startup/delts-workout-tracker)
 
 ## License
 
