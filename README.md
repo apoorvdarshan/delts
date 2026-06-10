@@ -34,15 +34,19 @@ Delts is built by **Apoorv Darshan, ACE Certified Personal Trainer** — the tra
 
 ## Highlights
 
+- Timer-first workout tracking — the red button starts and ends the session, with a Lock Screen Live Activity.
 - Daily workout board with exercise cards, sets, reps, RPE, muscles, and equipment.
-- Timer-first workout tracking with start/end session timing.
-- Exercise library with target muscle, equipment, level, and split-based browsing.
-- Set, rep, and RPE logging for active workouts.
+- Set, rep, and RPE logging for active workouts (strength RPE or CR10).
+- AI Coach chat (Premium) that sees your real workouts, progress, and goals — with photo attachments.
+- Automatic calorie-burn estimates (Premium) after every session, from your workout and body data.
+- Workout history with per-session detail, synced to Apple Health as workouts.
+- Exercise library — 845 exercises with target muscle, equipment, level, and split-based browsing.
 - Weight and body fat progress charts with ranges, averages, net change, and goal lines.
-- Optional Apple Health import/write support for weight and body fat.
+- Optional Apple Health import/write support for weight, body fat, and workouts.
 - Body fat pickers with exact number and visual range modes.
 - Custom theme picker with matching app icon variants.
-- Settings for appearance, workout frequency, duration range, split, equipment, RPE scale, target muscles, and optional 1RM anchors.
+- Localized into 16 languages — English, Arabic, Azerbaijani, German, Spanish, French, Hindi, Italian, Japanese, Korean, Dutch, Polish, Brazilian Portuguese, Romanian, Russian, and Simplified Chinese.
+- Free core app; Delts Premium (weekly or yearly) unlocks the AI features.
 
 ## Screenshots
 
