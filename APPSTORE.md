@@ -62,25 +62,25 @@ App Store Connect submission details for Delts. Each field is in a code block fo
 
     Delts is not medical advice. Consult a qualified professional before changing your training routine, especially if you have medical concerns or injuries.
 
-    Terms: https://delts.app/terms.html
-    Privacy: https://delts.app/privacy.html
-    Support: https://delts.app
+    Terms: https://delts.fit/terms.html
+    Privacy: https://delts.fit/privacy.html
+    Support: https://delts.fit
 
 ## Privacy URL
 
-    https://delts.app/privacy.html
+    https://delts.fit/privacy.html
 
 ## Terms URL
 
-    https://delts.app/terms.html
+    https://delts.fit/terms.html
 
 ## Support URL
 
-    https://delts.app
+    https://delts.fit
 
 ## Marketing URL
 
-    https://delts.app
+    https://delts.fit
 
 ## Reviewer Notes
 

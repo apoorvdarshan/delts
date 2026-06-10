@@ -320,7 +320,7 @@ struct AboutSettingsSection: View {
 }
 
 private enum AboutLinks {
-    static let appStoreShareURL: URL? = nil
+    static let appStoreShareURL: URL? = URL(string: "https://apps.apple.com/app/id6778653288")
     static let contactEmail = "ad13dtu@gmail.com"
     static let contactEmailURL = URL(string: "mailto:\(contactEmail)")
     static let githubIssueURL = URL(string: "https://github.com/apoorvdarshan/delts/issues/new")

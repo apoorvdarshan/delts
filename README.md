@@ -14,7 +14,7 @@ Plan workouts, time sessions, log sets and RPE, and track body progress — with
 ![AI](https://img.shields.io/badge/AI%20coach-Gemini-4E9BFA)
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![Website](https://img.shields.io/badge/website-delts.fit-B8F957)](https://delts.fit)
-![App Store](https://img.shields.io/badge/App%20Store-coming%20soon-black?logo=apple)
+[![App Store](https://img.shields.io/badge/App%20Store-coming%20soon-black?logo=apple)](https://apps.apple.com/app/id6778653288)
 
 </div>
 
