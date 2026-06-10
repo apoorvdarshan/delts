@@ -136,10 +136,10 @@ struct AboutSettingsSection: View {
                             AboutActionRow(
                                 title: "Open Source",
                                 systemImage: "curlybraces.square.fill",
-                                value: "Repo soon",
+                                value: "GitHub",
                                 tint: .deltsSecondaryAccent
                             ) {
-                                activeAlert = .placeholder(.openSource)
+                                open(AboutLinks.githubRepoURL)
                             }
                             AboutDivider()
                             AboutActionRow(
@@ -195,7 +195,7 @@ struct AboutSettingsSection: View {
                                 value: "delts.fit/privacy",
                                 tint: .deltsSecondaryAccent
                             ) {
-                                activeAlert = .placeholder(.privacy)
+                                open(AboutLinks.privacyURL)
                             }
                             AboutDivider()
                             AboutActionRow(
@@ -204,7 +204,7 @@ struct AboutSettingsSection: View {
                                 value: "delts.fit/terms",
                                 tint: .deltsSecondaryAccent
                             ) {
-                                activeAlert = .placeholder(.terms)
+                                open(AboutLinks.termsURL)
                             }
                         }
                     }
@@ -330,13 +330,13 @@ private enum AboutLinks {
     static let instagramURL = URL(string: "https://www.instagram.com/delts.fit")
     static let linkedInURL = URL(string: "https://www.linkedin.com/company/delts")
     static let productHuntURL = URL(string: "https://www.producthunt.com/products/delts")
+    static let githubRepoURL = URL(string: "https://github.com/apoorvdarshan/delts")
+    static let privacyURL = URL(string: "https://delts.fit/privacy.html")
+    static let termsURL = URL(string: "https://delts.fit/terms.html")
 }
 
 private enum AboutPlaceholder: Identifiable {
     case share
-    case openSource
-    case privacy
-    case terms
 
     var id: String {
         title
@@ -345,9 +345,6 @@ private enum AboutPlaceholder: Identifiable {
     var title: String {
         switch self {
         case .share: return "Share Delts"
-        case .openSource: return "Open Source"
-        case .privacy: return "Privacy Policy"
-        case .terms: return "Terms"
         }
     }
 
@@ -355,12 +352,6 @@ private enum AboutPlaceholder: Identifiable {
         switch self {
         case .share:
             return "The App Store share link will be added when the listing is ready."
-        case .openSource:
-            return "The repository is private for now. This row is ready for the public open-source repo link later."
-        case .privacy:
-            return "This will open delts.fit/privacy after the website is configured."
-        case .terms:
-            return "This will open delts.fit/terms after the website is configured."
         }
     }
 }
