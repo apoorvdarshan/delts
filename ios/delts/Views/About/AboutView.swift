@@ -29,40 +29,6 @@ struct AboutSettingsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-                    AboutSection(title: "Built by") {
-                        VStack(spacing: 14) {
-                            AboutRowStack {
-                                AboutActionRow(
-                                    title: "Apoorv Darshan",
-                                    systemImage: "person.fill",
-                                    value: "Creator",
-                                    tint: .deltsSecondaryAccent
-                                ) {
-                                    open(AboutLinks.xProfileURL)
-                                }
-                            }
-
-                            VStack(spacing: 10) {
-                                Image("ACEBadge")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 104, height: 104)
-                                    .accessibilityLabel("ACE Certified Personal Trainer")
-
-                                Text("ACE Certified Personal Trainer")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(Color.deltsMutedText)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 18)
-                            .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                                    .stroke(Color.deltsHairline.opacity(0.22), lineWidth: 0.5)
-                            }
-                        }
-                    }
-
                     AboutSection(title: "Release") {
                         AboutRowStack {
                             AboutActionRow(
@@ -183,6 +149,40 @@ struct AboutSettingsSection: View {
                                 tint: .deltsSecondaryAccent
                             ) {
                                 activeAlert = .placeholder(.productHunt)
+                            }
+                        }
+                    }
+
+                    AboutSection(title: "Built by") {
+                        VStack(spacing: 14) {
+                            AboutRowStack {
+                                AboutActionRow(
+                                    title: "Apoorv Darshan",
+                                    systemImage: "person.fill",
+                                    value: "Creator",
+                                    tint: .deltsSecondaryAccent
+                                ) {
+                                    open(AboutLinks.xProfileURL)
+                                }
+                            }
+
+                            VStack(spacing: 10) {
+                                Image("ACEBadge")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 104, height: 104)
+                                    .accessibilityLabel("ACE Certified Personal Trainer")
+
+                                Text("ACE Certified Personal Trainer")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Color.deltsMutedText)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                    .stroke(Color.deltsHairline.opacity(0.22), lineWidth: 0.5)
                             }
                         }
                     }
