@@ -29,6 +29,28 @@ struct AboutSettingsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
+                    AboutSection(title: "Built by") {
+                        AboutRowStack {
+                            AboutActionRow(
+                                title: "Apoorv Darshan",
+                                systemImage: "person.fill",
+                                value: "Creator",
+                                tint: .deltsSecondaryAccent
+                            ) {
+                                open(AboutLinks.xProfileURL)
+                            }
+                            AboutDivider()
+                            AboutActionRow(
+                                title: "ACE Certified Personal Trainer",
+                                systemImage: "checkmark.seal.fill",
+                                value: "Verify",
+                                tint: .deltsAccent
+                            ) {
+                                open(AboutLinks.aceCredentialURL)
+                            }
+                        }
+                    }
+
                     AboutSection(title: "Release") {
                         AboutRowStack {
                             AboutActionRow(
@@ -293,6 +315,7 @@ private enum AboutLinks {
     static let githubFeatureURL = URL(string: "https://github.com/apoorvdarshan/delts/issues/new?labels=enhancement")
     static let kofiURL = URL(string: "https://ko-fi.com/apoorvdarshan")
     static let xProfileURL = URL(string: "https://x.com/apoorvdarshan")
+    static let aceCredentialURL = URL(string: "https://credentials.acefitness.org/d23fcb24-899b-4588-be1b-93298a039289")
 }
 
 private enum AboutPlaceholder: Identifiable {

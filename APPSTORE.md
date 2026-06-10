@@ -39,6 +39,8 @@ App Store Connect submission details for Delts. Each field is in a code block fo
 
     Build your daily workout, start the red timer, log the work you actually perform, and review progress over time. Delts keeps planning, workout timing, set logging, and body progress in one clean app.
 
+    Built by an ACE Certified Personal Trainer.
+
     WORKOUT TIMER
     Start and end the workout from the main red timer. Session timing is tracked from that workout state, keeping planned exercises separate from performed work.
 
