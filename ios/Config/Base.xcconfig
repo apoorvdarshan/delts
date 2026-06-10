@@ -10,3 +10,7 @@
 // Coach chat lets you attach a photo from the camera or library.
 INFOPLIST_KEY_NSCameraUsageDescription = DELTS uses the camera so you can attach a photo to the Coach chat.
 INFOPLIST_KEY_NSPhotoLibraryUsageDescription = DELTS lets you attach a photo from your library to the Coach chat.
+
+// Only standard HTTPS (Apple OS encryption) is used — exempt from export
+// compliance documentation, so App Store Connect skips the encryption prompt.
+INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO
