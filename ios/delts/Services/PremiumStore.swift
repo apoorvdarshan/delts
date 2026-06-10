@@ -28,9 +28,20 @@ final class PremiumStore: ObservableObject {
     @Published private(set) var weeklyPlan: Plan?
     @Published private(set) var yearlyPlan: Plan?
     @Published private(set) var isSubscribed = false
+    @Published private(set) var activeProductID: String?
+    @Published private(set) var expiresAt: Date?
+    @Published private(set) var willRenew = false
     @Published private(set) var isLoadingProducts = false
     @Published private(set) var isPurchasing = false
     @Published var lastErrorMessage: String?
+
+    /// User-facing name of the active plan, e.g. "Yearly".
+    var activePlanTitle: String? {
+        guard let activeProductID else { return nil }
+        if activeProductID.contains("yearly") { return "Yearly" }
+        if activeProductID.contains("weekly") { return "Weekly" }
+        return "Premium"
+    }
 
     private var updatesTask: Task<Void, Never>?
 
@@ -56,8 +67,13 @@ final class PremiumStore: ObservableObject {
     var canEstimateCalories: Bool { isSubscribed }
 
     private func apply(_ info: CustomerInfo) {
-        isSubscribed = info.entitlements[Self.entitlementID]?.isActive == true
-            || !info.entitlements.active.isEmpty
+        let entitlement = info.entitlements[Self.entitlementID]
+            ?? info.entitlements.active.values.first
+        let active = entitlement?.isActive == true
+        isSubscribed = active
+        activeProductID = active ? entitlement?.productIdentifier : nil
+        expiresAt = active ? entitlement?.expirationDate : nil
+        willRenew = active ? (entitlement?.willRenew ?? false) : false
     }
 
     func refreshEntitlement() async {

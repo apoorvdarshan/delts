@@ -47,6 +47,7 @@ enum ProfileSectionKind: CaseIterable {
     case workoutPreferences
     case strength
     case appPreferences
+    case subscription
     case about
 }
 
@@ -128,6 +129,7 @@ struct ProfileEditorView: View {
             if sections.contains(.workoutPreferences) { workoutPreferencesSection }
             if sections.contains(.strength) { strengthSection }
             if sections.contains(.appPreferences) { appPreferencesSection }
+            if sections.contains(.subscription) { SubscriptionSettingsSection() }
             if sections.contains(.about), let updateChecker {
                 AboutSettingsSection(updateChecker: updateChecker)
             }
