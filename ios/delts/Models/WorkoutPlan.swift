@@ -48,9 +48,9 @@ final class WorkoutExercise: Identifiable {
 
     var restDisplay: String {
         if restSeconds >= 60 {
-            return "\(restSeconds / 60)m"
+            return String(localized: "\(restSeconds / 60)m")
         }
-        return "\(restSeconds)s"
+        return String(localized: "\(restSeconds)s")
     }
 }
 

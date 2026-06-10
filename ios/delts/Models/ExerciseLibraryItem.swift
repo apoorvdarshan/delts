@@ -52,7 +52,7 @@ struct ExerciseLibraryItem: Identifiable, Hashable {
         [category, force, mechanic]
             .filter { $0 != "Unspecified" }
             .joined(separator: " - ")
-            .nilIfEmpty ?? "Database metadata"
+            .nilIfEmpty ?? String(localized: "Database metadata")
     }
 
     var searchableText: String {

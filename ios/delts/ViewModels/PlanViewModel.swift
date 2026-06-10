@@ -15,14 +15,14 @@ struct WorkoutDurationRangeOption: Hashable, Identifiable {
     var title: String {
         if let upperBound {
             if lowerBound < 60, upperBound < 60 {
-                return "\(lowerBound)-\(upperBound) min"
+                return String(localized: "\(lowerBound)-\(upperBound) min")
             }
             if lowerBound >= 60, upperBound >= 60 {
-                return "\(hourText(for: lowerBound))-\(hourText(for: upperBound)) hr"
+                return String(localized: "\(hourText(for: lowerBound))-\(hourText(for: upperBound)) hr")
             }
-            return "\(durationText(for: lowerBound))-\(durationText(for: upperBound))"
+            return String(localized: "\(durationText(for: lowerBound))-\(durationText(for: upperBound))")
         }
-        return "\(durationText(for: lowerBound))+"
+        return String(localized: "\(durationText(for: lowerBound))+")
     }
 
     var promptText: String {
@@ -57,13 +57,13 @@ struct WorkoutDurationRangeOption: Hashable, Identifiable {
     private func durationText(for minutes: Int) -> String {
         switch minutes {
         case 120:
-            return "2 hr"
+            return String(localized: "2 hr")
         case let value where value > 60 && value % 60 == 30:
             return "\(Double(value) / 60.0) hr"
         case let value where value >= 60 && value % 60 == 0:
-            return "\(value / 60) hr"
+            return String(localized: "\(value / 60) hr")
         default:
-            return "\(minutes) min"
+            return String(localized: "\(minutes) min")
         }
     }
 
@@ -111,7 +111,7 @@ final class PlanViewModel: ObservableObject {
                 statusMessage = "AI generation failed. Built an offline plan instead."
             }
         } else {
-            statusMessage = "Offline plan generated from your profile."
+            statusMessage = String(localized: "Offline plan generated from your profile.")
         }
 
         return localGenerator.generate(

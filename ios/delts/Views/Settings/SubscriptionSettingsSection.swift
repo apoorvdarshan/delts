@@ -21,9 +21,9 @@ struct SubscriptionSettingsSection: View {
 
                 if !premium.isSubscribed {
                     actionRow(
-                        title: "Get Delts Premium",
+                        title: String(localized: "Get Delts Premium"),
                         systemImage: "sparkles",
-                        value: "Unlock AI",
+                        value: String(localized: "Unlock AI"),
                         tint: .deltsAccent
                     ) {
                         showPaywall = true
@@ -32,9 +32,9 @@ struct SubscriptionSettingsSection: View {
                 }
 
                 actionRow(
-                    title: "Manage Subscription",
+                    title: String(localized: "Manage Subscription"),
                     systemImage: "creditcard.fill",
-                    value: "App Store",
+                    value: String(localized: "App Store"),
                     tint: .deltsSecondaryAccent
                 ) {
                     showManageSubscriptions = true
@@ -43,7 +43,7 @@ struct SubscriptionSettingsSection: View {
                 actionRow(
                     title: "Restore Purchases",
                     systemImage: "arrow.clockwise.circle.fill",
-                    value: isRestoring ? "Restoring…" : "",
+                    value: isRestoring ? String(localized: "Restoring…") : "",
                     tint: .deltsSecondaryAccent
                 ) {
                     restore()
@@ -112,7 +112,7 @@ struct SubscriptionSettingsSection: View {
 
     private var statusDetail: String? {
         guard premium.isSubscribed else {
-            return "AI Coach and calorie estimates are locked"
+            return String(localized: "AI Coach and calorie estimates are locked")
         }
         var parts: [String] = []
         if let plan = premium.activePlanTitle {
@@ -120,7 +120,7 @@ struct SubscriptionSettingsSection: View {
         }
         if let date = premium.expiresAt {
             let formatted = date.formatted(date: .abbreviated, time: .omitted)
-            parts.append(premium.willRenew ? "renews \(formatted)" : "expires \(formatted)")
+            parts.append(premium.willRenew ? String(localized: "renews \(formatted)") : String(localized: "expires \(formatted)"))
         }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }

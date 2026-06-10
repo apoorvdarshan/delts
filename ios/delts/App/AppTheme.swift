@@ -13,10 +13,10 @@ enum AppAppearance: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .system: return "System"
-        case .light: return "Light"
-        case .dark: return "Dark"
-        case .darker: return "Darker"
+        case .system: return String(localized: "System")
+        case .light: return String(localized: "Light")
+        case .dark: return String(localized: "Dark")
+        case .darker: return String(localized: "Darker")
         }
     }
 
@@ -53,11 +53,11 @@ enum DeltsTheme: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .lime: return "Lime"
-        case .cyan: return "Cyan"
-        case .pink: return "Pink"
-        case .amber: return "Amber"
-        case .violet: return "Violet"
+        case .lime: return String(localized: "Lime")
+        case .cyan: return String(localized: "Cyan")
+        case .pink: return String(localized: "Pink")
+        case .amber: return String(localized: "Amber")
+        case .violet: return String(localized: "Violet")
         }
     }
 

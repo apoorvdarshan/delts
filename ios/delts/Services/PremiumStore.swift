@@ -38,9 +38,9 @@ final class PremiumStore: ObservableObject {
     /// User-facing name of the active plan, e.g. "Yearly".
     var activePlanTitle: String? {
         guard let activeProductID else { return nil }
-        if activeProductID.contains("yearly") { return "Yearly" }
-        if activeProductID.contains("weekly") { return "Weekly" }
-        return "Premium"
+        if activeProductID.contains("yearly") { return String(localized: "Yearly") }
+        if activeProductID.contains("weekly") { return String(localized: "Weekly") }
+        return String(localized: "Premium")
     }
 
     private var updatesTask: Task<Void, Never>?
@@ -113,7 +113,7 @@ final class PremiumStore: ObservableObject {
         } catch {
             let cancelled = (error as? RevenueCat.ErrorCode) == .purchaseCancelledError
             if !cancelled {
-                lastErrorMessage = "The purchase could not be completed. Check your connection and try again."
+                lastErrorMessage = String(localized: "The purchase could not be completed. Check your connection and try again.")
             }
             return false
         }
@@ -124,10 +124,10 @@ final class PremiumStore: ObservableObject {
             let info = try await Purchases.shared.restorePurchases()
             apply(info)
             if !isSubscribed {
-                lastErrorMessage = "No active subscription was found for this Apple ID."
+                lastErrorMessage = String(localized: "No active subscription was found for this Apple ID.")
             }
         } catch {
-            lastErrorMessage = "Restore failed. Check your connection and try again."
+            lastErrorMessage = String(localized: "Restore failed. Check your connection and try again.")
         }
     }
 }

@@ -21,7 +21,7 @@ struct PlanBuilderView: View {
     }
 
     private var equipmentDetail: String {
-        viewModel.selectedEquipment.isEmpty ? "Profile gear" : "\(viewModel.selectedEquipment.count) selected"
+        viewModel.selectedEquipment.isEmpty ? String(localized: "Profile gear") : String(localized: "\(viewModel.selectedEquipment.count) selected")
     }
 
     var body: some View {
@@ -69,7 +69,7 @@ struct PlanBuilderView: View {
 
                 VStack(alignment: .leading, spacing: 0) {
                     PlanHeroBadge(
-                        title: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? "AI planner ready" : "Offline planner",
+                        title: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? String(localized: "AI planner ready") : String(localized: "Offline planner"),
                         systemImage: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? "sparkles" : "bolt.fill"
                     )
 
@@ -101,9 +101,9 @@ struct PlanBuilderView: View {
             }
 
             PlanMetricStrip(metrics: [
-                PlanMetric(title: "Level", value: viewModel.selectedExperience.title, systemImage: planExperienceIcon(viewModel.selectedExperience), tint: .deltsSecondaryAccent),
-                PlanMetric(title: "Gear", value: viewModel.selectedEquipment.isEmpty ? "Profile" : "\(viewModel.selectedEquipment.count)", systemImage: "dumbbell.fill"),
-                PlanMetric(title: "Mode", value: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? "AI" : "Local", systemImage: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? "sparkles" : "bolt.fill", tint: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? .deltsAccent : .deltsWarning)
+                PlanMetric(title: String(localized: "Level"), value: viewModel.selectedExperience.title, systemImage: planExperienceIcon(viewModel.selectedExperience), tint: .deltsSecondaryAccent),
+                PlanMetric(title: String(localized: "Gear"), value: viewModel.selectedEquipment.isEmpty ? String(localized: "Profile") : "\(viewModel.selectedEquipment.count)", systemImage: "dumbbell.fill"),
+                PlanMetric(title: String(localized: "Mode"), value: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? String(localized: "AI") : String(localized: "Local"), systemImage: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? "sparkles" : "bolt.fill", tint: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? .deltsAccent : .deltsWarning)
             ])
         }
     }
@@ -111,7 +111,7 @@ struct PlanBuilderView: View {
     private var generatorControls: some View {
         VStack(alignment: .leading, spacing: 0) {
             planControl(
-                "Muscle group",
+                String(localized: "Muscle group"),
                 systemImage: viewModel.selectedMuscleGroup.icon,
                 detail: viewModel.selectedMuscleGroup.title
             ) {
@@ -120,7 +120,7 @@ struct PlanBuilderView: View {
 
             PlanControlDivider()
 
-            planControl("Goal", systemImage: planGoalIcon(viewModel.selectedGoal), detail: viewModel.selectedGoal.title) {
+            planControl(String(localized: "Goal"), systemImage: planGoalIcon(viewModel.selectedGoal), detail: viewModel.selectedGoal.title) {
                 PlanChoiceRail(
                     options: FitnessGoal.planCases,
                     selection: $viewModel.selectedGoal,
@@ -132,7 +132,7 @@ struct PlanBuilderView: View {
             PlanControlDivider()
 
             planControl(
-                "Experience",
+                String(localized: "Experience"),
                 systemImage: planExperienceIcon(viewModel.selectedExperience),
                 detail: viewModel.selectedExperience.title
             ) {
@@ -147,7 +147,7 @@ struct PlanBuilderView: View {
             PlanControlDivider()
 
             planControl(
-                "Duration",
+                String(localized: "Duration"),
                 systemImage: planDurationIcon(viewModel.selectedDurationRange.targetMinutes),
                 detail: viewModel.selectedDurationRange.title
             ) {
@@ -161,7 +161,7 @@ struct PlanBuilderView: View {
 
             PlanControlDivider()
 
-            planControl("Equipment", systemImage: "dumbbell.fill", detail: equipmentDetail) {
+            planControl(String(localized: "Equipment"), systemImage: "dumbbell.fill", detail: equipmentDetail) {
                 PlanProfileEquipmentSummary(equipment: viewModel.selectedEquipment)
             }
         }
@@ -170,7 +170,7 @@ struct PlanBuilderView: View {
     private var generateBar: some View {
         VStack(spacing: 10) {
             PrimaryButton(
-                title: viewModel.isGenerating ? "Building Workout" : "Generate Workout",
+                title: viewModel.isGenerating ? String(localized: "Building Workout") : String(localized: "Generate Workout"),
                 systemImage: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? "sparkles" : "bolt.fill",
                 isLoading: viewModel.isGenerating
             ) {
@@ -206,7 +206,7 @@ struct PlanBuilderView: View {
 
     private var generationStatusText: String? {
         if viewModel.isGenerating {
-            return (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? "Building a tailored AI session." : "Building an offline session from your profile."
+            return (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? String(localized: "Building a tailored AI session.") : String(localized: "Building an offline session from your profile.")
         }
 
         return viewModel.statusMessage
@@ -488,12 +488,12 @@ private struct PlanEquipmentSection: Identifiable {
 
     static let all: [PlanEquipmentSection] = [
         PlanEquipmentSection(
-            title: "Free Weights",
+            title: String(localized: "Free Weights"),
             systemImage: "dumbbell.fill",
             items: [.dumbbells, .barbell, .bench]
         ),
         PlanEquipmentSection(
-            title: "Machines",
+            title: String(localized: "Machines"),
             systemImage: "gearshape.2.fill",
             items: [
                 .cableMachine,
@@ -508,7 +508,7 @@ private struct PlanEquipmentSection: Identifiable {
             ]
         ),
         PlanEquipmentSection(
-            title: "Bodyweight & Cardio",
+            title: String(localized: "Bodyweight & Cardio"),
             systemImage: "figure.run",
             items: [.pullUpBar, .treadmill, .bodyweight]
         )
@@ -600,9 +600,9 @@ struct WorkoutPlanView: View {
 
                 VStack(alignment: .leading, spacing: 0) {
                     PlanControlHeader(
-                        title: "Exercise order",
+                        title: String(localized: "Exercise order"),
                         systemImage: "list.number",
-                        detail: "\(exercises.count) moves"
+                        detail: String(localized: "\(exercises.count) moves")
                     )
                     .padding(.bottom, 8)
 
@@ -625,7 +625,7 @@ struct WorkoutPlanView: View {
         .navigationTitle("Workout")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
-            PrimaryButton(title: "Start Workout", systemImage: "play.fill") {
+            PrimaryButton(title: String(localized: "Start Workout"), systemImage: "play.fill") {
                 startRoute = ExerciseStartRoute(index: 0)
             }
             .padding(.horizontal, 20)
@@ -656,7 +656,7 @@ struct WorkoutPlanView: View {
 
                 VStack(alignment: .leading, spacing: 0) {
                     PlanHeroBadge(
-                        title: plan.generatedByAI ? "AI generated" : "Offline generated",
+                        title: plan.generatedByAI ? String(localized: "AI generated") : String(localized: "Offline generated"),
                         systemImage: plan.generatedByAI ? "sparkles" : "bolt.fill"
                     )
 
@@ -684,9 +684,9 @@ struct WorkoutPlanView: View {
             }
 
             PlanMetricStrip(metrics: [
-                PlanMetric(title: "Exercises", value: "\(exercises.count)", systemImage: "list.clipboard.fill", tint: .deltsSecondaryAccent),
-                PlanMetric(title: "Duration", value: "\(plan.durationMinutes)m", systemImage: planDurationIcon(plan.durationMinutes)),
-                PlanMetric(title: "Goal", value: plan.goal.title, systemImage: planGoalIcon(plan.goal), tint: .deltsAccent)
+                PlanMetric(title: String(localized: "Exercises"), value: "\(exercises.count)", systemImage: "list.clipboard.fill", tint: .deltsSecondaryAccent),
+                PlanMetric(title: String(localized: "Duration"), value: String(localized: "\(plan.durationMinutes)m"), systemImage: planDurationIcon(plan.durationMinutes)),
+                PlanMetric(title: String(localized: "Goal"), value: plan.goal.title, systemImage: planGoalIcon(plan.goal), tint: .deltsAccent)
             ])
         }
     }

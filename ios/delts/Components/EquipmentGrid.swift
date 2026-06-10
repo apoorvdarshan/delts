@@ -70,11 +70,11 @@ private struct EquipmentSection: Identifiable {
 
     static let all: [EquipmentSection] = [
         EquipmentSection(
-            title: "Free Weights",
+            title: String(localized: "Free Weights"),
             items: [.dumbbells, .barbell, .bench]
         ),
         EquipmentSection(
-            title: "Machines",
+            title: String(localized: "Machines"),
             items: [
                 .cableMachine,
                 .smithMachine,
@@ -88,7 +88,7 @@ private struct EquipmentSection: Identifiable {
             ]
         ),
         EquipmentSection(
-            title: "Bodyweight & Cardio",
+            title: String(localized: "Bodyweight & Cardio"),
             items: [.pullUpBar, .treadmill, .bodyweight]
         )
     ]

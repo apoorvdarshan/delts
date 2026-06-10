@@ -575,15 +575,15 @@ struct HomeView: View {
     }
 
     private var activeSessionDateTitle: String {
-        guard let sessionDate else { return "active day" }
+        guard let sessionDate else { return String(localized: "active day") }
         if Calendar.current.isDateInToday(sessionDate) {
-            return "Today"
+            return String(localized: "Today")
         }
         if Calendar.current.isDateInTomorrow(sessionDate) {
-            return "Tomorrow"
+            return String(localized: "Tomorrow")
         }
         if Calendar.current.isDateInYesterday(sessionDate) {
-            return "Yesterday"
+            return String(localized: "Yesterday")
         }
         return sessionDate.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
     }

@@ -126,8 +126,8 @@ struct StartWorkoutHero: View {
     var onBurnTap: (() -> Void)? = nil
 
     private var calorieBurnText: String {
-        if let burnKcal { return "\(burnKcal) kcal" }
-        return "-- kcal"
+        if let burnKcal { return String(localized: "\(burnKcal) kcal") }
+        return String(localized: "-- kcal")
     }
 
     var body: some View {
@@ -217,9 +217,9 @@ struct HomeSessionTimerButton: View {
     }
 
     private var accessibilityLabel: String {
-        if isRunning { return "Pause workout timer" }
-        if isPaused || hasSession { return "Resume workout timer" }
-        return "Start workout timer"
+        if isRunning { return String(localized: "Pause workout timer") }
+        if isPaused || hasSession { return String(localized: "Resume workout timer") }
+        return String(localized: "Start workout timer")
     }
 
     private func displayText(at date: Date) -> String {
@@ -239,14 +239,14 @@ private struct HomeSessionTimerSideControls: View {
     var body: some View {
         VStack(spacing: 8) {
             HomeTimerSideButton(
-                title: "Stop",
+                title: String(localized: "Stop"),
                 systemImage: "stop.fill",
                 role: .stop,
                 action: stopTimer
             )
 
             HomeTimerSideButton(
-                title: "Discard",
+                title: String(localized: "Discard"),
                 systemImage: "trash.fill",
                 role: .discard,
                 action: discardTimer
@@ -398,7 +398,7 @@ struct HomeSessionStatsStrip: View {
     var body: some View {
         HStack(spacing: 0) {
             HomeMetricCard(
-                label: "Sets",
+                label: String(localized: "Sets"),
                 value: "\(setCount)",
                 systemImage: "checklist",
                 isActive: setCount > 0
@@ -407,7 +407,7 @@ struct HomeSessionStatsStrip: View {
             HomeMetricDivider()
 
             HomeMetricCard(
-                label: "Workouts",
+                label: String(localized: "Workouts"),
                 value: "\(workoutCount)",
                 systemImage: "dumbbell.fill",
                 isActive: workoutCount > 0
@@ -416,7 +416,7 @@ struct HomeSessionStatsStrip: View {
             HomeMetricDivider()
 
             HomeMetricCard(
-                label: "Reps",
+                label: String(localized: "Reps"),
                 value: "\(repCount)",
                 systemImage: "repeat",
                 isActive: repCount > 0
@@ -428,7 +428,7 @@ struct HomeSessionStatsStrip: View {
                 if calorieBurnLocked, let onBurnTap {
                     Button(action: onBurnTap) {
                         HomeMetricCard(
-                            label: "Burn",
+                            label: String(localized: "Burn"),
                             value: calorieBurnText,
                             systemImage: "flame.fill",
                             isActive: false,
@@ -439,7 +439,7 @@ struct HomeSessionStatsStrip: View {
                     .accessibilityLabel("Calorie burn, locked. Unlock with Delts Premium.")
                 } else {
                     HomeMetricCard(
-                        label: "Burn",
+                        label: String(localized: "Burn"),
                         value: calorieBurnText,
                         systemImage: "flame.fill",
                         isActive: calorieBurnActive,
@@ -713,7 +713,7 @@ struct PlannedSetField: View {
                 .frame(width: 54, alignment: .leading)
 
             PlannedSetValueField(
-                placeholder: "Reps",
+                placeholder: String(localized: "Reps"),
                 text: $reps,
                 keyboardType: .numberPad,
                 focus: repsFocus,
@@ -723,7 +723,7 @@ struct PlannedSetField: View {
             .frame(maxWidth: .infinity)
 
             PlannedSetValueField(
-                placeholder: "RPE \(rpeScale.inputPlaceholder)",
+                placeholder: String(localized: "RPE \(rpeScale.inputPlaceholder)"),
                 text: $rpe,
                 keyboardType: rpeScale.allowsDecimalInput ? .decimalPad : .numberPad,
                 focus: rpeFocus,
@@ -1020,7 +1020,7 @@ struct GuidedWorkoutSessionView: View {
                                 .stroke((exercise.isDone ? Color.deltsAccent : Color.deltsHairline).opacity(0.40), lineWidth: 0.7)
                         }
 
-                    Text(exercise.isDone ? "Done" : "Mark as done")
+                    Text(exercise.isDone ? String(localized: "Done") : String(localized: "Mark as done"))
                         .font(.subheadline.weight(.heavy))
                         .foregroundStyle(exercise.isDone ? Color.deltsAccent : Color.deltsCharcoal)
                         .lineLimit(1)
@@ -1102,7 +1102,7 @@ struct GuidedWorkoutSessionView: View {
             }
 
             PrimaryButton(
-                title: isLastExercise ? "Finish Workout" : "Next",
+                title: isLastExercise ? String(localized: "Finish Workout") : String(localized: "Next"),
                 systemImage: isLastExercise ? "checkmark.seal.fill" : "arrow.right"
             ) {
                 markCurrentExerciseDone()
@@ -1124,8 +1124,8 @@ struct GuidedWorkoutSessionView: View {
     }
 
     private var currentPositionText: String {
-        guard !exercises.isEmpty else { return "Workout of the day" }
-        return "Exercise \(currentIndex + 1) of \(exercises.count)"
+        guard !exercises.isEmpty else { return String(localized: "Workout of the day") }
+        return String(localized: "Exercise \(currentIndex + 1) of \(exercises.count)")
     }
 
     private func elapsedDisplay(at date: Date) -> String {
@@ -1149,13 +1149,13 @@ private struct GuidedWorkoutMetricGrid: View {
     var body: some View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
-                guidedMetric(title: "Level", value: exercise.rawLevel, systemImage: "chart.bar.fill")
-                guidedMetric(title: "Category", value: exercise.category, systemImage: "tag")
+                guidedMetric(title: String(localized: "Level"), value: exercise.rawLevel, systemImage: "chart.bar.fill")
+                guidedMetric(title: String(localized: "Category"), value: exercise.category, systemImage: "tag")
             }
 
             HStack(spacing: 8) {
-                guidedMetric(title: "Primary", value: primaryText, systemImage: "scope")
-                guidedMetric(title: "Equipment", value: exercise.rawEquipment, systemImage: "dumbbell.fill")
+                guidedMetric(title: String(localized: "Primary"), value: primaryText, systemImage: "scope")
+                guidedMetric(title: String(localized: "Equipment"), value: exercise.rawEquipment, systemImage: "dumbbell.fill")
             }
         }
     }
@@ -1296,7 +1296,7 @@ struct WorkoutPickerSheet: View {
 
                 Section {
                     if exercises.isEmpty {
-                        Text(!showsSourcePicker || source == .saved ? "No saved workouts yet." : "No dataset workouts found.")
+                        Text(!showsSourcePicker || source == .saved ? String(localized: "No saved workouts yet.") : String(localized: "No dataset workouts found."))
                             .foregroundStyle(Color.deltsMutedText)
                             .listRowBackground(Color.deltsPanel.opacity(0.22))
                     } else {
@@ -1437,7 +1437,7 @@ struct WorkoutPickerSheet: View {
             HStack(spacing: 9) {
                 if !hidesPrimaryFilter {
                     filterMenuPill(
-                        title: "Primary",
+                        title: String(localized: "Primary"),
                         value: primaryFilterTitle,
                         systemImage: "scope"
                     ) {
@@ -1453,11 +1453,11 @@ struct WorkoutPickerSheet: View {
                 }
 
                 filterMenuPill(
-                    title: "Secondary",
+                    title: String(localized: "Secondary"),
                     value: selectionTitle(selectedSecondaryMuscles),
                     systemImage: "scope"
                 ) {
-                        menuChoice("All Secondary", isSelected: selectedSecondaryMuscles.isEmpty) {
+                        menuChoice(String(localized: "All Secondary"), isSelected: selectedSecondaryMuscles.isEmpty) {
                             selectedSecondaryMuscles.removeAll()
                         }
                         ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
@@ -1468,7 +1468,7 @@ struct WorkoutPickerSheet: View {
                     }
 
                 filterMenuPill(
-                    title: "Equipment",
+                    title: String(localized: "Equipment"),
                     value: equipmentFilterTitle,
                     systemImage: "dumbbell.fill"
                 ) {
@@ -1483,11 +1483,11 @@ struct WorkoutPickerSheet: View {
                 }
 
                 filterMenuPill(
-                    title: "Level",
+                    title: String(localized: "Level"),
                     value: selectionTitle(selectedLevels),
                     systemImage: "chart.bar.fill"
                 ) {
-                    menuChoice("All Levels", isSelected: selectedLevels.isEmpty) {
+                    menuChoice(String(localized: "All Levels"), isSelected: selectedLevels.isEmpty) {
                         selectedLevels.removeAll()
                     }
                     ForEach(service.availableLevels, id: \.self) { level in
@@ -1498,11 +1498,11 @@ struct WorkoutPickerSheet: View {
                 }
 
                 filterMenuPill(
-                    title: "Force",
+                    title: String(localized: "Force"),
                     value: selectionTitle(selectedForces),
                     systemImage: "arrow.left.arrow.right"
                 ) {
-                    menuChoice("All Forces", isSelected: selectedForces.isEmpty) {
+                    menuChoice(String(localized: "All Forces"), isSelected: selectedForces.isEmpty) {
                         selectedForces.removeAll()
                     }
                     ForEach(service.availableForces, id: \.self) { force in
@@ -1513,11 +1513,11 @@ struct WorkoutPickerSheet: View {
                 }
 
                 filterMenuPill(
-                    title: "Mechanic",
+                    title: String(localized: "Mechanic"),
                     value: selectionTitle(selectedMechanics),
                     systemImage: "gearshape"
                 ) {
-                    menuChoice("All Mechanics", isSelected: selectedMechanics.isEmpty) {
+                    menuChoice(String(localized: "All Mechanics"), isSelected: selectedMechanics.isEmpty) {
                         selectedMechanics.removeAll()
                     }
                     ForEach(service.availableMechanics, id: \.self) { mechanic in
@@ -1528,11 +1528,11 @@ struct WorkoutPickerSheet: View {
                 }
 
                 filterMenuPill(
-                    title: "Category",
+                    title: String(localized: "Category"),
                     value: selectionTitle(selectedCategories),
                     systemImage: "tag"
                 ) {
-                    menuChoice("All Categories", isSelected: selectedCategories.isEmpty) {
+                    menuChoice(String(localized: "All Categories"), isSelected: selectedCategories.isEmpty) {
                         selectedCategories.removeAll()
                     }
                     ForEach(service.availableCategoryCounts) { categoryCount in
@@ -1548,24 +1548,24 @@ struct WorkoutPickerSheet: View {
 
     private var equipmentFilterTitle: String {
         if selectedRawEquipment.isEmpty {
-            return "All \(rawEquipmentOptions.count)"
+            return String(localized: "All \(rawEquipmentOptions.count)")
         }
         return selectionTitle(selectedRawEquipment)
     }
 
     private var primaryFilterTitle: String {
         if selectedPrimaryMuscles.isEmpty {
-            return "All \(primaryFilterOptions.count)"
+            return String(localized: "All \(primaryFilterOptions.count)")
         }
         return selectionTitle(selectedPrimaryMuscles)
     }
 
     private var allPrimaryMenuTitle: String {
-        "All Primary (\(primaryFilterOptions.count))"
+        String(localized: "All Primary (\(primaryFilterOptions.count))")
     }
 
     private var allEquipmentMenuTitle: String {
-        "All Equipment (\(rawEquipmentOptions.count))"
+        String(localized: "All Equipment (\(rawEquipmentOptions.count))")
     }
 
     private func resetFilters() {
@@ -1602,7 +1602,7 @@ struct WorkoutPickerSheet: View {
     private func selectionTitle(_ selection: Set<String>) -> String {
         if selection.isEmpty { return "All" }
         if selection.count == 1 { return selection.first ?? "All" }
-        return "\(selection.count) selected"
+        return String(localized: "\(selection.count) selected")
     }
 
     private func singleStoredSelection(_ selection: Set<String>) -> Set<String> {
@@ -1701,7 +1701,7 @@ private struct CopyFromDayRow: View {
         let names = day.exercises.prefix(3).map(\.name).joined(separator: ", ")
         let remaining = day.exercises.count - 3
         guard remaining > 0 else { return names }
-        return "\(names) + \(remaining)"
+        return String(localized: "\(names) + \(remaining)")
     }
 
     var body: some View {
@@ -1735,7 +1735,7 @@ private struct CopyFromDayRow: View {
                         .font(.system(.title3, design: .rounded, weight: .black).monospacedDigit())
                         .foregroundStyle(Color.deltsAccent)
 
-                    Text(day.exercises.count == 1 ? "workout" : "workouts")
+                    Text(day.exercises.count == 1 ? String(localized: "workout") : String(localized: "workouts"))
                         .font(.caption2.weight(.heavy))
                         .foregroundStyle(Color.deltsMutedText)
                 }
@@ -1753,10 +1753,10 @@ private struct CopyFromDayRow: View {
 
     private var dayTitle: String {
         if Calendar.current.isDateInToday(day.date) {
-            return "Today"
+            return String(localized: "Today")
         }
         if Calendar.current.isDateInYesterday(day.date) {
-            return "Yesterday"
+            return String(localized: "Yesterday")
         }
         return day.date.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
     }

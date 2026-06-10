@@ -29,10 +29,10 @@ struct AboutSettingsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-                    AboutSection(title: "Release") {
+                    AboutSection(title: String(localized: "Release")) {
                         AboutRowStack {
                             AboutActionRow(
-                                title: "Check for Updates",
+                                title: String(localized: "Check for Updates"),
                                 systemImage: "arrow.down.circle.fill",
                                 value: appVersionText,
                                 tint: .deltsSecondaryAccent
@@ -41,18 +41,18 @@ struct AboutSettingsSection: View {
                             }
                             AboutDivider()
                             AboutActionRow(
-                                title: "Rate Delts",
+                                title: String(localized: "Rate Delts"),
                                 systemImage: "star.fill",
-                                value: "Native prompt",
+                                value: String(localized: "Native prompt"),
                                 tint: .deltsSecondaryAccent
                             ) {
                                 requestAppReview()
                             }
                             AboutDivider()
                             AboutActionRow(
-                                title: "Share Delts",
+                                title: String(localized: "Share Delts"),
                                 systemImage: "square.and.arrow.up",
-                                value: "App Store link",
+                                value: String(localized: "App Store link"),
                                 tint: .deltsSecondaryAccent
                             ) {
                                 shareApp()
@@ -60,21 +60,21 @@ struct AboutSettingsSection: View {
                         }
                     }
 
-                    AboutSection(title: "Feedback") {
+                    AboutSection(title: String(localized: "Feedback")) {
                         AboutRowStack {
                             AboutActionRow(
-                                title: "Report an Issue",
+                                title: String(localized: "Report an Issue"),
                                 systemImage: "exclamationmark.bubble.fill",
-                                value: "GitHub",
+                                value: String(localized: "GitHub"),
                                 tint: .red
                             ) {
                                 open(AboutLinks.githubIssueURL)
                             }
                             AboutDivider()
                             AboutActionRow(
-                                title: "Request a Feature",
+                                title: String(localized: "Request a Feature"),
                                 systemImage: "lightbulb.fill",
-                                value: "GitHub",
+                                value: String(localized: "GitHub"),
                                 tint: .deltsSecondaryAccent
                             ) {
                                 open(AboutLinks.githubFeatureURL)
@@ -82,10 +82,10 @@ struct AboutSettingsSection: View {
                         }
                     }
 
-                    AboutSection(title: "Contact") {
+                    AboutSection(title: String(localized: "Contact")) {
                         AboutRowStack {
                             AboutActionRow(
-                                title: "Contact Us",
+                                title: String(localized: "Contact Us"),
                                 systemImage: "envelope.fill",
                                 value: AboutLinks.contactEmail,
                                 tint: .deltsSecondaryAccent
@@ -94,7 +94,7 @@ struct AboutSettingsSection: View {
                             }
                             AboutDivider()
                             AboutActionRow(
-                                title: "Follow on X",
+                                title: String(localized: "Follow on X"),
                                 systemImage: "at",
                                 value: "@apoorvdarshan",
                                 tint: .deltsSecondaryAccent
@@ -103,7 +103,7 @@ struct AboutSettingsSection: View {
                             }
                             AboutDivider()
                             AboutActionRow(
-                                title: "Instagram",
+                                title: String(localized: "Instagram"),
                                 systemImage: "camera.fill",
                                 value: "@delts.fit",
                                 tint: .deltsSecondaryAccent
@@ -112,7 +112,7 @@ struct AboutSettingsSection: View {
                             }
                             AboutDivider()
                             AboutActionRow(
-                                title: "LinkedIn",
+                                title: String(localized: "LinkedIn"),
                                 systemImage: "person.crop.square.filled.and.at.rectangle",
                                 value: "Delts",
                                 tint: .deltsSecondaryAccent
@@ -122,10 +122,10 @@ struct AboutSettingsSection: View {
                         }
                     }
 
-                    AboutSection(title: "Support & Links") {
+                    AboutSection(title: String(localized: "Support & Links")) {
                         AboutRowStack {
                             AboutActionRow(
-                                title: "Support on Ko-fi",
+                                title: String(localized: "Support on Ko-fi"),
                                 systemImage: "cup.and.saucer.fill",
                                 value: "apoorvdarshan",
                                 tint: .deltsSecondaryAccent
@@ -134,18 +134,18 @@ struct AboutSettingsSection: View {
                             }
                             AboutDivider()
                             AboutActionRow(
-                                title: "Open Source",
+                                title: String(localized: "Open Source"),
                                 systemImage: "curlybraces.square.fill",
-                                value: "GitHub",
+                                value: String(localized: "GitHub"),
                                 tint: .deltsSecondaryAccent
                             ) {
                                 open(AboutLinks.githubRepoURL)
                             }
                             AboutDivider()
                             AboutActionRow(
-                                title: "Product Hunt",
+                                title: String(localized: "Product Hunt"),
                                 systemImage: "paperplane.fill",
-                                value: "Vote for Delts",
+                                value: String(localized: "Vote for Delts"),
                                 tint: .deltsSecondaryAccent
                             ) {
                                 open(AboutLinks.productHuntURL)
@@ -153,13 +153,13 @@ struct AboutSettingsSection: View {
                         }
                     }
 
-                    AboutSection(title: "Built by") {
+                    AboutSection(title: String(localized: "Built by")) {
                         VStack(spacing: 14) {
                             AboutRowStack {
                                 AboutActionRow(
                                     title: "Apoorv Darshan",
                                     systemImage: "person.fill",
-                                    value: "Creator",
+                                    value: String(localized: "Creator"),
                                     tint: .deltsSecondaryAccent
                                 ) {
                                     open(AboutLinks.xProfileURL)
@@ -187,10 +187,10 @@ struct AboutSettingsSection: View {
                         }
                     }
 
-                    AboutSection(title: "Legal") {
+                    AboutSection(title: String(localized: "Legal")) {
                         AboutRowStack {
                             AboutActionRow(
-                                title: "Privacy Policy",
+                                title: String(localized: "Privacy Policy"),
                                 systemImage: "hand.raised.fill",
                                 value: "delts.fit/privacy",
                                 tint: .deltsSecondaryAccent
@@ -199,7 +199,7 @@ struct AboutSettingsSection: View {
                             }
                             AboutDivider()
                             AboutActionRow(
-                                title: "Terms",
+                                title: String(localized: "Terms"),
                                 systemImage: "doc.text.fill",
                                 value: "delts.fit/terms",
                                 tint: .deltsSecondaryAccent
@@ -228,7 +228,7 @@ struct AboutSettingsSection: View {
         if let version, !version.isEmpty {
             return version
         }
-        return "Unavailable"
+        return String(localized: "Unavailable")
     }
 
     private func requestAppReview() {
@@ -279,7 +279,7 @@ struct AboutSettingsSection: View {
                 dismissButton: .default(Text("OK"))
             )
         case let .available(version, storeURL):
-            let message = "Version \(version) is available. You are on \(appVersionText)."
+            let message = String(localized: "Version \(version) is available. You are on \(appVersionText).")
             if let storeURL {
                 return Alert(
                     title: Text("Update Available"),
@@ -297,7 +297,7 @@ struct AboutSettingsSection: View {
                 dismissButton: .default(Text("OK"))
             )
         case let .upToDate(latestVersion):
-            let latestText = latestVersion.map { " Latest App Store version: \($0)." } ?? ""
+            let latestText = latestVersion.map { String(localized: " Latest App Store version: \($0).") } ?? ""
             return Alert(
                 title: Text("Delts Is Up to Date"),
                 message: Text("You are on \(appVersionText).\(latestText)"),
@@ -344,14 +344,14 @@ private enum AboutPlaceholder: Identifiable {
 
     var title: String {
         switch self {
-        case .share: return "Share Delts"
+        case .share: return String(localized: "Share Delts")
         }
     }
 
     var message: String {
         switch self {
         case .share:
-            return "The App Store share link will be added when the listing is ready."
+            return String(localized: "The App Store share link will be added when the listing is ready.")
         }
     }
 }

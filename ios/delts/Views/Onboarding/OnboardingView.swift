@@ -133,32 +133,32 @@ struct OnboardingView: View {
             profileStep(
                 profile: profile,
                 icon: "person.fill",
-                title: "Your details",
-                subtitle: "A few basics so Delts can tailor plans to you.",
+                title: String(localized: "Your details"),
+                subtitle: String(localized: "A few basics so Delts can tailor plans to you."),
                 section: .personalDetails
             )
         case .body:
             profileStep(
                 profile: profile,
                 icon: "scalemass.fill",
-                title: "Body metrics",
-                subtitle: "Used for progress tracking and calorie estimates.",
+                title: String(localized: "Body metrics"),
+                subtitle: String(localized: "Used for progress tracking and calorie estimates."),
                 section: .bodyMetrics
             )
         case .goals:
             profileStep(
                 profile: profile,
                 icon: "target",
-                title: "Training goals",
-                subtitle: "What you want out of your training.",
+                title: String(localized: "Training goals"),
+                subtitle: String(localized: "What you want out of your training."),
                 section: .trainingGoals
             )
         case .preferences:
             profileStep(
                 profile: profile,
                 icon: "slider.horizontal.3",
-                title: "Workout preferences",
-                subtitle: "How and where you like to train.",
+                title: String(localized: "Workout preferences"),
+                subtitle: String(localized: "How and where you like to train."),
                 section: .workoutPreferences
             )
         case .rate:
@@ -217,20 +217,20 @@ struct OnboardingView: View {
             VStack(spacing: 0) {
                 welcomeHighlight(
                     "figure.strengthtraining.traditional",
-                    "Plan & time sessions",
-                    "The red button runs your workout"
+                    String(localized: "Plan & time sessions"),
+                    String(localized: "The red button runs your workout")
                 )
                 cardDivider
                 welcomeHighlight(
                     "chart.line.uptrend.xyaxis",
-                    "Track your progress",
-                    "Weight, body fat, and workout history"
+                    String(localized: "Track your progress"),
+                    String(localized: "Weight, body fat, and workout history")
                 )
                 cardDivider
                 welcomeHighlight(
                     "sparkles",
-                    "AI Coach",
-                    "Chat, photos, and calorie estimates"
+                    String(localized: "AI Coach"),
+                    String(localized: "Chat, photos, and calorie estimates")
                 )
             }
             .padding(.vertical, 6)
@@ -290,7 +290,7 @@ struct OnboardingView: View {
 
     private var rateStep: some View {
         VStack(alignment: .leading, spacing: 18) {
-            stepHeader(icon: "star.fill", "Enjoying Delts?", "A rating helps other lifters find the app. It only takes a second.")
+            stepHeader(icon: "star.fill", String(localized: "Enjoying Delts?"), String(localized: "A rating helps other lifters find the app. It only takes a second."))
 
             VStack(spacing: 22) {
                 HStack(alignment: .center, spacing: 10) {
@@ -362,14 +362,14 @@ struct OnboardingView: View {
 
     private var termsStep: some View {
         VStack(alignment: .leading, spacing: 18) {
-            stepHeader(icon: "checkmark.shield.fill", "One last thing", "Review and accept to start using Delts.")
+            stepHeader(icon: "checkmark.shield.fill", String(localized: "One last thing"), String(localized: "Review and accept to start using Delts."))
 
             VStack(spacing: 0) {
-                termsLinkRow("hand.raised.fill", "Privacy Policy", "delts.fit/privacy") {
+                termsLinkRow("hand.raised.fill", String(localized: "Privacy Policy"), "delts.fit/privacy") {
                     open("https://delts.fit/privacy")
                 }
                 cardDivider
-                termsLinkRow("doc.text.fill", "Terms", "delts.fit/terms") {
+                termsLinkRow("doc.text.fill", String(localized: "Terms"), "delts.fit/terms") {
                     open("https://delts.fit/terms")
                 }
             }
@@ -493,9 +493,9 @@ struct OnboardingView: View {
 
     private var primaryTitle: String {
         switch step {
-        case .welcome: return "Get Started"
-        case .terms: return "Start Training"
-        default: return "Continue"
+        case .welcome: return String(localized: "Get Started")
+        case .terms: return String(localized: "Start Training")
+        default: return String(localized: "Continue")
         }
     }
 

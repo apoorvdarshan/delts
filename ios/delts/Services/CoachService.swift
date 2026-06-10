@@ -32,16 +32,16 @@ enum CoachServiceError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notConfigured:
-            return "Coach isn't available right now."
+            return String(localized: "Coach isn't available right now.")
         case .network:
-            return "Network error. Check your connection and try again."
+            return String(localized: "Network error. Check your connection and try again.")
         case .server(let code):
             if code == 503 {
-                return "Coach AI isn't set up on the server yet."
+                return String(localized: "Coach AI isn't set up on the server yet.")
             }
-            return "Coach request failed (\(code)). Try again."
+            return String(localized: "Coach request failed (\(code)). Try again.")
         case .empty:
-            return "Coach didn't return a response. Try rephrasing."
+            return String(localized: "Coach didn't return a response. Try rephrasing.")
         }
     }
 }

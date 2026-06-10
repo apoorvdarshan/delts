@@ -122,13 +122,13 @@ struct PaywallView: View {
 
     private var featureList: some View {
         VStack(spacing: 0) {
-            featureRow("bubble.left.and.text.bubble.right.fill", "Unlimited AI Coach", "Chat about training, form, and nutrition — it sees your real data")
+            featureRow("bubble.left.and.text.bubble.right.fill", String(localized: "Unlimited AI Coach"), String(localized: "Chat about training, form, and nutrition — it sees your real data"))
             divider
-            featureRow("photo.fill", "Photo analysis", "Send gym equipment, meals, or physique photos to the Coach")
+            featureRow("photo.fill", String(localized: "Photo analysis"), String(localized: "Send gym equipment, meals, or physique photos to the Coach"))
             divider
-            featureRow("flame.fill", "Calorie burn estimates", "Automatic kcal after every session, synced to Apple Health")
+            featureRow("flame.fill", String(localized: "Calorie burn estimates"), String(localized: "Automatic kcal after every session, synced to Apple Health"))
             divider
-            featureRow("chart.line.uptrend.xyaxis", "Burn in your History", "Every logged workout gets its energy filled in")
+            featureRow("chart.line.uptrend.xyaxis", String(localized: "Burn in your History"), String(localized: "Every logged workout gets its energy filled in"))
         }
         .padding(.vertical, 6)
         .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
@@ -175,16 +175,16 @@ struct PaywallView: View {
         VStack(spacing: 12) {
             planCard(
                 plan: .yearly,
-                title: "Yearly",
+                title: String(localized: "Yearly"),
                 price: store.yearlyPlan?.displayPrice ?? "$39.99",
                 caption: yearlyCaption,
-                badge: "BEST VALUE"
+                badge: String(localized: "BEST VALUE")
             )
             planCard(
                 plan: .weekly,
-                title: "Weekly",
+                title: String(localized: "Weekly"),
                 price: store.weeklyPlan?.displayPrice ?? "$1.99",
-                caption: "per week · cancel anytime",
+                caption: String(localized: "per week · cancel anytime"),
                 badge: nil
             )
         }
@@ -192,13 +192,13 @@ struct PaywallView: View {
 
     private var yearlyCaption: String {
         guard let yearly = store.yearlyPlan, let weekly = store.weeklyPlan else {
-            return "per year · save over 60%"
+            return String(localized: "per year · save over 60%")
         }
         let weeklyPerYear = weekly.price * 52
-        guard weeklyPerYear > 0 else { return "per year" }
+        guard weeklyPerYear > 0 else { return String(localized: "per year") }
         let savings = (1 - (yearly.price / weeklyPerYear)) * 100
         let rounded = NSDecimalNumber(decimal: savings).intValue
-        return rounded > 0 ? "per year · save \(rounded)% vs weekly" : "per year"
+        return rounded > 0 ? String(localized: "per year · save \(rounded)% vs weekly") : String(localized: "per year")
     }
 
     private func planCard(plan: Plan, title: String, price: String, caption: String, badge: String?) -> some View {
@@ -265,7 +265,7 @@ struct PaywallView: View {
     private var footer: some View {
         VStack(spacing: 10) {
             PrimaryButton(
-                title: store.isPurchasing ? "Processing" : "Continue",
+                title: store.isPurchasing ? String(localized: "Processing") : String(localized: "Continue"),
                 systemImage: "lock.open.fill",
                 isLoading: store.isPurchasing
             ) {

@@ -77,7 +77,7 @@ final class CoachViewModel: ObservableObject {
                 result = CoachMessage(role: .model, text: reply)
                 succeeded = true
             } catch {
-                let description = (error as? LocalizedError)?.errorDescription ?? "Something went wrong. Try again."
+                let description = (error as? LocalizedError)?.errorDescription ?? String(localized: "Something went wrong. Try again.")
                 result = CoachMessage(role: .model, text: description, isError: true)
             }
             guard let self else { return }

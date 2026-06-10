@@ -180,10 +180,10 @@ struct CoachView: View {
     }
 
     private static let suggestions = [
-        "Plan a workout for me today",
-        "How is my body progress trending?",
-        "Give me tips to reach my goal",
-        "Review my last workout"
+        String(localized: "Plan a workout for me today"),
+        String(localized: "How is my body progress trending?"),
+        String(localized: "Give me tips to reach my goal"),
+        String(localized: "Review my last workout")
     ]
 
     // MARK: - Input bar

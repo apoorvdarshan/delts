@@ -33,9 +33,9 @@ private enum MeasurementSystem: String, CaseIterable, Hashable {
     var title: String {
         switch self {
         case .metric:
-            return "Metric"
+            return String(localized: "Metric")
         case .imperial:
-            return "Imperial"
+            return String(localized: "Imperial")
         }
     }
 }
@@ -138,25 +138,25 @@ struct ProfileEditorView: View {
 
     private var personalDetailsSection: some View {
         ProfileSection(
-            title: "Personal Details",
-            subtitle: "Basic profile details used to shape plans.",
+            title: String(localized: "Personal Details"),
+            subtitle: String(localized: "Basic profile details used to shape plans."),
             systemImage: "person.text.rectangle"
         ) {
             ProfileRowStack {
-                ProfileTextInputRow(title: "Name", systemImage: "person.fill", text: nameBinding, showsKeyboardDone: true)
+                ProfileTextInputRow(title: String(localized: "Name"), systemImage: "person.fill", text: nameBinding, showsKeyboardDone: true)
                 ProfileDivider()
                 ProfileSexImagePicker(selection: genderBinding)
                 ProfileDivider()
                 ProfileIntegerPickerRow(
-                    title: "Age",
+                    title: String(localized: "Age"),
                     systemImage: "calendar",
                     value: ageBinding,
                     range: ageRange,
-                    unit: "yr"
+                    unit: String(localized: "yr")
                 )
                 ProfileDivider()
                 ProfileHeightPickerRow(
-                    title: "Height",
+                    title: String(localized: "Height"),
                     systemImage: "ruler",
                     system: heightMeasurementSystemBinding,
                     centimeters: heightBinding
@@ -167,27 +167,27 @@ struct ProfileEditorView: View {
 
     private var bodyMetricsSection: some View {
         ProfileSection(
-            title: "Body Metrics",
-            subtitle: "Current body data, targets, and health sync.",
+            title: String(localized: "Body Metrics"),
+            subtitle: String(localized: "Current body data, targets, and health sync."),
             systemImage: "figure.arms.open"
         ) {
             ProfileRowStack {
                 ProfileWeightPickerRow(
-                    title: "Current weight",
+                    title: String(localized: "Current weight"),
                     systemImage: "scalemass",
                     system: weightMeasurementSystemBinding,
                     kilograms: weightBinding
                 )
                 ProfileDivider()
                 ProfileWeightPickerRow(
-                    title: "Goal weight",
+                    title: String(localized: "Goal weight"),
                     systemImage: "target",
                     system: weightMeasurementSystemBinding,
                     kilograms: goalWeightBinding
                 )
                 ProfileDivider()
                 ProfileBodyFatRangePickerRow(
-                    title: "Current body fat",
+                    title: String(localized: "Current body fat"),
                     systemImage: "percent",
                     value: currentBodyFatBinding,
                     isExact: $currentBodyFatIsExact,
@@ -195,14 +195,14 @@ struct ProfileEditorView: View {
                 )
                 ProfileDivider()
                 ProfileBodyFatRangePickerRow(
-                    title: "Goal body fat",
+                    title: String(localized: "Goal body fat"),
                     systemImage: "scope",
                     value: desiredBodyFatBinding,
                     isExact: $goalBodyFatIsExact,
                     sex: profile.gender
                 )
                 ProfileDivider()
-                ProfileFieldRow(title: "Apple Health", systemImage: "heart.text.square") {
+                ProfileFieldRow(title: String(localized: "Apple Health"), systemImage: "heart.text.square") {
                     Toggle("", isOn: appleHealthBinding)
                         .labelsHidden()
                 }
@@ -249,13 +249,13 @@ struct ProfileEditorView: View {
 
     private var trainingGoalsSection: some View {
         ProfileSection(
-            title: "Training Goals",
-            subtitle: "Targets, focus areas, and limits before plans are generated.",
+            title: String(localized: "Training Goals"),
+            subtitle: String(localized: "Targets, focus areas, and limits before plans are generated."),
             systemImage: "scope"
         ) {
             ProfileRowStack {
                 ProfileMenuPicker(
-                    title: "Level",
+                    title: String(localized: "Level"),
                     systemImage: "chart.line.uptrend.xyaxis",
                     selection: datasetLevelBinding,
                     options: exerciseLibraryService.availableLevels,
@@ -263,7 +263,7 @@ struct ProfileEditorView: View {
                 )
                 ProfileDivider()
                 ProfileMultiSelectMenuRow(
-                    title: "Goals",
+                    title: String(localized: "Goals"),
                     systemImage: "flag.checkered",
                     options: profileGoalOptions,
                     selection: selectedGoalsBinding,
@@ -271,7 +271,7 @@ struct ProfileEditorView: View {
                 )
                 if selectedGoalTitles.contains(otherGoalTitle) {
                     ProfileDivider()
-                    ProfileTextAreaRow(title: "Extra goals", systemImage: "text.alignleft", text: extraGoalsBinding)
+                    ProfileTextAreaRow(title: String(localized: "Extra goals"), systemImage: "text.alignleft", text: extraGoalsBinding)
                 }
                 ProfileDivider()
                 ProfileTargetMuscleSelectorRow(
@@ -281,7 +281,7 @@ struct ProfileEditorView: View {
                 )
                 ProfileDivider()
                 ProfileToggleInfoRow(
-                    title: "Target-only Primary",
+                    title: String(localized: "Target-only Primary"),
                     systemImage: "scope",
                     isOn: $showOnlyTargetPrimaryFilters
                 ) {
@@ -289,7 +289,7 @@ struct ProfileEditorView: View {
                 }
                 ProfileDivider()
                 ProfileMultiSelectMenuRow(
-                    title: "Issues",
+                    title: String(localized: "Issues"),
                     systemImage: "exclamationmark.triangle.fill",
                     options: FitnessIssue.allCases,
                     selection: issuesBinding,
@@ -298,7 +298,7 @@ struct ProfileEditorView: View {
                 if profile.fitnessIssues.contains(.other) {
                     ProfileDivider()
                     ProfileTextAreaRow(
-                        title: "Extra issues",
+                        title: String(localized: "Extra issues"),
                         systemImage: "text.bubble",
                         text: extraIssuesBinding
                     )
@@ -309,21 +309,21 @@ struct ProfileEditorView: View {
 
     private var workoutPreferencesSection: some View {
         ProfileSection(
-            title: "Workout Preferences",
-            subtitle: "How training should fit into the week.",
+            title: String(localized: "Workout Preferences"),
+            subtitle: String(localized: "How training should fit into the week."),
             systemImage: "calendar.badge.clock"
         ) {
             ProfileRowStack {
                 ProfileMenuPicker(
-                    title: "Frequency",
+                    title: String(localized: "Frequency"),
                     systemImage: "calendar",
                     selection: frequencyBinding,
                     options: frequencyOptions,
-                    label: { "\($0) days/week" }
+                    label: { String(localized: "\($0) days/week") }
                 )
                 ProfileDivider()
                 ProfileMenuPicker(
-                    title: "Workout duration",
+                    title: String(localized: "Workout duration"),
                     systemImage: "timer",
                     selection: durationRangeBinding,
                     options: WorkoutDurationRangeOption.options,
@@ -331,20 +331,20 @@ struct ProfileEditorView: View {
                 )
                 ProfileDivider()
                 ProfileToggleRow(
-                    title: "Week starts Monday",
+                    title: String(localized: "Week starts Monday"),
                     systemImage: "calendar.badge.clock",
                     isOn: $weekStartsOnMonday
                 )
                 ProfileDivider()
                 ProfileWorkoutSplitPickerRow(
-                    title: "Workout split",
+                    title: String(localized: "Workout split"),
                     systemImage: "square.split.2x2",
                     selection: splitBinding
                 )
                 if profile.workoutSplit == .custom {
                     ProfileDivider()
                     ProfileTextInputRow(
-                        title: "Custom split",
+                        title: String(localized: "Custom split"),
                         systemImage: "text.line.first.and.arrowtriangle.forward",
                         text: customWorkoutSplitBinding,
                         showsKeyboardDone: true
@@ -352,13 +352,13 @@ struct ProfileEditorView: View {
                 }
                 ProfileDivider()
                 ProfileRPEScalePickerRow(
-                    title: "RPE scale",
+                    title: String(localized: "RPE scale"),
                     systemImage: "gauge.medium",
                     selection: rpeScaleBinding
                 )
                 ProfileDivider()
                 ProfileEquipmentImagePickerRow(
-                    title: "Equipment",
+                    title: String(localized: "Equipment"),
                     systemImage: "dumbbell.fill",
                     options: exerciseLibraryService.availableRawEquipment,
                     exercises: exerciseLibraryService.exercises,
@@ -371,13 +371,13 @@ struct ProfileEditorView: View {
 
     private var strengthSection: some View {
         ProfileSection(
-            title: "Strength Numbers",
-            subtitle: "Optional 1RM anchors for load guidance.",
+            title: String(localized: "Strength Numbers"),
+            subtitle: String(localized: "Optional 1RM anchors for load guidance."),
             systemImage: "scalemass.fill"
         ) {
             ProfileRowStack {
                 ProfileNumberInputRow(
-                    title: "Bench Press",
+                    title: String(localized: "Bench Press"),
                     systemImage: "figure.strengthtraining.traditional",
                     assetImageName: "one_rm_icon_bench",
                     system: weightMeasurementSystemBinding,
@@ -385,7 +385,7 @@ struct ProfileEditorView: View {
                 )
                 ProfileDivider()
                 ProfileNumberInputRow(
-                    title: "Squat",
+                    title: String(localized: "Squat"),
                     systemImage: "figure.strengthtraining.functional",
                     assetImageName: "one_rm_icon_squat",
                     system: weightMeasurementSystemBinding,
@@ -393,7 +393,7 @@ struct ProfileEditorView: View {
                 )
                 ProfileDivider()
                 ProfileNumberInputRow(
-                    title: "Deadlift",
+                    title: String(localized: "Deadlift"),
                     systemImage: "figure.core.training",
                     assetImageName: "one_rm_icon_deadlift",
                     system: weightMeasurementSystemBinding,
@@ -401,7 +401,7 @@ struct ProfileEditorView: View {
                 )
                 ProfileDivider()
                 ProfileNumberInputRow(
-                    title: "Overhead Press",
+                    title: String(localized: "Overhead Press"),
                     systemImage: "arrow.up",
                     assetImageName: "one_rm_icon_overhead_press",
                     system: weightMeasurementSystemBinding,
@@ -413,15 +413,15 @@ struct ProfileEditorView: View {
 
     private var appPreferencesSection: some View {
         ProfileSection(
-            title: "App Preferences",
-            subtitle: "Display options for Delts.",
+            title: String(localized: "App Preferences"),
+            subtitle: String(localized: "Display options for Delts."),
             systemImage: "gearshape.fill"
         ) {
             ProfileRowStack {
                 ProfileThemePickerRow(selection: deltsThemeBinding)
                 ProfileDivider()
                 ProfileMenuPicker(
-                    title: "Appearance",
+                    title: String(localized: "Appearance"),
                     systemImage: "circle.lefthalf.filled",
                     selection: appAppearanceBinding,
                     options: AppAppearance.allCases,
@@ -1098,7 +1098,7 @@ private struct ProfileDoneAccessoryTextField: UIViewRepresentable {
 
         func makeAccessoryToolbar() -> UIToolbar {
             let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
-            let doneItem = UIBarButtonItem(title: "Done", style: .plain, target: self, action: #selector(doneTapped))
+            let doneItem = UIBarButtonItem(title: String(localized: "Done"), style: .plain, target: self, action: #selector(doneTapped))
             doneItem.setTitleTextAttributes(
                 [
                     .font: UIFont.boldSystemFont(ofSize: 17),
@@ -1157,7 +1157,7 @@ private struct ProfileSexImagePicker: View {
     ]
 
     var body: some View {
-        ProfileFieldRow(title: "Sex", systemImage: "person.2") {
+        ProfileFieldRow(title: String(localized: "Sex"), systemImage: "person.2") {
             Button {
                 isPickerPresented = true
             } label: {
@@ -1300,7 +1300,7 @@ private struct ProfileNumberInputRow: View {
     }
 
     private var unit: String {
-        system == .metric ? "kg" : "lb"
+        system == .metric ? String(localized: "kg") : String(localized: "lb")
     }
 
     var body: some View {
@@ -1367,10 +1367,10 @@ private struct ProfileHeightPickerRow: View {
     private var displayText: String {
         switch system {
         case .metric:
-            return "\(profileFormatDecimal(centimeters)) cm"
+            return String(localized: "\(profileFormatDecimal(centimeters)) cm")
         case .imperial:
             let parts = profileImperialHeightParts(fromCentimeters: centimeters)
-            return "\(parts.feet) ft \(parts.inches) in"
+            return String(localized: "\(parts.feet) ft \(parts.inches) in")
         }
     }
 
@@ -1413,7 +1413,7 @@ private struct ProfileWeightPickerRow: View {
     }
 
     private var unit: String {
-        system == .metric ? "kg" : "lb"
+        system == .metric ? String(localized: "kg") : String(localized: "lb")
     }
 
     private var displayText: String {
@@ -1435,7 +1435,7 @@ private struct ProfileWeightPickerRow: View {
                     initialSystem: system,
                     metricRange: 30...250,
                     imperialRange: 66...551,
-                    confirmationTitle: "Save"
+                    confirmationTitle: String(localized: "Save")
                 ) { newKilograms, newSystem in
                     system = newSystem
                     kilograms = newKilograms
@@ -1643,8 +1643,8 @@ private struct ProfileBodyFatExactWheelPicker: View {
                 .frame(maxWidth: .infinity, alignment: .center)
 
             HStack(spacing: 10) {
-                ProfileWheelColumn(title: "Whole", selection: $whole, values: Array(0...60)) { "\($0)" }
-                ProfileWheelColumn(title: "Decimal", selection: $decimal, values: Array(0...9)) { ".\($0)" }
+                ProfileWheelColumn(title: String(localized: "Whole"), selection: $whole, values: Array(0...60)) { "\($0)" }
+                ProfileWheelColumn(title: String(localized: "Decimal"), selection: $decimal, values: Array(0...9)) { ".\($0)" }
 
                 Text("%")
                     .font(.headline.weight(.bold))
@@ -1726,23 +1726,23 @@ private struct ProfileBodyFatRange: Identifiable {
     let summary: String
 
     private static let maleRanges: [ProfileBodyFatRange] = [
-        ProfileBodyFatRange(id: "06_09", title: "6-9%", lowerBound: 6, upperBound: 9, storedValue: 8, summary: "Very lean"),
-        ProfileBodyFatRange(id: "10_13", title: "10-13%", lowerBound: 10, upperBound: 13, storedValue: 12, summary: "Lean"),
-        ProfileBodyFatRange(id: "14_17", title: "14-17%", lowerBound: 14, upperBound: 17, storedValue: 16, summary: "Fit"),
-        ProfileBodyFatRange(id: "18_22", title: "18-22%", lowerBound: 18, upperBound: 22, storedValue: 20, summary: "Average"),
-        ProfileBodyFatRange(id: "23_27", title: "23-27%", lowerBound: 23, upperBound: 27, storedValue: 25, summary: "Soft"),
-        ProfileBodyFatRange(id: "28_32", title: "28-32%", lowerBound: 28, upperBound: 32, storedValue: 30, summary: "Fuller"),
-        ProfileBodyFatRange(id: "33_plus", title: "33%+", lowerBound: 33, upperBound: nil, storedValue: 36, summary: "High")
+        ProfileBodyFatRange(id: "06_09", title: "6-9%", lowerBound: 6, upperBound: 9, storedValue: 8, summary: String(localized: "Very lean")),
+        ProfileBodyFatRange(id: "10_13", title: "10-13%", lowerBound: 10, upperBound: 13, storedValue: 12, summary: String(localized: "Lean")),
+        ProfileBodyFatRange(id: "14_17", title: "14-17%", lowerBound: 14, upperBound: 17, storedValue: 16, summary: String(localized: "Fit")),
+        ProfileBodyFatRange(id: "18_22", title: "18-22%", lowerBound: 18, upperBound: 22, storedValue: 20, summary: String(localized: "Average")),
+        ProfileBodyFatRange(id: "23_27", title: "23-27%", lowerBound: 23, upperBound: 27, storedValue: 25, summary: String(localized: "Soft")),
+        ProfileBodyFatRange(id: "28_32", title: "28-32%", lowerBound: 28, upperBound: 32, storedValue: 30, summary: String(localized: "Fuller")),
+        ProfileBodyFatRange(id: "33_plus", title: "33%+", lowerBound: 33, upperBound: nil, storedValue: 36, summary: String(localized: "High"))
     ]
 
     private static let femaleRanges: [ProfileBodyFatRange] = [
-        ProfileBodyFatRange(id: "06_09", title: "6-9%", lowerBound: 6, upperBound: 9, storedValue: 8, summary: "Very lean"),
-        ProfileBodyFatRange(id: "10_13", title: "10-13%", lowerBound: 10, upperBound: 13, storedValue: 12, summary: "Lean"),
-        ProfileBodyFatRange(id: "14_17", title: "14-17%", lowerBound: 14, upperBound: 17, storedValue: 16, summary: "Fit"),
-        ProfileBodyFatRange(id: "18_22", title: "18-22%", lowerBound: 18, upperBound: 22, storedValue: 20, summary: "Average"),
-        ProfileBodyFatRange(id: "23_27", title: "23-27%", lowerBound: 23, upperBound: 27, storedValue: 25, summary: "Soft"),
-        ProfileBodyFatRange(id: "28_32", title: "28-32%", lowerBound: 28, upperBound: 32, storedValue: 30, summary: "Fuller"),
-        ProfileBodyFatRange(id: "33_plus", title: "33%+", lowerBound: 33, upperBound: nil, storedValue: 36, summary: "High")
+        ProfileBodyFatRange(id: "06_09", title: "6-9%", lowerBound: 6, upperBound: 9, storedValue: 8, summary: String(localized: "Very lean")),
+        ProfileBodyFatRange(id: "10_13", title: "10-13%", lowerBound: 10, upperBound: 13, storedValue: 12, summary: String(localized: "Lean")),
+        ProfileBodyFatRange(id: "14_17", title: "14-17%", lowerBound: 14, upperBound: 17, storedValue: 16, summary: String(localized: "Fit")),
+        ProfileBodyFatRange(id: "18_22", title: "18-22%", lowerBound: 18, upperBound: 22, storedValue: 20, summary: String(localized: "Average")),
+        ProfileBodyFatRange(id: "23_27", title: "23-27%", lowerBound: 23, upperBound: 27, storedValue: 25, summary: String(localized: "Soft")),
+        ProfileBodyFatRange(id: "28_32", title: "28-32%", lowerBound: 28, upperBound: 32, storedValue: 30, summary: String(localized: "Fuller")),
+        ProfileBodyFatRange(id: "33_plus", title: "33%+", lowerBound: 33, upperBound: nil, storedValue: 36, summary: String(localized: "High"))
     ]
 
     static func options(for sex: String) -> [ProfileBodyFatRange] {
@@ -1868,8 +1868,8 @@ private struct ProfileDecimalWheelSheet: View {
                     .frame(maxWidth: .infinity, alignment: .center)
 
                 HStack(spacing: 10) {
-                    ProfileWheelColumn(title: "Whole", selection: $whole, values: wholeOptions) { "\($0)" }
-                    ProfileWheelColumn(title: "Decimal", selection: $decimal, values: Array(0...9)) { ".\($0)" }
+                    ProfileWheelColumn(title: String(localized: "Whole"), selection: $whole, values: wholeOptions) { "\($0)" }
+                    ProfileWheelColumn(title: String(localized: "Decimal"), selection: $decimal, values: Array(0...9)) { ".\($0)" }
 
                     Text(unit)
                         .font(.headline.weight(.bold))
@@ -1922,7 +1922,7 @@ private struct ProfileMassWheelSheet: View {
         initialSystem: MeasurementSystem,
         metricRange: ClosedRange<Int>,
         imperialRange: ClosedRange<Int>,
-        confirmationTitle: String = "Done",
+        confirmationTitle: String = String(localized: "Done"),
         onSave: @escaping (Double, MeasurementSystem) -> Void
     ) {
         let initialDisplayValue = initialSystem == .metric ? initialKilograms : initialKilograms * 2.2046226218
@@ -1938,7 +1938,7 @@ private struct ProfileMassWheelSheet: View {
     }
 
     private var unit: String {
-        selectedSystem == .metric ? "kg" : "lb"
+        selectedSystem == .metric ? String(localized: "kg") : String(localized: "lb")
     }
 
     private var wholeOptions: [Int] {
@@ -1979,8 +1979,8 @@ private struct ProfileMassWheelSheet: View {
                     .frame(maxWidth: .infinity, alignment: .center)
 
                 HStack(spacing: 10) {
-                    ProfileWheelColumn(title: "Whole", selection: $whole, values: wholeOptions) { "\($0)" }
-                    ProfileWheelColumn(title: "Decimal", selection: $decimal, values: Array(0...9)) { ".\($0)" }
+                    ProfileWheelColumn(title: String(localized: "Whole"), selection: $whole, values: wholeOptions) { "\($0)" }
+                    ProfileWheelColumn(title: String(localized: "Decimal"), selection: $decimal, values: Array(0...9)) { ".\($0)" }
 
                     Text(unit)
                         .font(.headline.weight(.bold))
@@ -2063,9 +2063,9 @@ private struct ProfileHeightWheelSheet: View {
     private var displayText: String {
         switch selectedSystem {
         case .metric:
-            return "\(profileFormatDecimal(selectedCentimeters)) cm"
+            return String(localized: "\(profileFormatDecimal(selectedCentimeters)) cm")
         case .imperial:
-            return "\(feet) ft \(inches) in"
+            return String(localized: "\(feet) ft \(inches) in")
         }
     }
 
@@ -2096,8 +2096,8 @@ private struct ProfileHeightWheelSheet: View {
 
                 if selectedSystem == .metric {
                     HStack(spacing: 10) {
-                        ProfileWheelColumn(title: "Whole", selection: $centimetersWhole, values: Array(120...230)) { "\($0)" }
-                        ProfileWheelColumn(title: "Decimal", selection: $centimetersDecimal, values: Array(0...9)) { ".\($0)" }
+                        ProfileWheelColumn(title: String(localized: "Whole"), selection: $centimetersWhole, values: Array(120...230)) { "\($0)" }
+                        ProfileWheelColumn(title: String(localized: "Decimal"), selection: $centimetersDecimal, values: Array(0...9)) { ".\($0)" }
 
                         Text("cm")
                             .font(.headline.weight(.bold))
@@ -2107,8 +2107,8 @@ private struct ProfileHeightWheelSheet: View {
                     .frame(height: 190)
                 } else {
                     HStack(spacing: 8) {
-                        ProfileWheelColumn(title: "Feet", selection: $feet, values: Array(3...8)) { "\($0)" }
-                        ProfileWheelColumn(title: "Inches", selection: $inches, values: Array(0...11)) { "\($0)" }
+                        ProfileWheelColumn(title: String(localized: "Feet"), selection: $feet, values: Array(3...8)) { "\($0)" }
+                        ProfileWheelColumn(title: String(localized: "Inches"), selection: $inches, values: Array(0...11)) { "\($0)" }
                     }
                     .frame(height: 190)
                 }
@@ -2285,7 +2285,7 @@ private struct ProfileThemePickerRow: View {
     }
 
     var body: some View {
-        ProfileControlBlock(title: "Theme", systemImage: "paintpalette.fill") {
+        ProfileControlBlock(title: String(localized: "Theme"), systemImage: "paintpalette.fill") {
             LazyVGrid(columns: columns, spacing: 8) {
                 ForEach(DeltsTheme.allCases) { theme in
                     Button {
@@ -2482,12 +2482,12 @@ private struct ProfileMultiSelectMenuRow<Option: Hashable>: View {
 
     private var summary: String {
         if selectedTitles.isEmpty {
-            return "None"
+            return String(localized: "None")
         }
         if selectedTitles.count <= 2 {
             return selectedTitles.joined(separator: ", ")
         }
-        return "\(selectedTitles.count) selected"
+        return String(localized: "\(selectedTitles.count) selected")
     }
 
     private var selectedTitles: [String] {
@@ -2553,12 +2553,12 @@ private struct ProfileEquipmentImagePickerRow: View {
 
     private var summary: String {
         if selectedTitles.isEmpty {
-            return "None"
+            return String(localized: "None")
         }
         if selectedTitles.count <= 2 {
             return selectedTitles.joined(separator: ", ")
         }
-        return "\(selectedTitles.count) selected"
+        return String(localized: "\(selectedTitles.count) selected")
     }
 
     private var selectedTitles: [String] {
@@ -2797,22 +2797,22 @@ private extension RPEScale {
     var profileDescription: String {
         switch self {
         case .strength:
-            return "Best for lifting: rate effort by how many reps you had left."
+            return String(localized: "Best for lifting: rate effort by how many reps you had left.")
         case .cr10:
-            return "General effort scale for strength, conditioning, and mixed sessions."
+            return String(localized: "General effort scale for strength, conditioning, and mixed sessions.")
         case .borg:
-            return "Classic endurance scale tied to breathing, fatigue, and heart rate."
+            return String(localized: "Classic endurance scale tied to breathing, fatigue, and heart rate.")
         }
     }
 
     var profileInputDetail: String {
         switch self {
         case .strength:
-            return "Range 1-10 - decimals allowed"
+            return String(localized: "Range 1-10 - decimals allowed")
         case .cr10:
-            return "Range 0-10 - decimals allowed"
+            return String(localized: "Range 0-10 - decimals allowed")
         case .borg:
-            return "Range 6-20 - whole numbers"
+            return String(localized: "Range 6-20 - whole numbers")
         }
     }
 }
@@ -3048,23 +3048,23 @@ private extension WorkoutSplit {
     var profileDescription: String {
         switch self {
         case .fullBody:
-            return "Train the whole body each workout with broad coverage."
+            return String(localized: "Train the whole body each workout with broad coverage.")
         case .upperLower:
-            return "Alternate upper-body, lower-body, and core-focused days."
+            return String(localized: "Alternate upper-body, lower-body, and core-focused days.")
         case .pushPullLegs:
-            return "Group exercises into push, pull, legs, and core work."
+            return String(localized: "Group exercises into push, pull, legs, and core work.")
         case .broSplit:
-            return "Focus each day around one major muscle or body region."
+            return String(localized: "Focus each day around one major muscle or body region.")
         case .arnoldSplit:
-            return "Pair chest/back, shoulders/arms, legs, and core days."
+            return String(localized: "Pair chest/back, shoulders/arms, legs, and core days.")
         case .pushPull:
-            return "Split work by pushing and pulling patterns across the body."
+            return String(localized: "Split work by pushing and pulling patterns across the body.")
         case .antagonistSplit:
-            return "Pair opposing muscle groups for balanced sessions."
+            return String(localized: "Pair opposing muscle groups for balanced sessions.")
         case .hybridSplit:
-            return "Mix compound strength days with accessory hypertrophy work."
+            return String(localized: "Mix compound strength days with accessory hypertrophy work.")
         case .custom:
-            return "Use your own split text for plan prompts and filtering."
+            return String(localized: "Use your own split text for plan prompts and filtering.")
         }
     }
 }
@@ -3240,7 +3240,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "chest",
             title: "Chest",
-            detail: "Pecs",
+            detail: String(localized: "Pecs"),
             systemImage: "figure.strengthtraining.traditional",
             muscles: ["Chest"],
             isComposite: false
@@ -3248,7 +3248,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "shoulders",
             title: "Shoulders",
-            detail: "Delts",
+            detail: String(localized: "Delts"),
             systemImage: "figure.strengthtraining.functional",
             muscles: ["Shoulders"],
             isComposite: false
@@ -3256,7 +3256,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "abdominals",
             title: "Abdominals",
-            detail: "Abdominals",
+            detail: String(localized: "Abdominals"),
             systemImage: "figure.core.training",
             muscles: ["Abdominals"],
             isComposite: false
@@ -3264,7 +3264,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "biceps",
             title: "Biceps",
-            detail: "Front upper arm",
+            detail: String(localized: "Front upper arm"),
             systemImage: "dumbbell.fill",
             muscles: ["Biceps"],
             isComposite: false
@@ -3272,7 +3272,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "triceps",
             title: "Triceps",
-            detail: "Back upper arm",
+            detail: String(localized: "Back upper arm"),
             systemImage: "dumbbell.fill",
             muscles: ["Triceps"],
             isComposite: false
@@ -3280,7 +3280,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "forearms",
             title: "Forearms",
-            detail: "Grip and lower arm",
+            detail: String(localized: "Grip and lower arm"),
             systemImage: "dumbbell.fill",
             muscles: ["Forearms"],
             isComposite: false
@@ -3288,7 +3288,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "lats",
             title: "Lats",
-            detail: "Width-focused back",
+            detail: String(localized: "Width-focused back"),
             systemImage: "figure.pullup",
             muscles: ["Lats"],
             isComposite: false
@@ -3296,7 +3296,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "middle_back",
             title: "Middle Back",
-            detail: "Rows and upper-back thickness",
+            detail: String(localized: "Rows and upper-back thickness"),
             systemImage: "figure.pullup",
             muscles: ["Middle Back"],
             isComposite: false
@@ -3304,7 +3304,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "lower_back",
             title: "Lower Back",
-            detail: "Spinal erectors",
+            detail: String(localized: "Spinal erectors"),
             systemImage: "figure.flexibility",
             muscles: ["Lower Back"],
             isComposite: false
@@ -3312,7 +3312,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "traps",
             title: "Traps",
-            detail: "Upper back and neck line",
+            detail: String(localized: "Upper back and neck line"),
             systemImage: "figure.strengthtraining.functional",
             muscles: ["Traps"],
             isComposite: false
@@ -3320,7 +3320,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "quadriceps",
             title: "Quadriceps",
-            detail: "Quadriceps",
+            detail: String(localized: "Quadriceps"),
             systemImage: "figure.run",
             muscles: ["Quadriceps"],
             isComposite: false
@@ -3328,7 +3328,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "hamstrings",
             title: "Hamstrings",
-            detail: "Posterior thigh",
+            detail: String(localized: "Posterior thigh"),
             systemImage: "figure.run",
             muscles: ["Hamstrings"],
             isComposite: false
@@ -3336,7 +3336,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "glutes",
             title: "Glutes",
-            detail: "Hips and glutes",
+            detail: String(localized: "Hips and glutes"),
             systemImage: "figure.run",
             muscles: ["Glutes"],
             isComposite: false
@@ -3344,7 +3344,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "calves",
             title: "Calves",
-            detail: "Lower leg",
+            detail: String(localized: "Lower leg"),
             systemImage: "figure.run",
             muscles: ["Calves"],
             isComposite: false
@@ -3352,7 +3352,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "abductors",
             title: "Abductors",
-            detail: "Outer hip",
+            detail: String(localized: "Outer hip"),
             systemImage: "figure.walk",
             muscles: ["Abductors"],
             isComposite: false
@@ -3360,7 +3360,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "adductors",
             title: "Adductors",
-            detail: "Inner thigh",
+            detail: String(localized: "Inner thigh"),
             systemImage: "figure.walk",
             muscles: ["Adductors"],
             isComposite: false
@@ -3368,7 +3368,7 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
         ProfileTargetMuscleGroup(
             id: "neck",
             title: "Neck",
-            detail: "Neck",
+            detail: String(localized: "Neck"),
             systemImage: "figure.stand",
             muscles: ["Neck"],
             isComposite: false
@@ -3463,12 +3463,12 @@ private struct ProfileTargetMuscleGroup: Identifiable, Hashable {
     static func summary(selection: Set<String>, allowedValues: [String]) -> String {
         let titles = selectedGroups(selection: selection, allowedValues: allowedValues).map(\.title)
         if titles.isEmpty {
-            return "None"
+            return String(localized: "None")
         }
         if titles.count <= 2 {
             return titles.joined(separator: ", ")
         }
-        return "\(titles.count) selected"
+        return String(localized: "\(titles.count) selected")
     }
 }
 
@@ -3487,38 +3487,38 @@ private struct ProfileTargetMuscleSection: Identifiable {
     static let all: [ProfileTargetMuscleSection] = [
         ProfileTargetMuscleSection(
             id: "upper",
-            title: "Upper Body",
-            detail: "Chest and shoulders.",
+            title: String(localized: "Upper Body"),
+            detail: String(localized: "Chest and shoulders."),
             groupIDs: ["chest", "shoulders"]
         ),
         ProfileTargetMuscleSection(
             id: "back",
-            title: "Back",
-            detail: "Choose the exact back area.",
+            title: String(localized: "Back"),
+            detail: String(localized: "Choose the exact back area."),
             groupIDs: ["lats", "middle_back", "lower_back", "traps"]
         ),
         ProfileTargetMuscleSection(
             id: "arms",
-            title: "Arms",
-            detail: "Biceps, triceps, and forearms are separate.",
+            title: String(localized: "Arms"),
+            detail: String(localized: "Biceps, triceps, and forearms are separate."),
             groupIDs: ["biceps", "triceps", "forearms"]
         ),
         ProfileTargetMuscleSection(
             id: "core",
-            title: "Core",
-            detail: "Abdominal work.",
+            title: String(localized: "Core"),
+            detail: String(localized: "Abdominal work."),
             groupIDs: ["abdominals"]
         ),
         ProfileTargetMuscleSection(
             id: "legs",
-            title: "Legs / Hips",
-            detail: "Every primary lower-body target stays separate.",
+            title: String(localized: "Legs / Hips"),
+            detail: String(localized: "Every primary lower-body target stays separate."),
             groupIDs: ["quadriceps", "hamstrings", "glutes", "calves", "abductors", "adductors"]
         ),
         ProfileTargetMuscleSection(
             id: "neck",
-            title: "Neck",
-            detail: "Optional neck focus.",
+            title: String(localized: "Neck"),
+            detail: String(localized: "Optional neck focus."),
             groupIDs: ["neck"]
         )
     ]
@@ -3542,7 +3542,7 @@ private struct ProfileTargetMuscleSelectorRow: View {
             Button {
                 isPresented = true
             } label: {
-                ProfileFieldRow(title: "Target muscles", systemImage: "scope") {
+                ProfileFieldRow(title: String(localized: "Target muscles"), systemImage: "scope") {
                     ProfileMenuValueLabel(
                         text: ProfileTargetMuscleGroup.summary(
                             selection: selection,
@@ -3691,14 +3691,14 @@ private struct ProfileSelectionActionRow: View {
     var body: some View {
         HStack(spacing: 10) {
             ProfileSelectionActionButton(
-                title: "Select all",
+                title: String(localized: "Select all"),
                 systemImage: "checkmark.circle",
                 isDisabled: selectAllDisabled,
                 action: selectAll
             )
 
             ProfileSelectionActionButton(
-                title: "Clear all",
+                title: String(localized: "Clear all"),
                 systemImage: "xmark.circle",
                 isDisabled: clearAllDisabled,
                 action: clearAll

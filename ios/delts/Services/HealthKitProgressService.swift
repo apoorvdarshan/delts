@@ -275,9 +275,9 @@ enum HealthKitProgressError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unavailable:
-            return "Apple Health is not available on this device."
+            return String(localized: "Apple Health is not available on this device.")
         case .denied:
-            return "Apple Health permission was not granted."
+            return String(localized: "Apple Health permission was not granted.")
         }
     }
 }

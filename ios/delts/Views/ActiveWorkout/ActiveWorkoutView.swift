@@ -167,7 +167,7 @@ struct ActiveWorkoutView: View {
     private var bottomPrimaryAction: some View {
         VStack(spacing: 10) {
             if viewModel.isLastExercise {
-                PrimaryButton(title: "Finish Workout", systemImage: "checkmark.seal.fill") {
+                PrimaryButton(title: String(localized: "Finish Workout"), systemImage: "checkmark.seal.fill") {
                     finishWorkout()
                 }
             } else {
@@ -188,7 +188,7 @@ struct ActiveWorkoutView: View {
                     }
                     .deltsPressable()
 
-                    PrimaryButton(title: "Next", systemImage: "arrow.right") {
+                    PrimaryButton(title: String(localized: "Next"), systemImage: "arrow.right") {
                         goToNextExercise()
                     }
                 }
@@ -312,15 +312,15 @@ struct ActiveWorkoutView: View {
     private func metricGroup(_ exercise: WorkoutExercise) -> some View {
         if dynamicTypeSize.isAccessibilitySize {
             VStack(spacing: 12) {
-                exerciseMetric(title: "Sets", value: "\(exercise.sets)", systemImage: "number")
+                exerciseMetric(title: String(localized: "Sets"), value: "\(exercise.sets)", systemImage: "number")
                 stripSeparator
-                exerciseMetric(title: "Reps", value: exercise.reps, systemImage: "repeat", tint: .deltsInferno)
+                exerciseMetric(title: String(localized: "Reps"), value: exercise.reps, systemImage: "repeat", tint: .deltsInferno)
             }
         } else {
             HStack(spacing: 0) {
-                exerciseMetric(title: "Sets", value: "\(exercise.sets)", systemImage: "number")
+                exerciseMetric(title: String(localized: "Sets"), value: "\(exercise.sets)", systemImage: "number")
                 metricDivider
-                exerciseMetric(title: "Reps", value: exercise.reps, systemImage: "repeat", tint: .deltsInferno)
+                exerciseMetric(title: String(localized: "Reps"), value: exercise.reps, systemImage: "repeat", tint: .deltsInferno)
             }
         }
     }
@@ -330,33 +330,33 @@ struct ActiveWorkoutView: View {
             setStamp(setIndex)
 
             setEntryField(
-                title: "Weight",
+                title: String(localized: "Weight"),
                 placeholder: "0",
                 text: weightBinding(setIndex),
                 keyboardType: .decimalPad,
                 field: .weight(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex),
-                accessibilityLabel: "Weight for set \(setIndex + 1)"
+                accessibilityLabel: String(localized: "Weight for set \(setIndex + 1)")
             )
             .layoutPriority(1)
 
             setEntryField(
-                title: "Reps",
+                title: String(localized: "Reps"),
                 placeholder: "0",
                 text: repsBinding(setIndex),
                 keyboardType: .numberPad,
                 field: .reps(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex),
-                accessibilityLabel: "Reps for set \(setIndex + 1)",
+                accessibilityLabel: String(localized: "Reps for set \(setIndex + 1)"),
                 alignment: .center
             )
             .frame(width: 88)
 
             setEntryField(
-                title: "RPE",
+                title: String(localized: "RPE"),
                 placeholder: rpeScale.inputPlaceholder,
                 text: rpeBinding(setIndex),
                 keyboardType: rpeKeyboardType,
                 field: .rpe(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex),
-                accessibilityLabel: "RPE for set \(setIndex + 1)",
+                accessibilityLabel: String(localized: "RPE for set \(setIndex + 1)"),
                 alignment: .center
             )
             .frame(width: 78)
@@ -411,35 +411,35 @@ struct ActiveWorkoutView: View {
 
     private func weightEntryField(_ setIndex: Int) -> some View {
         setEntryField(
-            title: "Weight",
+            title: String(localized: "Weight"),
             placeholder: "0",
             text: weightBinding(setIndex),
             keyboardType: .decimalPad,
             field: .weight(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex),
-            accessibilityLabel: "Weight for set \(setIndex + 1)"
+            accessibilityLabel: String(localized: "Weight for set \(setIndex + 1)")
         )
     }
 
     private func repsEntryField(_ setIndex: Int) -> some View {
         setEntryField(
-            title: "Reps",
+            title: String(localized: "Reps"),
             placeholder: "0",
             text: repsBinding(setIndex),
             keyboardType: .numberPad,
             field: .reps(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex),
-            accessibilityLabel: "Reps for set \(setIndex + 1)",
+            accessibilityLabel: String(localized: "Reps for set \(setIndex + 1)"),
             alignment: .center
         )
     }
 
     private func rpeEntryField(_ setIndex: Int) -> some View {
         setEntryField(
-            title: "RPE",
+            title: String(localized: "RPE"),
             placeholder: rpeScale.inputPlaceholder,
             text: rpeBinding(setIndex),
             keyboardType: rpeKeyboardType,
             field: .rpe(exerciseIndex: viewModel.currentExerciseIndex, setIndex: setIndex),
-            accessibilityLabel: "RPE for set \(setIndex + 1)",
+            accessibilityLabel: String(localized: "RPE for set \(setIndex + 1)"),
             alignment: .center
         )
     }
@@ -521,7 +521,7 @@ struct ActiveWorkoutView: View {
                 .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .deltsPressable()
-        .accessibilityLabel(complete ? "Mark set \(setIndex + 1) incomplete" : "Mark set \(setIndex + 1) complete")
+        .accessibilityLabel(complete ? String(localized: "Mark set \(setIndex + 1) incomplete") : String(localized: "Mark set \(setIndex + 1) complete"))
     }
 
     private func exerciseMetric(
@@ -581,8 +581,8 @@ struct ActiveWorkoutView: View {
     }
 
     private var currentPositionText: String {
-        guard !viewModel.exercises.isEmpty else { return "Exercise 0 of 0" }
-        return "Exercise \(viewModel.currentExerciseIndex + 1) of \(viewModel.exercises.count)"
+        guard !viewModel.exercises.isEmpty else { return String(localized: "Exercise 0 of 0") }
+        return String(localized: "Exercise \(viewModel.currentExerciseIndex + 1) of \(viewModel.exercises.count)")
     }
 
     private var rpeScale: RPEScale {

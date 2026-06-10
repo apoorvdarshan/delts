@@ -9,17 +9,17 @@ enum RPEScale: String, CaseIterable, Hashable {
 
     var title: String {
         switch self {
-        case .strength: return "Strength 1-10"
-        case .cr10: return "CR10 0-10"
-        case .borg: return "Borg 6-20"
+        case .strength: return String(localized: "Strength 1-10")
+        case .cr10: return String(localized: "CR10 0-10")
+        case .borg: return String(localized: "Borg 6-20")
         }
     }
 
     var inputPlaceholder: String {
         switch self {
-        case .strength: return "1-10"
-        case .cr10: return "0-10"
-        case .borg: return "6-20"
+        case .strength: return String(localized: "1-10")
+        case .cr10: return String(localized: "0-10")
+        case .borg: return String(localized: "6-20")
         }
     }
 

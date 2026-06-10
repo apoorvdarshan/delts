@@ -39,7 +39,7 @@ private struct ExerciseLibraryBrowserView: View {
     private var splitFilterTitle: String {
         switch selectedWorkoutSplit {
         case .fullBody, .custom:
-            return "Body Part"
+            return String(localized: "Body Part")
         default:
             return selectedWorkoutSplit.title
         }
@@ -181,7 +181,7 @@ private struct ExerciseLibraryBrowserView: View {
                 } else {
                     ResultsHeader(
                         count: items.count,
-                        noun: "exercise",
+                        noun: String(localized: "exercise"),
                         subtitle: selectedSort.title,
                         selectedSort: $selectedSort,
                         canReset: hasActiveFilters,
@@ -253,7 +253,7 @@ private struct ExerciseLibraryBrowserView: View {
                         value: selectionTitle(selectedSplitGroupTitles),
                         systemImage: "square.grid.2x2"
                     ) {
-                        menuChoice("All \(splitFilterTitle)", isSelected: selectedSplitGroupTitles.isEmpty) {
+                        menuChoice(String(localized: "All \(splitFilterTitle)"), isSelected: selectedSplitGroupTitles.isEmpty) {
                             selectedSplitGroupTitles.removeAll()
                         }
                         ForEach(splitGroups) { group in
@@ -265,7 +265,7 @@ private struct ExerciseLibraryBrowserView: View {
 
                     if shouldShowPrimaryFilter {
                         filterMenuPill(
-                            title: "Primary",
+                            title: String(localized: "Primary"),
                             value: primaryFilterTitle,
                             systemImage: "scope"
                         ) {
@@ -281,11 +281,11 @@ private struct ExerciseLibraryBrowserView: View {
                     }
 
                     filterMenuPill(
-                        title: "Secondary",
+                        title: String(localized: "Secondary"),
                         value: selectionTitle(selectedSecondaryMuscles),
                         systemImage: "scope"
                     ) {
-                        menuChoice("All Secondary", isSelected: selectedSecondaryMuscles.isEmpty) {
+                        menuChoice(String(localized: "All Secondary"), isSelected: selectedSecondaryMuscles.isEmpty) {
                             selectedSecondaryMuscles.removeAll()
                         }
                         ForEach(service.availableSecondaryMuscles, id: \.self) { muscle in
@@ -296,7 +296,7 @@ private struct ExerciseLibraryBrowserView: View {
                     }
 
                     filterMenuPill(
-                        title: "Equipment",
+                        title: String(localized: "Equipment"),
                         value: equipmentFilterTitle,
                         systemImage: "dumbbell.fill"
                     ) {
@@ -311,11 +311,11 @@ private struct ExerciseLibraryBrowserView: View {
                     }
 
                     filterMenuPill(
-                        title: "Level",
+                        title: String(localized: "Level"),
                         value: selectionTitle(selectedLevels),
                         systemImage: "chart.bar.fill"
                     ) {
-                        menuChoice("All Levels", isSelected: selectedLevels.isEmpty) { selectedLevels.removeAll() }
+                        menuChoice(String(localized: "All Levels"), isSelected: selectedLevels.isEmpty) { selectedLevels.removeAll() }
                         ForEach(service.availableLevels, id: \.self) { level in
                             menuChoice(level, isSelected: selectedLevels.contains(level)) {
                                 selectedLevels = [level]
@@ -324,11 +324,11 @@ private struct ExerciseLibraryBrowserView: View {
                     }
 
                     filterMenuPill(
-                        title: "Force",
+                        title: String(localized: "Force"),
                         value: selectionTitle(selectedForces),
                         systemImage: "arrow.left.arrow.right"
                     ) {
-                        menuChoice("All Forces", isSelected: selectedForces.isEmpty) { selectedForces.removeAll() }
+                        menuChoice(String(localized: "All Forces"), isSelected: selectedForces.isEmpty) { selectedForces.removeAll() }
                         ForEach(service.availableForces, id: \.self) { force in
                             menuChoice(force, isSelected: selectedForces.contains(force)) {
                                 selectedForces = [force]
@@ -337,11 +337,11 @@ private struct ExerciseLibraryBrowserView: View {
                     }
 
                     filterMenuPill(
-                        title: "Mechanic",
+                        title: String(localized: "Mechanic"),
                         value: selectionTitle(selectedMechanics),
                         systemImage: "gearshape"
                     ) {
-                        menuChoice("All Mechanics", isSelected: selectedMechanics.isEmpty) { selectedMechanics.removeAll() }
+                        menuChoice(String(localized: "All Mechanics"), isSelected: selectedMechanics.isEmpty) { selectedMechanics.removeAll() }
                         ForEach(service.availableMechanics, id: \.self) { mechanic in
                             menuChoice(mechanic, isSelected: selectedMechanics.contains(mechanic)) {
                                 selectedMechanics = [mechanic]
@@ -350,11 +350,11 @@ private struct ExerciseLibraryBrowserView: View {
                     }
 
                     filterMenuPill(
-                        title: "Category",
+                        title: String(localized: "Category"),
                         value: categoryFilterTitle,
                         systemImage: "tag"
                     ) {
-                        menuChoice("All Categories", isSelected: selectedCategories.isEmpty) { selectedCategories.removeAll() }
+                        menuChoice(String(localized: "All Categories"), isSelected: selectedCategories.isEmpty) { selectedCategories.removeAll() }
                         ForEach(service.availableCategoryCounts) { categoryCount in
                             menuChoice(categoryMenuTitle(categoryCount), isSelected: selectedCategories.contains(categoryCount.category)) {
                                 selectedCategories = [categoryCount.category]
@@ -369,24 +369,24 @@ private struct ExerciseLibraryBrowserView: View {
 
     private var equipmentFilterTitle: String {
         if selectedRawEquipment.isEmpty {
-            return "All \(profileRawEquipmentOptions.count)"
+            return String(localized: "All \(profileRawEquipmentOptions.count)")
         }
         return selectionTitle(selectedRawEquipment)
     }
 
     private var primaryFilterTitle: String {
         if selectedPrimaryMuscles.isEmpty {
-            return "All \(primaryFilterOptions.count)"
+            return String(localized: "All \(primaryFilterOptions.count)")
         }
         return selectionTitle(selectedPrimaryMuscles)
     }
 
     private var allPrimaryMenuTitle: String {
-        "All Primary (\(primaryFilterOptions.count))"
+        String(localized: "All Primary (\(primaryFilterOptions.count))")
     }
 
     private var allEquipmentMenuTitle: String {
-        "All Equipment (\(profileRawEquipmentOptions.count))"
+        String(localized: "All Equipment (\(profileRawEquipmentOptions.count))")
     }
 
     private var categoryFilterTitle: String {
@@ -459,7 +459,7 @@ private struct ExerciseLibraryBrowserView: View {
     private func selectionTitle(_ selection: Set<String>) -> String {
         if selection.isEmpty { return "All" }
         if selection.count == 1 { return selection.first ?? "All" }
-        return "\(selection.count) selected"
+        return String(localized: "\(selection.count) selected")
     }
 
     private func singleStoredSelection(_ selection: Set<String>) -> Set<String> {
@@ -610,7 +610,7 @@ private struct WorkoutsSearchRow: View {
     @Binding var searchText: String
 
     var body: some View {
-        WorkoutFilterRow(title: "Search", systemImage: "magnifyingglass") {
+        WorkoutFilterRow(title: String(localized: "Search"), systemImage: "magnifyingglass") {
             TextField("Exercise", text: $searchText)
                 .textFieldStyle(.plain)
                 .foregroundStyle(Color.deltsCharcoal)
@@ -721,7 +721,7 @@ private struct ResultsHeader: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("\(count) \(count == 1 ? noun : "\(noun)s")")
+                Text("\(count) \(count == 1 ? noun : String(localized: "\(noun)s"))")
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(Color.deltsCharcoal)
                     .textCase(nil)
@@ -902,15 +902,15 @@ private struct CompletedWorkoutRow: View {
     private var historySummaryStrip: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 10) {
-                HistorySummaryItem(value: "\(logs.count)", label: logs.count == 1 ? "exercise" : "exercises", systemImage: "figure.strengthtraining.traditional")
-                HistorySummaryItem(value: "\(completedSets)/\(totalSets)", label: "sets", systemImage: "checkmark")
-                HistorySummaryItem(value: "\(workout.durationMinutes)m", label: "duration", systemImage: "clock")
+                HistorySummaryItem(value: "\(logs.count)", label: logs.count == 1 ? String(localized: "exercise") : String(localized: "exercises"), systemImage: "figure.strengthtraining.traditional")
+                HistorySummaryItem(value: "\(completedSets)/\(totalSets)", label: String(localized: "sets"), systemImage: "checkmark")
+                HistorySummaryItem(value: String(localized: "\(workout.durationMinutes)m"), label: String(localized: "duration"), systemImage: "clock")
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                HistorySummaryItem(value: "\(logs.count)", label: logs.count == 1 ? "exercise" : "exercises", systemImage: "figure.strengthtraining.traditional")
-                HistorySummaryItem(value: "\(completedSets)/\(totalSets)", label: "sets", systemImage: "checkmark")
-                HistorySummaryItem(value: "\(workout.durationMinutes)m", label: "duration", systemImage: "clock")
+                HistorySummaryItem(value: "\(logs.count)", label: logs.count == 1 ? String(localized: "exercise") : String(localized: "exercises"), systemImage: "figure.strengthtraining.traditional")
+                HistorySummaryItem(value: "\(completedSets)/\(totalSets)", label: String(localized: "sets"), systemImage: "checkmark")
+                HistorySummaryItem(value: String(localized: "\(workout.durationMinutes)m"), label: String(localized: "duration"), systemImage: "clock")
             }
         }
         .font(.caption.weight(.semibold))
@@ -955,7 +955,7 @@ private struct WorkoutHistoryGlyph: View {
 
     private var initial: String {
         let trimmedTitle = workout.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmedTitle.first.map { String($0).uppercased() } ?? "W"
+        return trimmedTitle.first.map { String($0).uppercased() } ?? String(localized: "W")
     }
 }
 
@@ -1070,7 +1070,7 @@ struct ExerciseLibraryDetailView: View {
             .deltsPressable()
             .padding(.top, 14)
             .padding(.trailing, 16)
-            .accessibilityLabel(isMetricsPresented ? "Hide exercise details" : "Show exercise details")
+            .accessibilityLabel(isMetricsPresented ? String(localized: "Hide exercise details") : String(localized: "Show exercise details"))
         }
         .frame(width: width, height: 294)
         .animation(.snappy(duration: 0.28), value: isMetricsPresented)
@@ -1088,18 +1088,18 @@ private struct ExerciseHeroMetricOverlay: View {
     var body: some View {
         VStack(alignment: .center, spacing: 6) {
             HStack(spacing: 8) {
-                metricButton(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill", compact: true)
-                metricButton(title: "Category", value: item.category, systemImage: "tag", compact: true)
+                metricButton(title: String(localized: "Level"), value: item.rawLevel, systemImage: "chart.bar.fill", compact: true)
+                metricButton(title: String(localized: "Category"), value: item.category, systemImage: "tag", compact: true)
             }
 
             HStack(spacing: 8) {
-                metricButton(title: "Force", value: item.force, systemImage: "arrow.left.arrow.right", compact: true)
-                metricButton(title: "Mechanic", value: item.mechanic, systemImage: "gearshape", compact: true)
+                metricButton(title: String(localized: "Force"), value: item.force, systemImage: "arrow.left.arrow.right", compact: true)
+                metricButton(title: String(localized: "Mechanic"), value: item.mechanic, systemImage: "gearshape", compact: true)
             }
 
-            metricButton(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope", compact: false, valueLineLimit: 2)
-            metricButton(title: "Secondary", value: item.secondaryMusclesTitle, systemImage: "scope", compact: false, valueLineLimit: 3)
-            metricButton(title: "Equipment", value: item.rawEquipment, systemImage: "dumbbell.fill", compact: false, valueLineLimit: 2)
+            metricButton(title: String(localized: "Primary"), value: item.primaryMusclesTitle, systemImage: "scope", compact: false, valueLineLimit: 2)
+            metricButton(title: String(localized: "Secondary"), value: item.secondaryMusclesTitle, systemImage: "scope", compact: false, valueLineLimit: 3)
+            metricButton(title: String(localized: "Equipment"), value: item.rawEquipment, systemImage: "dumbbell.fill", compact: false, valueLineLimit: 2)
         }
         .frame(maxWidth: .infinity)
     }
@@ -1180,19 +1180,19 @@ private struct DetailMetricGrid: View {
     var body: some View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
-                DetailMetric(title: "Level", value: item.rawLevel, systemImage: "chart.bar.fill")
-                DetailMetric(title: "Category", value: item.category, systemImage: "tag")
+                DetailMetric(title: String(localized: "Level"), value: item.rawLevel, systemImage: "chart.bar.fill")
+                DetailMetric(title: String(localized: "Category"), value: item.category, systemImage: "tag")
             }
 
             HStack(spacing: 8) {
-                DetailMetric(title: "Force", value: item.force, systemImage: "arrow.left.arrow.right")
-                DetailMetric(title: "Mechanic", value: item.mechanic, systemImage: "gearshape")
+                DetailMetric(title: String(localized: "Force"), value: item.force, systemImage: "arrow.left.arrow.right")
+                DetailMetric(title: String(localized: "Mechanic"), value: item.mechanic, systemImage: "gearshape")
             }
 
             HStack(spacing: 8) {
-                DetailMetric(title: "Primary", value: item.primaryMusclesTitle, systemImage: "scope")
-                DetailMetric(title: "Secondary", value: item.secondaryMusclesTitle, systemImage: "scope")
-                DetailMetric(title: "Equipment", value: item.rawEquipment, systemImage: "dumbbell.fill")
+                DetailMetric(title: String(localized: "Primary"), value: item.primaryMusclesTitle, systemImage: "scope")
+                DetailMetric(title: String(localized: "Secondary"), value: item.secondaryMusclesTitle, systemImage: "scope")
+                DetailMetric(title: String(localized: "Equipment"), value: item.rawEquipment, systemImage: "dumbbell.fill")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1300,11 +1300,11 @@ struct CompletedWorkoutDetailView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 0) {
-                WorkoutSummaryMetric(value: "\(workout.exerciseLogs.count)", title: "Exercises", systemImage: "figure.strengthtraining.traditional")
+                WorkoutSummaryMetric(value: "\(workout.exerciseLogs.count)", title: String(localized: "Exercises"), systemImage: "figure.strengthtraining.traditional")
                 Divider().frame(height: 42).overlay(Color.deltsHairline.opacity(0.34))
-                WorkoutSummaryMetric(value: "\(completedSets)/\(totalSets)", title: "Sets", systemImage: "checkmark")
+                WorkoutSummaryMetric(value: "\(completedSets)/\(totalSets)", title: String(localized: "Sets"), systemImage: "checkmark")
                 Divider().frame(height: 42).overlay(Color.deltsHairline.opacity(0.34))
-                WorkoutSummaryMetric(value: "\(workout.durationMinutes)m", title: "Duration", systemImage: "clock")
+                WorkoutSummaryMetric(value: String(localized: "\(workout.durationMinutes)m"), title: String(localized: "Duration"), systemImage: "clock")
             }
         }
     }
@@ -1391,10 +1391,10 @@ private struct CompletedSetLogRow: View {
         guard let rpe = set.rpe?.trimmingCharacters(in: .whitespacesAndNewlines),
               !rpe.isEmpty
         else {
-            return "\(weight) x \(reps)"
+            return String(localized: "\(weight) x \(reps)")
         }
 
-        return "\(weight) x \(reps) | RPE \(rpe)"
+        return String(localized: "\(weight) x \(reps) | RPE \(rpe)")
     }
 }
 

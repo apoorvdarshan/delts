@@ -75,7 +75,7 @@ struct ProgressTabView: View {
             }
             .sheet(isPresented: $isLoggingWeight) {
                 ProgressMassWheelSheet(
-                    title: "Log Weight",
+                    title: String(localized: "Log Weight"),
                     initialKilograms: profiles.first?.currentWeightKG ?? latestWeightKg ?? 0,
                     initialSystem: ProgressMeasurementSystem(storedValue: measurementSystemRaw),
                     metricRange: 30...250,
@@ -87,7 +87,7 @@ struct ProgressTabView: View {
             }
             .sheet(isPresented: $isLoggingBodyFat) {
                 ProgressBodyFatRangeSheet(
-                    title: "Log Body Fat",
+                    title: String(localized: "Log Body Fat"),
                     initialValue: latestBodyFat ?? profiles.first?.currentBodyFatPercentage ?? 0,
                     initialIsExact: currentBodyFatIsExact,
                     sex: profiles.first?.gender ?? "Male"
@@ -239,14 +239,14 @@ struct ProgressTabView: View {
 
     private var weightMetricCard: some View {
         ProgressMetricCard(
-            title: "Weight",
+            title: String(localized: "Weight"),
             unit: usesImperialUnits ? "lb" : "kg",
             values: filteredWeightPoints,
             range: selectedRange,
             currentValue: profiles.first.map { displayWeight($0.currentWeightKG) } ?? filteredWeightPoints.last?.value,
             goalValue: effectiveGoalWeightKG.map(displayWeight),
             goalText: nil,
-            actionTitle: "Log Weight",
+            actionTitle: String(localized: "Log Weight"),
             actionSystemImage: "plus.circle.fill",
             onLog: {
                 isLoggingWeight = true
@@ -256,14 +256,14 @@ struct ProgressTabView: View {
 
     private var bodyFatMetricCard: some View {
         ProgressMetricCard(
-            title: "Body Fat",
+            title: String(localized: "Body Fat"),
             unit: "%",
             values: filteredBodyFatPoints,
             range: selectedRange,
             currentValue: currentBodyFatValue,
             goalValue: nil,
             goalText: goalBodyFatText,
-            actionTitle: "Log Body Fat",
+            actionTitle: String(localized: "Log Body Fat"),
             actionSystemImage: "plus.circle.fill",
             onLog: {
                 isLoggingBodyFat = true
@@ -491,12 +491,12 @@ private enum ProgressRange: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .week: return "Week"
-        case .month: return "Month"
-        case .threeMonths: return "3M"
-        case .sixMonths: return "6M"
-        case .year: return "1Y"
-        case .all: return "All"
+        case .week: return String(localized: "Week")
+        case .month: return String(localized: "Month")
+        case .threeMonths: return String(localized: "3M")
+        case .sixMonths: return String(localized: "6M")
+        case .year: return String(localized: "1Y")
+        case .all: return String(localized: "All")
         }
     }
 
@@ -556,11 +556,11 @@ private enum ProgressMetricKind: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .weight:
-            return "Weight"
+            return String(localized: "Weight")
         case .bodyFat:
-            return "Body Fat"
+            return String(localized: "Body Fat")
         case .history:
-            return "History"
+            return String(localized: "History")
         }
     }
 
@@ -583,13 +583,13 @@ private struct WorkoutHistoryCard: View {
     }
 
     private var burnText: String {
-        if let kcal = workout.caloriesBurned { return "\(kcal) kcal" }
-        return "-- kcal"
+        if let kcal = workout.caloriesBurned { return String(localized: "\(kcal) kcal") }
+        return String(localized: "-- kcal")
     }
 
     private var movesText: String {
         let count = workout.exerciseLogs.count
-        return "\(count) \(count == 1 ? "move" : "moves")"
+        return count == 1 ? String(localized: "\(count) move") : String(localized: "\(count) moves")
     }
 
     var body: some View {
@@ -622,13 +622,13 @@ private struct WorkoutHistoryCard: View {
             }
 
             HStack(spacing: 14) {
-                InlineStat(icon: "clock.fill", text: "\(workout.durationMinutes) min")
+                InlineStat(icon: "clock.fill", text: String(localized: "\(workout.durationMinutes) min"))
 
                 if isBurnLocked {
                     Button {
                         onBurnLockedTap?()
                     } label: {
-                        InlineStat(icon: "flame.fill", text: "kcal", tint: .deltsMutedText, isLocked: true)
+                        InlineStat(icon: "flame.fill", text: String(localized: "kcal"), tint: .deltsMutedText, isLocked: true)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Calorie burn, locked. Unlock with Delts Premium.")
@@ -760,9 +760,9 @@ private struct HistoryExerciseRow: View {
     private func setSummary(_ set: CompletedSetLog) -> String {
         var parts: [String] = []
         let reps = set.reps.trimmingCharacters(in: .whitespaces)
-        if !reps.isEmpty { parts.append("\(reps) reps") }
+        if !reps.isEmpty { parts.append(String(localized: "\(reps) reps")) }
         if let rpe = set.rpe?.trimmingCharacters(in: .whitespaces), !rpe.isEmpty {
-            parts.append("RPE \(rpe)")
+            parts.append(String(localized: "RPE \(rpe)"))
         }
         return parts.isEmpty ? "—" : parts.joined(separator: " · ")
     }
@@ -965,10 +965,10 @@ private struct ProgressMetricCard: View {
             }
 
             HStack(spacing: 10) {
-                MetricStatTile(title: "Current", value: displayedCurrentValue.map(formatted) ?? "--")
-                MetricStatTile(title: "Goal", value: goalText ?? goalValue.map(formatted) ?? "--")
-                MetricStatTile(title: "Net Change", value: netChangeValue.map(formattedSigned) ?? "--")
-                MetricStatTile(title: "Average", value: averageValue.map(formatted) ?? "--")
+                MetricStatTile(title: String(localized: "Current"), value: displayedCurrentValue.map(formatted) ?? "--")
+                MetricStatTile(title: String(localized: "Goal"), value: goalText ?? goalValue.map(formatted) ?? "--")
+                MetricStatTile(title: String(localized: "Net Change"), value: netChangeValue.map(formattedSigned) ?? "--")
+                MetricStatTile(title: String(localized: "Average"), value: averageValue.map(formatted) ?? "--")
             }
 
             MetricLineGraph(points: graphValues, unit: unit, goalValue: goalValue)
@@ -1304,8 +1304,8 @@ private struct MetricHistoryRow: View {
                     .foregroundStyle(Color.deltsCharcoal)
 
                 HStack(spacing: 8) {
-                    MetricHistoryPill(title: "Weight", value: weightText)
-                    MetricHistoryPill(title: "Body fat", value: bodyFatText)
+                    MetricHistoryPill(title: String(localized: "Weight"), value: weightText)
+                    MetricHistoryPill(title: String(localized: "Body fat"), value: bodyFatText)
                 }
             }
 
@@ -1366,7 +1366,7 @@ private struct BodyLogSheet: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
                     if snapshots.isEmpty {
-                        ProgressEmptyState(text: "No weight or body fat logs in this range.")
+                        ProgressEmptyState(text: String(localized: "No weight or body fat logs in this range."))
                     } else {
                         ForEach(snapshots) { snapshot in
                             MetricHistoryRow(
@@ -1415,9 +1415,9 @@ private enum ProgressMeasurementSystem: String, CaseIterable, Hashable {
     var title: String {
         switch self {
         case .metric:
-            return "Metric"
+            return String(localized: "Metric")
         case .imperial:
-            return "Imperial"
+            return String(localized: "Imperial")
         }
     }
 
@@ -1498,8 +1498,8 @@ private struct ProgressMassWheelSheet: View {
                     .frame(maxWidth: .infinity, alignment: .center)
 
                 HStack(spacing: 10) {
-                    ProgressWheelColumn(title: "Whole", selection: $whole, values: wholeOptions) { "\($0)" }
-                    ProgressWheelColumn(title: "Decimal", selection: $decimal, values: Array(0...9)) { ".\($0)" }
+                    ProgressWheelColumn(title: String(localized: "Whole"), selection: $whole, values: wholeOptions) { "\($0)" }
+                    ProgressWheelColumn(title: String(localized: "Decimal"), selection: $decimal, values: Array(0...9)) { ".\($0)" }
 
                     Text(unit)
                         .font(.headline.weight(.bold))
@@ -1668,8 +1668,8 @@ private struct ProgressBodyFatExactWheelPicker: View {
                 .frame(maxWidth: .infinity, alignment: .center)
 
             HStack(spacing: 10) {
-                ProgressWheelColumn(title: "Whole", selection: $whole, values: Array(0...60)) { "\($0)" }
-                ProgressWheelColumn(title: "Decimal", selection: $decimal, values: Array(0...9)) { ".\($0)" }
+                ProgressWheelColumn(title: String(localized: "Whole"), selection: $whole, values: Array(0...60)) { "\($0)" }
+                ProgressWheelColumn(title: String(localized: "Decimal"), selection: $decimal, values: Array(0...9)) { ".\($0)" }
 
                 Text("%")
                     .font(.headline.weight(.bold))
@@ -1751,13 +1751,13 @@ private struct ProgressBodyFatRange: Identifiable {
     let summary: String
 
     private static let ranges: [ProgressBodyFatRange] = [
-        ProgressBodyFatRange(id: "06_09", title: "6-9%", lowerBound: 6, upperBound: 9, storedValue: 8, summary: "Very lean"),
-        ProgressBodyFatRange(id: "10_13", title: "10-13%", lowerBound: 10, upperBound: 13, storedValue: 12, summary: "Lean"),
-        ProgressBodyFatRange(id: "14_17", title: "14-17%", lowerBound: 14, upperBound: 17, storedValue: 16, summary: "Fit"),
-        ProgressBodyFatRange(id: "18_22", title: "18-22%", lowerBound: 18, upperBound: 22, storedValue: 20, summary: "Average"),
-        ProgressBodyFatRange(id: "23_27", title: "23-27%", lowerBound: 23, upperBound: 27, storedValue: 25, summary: "Soft"),
-        ProgressBodyFatRange(id: "28_32", title: "28-32%", lowerBound: 28, upperBound: 32, storedValue: 30, summary: "Fuller"),
-        ProgressBodyFatRange(id: "33_plus", title: "33%+", lowerBound: 33, upperBound: nil, storedValue: 36, summary: "High")
+        ProgressBodyFatRange(id: "06_09", title: "6-9%", lowerBound: 6, upperBound: 9, storedValue: 8, summary: String(localized: "Very lean")),
+        ProgressBodyFatRange(id: "10_13", title: "10-13%", lowerBound: 10, upperBound: 13, storedValue: 12, summary: String(localized: "Lean")),
+        ProgressBodyFatRange(id: "14_17", title: "14-17%", lowerBound: 14, upperBound: 17, storedValue: 16, summary: String(localized: "Fit")),
+        ProgressBodyFatRange(id: "18_22", title: "18-22%", lowerBound: 18, upperBound: 22, storedValue: 20, summary: String(localized: "Average")),
+        ProgressBodyFatRange(id: "23_27", title: "23-27%", lowerBound: 23, upperBound: 27, storedValue: 25, summary: String(localized: "Soft")),
+        ProgressBodyFatRange(id: "28_32", title: "28-32%", lowerBound: 28, upperBound: 32, storedValue: 30, summary: String(localized: "Fuller")),
+        ProgressBodyFatRange(id: "33_plus", title: "33%+", lowerBound: 33, upperBound: nil, storedValue: 36, summary: String(localized: "High"))
     ]
 
     static func options(for sex: String) -> [ProgressBodyFatRange] {
@@ -1859,10 +1859,10 @@ private struct MetricSnapshotEditSheet: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
-                MetricEditField(title: "Weight", unit: usesImperialUnits ? "lb" : "kg", text: $weightRaw)
-                MetricEditField(title: "Body fat", unit: "%", text: $bodyFatRaw)
+                MetricEditField(title: String(localized: "Weight"), unit: usesImperialUnits ? "lb" : "kg", text: $weightRaw)
+                MetricEditField(title: String(localized: "Body fat"), unit: "%", text: $bodyFatRaw)
 
-                PrimaryButton(title: "Save Changes", systemImage: "checkmark") {
+                PrimaryButton(title: String(localized: "Save Changes"), systemImage: "checkmark") {
                     var updated = snapshot
                     updated.weightKg = parsedWeightKg
                     updated.bodyFat = parsedBodyFat

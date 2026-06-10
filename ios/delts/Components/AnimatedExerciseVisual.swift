@@ -12,7 +12,7 @@ struct AnimatedExerciseVisual: View {
     var allowsDerivedImageLookup = true
     var animatesFrames = true
     var fallbackSystemImage = "figure.strengthtraining.traditional"
-    var fallbackTitle = "Exercise"
+    var fallbackTitle = String(localized: "Exercise")
     @State private var animate = false
 
     var body: some View {
