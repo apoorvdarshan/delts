@@ -21,8 +21,10 @@ struct OnboardingView: View {
     @AppStorage("delts_terms_accepted_at") private var termsAcceptedAt = 0.0
 
     @State private var stepIndex = 0
+    @State private var goingForward = true
     @State private var agreedToTerms = false
     @State private var didRequestReview = false
+    @State private var welcomeRevealed = false
 
     private let steps = OnboardingStep.allCases
 
@@ -49,48 +51,78 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             progressHeader
 
-            ScrollView {
-                stepBody(profile: profile)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 6)
-                    .padding(.bottom, 24)
+            ZStack(alignment: .top) {
+                ScrollView {
+                    stepBody(profile: profile)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 10)
+                        .padding(.bottom, 28)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .id(stepIndex)
+                .transition(stepTransition)
             }
-            .scrollDismissesKeyboard(.interactively)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             bottomBar
         }
+        .background(alignment: .top) {
+            RadialGradient(
+                colors: [Color.deltsAccent.opacity(0.12), .clear],
+                center: .top,
+                startRadius: 10,
+                endRadius: 440
+            )
+            .ignoresSafeArea()
+        }
     }
 
-    private var progressHeader: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 12) {
-                if stepIndex > 0 {
-                    Button {
-                        withAnimation(.snappy(duration: 0.25)) { stepIndex -= 1 }
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.headline.weight(.bold))
-                            .foregroundStyle(Color.deltsCharcoal)
-                            .frame(width: 36, height: 36)
-                            .background(Color.deltsPanel.opacity(0.3), in: Circle())
-                    }
-                    .deltsPressable()
-                    .transition(.opacity)
-                }
+    private var stepTransition: AnyTransition {
+        .asymmetric(
+            insertion: .move(edge: goingForward ? .trailing : .leading).combined(with: .opacity),
+            removal: .move(edge: goingForward ? .leading : .trailing).combined(with: .opacity)
+        )
+    }
 
-                HStack(spacing: 6) {
-                    ForEach(steps.indices, id: \.self) { index in
-                        Capsule()
-                            .fill(index <= stepIndex ? Color.deltsAccent : Color.deltsPanel.opacity(0.45))
-                            .frame(height: 4)
-                    }
+    // MARK: - Progress header
+
+    private var progressHeader: some View {
+        HStack(spacing: 14) {
+            if stepIndex > 0 {
+                Button {
+                    goBack()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Color.deltsCharcoal)
+                        .frame(width: 34, height: 34)
+                        .background(Color.deltsPanel.opacity(0.32), in: Circle())
+                        .overlay(Circle().stroke(Color.deltsHairline.opacity(0.3), lineWidth: 0.5))
+                }
+                .deltsPressable()
+                .transition(.opacity.combined(with: .scale(scale: 0.6)))
+            }
+
+            HStack(spacing: 6) {
+                ForEach(steps.indices, id: \.self) { index in
+                    Capsule()
+                        .fill(index <= stepIndex ? Color.deltsAccent : Color.deltsPanel.opacity(0.5))
+                        .frame(height: 4)
+                        .shadow(
+                            color: index == stepIndex ? Color.deltsAccent.opacity(0.65) : .clear,
+                            radius: 5
+                        )
+                        .animation(.snappy(duration: 0.3), value: stepIndex)
                 }
             }
         }
+        .animation(.snappy(duration: 0.25), value: stepIndex)
         .padding(.horizontal, 20)
         .padding(.top, 14)
-        .padding(.bottom, 6)
+        .padding(.bottom, 8)
     }
+
+    // MARK: - Steps
 
     @ViewBuilder
     private func stepBody(profile: UserProfile) -> some View {
@@ -100,6 +132,7 @@ struct OnboardingView: View {
         case .personal:
             profileStep(
                 profile: profile,
+                icon: "person.fill",
                 title: "Your details",
                 subtitle: "A few basics so Delts can tailor plans to you.",
                 section: .personalDetails
@@ -107,6 +140,7 @@ struct OnboardingView: View {
         case .body:
             profileStep(
                 profile: profile,
+                icon: "scalemass.fill",
                 title: "Body metrics",
                 subtitle: "Used for progress tracking and calorie estimates.",
                 section: .bodyMetrics
@@ -114,6 +148,7 @@ struct OnboardingView: View {
         case .goals:
             profileStep(
                 profile: profile,
+                icon: "target",
                 title: "Training goals",
                 subtitle: "What you want out of your training.",
                 section: .trainingGoals
@@ -121,6 +156,7 @@ struct OnboardingView: View {
         case .preferences:
             profileStep(
                 profile: profile,
+                icon: "slider.horizontal.3",
                 title: "Workout preferences",
                 subtitle: "How and where you like to train.",
                 section: .workoutPreferences
@@ -132,9 +168,15 @@ struct OnboardingView: View {
         }
     }
 
-    private func profileStep(profile: UserProfile, title: String, subtitle: String, section: ProfileSectionKind) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            stepHeader(title, subtitle)
+    private func profileStep(
+        profile: UserProfile,
+        icon: String,
+        title: String,
+        subtitle: String,
+        section: ProfileSectionKind
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 18) {
+            stepHeader(icon: icon, title, subtitle)
             ProfileEditorView(profile: profile, sections: [section], embedded: true)
         }
     }
@@ -142,81 +184,179 @@ struct OnboardingView: View {
     // MARK: - Welcome
 
     private var welcomeStep: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Image(DeltsTheme.current.previewAssetName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 92, height: 92)
-                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                .padding(.top, 8)
+        VStack(spacing: 26) {
+            ZStack {
+                Circle()
+                    .fill(Color.deltsAccent.opacity(0.20))
+                    .frame(width: 190, height: 190)
+                    .blur(radius: 56)
 
-            VStack(alignment: .leading, spacing: 10) {
+                Image(DeltsTheme.current.previewAssetName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 110, height: 110)
+                    .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                            .stroke(Color.white.opacity(0.14), lineWidth: 0.6)
+                    }
+                    .shadow(color: Color.deltsAccent.opacity(0.38), radius: 26, y: 10)
+                    .scaleEffect(welcomeRevealed ? 1 : 0.84)
+                    .opacity(welcomeRevealed ? 1 : 0)
+            }
+            .padding(.top, 16)
+
+            VStack(spacing: 10) {
+                Text("LET'S GET YOU SET UP")
+                    .font(.caption.weight(.heavy))
+                    .tracking(2.4)
+                    .foregroundStyle(Color.deltsAccent)
+
                 Text("Welcome to Delts")
-                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.deltsCharcoal)
-                Text("A gym app built around the red session timer. Let's set up your profile so plans, progress, and calorie estimates fit you.")
-                    .font(.body)
-                    .foregroundStyle(Color.deltsMutedText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+                    .multilineTextAlignment(.center)
 
-            VStack(alignment: .leading, spacing: 12) {
-                onboardingHighlight("figure.strengthtraining.traditional", "Plan and time your sessions")
-                onboardingHighlight("chart.line.uptrend.xyaxis", "Track weight, body fat, and history")
-                onboardingHighlight("sparkles", "AI coach and calorie estimates")
+                Text("A gym app built around the red session timer. Set up your profile so plans, progress, and calorie estimates fit you.")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.deltsMutedText)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 8)
             }
-            .padding(.top, 4)
+            .opacity(welcomeRevealed ? 1 : 0)
+            .offset(y: welcomeRevealed ? 0 : 14)
+
+            VStack(spacing: 0) {
+                welcomeHighlight(
+                    "figure.strengthtraining.traditional",
+                    "Plan & time sessions",
+                    "The red button runs your workout"
+                )
+                cardDivider
+                welcomeHighlight(
+                    "chart.line.uptrend.xyaxis",
+                    "Track your progress",
+                    "Weight, body fat, and workout history"
+                )
+                cardDivider
+                welcomeHighlight(
+                    "sparkles",
+                    "AI Coach",
+                    "Chat, photos, and calorie estimates"
+                )
+            }
+            .padding(.vertical, 6)
+            .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
+            }
+            .opacity(welcomeRevealed ? 1 : 0)
+            .offset(y: welcomeRevealed ? 0 : 20)
+
+            Text("Takes under a minute · Edit anytime in Settings")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Color.deltsMutedText.opacity(0.85))
+                .opacity(welcomeRevealed ? 1 : 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
+        .onAppear {
+            guard !welcomeRevealed else { return }
+            withAnimation(.spring(duration: 0.7, bounce: 0.22).delay(0.08)) {
+                welcomeRevealed = true
+            }
+        }
     }
 
-    private func onboardingHighlight(_ systemImage: String, _ text: String) -> some View {
-        HStack(spacing: 12) {
+    private var cardDivider: some View {
+        Rectangle()
+            .fill(Color.deltsHairline.opacity(0.22))
+            .frame(height: 0.5)
+            .padding(.leading, 64)
+    }
+
+    private func welcomeHighlight(_ systemImage: String, _ title: String, _ subtitle: String) -> some View {
+        HStack(spacing: 14) {
             Image(systemName: systemImage)
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(Color.deltsAccent)
-                .frame(width: 30, height: 30)
-                .background(Color.deltsAccent.opacity(0.12), in: Circle())
-            Text(text)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.deltsCharcoal)
+                .frame(width: 36, height: 36)
+                .background(Color.deltsAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                Text(subtitle)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+            }
+
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
     }
 
     // MARK: - Rate
 
     private var rateStep: some View {
         VStack(alignment: .leading, spacing: 18) {
-            stepHeader("Enjoying Delts?", "A rating helps other lifters find the app. It only takes a second.")
+            stepHeader(icon: "star.fill", "Enjoying Delts?", "A rating helps other lifters find the app. It only takes a second.")
 
-            VStack(spacing: 16) {
-                HStack(spacing: 8) {
-                    ForEach(0..<5) { _ in
+            VStack(spacing: 22) {
+                HStack(alignment: .center, spacing: 10) {
+                    ForEach(0..<5, id: \.self) { index in
                         Image(systemName: "star.fill")
-                            .font(.system(size: 26, weight: .bold))
+                            .font(.system(size: starSize(for: index), weight: .bold))
                             .foregroundStyle(Color.deltsAccent)
+                            .shadow(color: Color.deltsAccent.opacity(0.45), radius: 9, y: 2)
                     }
                 }
+                .padding(.top, 6)
+
+                Text("Loving the red button? Tell the App Store.")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .multilineTextAlignment(.center)
 
                 Button {
                     requestReview()
-                    didRequestReview = true
+                    withAnimation(.snappy(duration: 0.25)) { didRequestReview = true }
                 } label: {
-                    Label(didRequestReview ? "Thanks!" : "Rate Delts", systemImage: didRequestReview ? "checkmark" : "star.fill")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(Color.deltsOnAccent)
-                        .padding(.horizontal, 22)
-                        .padding(.vertical, 12)
-                        .background(Color.deltsAccent, in: Capsule())
+                    Label(
+                        didRequestReview ? "Thanks!" : "Rate Delts",
+                        systemImage: didRequestReview ? "checkmark" : "star.fill"
+                    )
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Color.deltsOnAccent)
+                    .padding(.horizontal, 26)
+                    .padding(.vertical, 13)
+                    .background(Color.deltsAccent, in: Capsule())
+                    .shadow(color: Color.deltsAccent.opacity(0.35), radius: 12, y: 5)
                 }
                 .deltsPressable()
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 28)
-            .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .padding(.vertical, 32)
+            .padding(.horizontal, 18)
+            .background {
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .fill(Color.deltsPanel.opacity(0.18))
+                    .overlay {
+                        RadialGradient(
+                            colors: [Color.deltsAccent.opacity(0.10), .clear],
+                            center: .top,
+                            startRadius: 0,
+                            endRadius: 240
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                    }
+            }
             .overlay {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(Color.deltsHairline.opacity(0.22), lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
             }
 
             Text("You can rate or review anytime from Settings → About.")
@@ -226,48 +366,129 @@ struct OnboardingView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    private func starSize(for index: Int) -> CGFloat {
+        let sizes: [CGFloat] = [22, 27, 32, 27, 22]
+        return sizes[index]
+    }
+
     // MARK: - Terms
 
     private var termsStep: some View {
         VStack(alignment: .leading, spacing: 18) {
-            stepHeader("One last thing", "Review and accept to start using Delts.")
+            stepHeader(icon: "checkmark.shield.fill", "One last thing", "Review and accept to start using Delts.")
 
-            VStack(alignment: .leading, spacing: 16) {
-                Text("By continuing you agree to the Delts [Terms](https://delts.fit/terms) and [Privacy Policy](https://delts.fit/privacy). Delts is not medical advice — consult a professional before changing your training.")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .tint(Color.deltsAccent)
-                    .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: 0) {
+                termsLinkRow("hand.raised.fill", "Privacy Policy", "delts.fit/privacy") {
+                    open("https://delts.fit/privacy")
+                }
+                cardDivider
+                termsLinkRow("doc.text.fill", "Terms", "delts.fit/terms") {
+                    open("https://delts.fit/terms")
+                }
+            }
+            .padding(.vertical, 4)
+            .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
+            }
 
-                Toggle(isOn: $agreedToTerms) {
+            Text("Delts is not medical advice — consult a professional before changing your training.")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.deltsMutedText)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button {
+                withAnimation(.snappy(duration: 0.22)) { agreedToTerms.toggle() }
+            } label: {
+                HStack(spacing: 13) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(agreedToTerms ? Color.deltsAccent : Color.deltsPanel.opacity(0.42))
+                            .frame(width: 27, height: 27)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .stroke(Color.deltsHairline.opacity(agreedToTerms ? 0 : 0.55), lineWidth: 1)
+                            }
+
+                        if agreedToTerms {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 13, weight: .black))
+                                .foregroundStyle(Color.deltsOnAccent)
+                                .transition(.scale.combined(with: .opacity))
+                        }
+                    }
+
                     Text("I agree to the Terms and Privacy Policy")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.deltsCharcoal)
-                }
-                .tint(Color.deltsAccent)
+                        .multilineTextAlignment(.leading)
 
-                HStack(spacing: 18) {
-                    Button("Privacy Policy") { open("https://delts.fit/privacy") }
-                    Button("Terms") { open("https://delts.fit/terms") }
+                    Spacer(minLength: 0)
                 }
-                .font(.caption.weight(.bold))
-                .tint(Color.deltsSecondaryAccent)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 15)
+                .background(
+                    agreedToTerms ? Color.deltsAccent.opacity(0.10) : Color.deltsPanel.opacity(0.18),
+                    in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(
+                            agreedToTerms ? Color.deltsAccent.opacity(0.5) : Color.deltsHairline.opacity(0.3),
+                            lineWidth: agreedToTerms ? 1 : 0.5
+                        )
+                }
+                .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             }
-            .padding(18)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.deltsPanel.opacity(0.18), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(Color.deltsHairline.opacity(0.22), lineWidth: 0.5)
-            }
+            .deltsPressable()
+            .accessibilityLabel("I agree to the Terms and Privacy Policy")
+            .accessibilityValue(agreedToTerms ? "Agreed" : "Not agreed")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func termsLinkRow(_ systemImage: String, _ title: String, _ detail: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 13) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Color.deltsSecondaryAccent)
+                    .frame(width: 34, height: 34)
+                    .background(Color.deltsSecondaryAccent.opacity(0.10), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+
+                Text(title)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+
+                Spacer(minLength: 8)
+
+                Text(detail)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+
+                Image(systemName: "arrow.up.right")
+                    .font(.caption2.weight(.heavy))
+                    .foregroundStyle(Color.deltsMutedText.opacity(0.8))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        }
+        .deltsPressable()
     }
 
     // MARK: - Bottom bar
 
     private var bottomBar: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 8) {
+            if step == .terms && !agreedToTerms {
+                Text("Tick the agreement above to continue")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+                    .transition(.opacity)
+            }
+
             PrimaryButton(
                 title: primaryTitle,
                 systemImage: primarySystemImage
@@ -275,10 +496,11 @@ struct OnboardingView: View {
                 advance()
             }
             .disabled(step == .terms && !agreedToTerms)
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            .padding(.bottom, 8)
         }
+        .animation(.snappy(duration: 0.2), value: agreedToTerms)
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
         .deltsBottomActionBackground()
     }
 
@@ -304,30 +526,57 @@ struct OnboardingView: View {
             finish()
             return
         }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
         try? modelContext.save()
-        withAnimation(.snappy(duration: 0.25)) {
+        goingForward = true
+        withAnimation(.snappy(duration: 0.32)) {
             stepIndex = min(stepIndex + 1, steps.count - 1)
+        }
+    }
+
+    private func goBack() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        goingForward = false
+        withAnimation(.snappy(duration: 0.32)) {
+            stepIndex = max(stepIndex - 1, 0)
         }
     }
 
     private func finish() {
         guard agreedToTerms else { return }
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         try? modelContext.save()
         termsAcceptedAt = Date().timeIntervalSince1970
         onboardingComplete = true
     }
 
-    private func stepHeader(_ title: String, _ subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                .foregroundStyle(Color.deltsCharcoal)
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
-            Text(subtitle)
-                .font(.subheadline)
-                .foregroundStyle(Color.deltsMutedText)
-                .fixedSize(horizontal: false, vertical: true)
+    private func stepHeader(icon: String, _ title: String, _ subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .frame(width: 32, height: 32)
+                    .background(Color.deltsAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                Text("Step \(stepIndex) of \(steps.count - 1)")
+                    .font(.caption.weight(.heavy))
+                    .tracking(1.6)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Color.deltsMutedText)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.deltsMutedText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
