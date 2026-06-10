@@ -40,6 +40,18 @@ Delts is built by **Apoorv Darshan, ACE Certified Personal Trainer** — the tra
 - Custom theme picker with matching app icon variants.
 - Settings for appearance, workout frequency, duration range, split, equipment, RPE scale, target muscles, and optional 1RM anchors.
 
+## Screenshots
+
+| The red button | Set logging | Exercise detail | Library |
+|:---:|:---:|:---:|:---:|
+| <img src="web/assets/screenshots/1.timer.png" width="200" alt="Session timer"> | <img src="web/assets/screenshots/2.logging.png" width="200" alt="Set logging"> | <img src="web/assets/screenshots/3.exercise.png" width="200" alt="Exercise instructions"> | <img src="web/assets/screenshots/4.library.png" width="200" alt="Exercise library"> |
+| Start, pause, and stop the session — timing drives everything | Log sets, reps, and RPE inline while the timer runs | Photos and step-by-step form instructions for every move | 845 exercises with split, muscle, and equipment filters |
+
+| Planning | AI Coach | Progress | Settings |
+|:---:|:---:|:---:|:---:|
+| <img src="web/assets/screenshots/5.planning.png" width="200" alt="Workout planning"> | <img src="web/assets/screenshots/6.coach.png" width="200" alt="AI Coach chat"> | <img src="web/assets/screenshots/7.progress.png" width="200" alt="Progress charts"> | <img src="web/assets/screenshots/8.settings.png" width="200" alt="Settings"> |
+| Build today's plan in two taps — saved workouts, copied days, or split presets | A coach that sees your real workouts, progress, and goals | Weight and body fat charts with goal lines and history | Tuned to your body, goals, equipment, and units |
+
 ## Repository Layout
 
 - `ios/` - SwiftUI iOS app and widget target.
