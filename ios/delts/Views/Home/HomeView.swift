@@ -39,9 +39,11 @@ struct HomeView: View {
     private let service = ExerciseLibraryService.shared
     private let calorieService = CalorieEstimateService()
     @StateObject private var healthKit = HealthKitProgressService()
+    @ObservedObject private var premium = PremiumStore.shared
     @AppStorage("apple_health_enabled") private var appleHealthEnabled = false
     @State private var burnByDateKey: [String: Int] = WorkoutBurnStore.load()
     @State private var estimatingBurnDateKeys: Set<String> = []
+    @State private var isPaywallPresented = false
 
     private var selectedDateKey: String {
         WorkoutDayPlanStore.key(for: selectedDate)
@@ -292,7 +294,9 @@ struct HomeView: View {
                         stopTimer: stopSessionTimer,
                         discardTimer: discardSessionTimer,
                         burnKcal: selectedBurnKcal,
-                        isEstimatingBurn: isEstimatingSelectedBurn
+                        isEstimatingBurn: isEstimatingSelectedBurn,
+                        burnLocked: selectedBurnKcal == nil && !isEstimatingSelectedBurn && !premium.canEstimateCalories,
+                        onBurnTap: { isPaywallPresented = true }
                     )
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -458,6 +462,9 @@ struct HomeView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text("Add at least one workout to \(selectedDateTitle) before starting the timer.")
+            }
+            .sheet(isPresented: $isPaywallPresented) {
+                PaywallView()
             }
             .sheet(isPresented: $isWorkoutPickerPresented) {
                 WorkoutPickerSheet(
@@ -707,6 +714,8 @@ struct HomeView: View {
     /// the completed workout, show it in the Burn stat, and write it to Apple Health.
     private func estimateBurn(workout: CompletedWorkout, dateKey: String, exercises: [PlannedRoutineExercise], durationMinutes: Int) {
         guard GeminiConfig.isAIEnabled, !exercises.isEmpty else { return }
+        // Premium feature: requires a subscription or a remaining free taste.
+        guard premium.canEstimateCalories else { return }
 
         let profile = profiles.first
         let bio = CalorieEstimateService.Bio(
@@ -747,6 +756,7 @@ struct HomeView: View {
                 try? modelContext.save()
                 burnByDateKey[dateKey] = kcal
                 WorkoutBurnStore.save(burnByDateKey)
+                PremiumStore.shared.consumeCalorieTaste()
 
                 if healthEnabled {
                     let end = workout.date

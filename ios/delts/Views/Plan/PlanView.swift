@@ -69,8 +69,8 @@ struct PlanBuilderView: View {
 
                 VStack(alignment: .leading, spacing: 0) {
                     PlanHeroBadge(
-                        title: GeminiConfig.isAIEnabled ? "AI planner ready" : "Offline planner",
-                        systemImage: GeminiConfig.isAIEnabled ? "sparkles" : "bolt.fill"
+                        title: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? "AI planner ready" : "Offline planner",
+                        systemImage: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? "sparkles" : "bolt.fill"
                     )
 
                     Spacer(minLength: 34)
@@ -103,7 +103,7 @@ struct PlanBuilderView: View {
             PlanMetricStrip(metrics: [
                 PlanMetric(title: "Level", value: viewModel.selectedExperience.title, systemImage: planExperienceIcon(viewModel.selectedExperience), tint: .deltsSecondaryAccent),
                 PlanMetric(title: "Gear", value: viewModel.selectedEquipment.isEmpty ? "Profile" : "\(viewModel.selectedEquipment.count)", systemImage: "dumbbell.fill"),
-                PlanMetric(title: "Mode", value: GeminiConfig.isAIEnabled ? "AI" : "Local", systemImage: GeminiConfig.isAIEnabled ? "sparkles" : "bolt.fill", tint: GeminiConfig.isAIEnabled ? .deltsAccent : .deltsWarning)
+                PlanMetric(title: "Mode", value: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? "AI" : "Local", systemImage: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? "sparkles" : "bolt.fill", tint: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? .deltsAccent : .deltsWarning)
             ])
         }
     }
@@ -171,7 +171,7 @@ struct PlanBuilderView: View {
         VStack(spacing: 10) {
             PrimaryButton(
                 title: viewModel.isGenerating ? "Building Workout" : "Generate Workout",
-                systemImage: GeminiConfig.isAIEnabled ? "sparkles" : "bolt.fill",
+                systemImage: (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? "sparkles" : "bolt.fill",
                 isLoading: viewModel.isGenerating
             ) {
                 Task {
@@ -206,7 +206,7 @@ struct PlanBuilderView: View {
 
     private var generationStatusText: String? {
         if viewModel.isGenerating {
-            return GeminiConfig.isAIEnabled ? "Building a tailored AI session." : "Building an offline session from your profile."
+            return (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? "Building a tailored AI session." : "Building an offline session from your profile."
         }
 
         return viewModel.statusMessage
@@ -214,7 +214,7 @@ struct PlanBuilderView: View {
 
     private var generationStatusIcon: String {
         if viewModel.isGenerating {
-            return GeminiConfig.isAIEnabled ? "sparkles" : "bolt.fill"
+            return (GeminiConfig.isAIEnabled && PremiumStore.shared.isSubscribed) ? "sparkles" : "bolt.fill"
         }
 
         if viewModel.statusMessage?.localizedCaseInsensitiveContains("failed") == true {

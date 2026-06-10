@@ -40,6 +40,7 @@ final class BurnEstimator: ObservableObject {
     ) {
         let id = workout.id
         guard GeminiConfig.isAIEnabled,
+              PremiumStore.shared.isSubscribed,
               workout.caloriesBurned == nil,
               !estimatingIDs.contains(id) else { return }
 

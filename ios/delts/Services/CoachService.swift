@@ -80,6 +80,7 @@ final class CoachService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(GeminiConfig.deviceID, forHTTPHeaderField: "X-Delts-Device")
         request.timeoutInterval = 60
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 

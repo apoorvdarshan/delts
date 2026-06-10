@@ -10,11 +10,13 @@ struct CoachView: View {
     @Query(sort: \CompletedWorkout.date, order: .reverse) private var completedWorkouts: [CompletedWorkout]
 
     @StateObject private var viewModel = CoachViewModel()
+    @ObservedObject private var premium = PremiumStore.shared
     @FocusState private var inputFocused: Bool
     @State private var photoItem: PhotosPickerItem?
     @State private var showPhotosPicker = false
     @State private var showCamera = false
     @State private var showResetConfirm = false
+    @State private var showPaywall = false
 
     private let typingID = "coach-typing-indicator"
 
@@ -54,6 +56,9 @@ struct CoachView: View {
                     Button("Cancel", role: .cancel) {}
                 } message: {
                     Text("Clears the conversation. Your workouts and progress aren't affected.")
+                }
+                .sheet(isPresented: $showPaywall) {
+                    PaywallView()
                 }
                 .onChange(of: photoItem) { _, newItem in
                     guard let newItem else { return }
@@ -185,6 +190,10 @@ struct CoachView: View {
 
     private var inputBar: some View {
         VStack(spacing: 10) {
+            if !premium.isSubscribed {
+                tasteBanner
+            }
+
             if let image = viewModel.attachedImage {
                 attachmentPreview(image)
             }
@@ -212,6 +221,43 @@ struct CoachView: View {
         .padding(.top, 10)
         .padding(.bottom, 8)
         .deltsBottomActionBackground()
+    }
+
+    private var tasteBanner: some View {
+        Button {
+            showPaywall = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: premium.coachTasteRemaining > 0 ? "sparkles" : "lock.fill")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+
+                Text(premium.coachTasteRemaining > 0
+                     ? "\(premium.coachTasteRemaining) free message\(premium.coachTasteRemaining == 1 ? "" : "s") left"
+                     : "Unlock unlimited Coach")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+
+                Spacer(minLength: 0)
+
+                Text("Go Premium")
+                    .font(.caption.weight(.heavy))
+                    .foregroundStyle(Color.deltsOnAccent)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color.deltsAccent, in: Capsule())
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(Color.deltsAccent.opacity(0.10), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.deltsAccent.opacity(0.30), lineWidth: 0.5)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .deltsPressable()
+        .accessibilityLabel("Delts Premium")
     }
 
     private var attachMenu: some View {
@@ -292,8 +338,17 @@ struct CoachView: View {
 
     private func submit() {
         guard viewModel.canSend else { return }
+        guard premium.canUseCoach else {
+            inputFocused = false
+            showPaywall = true
+            return
+        }
         inputFocused = false
-        viewModel.send(contextProvider: buildContext)
+        viewModel.send(contextProvider: buildContext) {
+            // Consume the free taste only when the Coach actually replied, so
+            // network failures never burn the lifetime allowance.
+            PremiumStore.shared.consumeCoachTaste()
+        }
     }
 
     private func buildContext() -> String {

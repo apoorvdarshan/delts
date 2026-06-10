@@ -122,6 +122,8 @@ struct StartWorkoutHero: View {
     let discardTimer: () -> Void
     var burnKcal: Int? = nil
     var isEstimatingBurn: Bool = false
+    var burnLocked: Bool = false
+    var onBurnTap: (() -> Void)? = nil
 
     private var calorieBurnText: String {
         if let burnKcal { return "\(burnKcal) kcal" }
@@ -163,7 +165,9 @@ struct StartWorkoutHero: View {
                 repCount: repCount,
                 calorieBurnText: calorieBurnText,
                 calorieBurnActive: burnKcal != nil,
-                calorieBurnLoading: isEstimatingBurn
+                calorieBurnLoading: isEstimatingBurn,
+                calorieBurnLocked: burnLocked,
+                onBurnTap: onBurnTap
             )
         }
         .frame(maxWidth: .infinity)
@@ -387,6 +391,8 @@ struct HomeSessionStatsStrip: View {
     let calorieBurnText: String
     var calorieBurnActive: Bool = false
     var calorieBurnLoading: Bool = false
+    var calorieBurnLocked: Bool = false
+    var onBurnTap: (() -> Void)? = nil
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -418,13 +424,30 @@ struct HomeSessionStatsStrip: View {
 
             HomeMetricDivider()
 
-            HomeMetricCard(
-                label: "Burn",
-                value: calorieBurnText,
-                systemImage: "flame.fill",
-                isActive: calorieBurnActive,
-                isLoading: calorieBurnLoading
-            )
+            Group {
+                if calorieBurnLocked, let onBurnTap {
+                    Button(action: onBurnTap) {
+                        HomeMetricCard(
+                            label: "Burn",
+                            value: calorieBurnText,
+                            systemImage: "flame.fill",
+                            isActive: false,
+                            isLocked: true
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Calorie burn, locked. Unlock with Delts Premium.")
+                } else {
+                    HomeMetricCard(
+                        label: "Burn",
+                        value: calorieBurnText,
+                        systemImage: "flame.fill",
+                        isActive: calorieBurnActive,
+                        isLoading: calorieBurnLoading,
+                        isLocked: calorieBurnLocked
+                    )
+                }
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 8)
@@ -457,6 +480,7 @@ struct HomeMetricCard: View {
     let systemImage: String
     let isActive: Bool
     var isLoading: Bool = false
+    var isLocked: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -473,7 +497,17 @@ struct HomeMetricCard: View {
                     .minimumScaleFactor(0.7)
             }
 
-            if isLoading {
+            if isLocked {
+                HStack(spacing: 6) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 16, weight: .black))
+                        .foregroundStyle(Color.deltsAccent)
+                    Text("kcal")
+                        .font(.system(size: 14, weight: .black, design: .rounded))
+                        .foregroundStyle(Color.deltsMutedText)
+                }
+                .frame(height: 29, alignment: .leading)
+            } else if isLoading {
                 HStack(spacing: 6) {
                     ProgressView()
                         .controlSize(.small)

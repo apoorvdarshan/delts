@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
     @State private var selectedTab: DeltsTab = .initialTab
     @StateObject private var updateChecker = AppUpdateChecker()
@@ -29,6 +30,12 @@ struct ContentView: View {
             .task {
                 ensureDefaultProfile()
                 await updateChecker.checkForUpdatesIfNeeded()
+            }
+            .onChange(of: scenePhase) { _, phase in
+                // Plain subscription lapses emit no Transaction.updates event, so
+                // re-check entitlements every time the app comes to the foreground.
+                guard phase == .active else { return }
+                Task { await PremiumStore.shared.refreshEntitlement() }
             }
     }
 

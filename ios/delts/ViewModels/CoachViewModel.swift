@@ -51,7 +51,9 @@ final class CoachViewModel: ObservableObject {
 
     /// Sends the current draft + attachment. `contextProvider` is evaluated now,
     /// on the main actor, so it can read SwiftData/app state safely.
-    func send(contextProvider: () -> String) {
+    /// `onSuccess` fires only when the Coach actually replied — used to consume
+    /// the free-taste allowance without burning it on failed sends.
+    func send(contextProvider: () -> String, onSuccess: (() -> Void)? = nil) {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         let image = attachedImage
         guard !isSending, !text.isEmpty || image != nil else { return }
@@ -69,9 +71,11 @@ final class CoachViewModel: ObservableObject {
 
         Task { [weak self] in
             let result: CoachMessage
+            var succeeded = false
             do {
                 let reply = try await service.reply(systemContext: context, history: history)
                 result = CoachMessage(role: .model, text: reply)
+                succeeded = true
             } catch {
                 let description = (error as? LocalizedError)?.errorDescription ?? "Something went wrong. Try again."
                 result = CoachMessage(role: .model, text: description, isError: true)
@@ -80,6 +84,9 @@ final class CoachViewModel: ObservableObject {
             self.messages.append(result)
             self.persist(result, imageData: nil)
             self.isSending = false
+            if succeeded {
+                onSuccess?()
+            }
         }
     }
 

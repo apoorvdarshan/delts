@@ -33,6 +33,7 @@ final class GeminiWorkoutService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(GeminiConfig.deviceID, forHTTPHeaderField: "X-Delts-Device")
         request.httpBody = try JSONEncoder().encode(GeminiRequest(prompt: prompt(
             profile: profile,
             muscleGroup: muscleGroup,

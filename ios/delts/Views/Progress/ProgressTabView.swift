@@ -19,6 +19,8 @@ struct ProgressTabView: View {
     @State private var isShowingBodyLogs = false
     @StateObject private var healthKit = HealthKitProgressService()
     @ObservedObject private var burnEstimator = BurnEstimator.shared
+    @ObservedObject private var premium = PremiumStore.shared
+    @State private var isPaywallPresented = false
 
     private var filteredSnapshots: [ProgressMetricSnapshot] {
         selectedRange.filter(snapshots).sorted { $0.date < $1.date }
@@ -103,6 +105,14 @@ struct ProgressTabView: View {
                     delete: deleteSnapshot
                 )
             }
+            .sheet(isPresented: $isPaywallPresented) {
+                PaywallView()
+            }
+            .onChange(of: premium.isSubscribed) { _, subscribed in
+                // Backfill missing burns immediately after subscribing from here.
+                guard subscribed else { return }
+                healMissingBurns()
+            }
         }
     }
 
@@ -177,6 +187,10 @@ struct ProgressTabView: View {
                         WorkoutHistoryCard(
                             workout: workout,
                             isEstimating: burnEstimator.isEstimating(workout.id),
+                            isBurnLocked: workout.caloriesBurned == nil
+                                && !premium.isSubscribed
+                                && !burnEstimator.isEstimating(workout.id),
+                            onBurnLockedTap: { isPaywallPresented = true },
                             onDelete: { deleteCompletedWorkout(workout) }
                         )
                     }
@@ -188,8 +202,10 @@ struct ProgressTabView: View {
 
     /// Compute calories for recently completed workouts that don't have one yet
     /// (e.g. an on-stop estimate that failed or predates the feature). Capped so a
-    /// long history doesn't fire a burst of requests.
+    /// long history doesn't fire a burst of requests. Subscribers only — the free
+    /// taste is consumed on Stop, never silently here.
     private func healMissingBurns() {
+        guard premium.isSubscribed else { return }
         let missing = completedWorkouts.filter { $0.caloriesBurned == nil }.prefix(8)
         guard !missing.isEmpty else { return }
 
@@ -558,6 +574,8 @@ private enum ProgressMetricKind: String, CaseIterable, Identifiable {
 private struct WorkoutHistoryCard: View {
     let workout: CompletedWorkout
     var isEstimating: Bool = false
+    var isBurnLocked: Bool = false
+    var onBurnLockedTap: (() -> Void)? = nil
     let onDelete: () -> Void
 
     private var dateText: String {
@@ -607,12 +625,24 @@ private struct WorkoutHistoryCard: View {
 
             HStack(spacing: 14) {
                 InlineStat(icon: "clock.fill", text: "\(workout.durationMinutes) min")
-                InlineStat(
-                    icon: "flame.fill",
-                    text: burnText,
-                    tint: (workout.caloriesBurned != nil || isEstimating) ? .deltsAccent : .deltsMutedText,
-                    isLoading: isEstimating
-                )
+
+                if isBurnLocked {
+                    Button {
+                        onBurnLockedTap?()
+                    } label: {
+                        InlineStat(icon: "flame.fill", text: "kcal", tint: .deltsMutedText, isLocked: true)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Calorie burn, locked. Unlock with Delts Premium.")
+                } else {
+                    InlineStat(
+                        icon: "flame.fill",
+                        text: burnText,
+                        tint: (workout.caloriesBurned != nil || isEstimating) ? .deltsAccent : .deltsMutedText,
+                        isLoading: isEstimating
+                    )
+                }
+
                 InlineStat(icon: "dumbbell.fill", text: movesText)
             }
 
@@ -645,13 +675,21 @@ private struct InlineStat: View {
     let text: String
     var tint: Color = .deltsAccent
     var isLoading: Bool = false
+    var isLocked: Bool = false
 
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: icon)
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(tint)
-            if isLoading {
+            if isLocked {
+                Image(systemName: "lock.fill")
+                    .font(.caption2.weight(.black))
+                    .foregroundStyle(Color.deltsAccent)
+                Text(text)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.deltsMutedText)
+            } else if isLoading {
                 ProgressView()
                     .controlSize(.mini)
                     .tint(tint)

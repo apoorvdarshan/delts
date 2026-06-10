@@ -97,7 +97,8 @@ final class PlanViewModel: ObservableObject {
         let activeProfile = profile ?? UserProfile.defaultProfile()
         let equipment = selectedEquipment.isEmpty ? activeProfile.availableEquipment : selectedEquipment
 
-        if GeminiConfig.isAIEnabled {
+        let isPremium = await MainActor.run { PremiumStore.shared.isSubscribed }
+        if GeminiConfig.isAIEnabled && isPremium {
             do {
                 return try await geminiService.generateWorkout(
                     profile: activeProfile,

@@ -1,0 +1,88 @@
+{
+  "identifier" : "B1F2A3C4-0000-4000-8000-DELTS0000001",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "DEL75000001",
+      "localizations" : [
+
+      ],
+      "name" : "Delts Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "1.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "DEL75000002",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited AI Coach and calorie estimates",
+              "displayName" : "Delts Premium Weekly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "delts.premium.weekly",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Premium Weekly",
+          "subscriptionGroupID" : "DEL75000001",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "39.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "DEL75000003",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited AI Coach and calorie estimates",
+              "displayName" : "Delts Premium Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "delts.premium.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Premium Yearly",
+          "subscriptionGroupID" : "DEL75000001",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}
