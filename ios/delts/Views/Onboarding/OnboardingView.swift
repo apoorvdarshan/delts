@@ -185,26 +185,13 @@ struct OnboardingView: View {
 
     private var welcomeStep: some View {
         VStack(spacing: 26) {
-            ZStack {
-                Circle()
-                    .fill(Color.deltsAccent.opacity(0.20))
-                    .frame(width: 190, height: 190)
-                    .blur(radius: 56)
-
-                Image(DeltsTheme.current.previewAssetName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 110, height: 110)
-                    .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 26, style: .continuous)
-                            .stroke(Color.white.opacity(0.14), lineWidth: 0.6)
-                    }
-                    .shadow(color: Color.deltsAccent.opacity(0.38), radius: 26, y: 10)
-                    .scaleEffect(welcomeRevealed ? 1 : 0.84)
-                    .opacity(welcomeRevealed ? 1 : 0)
-            }
-            .padding(.top, 16)
+            Image("DeltsGlyph")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 116, height: 116)
+                .scaleEffect(welcomeRevealed ? 1 : 0.84)
+                .opacity(welcomeRevealed ? 1 : 0)
+                .padding(.top, 16)
 
             VStack(spacing: 10) {
                 Text("LET'S GET YOU SET UP")
