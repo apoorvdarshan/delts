@@ -1,9 +1,10 @@
 import Combine
 import Foundation
-import StoreKit
+import RevenueCat
 
-/// StoreKit 2 subscription manager for Delts Premium, plus the one-time
-/// lifetime "taste" allowance that lets new users try the AI features
+/// Subscription manager for Delts Premium, backed by RevenueCat (which uses
+/// StoreKit 2 under the hood and verifies receipts server-side), plus the
+/// one-time lifetime "taste" allowance that lets new users try the AI features
 /// (Coach chat + calorie estimates) before subscribing.
 ///
 /// Free tier = every local feature (timer, logging, history, progress).
@@ -12,18 +13,26 @@ import StoreKit
 final class PremiumStore: ObservableObject {
     static let shared = PremiumStore()
 
-    enum ProductID {
-        static let weekly = "delts.premium.weekly"
-        static let yearly = "delts.premium.yearly"
-        static let all: Set<String> = [weekly, yearly]
-    }
+    /// RevenueCat public SDK key for the "Delts iOS" App Store app.
+    static let revenueCatAPIKey = "appl_MruPsHFfCLYIQomGjxSWfYpiiqr"
+    /// RevenueCat entitlement that gates the AI features.
+    static let entitlementID = "premium"
 
     /// One-time lifetime allowances (not monthly) so the taste can't be
     /// farmed as a permanent free tier.
     static let coachTasteLimit = 5
     static let calorieTasteLimit = 3
 
-    @Published private(set) var products: [Product] = []
+    /// A purchasable plan from the current RevenueCat offering.
+    struct Plan {
+        let package: Package
+
+        var displayPrice: String { package.storeProduct.localizedPriceString }
+        var price: Decimal { package.storeProduct.price }
+    }
+
+    @Published private(set) var weeklyPlan: Plan?
+    @Published private(set) var yearlyPlan: Plan?
     @Published private(set) var isSubscribed = false
     @Published private(set) var isLoadingProducts = false
     @Published private(set) var isPurchasing = false
@@ -37,11 +46,8 @@ final class PremiumStore: ObservableObject {
         coachTasteUsed = UserDefaults.standard.integer(forKey: "delts_taste_coach_used")
         calorieTasteUsed = UserDefaults.standard.integer(forKey: "delts_taste_calorie_used")
         updatesTask = Task { [weak self] in
-            for await update in Transaction.updates {
-                if case .verified(let transaction) = update {
-                    await transaction.finish()
-                }
-                await self?.refreshEntitlement()
+            for await info in Purchases.shared.customerInfoStream {
+                self?.apply(info)
             }
         }
         Task {
@@ -74,73 +80,63 @@ final class PremiumStore: ObservableObject {
         UserDefaults.standard.set(calorieTasteUsed, forKey: "delts_taste_calorie_used")
     }
 
+    private func apply(_ info: CustomerInfo) {
+        isSubscribed = info.entitlements[Self.entitlementID]?.isActive == true
+            || !info.entitlements.active.isEmpty
+    }
+
     func refreshEntitlement() async {
-        var active = false
-        for await result in Transaction.currentEntitlements {
-            guard case .verified(let transaction) = result else { continue }
-            if ProductID.all.contains(transaction.productID), transaction.revocationDate == nil {
-                active = true
-            }
+        if let info = try? await Purchases.shared.customerInfo() {
+            apply(info)
         }
-        isSubscribed = active
     }
 
     // MARK: - Products
 
-    var weeklyProduct: Product? { products.first { $0.id == ProductID.weekly } }
-    var yearlyProduct: Product? { products.first { $0.id == ProductID.yearly } }
-
     func loadProducts() async {
-        guard products.isEmpty, !isLoadingProducts else { return }
+        guard weeklyPlan == nil || yearlyPlan == nil, !isLoadingProducts else { return }
         isLoadingProducts = true
         defer { isLoadingProducts = false }
         do {
-            products = try await Product.products(for: ProductID.all)
+            let offerings = try await Purchases.shared.offerings()
+            guard let current = offerings.current else { return }
+            yearlyPlan = (current.annual ?? current.package(identifier: "$rc_annual")).map(Plan.init)
+            weeklyPlan = (current.weekly ?? current.package(identifier: "$rc_weekly")).map(Plan.init)
         } catch {
-            products = []
+            // Leave plans nil; the paywall shows its unavailable state.
         }
     }
 
     // MARK: - Purchase / restore
 
     @discardableResult
-    func purchase(_ product: Product) async -> Bool {
+    func purchase(_ plan: Plan) async -> Bool {
         guard !isPurchasing else { return false }
         isPurchasing = true
         defer { isPurchasing = false }
 
         do {
-            let result = try await product.purchase()
-            switch result {
-            case .success(let verification):
-                if case .verified(let transaction) = verification {
-                    await transaction.finish()
-                } else {
-                    lastErrorMessage = "The purchase could not be verified. You have not been charged twice — try Restore Purchases."
-                }
-                await refreshEntitlement()
-                return isSubscribed
-            case .userCancelled, .pending:
-                return false
-            @unknown default:
-                return false
-            }
+            let result = try await Purchases.shared.purchase(package: plan.package)
+            apply(result.customerInfo)
+            return isSubscribed
         } catch {
-            lastErrorMessage = "The purchase could not be completed. Check your connection and try again."
+            let cancelled = (error as? RevenueCat.ErrorCode) == .purchaseCancelledError
+            if !cancelled {
+                lastErrorMessage = "The purchase could not be completed. Check your connection and try again."
+            }
             return false
         }
     }
 
     func restorePurchases() async {
         do {
-            try await AppStore.sync()
+            let info = try await Purchases.shared.restorePurchases()
+            apply(info)
+            if !isSubscribed {
+                lastErrorMessage = "No active subscription was found for this Apple ID."
+            }
         } catch {
             lastErrorMessage = "Restore failed. Check your connection and try again."
-            return
-        }
-        await refreshEntitlement()
-        if !isSubscribed {
-            lastErrorMessage = "No active subscription was found for this Apple ID."
         }
     }
 }

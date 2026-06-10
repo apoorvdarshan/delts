@@ -1,4 +1,3 @@
-import StoreKit
 import SwiftUI
 
 /// Delts Premium paywall. Free tier keeps every local feature; Premium unlocks
@@ -67,7 +66,7 @@ struct PaywallView: View {
     }
 
     private var productsAvailable: Bool {
-        store.weeklyProduct != nil || store.yearlyProduct != nil
+        store.weeklyPlan != nil || store.yearlyPlan != nil
     }
 
     // MARK: - Header
@@ -177,14 +176,14 @@ struct PaywallView: View {
             planCard(
                 plan: .yearly,
                 title: "Yearly",
-                price: store.yearlyProduct?.displayPrice ?? "$39.99",
+                price: store.yearlyPlan?.displayPrice ?? "$39.99",
                 caption: yearlyCaption,
                 badge: "BEST VALUE"
             )
             planCard(
                 plan: .weekly,
                 title: "Weekly",
-                price: store.weeklyProduct?.displayPrice ?? "$1.99",
+                price: store.weeklyPlan?.displayPrice ?? "$1.99",
                 caption: "per week · cancel anytime",
                 badge: nil
             )
@@ -192,7 +191,7 @@ struct PaywallView: View {
     }
 
     private var yearlyCaption: String {
-        guard let yearly = store.yearlyProduct, let weekly = store.weeklyProduct else {
+        guard let yearly = store.yearlyPlan, let weekly = store.weeklyPlan else {
             return "per year · save over 60%"
         }
         let weeklyPerYear = weekly.price * 52
@@ -299,10 +298,10 @@ struct PaywallView: View {
     // MARK: - Actions
 
     private func purchaseSelected() {
-        let product = selectedPlan == .yearly ? store.yearlyProduct : store.weeklyProduct
-        guard let product else { return }
+        let plan = selectedPlan == .yearly ? store.yearlyPlan : store.weeklyPlan
+        guard let plan else { return }
         Task {
-            await PremiumStore.shared.purchase(product)
+            await PremiumStore.shared.purchase(plan)
         }
     }
 
