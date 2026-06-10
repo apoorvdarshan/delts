@@ -145,10 +145,10 @@ struct AboutSettingsSection: View {
                             AboutActionRow(
                                 title: "Product Hunt",
                                 systemImage: "paperplane.fill",
-                                value: "Coming soon",
+                                value: "Vote for Delts",
                                 tint: .deltsSecondaryAccent
                             ) {
-                                activeAlert = .placeholder(.productHunt)
+                                open(AboutLinks.productHuntURL)
                             }
                         }
                     }
@@ -329,12 +329,12 @@ private enum AboutLinks {
     static let xProfileURL = URL(string: "https://x.com/apoorvdarshan")
     static let instagramURL = URL(string: "https://www.instagram.com/delts.fit")
     static let linkedInURL = URL(string: "https://www.linkedin.com/company/delts")
+    static let productHuntURL = URL(string: "https://www.producthunt.com/products/delts")
 }
 
 private enum AboutPlaceholder: Identifiable {
     case share
     case openSource
-    case productHunt
     case privacy
     case terms
 
@@ -346,7 +346,6 @@ private enum AboutPlaceholder: Identifiable {
         switch self {
         case .share: return "Share Delts"
         case .openSource: return "Open Source"
-        case .productHunt: return "Product Hunt"
         case .privacy: return "Privacy Policy"
         case .terms: return "Terms"
         }
@@ -358,8 +357,6 @@ private enum AboutPlaceholder: Identifiable {
             return "The App Store share link will be added when the listing is ready."
         case .openSource:
             return "The repository is private for now. This row is ready for the public open-source repo link later."
-        case .productHunt:
-            return "The Product Hunt launch link will be added when it is ready."
         case .privacy:
             return "This will open delts.fit/privacy after the website is configured."
         case .terms:

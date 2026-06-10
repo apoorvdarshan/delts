@@ -18,6 +18,7 @@ Plan workouts, time sessions, log sets and RPE, and track body progress — with
 [![Instagram](https://img.shields.io/badge/Instagram-%40delts.fit-E4405F?logo=instagram&logoColor=white)](https://www.instagram.com/delts.fit)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Delts-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/company/delts)
 [![TrustMRR](https://img.shields.io/badge/TrustMRR-listed-22C55E)](https://trustmrr.com/startup/delts-workout-tracker)
+[![Product Hunt](https://img.shields.io/badge/Product%20Hunt-vote-DA552F?logo=producthunt&logoColor=white)](https://www.producthunt.com/products/delts)
 
 </div>
 
@@ -93,6 +94,7 @@ Follow Delts:
 - Instagram: [@delts.fit](https://www.instagram.com/delts.fit)
 - LinkedIn: [Delts](https://www.linkedin.com/company/delts)
 - TrustMRR: [Delts - Workout Tracker](https://trustmrr.com/startup/delts-workout-tracker)
+- Product Hunt: [Delts](https://www.producthunt.com/products/delts)
 
 ## License
 
