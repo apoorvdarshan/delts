@@ -25,14 +25,6 @@ App Store Connect submission details for Delts. Each field is in a code block fo
 
 ## What's New
 
-    Initial App Store preparation for Delts.
-    - Workout timer-centered training flow.
-    - Daily workout board and exercise library.
-    - Set, rep, and RPE logging for active workouts.
-    - Weight and body fat progress charts.
-    - Optional Apple Health support for weight and body fat.
-    - Custom themes with matching app icons.
-
 ## Description
 
     Delts is a focused iPhone workout planner and tracker for gym sessions.
