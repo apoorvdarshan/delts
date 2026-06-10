@@ -1,8 +1,7 @@
 import Foundation
 
-/// Estimates calories burned for a finished session by sending the workout
-/// (duration + exercises/sets/reps/RPE) and the person's bio data to Gemini
-/// through the delts.fit proxy.
+/// Estimates calories burned for a session by sending the workout (duration +
+/// exercises/sets/reps/RPE) and the person's bio data to Gemini via the proxy.
 struct CalorieEstimateService {
     struct Bio {
         let gender: String
@@ -21,10 +20,18 @@ struct CalorieEstimateService {
     }
 
     func estimate(durationMinutes: Int, exercises: [PlannedRoutineExercise], bio: Bio) async throws -> Int {
+        try await run(prompt: Self.prompt(durationMinutes: durationMinutes, exerciseLines: Self.lines(from: exercises), bio: bio))
+    }
+
+    func estimate(durationMinutes: Int, exerciseLogs: [CompletedExerciseLog], bio: Bio) async throws -> Int {
+        try await run(prompt: Self.prompt(durationMinutes: durationMinutes, exerciseLines: Self.lines(fromLogs: exerciseLogs), bio: bio))
+    }
+
+    private func run(prompt: String) async throws -> Int {
         guard let url = GeminiConfig.proxyURL else { throw EstimateError.notConfigured }
 
         let payload: [String: Any] = [
-            "contents": [["role": "user", "parts": [["text": Self.prompt(durationMinutes: durationMinutes, exercises: exercises, bio: bio)]]]],
+            "contents": [["role": "user", "parts": [["text": prompt]]]],
             "generationConfig": ["temperature": 0.2, "responseMimeType": "application/json"]
         ]
 
@@ -71,17 +78,15 @@ struct CalorieEstimateService {
         }
 
         // Fallback: first run of digits anywhere in the response.
-        let digits = cleaned.prefix { !$0.isNumber }.isEmpty ? cleaned : cleaned
-        let firstNumber = digits.drop { !$0.isNumber }.prefix { $0.isNumber }
+        let firstNumber = cleaned.drop { !$0.isNumber }.prefix { $0.isNumber }
         if let parsed = Int(firstNumber) { return clamp(parsed) }
         return nil
     }
 
     private static func clamp(_ value: Int) -> Int { min(max(value, 0), 5000) }
 
-    private static func prompt(durationMinutes: Int, exercises: [PlannedRoutineExercise], bio: Bio) -> String {
-        var lines: [String] = []
-        for exercise in exercises {
+    private static func lines(from exercises: [PlannedRoutineExercise]) -> [String] {
+        exercises.map { exercise in
             let reps = exercise.normalizedSetReps
             let rpe = exercise.normalizedSetRPE
             let setCount = max(exercise.sets, 1)
@@ -94,10 +99,26 @@ struct CalorieEstimateService {
                 setParts.append(part)
             }
             let muscle = exercise.primaryMuscles.first ?? "Unspecified"
-            lines.append("- \(exercise.name) (\(muscle), \(exercise.rawEquipment)): \(setParts.joined(separator: ", "))")
+            return "- \(exercise.name) (\(muscle), \(exercise.rawEquipment)): \(setParts.joined(separator: ", "))"
         }
-        let exerciseText = lines.isEmpty ? "- (no logged sets)" : lines.joined(separator: "\n")
+    }
 
+    private static func lines(fromLogs logs: [CompletedExerciseLog]) -> [String] {
+        logs.map { log in
+            var setParts: [String] = []
+            for set in log.sets {
+                let reps = set.reps.trimmingCharacters(in: .whitespaces)
+                let rpe = set.rpe?.trimmingCharacters(in: .whitespaces) ?? ""
+                var part = reps.isEmpty ? "?" : "\(reps) reps"
+                if !rpe.isEmpty { part += " @RPE \(rpe)" }
+                setParts.append(part)
+            }
+            return "- \(log.name) (\(log.targetMuscle), \(log.equipment)): \(setParts.joined(separator: ", "))"
+        }
+    }
+
+    private static func prompt(durationMinutes: Int, exerciseLines: [String], bio: Bio) -> String {
+        let exerciseText = exerciseLines.isEmpty ? "- (no logged sets)" : exerciseLines.joined(separator: "\n")
         return """
         Estimate the total calories burned during this resistance-training session.
         Weigh the person's body data, the exercises and their sets/reps/effort, and the total session time.
@@ -122,6 +143,7 @@ private struct GeminiTextResponse: Decodable {
 }
 
 /// Persists the estimated calories burned per workout day (keyed by date key).
+/// Used by the Home "Burn" stat.
 enum WorkoutBurnStore {
     private static let key = "delts.workoutBurn.v1"
 

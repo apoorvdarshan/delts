@@ -168,18 +168,49 @@ struct ProgressTabView: View {
 
     @ViewBuilder
     private var workoutHistorySection: some View {
-        if completedWorkouts.isEmpty {
-            ProgressHistoryEmptyCard()
-        } else {
-            VStack(spacing: 10) {
-                ForEach(completedWorkouts) { workout in
-                    WorkoutHistoryCard(
-                        workout: workout,
-                        isEstimating: burnEstimator.isEstimating(workout.id),
-                        onDelete: { deleteCompletedWorkout(workout) }
-                    )
+        Group {
+            if completedWorkouts.isEmpty {
+                ProgressHistoryEmptyCard()
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(completedWorkouts) { workout in
+                        WorkoutHistoryCard(
+                            workout: workout,
+                            isEstimating: burnEstimator.isEstimating(workout.id),
+                            onDelete: { deleteCompletedWorkout(workout) }
+                        )
+                    }
                 }
             }
+        }
+        .onAppear { healMissingBurns() }
+    }
+
+    /// Compute calories for recently completed workouts that don't have one yet
+    /// (e.g. an on-stop estimate that failed or predates the feature). Capped so a
+    /// long history doesn't fire a burst of requests.
+    private func healMissingBurns() {
+        let missing = completedWorkouts.filter { $0.caloriesBurned == nil }.prefix(8)
+        guard !missing.isEmpty else { return }
+
+        let profile = profiles.first
+        let bio = CalorieEstimateService.Bio(
+            gender: profile?.gender ?? "Unknown",
+            age: profile?.age ?? 0,
+            heightCM: profile?.heightCM ?? 0,
+            weightKG: profile?.currentWeightKG ?? 0,
+            bodyFatPercentage: profile?.currentBodyFatPercentage ?? 0,
+            experience: profile?.experienceLevel.title ?? "Intermediate"
+        )
+
+        for workout in missing {
+            burnEstimator.estimateIfNeeded(
+                workout: workout,
+                bio: bio,
+                modelContext: modelContext,
+                appleHealthEnabled: appleHealthEnabled,
+                healthKit: healthKit
+            )
         }
     }
 
