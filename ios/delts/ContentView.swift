@@ -247,11 +247,11 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .home: return "Home"
-        case .workouts: return "Workouts"
-        case .coach: return "Coach"
-        case .progress: return "Progress"
-        case .profile: return "Settings"
+        case .home: return String(localized: "Home")
+        case .workouts: return String(localized: "Workouts")
+        case .coach: return String(localized: "Coach")
+        case .progress: return String(localized: "Progress")
+        case .profile: return String(localized: "Settings")
         }
     }
 

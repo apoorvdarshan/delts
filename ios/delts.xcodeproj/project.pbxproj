@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BAAE1C8C2FDA1934009ED017 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = BAAE1C8A2FDA1934009ED017 /* InfoPlist.xcstrings */; };
+		BAAE1C8D2FDA1934009ED017 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = BAAE1C8B2FDA1934009ED017 /* Localizable.xcstrings */; };
 		BF0000000000000000000001 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = BF0000000000000000000003 /* RevenueCat */; };
 		C0DEF1000000000000000010 /* DeltsTimerWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DEF1000000000000000003 /* DeltsTimerWidgetBundle.swift */; };
 		C0DEF1000000000000000011 /* WorkoutTimerLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DEF1000000000000000004 /* WorkoutTimerLiveActivity.swift */; };
@@ -40,6 +42,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		BAAE1C8A2FDA1934009ED017 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
+		BAAE1C8B2FDA1934009ED017 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		BAE99A722FC0922800559E0F /* delts.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = delts.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BAE99A802FC0B00000559E0F /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		BAE99A812FC0B00000559E0F /* Secrets.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.example.xcconfig; sourceTree = "<group>"; };
@@ -109,6 +113,8 @@
 		C0DEF1000000000000000002 /* DeltsTimerWidget */ = {
 			isa = PBXGroup;
 			children = (
+				BAAE1C8A2FDA1934009ED017 /* InfoPlist.xcstrings */,
+				BAAE1C8B2FDA1934009ED017 /* Localizable.xcstrings */,
 				C0DEF1000000000000000003 /* DeltsTimerWidgetBundle.swift */,
 				C0DEF1000000000000000004 /* WorkoutTimerLiveActivity.swift */,
 				C0DEF1000000000000000005 /* Info.plist */,
@@ -194,6 +200,21 @@
 			knownRegions = (
 				en,
 				Base,
+				ar,
+				az,
+				de,
+				es,
+				fr,
+				hi,
+				it,
+				ja,
+				ko,
+				nl,
+				pl,
+				"pt-BR",
+				ro,
+				ru,
+				"zh-Hans",
 			);
 			mainGroup = BAE99A692FC0922800559E0F;
 			minimizedProjectReferenceProxies = 1;
@@ -223,6 +244,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BAAE1C8C2FDA1934009ED017 /* InfoPlist.xcstrings in Resources */,
+				BAAE1C8D2FDA1934009ED017 /* Localizable.xcstrings in Resources */,
 				C0DEF1000000000000000056 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
