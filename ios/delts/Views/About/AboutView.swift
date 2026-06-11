@@ -125,15 +125,6 @@ struct AboutSettingsSection: View {
                     AboutSection(title: String(localized: "Support & Links")) {
                         AboutRowStack {
                             AboutActionRow(
-                                title: String(localized: "Support on Ko-fi"),
-                                systemImage: "cup.and.saucer.fill",
-                                value: "apoorvdarshan",
-                                tint: .deltsSecondaryAccent
-                            ) {
-                                open(AboutLinks.kofiURL)
-                            }
-                            AboutDivider()
-                            AboutActionRow(
                                 title: String(localized: "Open Source"),
                                 systemImage: "curlybraces.square.fill",
                                 value: String(localized: "GitHub"),
@@ -325,7 +316,6 @@ private enum AboutLinks {
     static let contactEmailURL = URL(string: "mailto:\(contactEmail)")
     static let githubIssueURL = URL(string: "https://github.com/apoorvdarshan/delts/issues/new")
     static let githubFeatureURL = URL(string: "https://github.com/apoorvdarshan/delts/issues/new?labels=enhancement")
-    static let kofiURL = URL(string: "https://ko-fi.com/apoorvdarshan")
     static let xProfileURL = URL(string: "https://x.com/apoorvdarshan")
     static let instagramURL = URL(string: "https://www.instagram.com/delts.fit")
     static let linkedInURL = URL(string: "https://www.linkedin.com/company/delts")

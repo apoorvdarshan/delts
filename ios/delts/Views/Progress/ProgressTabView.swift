@@ -203,7 +203,7 @@ struct ProgressTabView: View {
     /// long history doesn't fire a burst of requests. Subscribers only — the free
     /// taste is consumed on Stop, never silently here.
     private func healMissingBurns() {
-        guard premium.isSubscribed else { return }
+        guard premium.isSubscribed, AIConsent.isGranted else { return }
         let missing = completedWorkouts.filter { $0.caloriesBurned == nil }.prefix(8)
         guard !missing.isEmpty else { return }
 

@@ -7,6 +7,8 @@ struct SubscriptionSettingsSection: View {
     @State private var showManageSubscriptions = false
     @State private var showPaywall = false
     @State private var isRestoring = false
+    @State private var showAIConsent = false
+    @State private var aiConsentGranted = AIConsent.isGranted
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -31,6 +33,15 @@ struct SubscriptionSettingsSection: View {
                     divider
                 }
 
+                actionRow(
+                    title: String(localized: "AI Data Sharing"),
+                    systemImage: "hand.raised.fill",
+                    value: aiConsentGranted ? String(localized: "Allowed") : String(localized: "Off"),
+                    tint: .deltsSecondaryAccent
+                ) {
+                    showAIConsent = true
+                }
+                divider
                 actionRow(
                     title: String(localized: "Manage Subscription"),
                     systemImage: "creditcard.fill",
@@ -63,6 +74,11 @@ struct SubscriptionSettingsSection: View {
                 .padding(.top, 2)
         }
         .manageSubscriptionsSheet(isPresented: $showManageSubscriptions)
+        .sheet(isPresented: $showAIConsent) {
+            AIConsentSheet { granted in
+                aiConsentGranted = granted
+            }
+        }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }

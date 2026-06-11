@@ -17,6 +17,7 @@ struct CoachView: View {
     @State private var showCamera = false
     @State private var showResetConfirm = false
     @State private var showPaywall = false
+    @State private var showAIConsent = false
 
     private let typingID = "coach-typing-indicator"
 
@@ -43,7 +44,12 @@ struct CoachView: View {
                     }
                 }
                 .safeAreaInset(edge: .bottom) { inputBar }
-                .onAppear { viewModel.configure(modelContext: modelContext) }
+                .onAppear {
+                    viewModel.configure(modelContext: modelContext)
+                    if ProcessInfo.processInfo.arguments.contains("--delts-show-ai-consent") {
+                        showAIConsent = true
+                    }
+                }
                 .photosPicker(isPresented: $showPhotosPicker, selection: $photoItem, matching: .images)
                 .fullScreenCover(isPresented: $showCamera) {
                     CoachCameraPicker { image in
@@ -56,6 +62,11 @@ struct CoachView: View {
                     Button("Cancel", role: .cancel) {}
                 } message: {
                     Text("Clears the conversation. Your workouts and progress aren't affected.")
+                }
+                .sheet(isPresented: $showAIConsent) {
+                    AIConsentSheet { granted in
+                        if granted { submit() }
+                    }
                 }
                 .sheet(isPresented: $showPaywall) {
                     PaywallView()
@@ -192,6 +203,8 @@ struct CoachView: View {
         VStack(spacing: 10) {
             if !premium.isSubscribed {
                 tasteBanner
+            } else if AIConsent.hasDecided && !AIConsent.isGranted {
+                consentOffBanner
             }
 
             if let image = viewModel.attachedImage {
@@ -216,11 +229,43 @@ struct CoachView: View {
 
                 sendButton
             }
+
+            Text("AI-generated guidance with sources where available. Not medical advice.")
+                .font(.caption2)
+                .foregroundStyle(Color.deltsMutedText.opacity(0.8))
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 16)
         .padding(.top, 10)
         .padding(.bottom, 8)
         .deltsBottomActionBackground()
+    }
+
+    private var consentOffBanner: some View {
+        Button {
+            showAIConsent = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "hand.raised.fill")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+
+                Text("AI data sharing is off")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+
+                Spacer(minLength: 0)
+
+                Text("Review")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Color.deltsPanel.opacity(0.3), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     private var tasteBanner: some View {
@@ -339,6 +384,11 @@ struct CoachView: View {
         guard premium.canUseCoach else {
             inputFocused = false
             showPaywall = true
+            return
+        }
+        guard AIConsent.isGranted else {
+            inputFocused = false
+            showAIConsent = true
             return
         }
         inputFocused = false

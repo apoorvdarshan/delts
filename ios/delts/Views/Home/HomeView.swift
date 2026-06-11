@@ -28,6 +28,7 @@ struct HomeView: View {
     @State private var sessionElapsedSeconds = 0
     @State private var isOtherDateTimerDialogPresented = false
     @State private var isEmptyWorkoutStartDialogPresented = false
+    @State private var pendingBurnEstimate: (() -> Void)?
     @State private var selectedWorkoutRoute: PlannedWorkoutDetailRoute?
     @State private var isGuidedWorkoutPresented = false
     @FocusState private var focusedField: PlannedSetFocus?
@@ -463,6 +464,16 @@ struct HomeView: View {
             } message: {
                 Text("Add at least one workout to \(selectedDateTitle) before starting the timer.")
             }
+            .sheet(isPresented: Binding(
+                get: { pendingBurnEstimate != nil },
+                set: { if !$0 { pendingBurnEstimate = nil } }
+            )) {
+                AIConsentSheet { granted in
+                    let estimate = pendingBurnEstimate
+                    pendingBurnEstimate = nil
+                    if granted { estimate?() }
+                }
+            }
             .sheet(isPresented: $isPaywallPresented) {
                 PaywallView()
             }
@@ -706,7 +717,16 @@ struct HomeView: View {
         modelContext.insert(completedWorkout)
         try? modelContext.save()
 
-        estimateBurn(workout: completedWorkout, dateKey: selectedDateKey, exercises: selectedExercises, durationMinutes: durationMinutes)
+        if premium.isSubscribed && !AIConsent.hasDecided {
+            // First AI use: disclose what is shared and ask permission (Guideline 5.1.2).
+            let dateKey = selectedDateKey
+            let exercises = selectedExercises
+            pendingBurnEstimate = { [self] in
+                estimateBurn(workout: completedWorkout, dateKey: dateKey, exercises: exercises, durationMinutes: durationMinutes)
+            }
+        } else {
+            estimateBurn(workout: completedWorkout, dateKey: selectedDateKey, exercises: selectedExercises, durationMinutes: durationMinutes)
+        }
     }
 
     /// On Stop, ask Gemini to estimate calories burned from the session
@@ -714,8 +734,8 @@ struct HomeView: View {
     /// the completed workout, show it in the Burn stat, and write it to Apple Health.
     private func estimateBurn(workout: CompletedWorkout, dateKey: String, exercises: [PlannedRoutineExercise], durationMinutes: Int) {
         guard GeminiConfig.isAIEnabled, !exercises.isEmpty else { return }
-        // Calorie estimates are premium-only.
-        guard premium.isSubscribed else { return }
+        // Calorie estimates are premium-only, and only with AI data-sharing consent.
+        guard premium.isSubscribed, AIConsent.isGranted else { return }
 
         let profile = profiles.first
         let bio = CalorieEstimateService.Bio(
