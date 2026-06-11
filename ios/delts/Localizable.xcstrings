@@ -6607,6 +6607,194 @@
         }
       }
     },
+    "AI Data Sharing" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مشاركة بيانات الذكاء الاصطناعي"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI ilə Məlumat Paylaşımı"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI-Datenfreigabe"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir datos con la IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partage de données avec l'IA"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI डेटा शेयरिंग"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Condivisione dati con l'IA"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AIデータ共有"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 데이터 공유"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI-gegevensdeling"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Udostępnianie danych AI"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartilhamento de dados com a IA"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partajarea datelor cu AI"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Передача данных ИИ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 数据共享"
+          }
+        }
+      }
+    },
+    "AI data sharing is off" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مشاركة بيانات الذكاء الاصطناعي متوقفة"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI ilə məlumat paylaşımı söndürülüb"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI-Datenfreigabe ist deaktiviert"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir datos con la IA está desactivado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le partage de données avec l'IA est désactivé"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI डेटा शेयरिंग बंद है"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La condivisione dei dati con l'IA è disattivata"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AIデータ共有はオフです"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 데이터 공유가 꺼져 있습니다"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI-gegevensdeling staat uit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Udostępnianie danych AI jest wyłączone"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O compartilhamento de dados com a IA está desativado"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partajarea datelor cu AI este dezactivată"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Передача данных ИИ отключена"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 数据共享已关闭"
+          }
+        }
+      }
+    },
     "AI generated" : {
       "localizations" : {
         "ar" : {
@@ -6791,6 +6979,100 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "AI 规划器已就绪"
+          }
+        }
+      }
+    },
+    "AI-generated guidance with sources where available. Not medical advice." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إرشادات مُنشأة بالذكاء الاصطناعي مع المصادر عند توفرها. ليست نصيحة طبية."
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mümkün olduqda mənbələrlə birlikdə AI tərəfindən yaradılan tövsiyələr. Tibbi məsləhət deyil."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI-generierte Empfehlungen, mit Quellen sofern verfügbar. Keine medizinische Beratung."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orientación generada por IA, con fuentes cuando estén disponibles. No es un consejo médico."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conseils générés par l'IA, avec sources lorsque disponibles. Ne constitue pas un avis médical."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI द्वारा जनरेट किया गया मार्गदर्शन, उपलब्ध होने पर स्रोतों के साथ। यह चिकित्सा सलाह नहीं है।"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indicazioni generate dall'IA, con fonti ove disponibili. Non è un consiglio medico."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AIが生成したガイダンスです（可能な場合は情報源を表示）。医学的アドバイスではありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI가 생성한 안내이며, 가능한 경우 출처를 제공합니다. 의학적 조언이 아닙니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Door AI gegenereerd advies, met bronnen indien beschikbaar. Geen medisch advies."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wskazówki generowane przez AI, ze źródłami, jeśli są dostępne. To nie jest porada medyczna."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orientações geradas por IA, com fontes quando disponíveis. Não é aconselhamento médico."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recomandări generate de AI, cu surse acolo unde sunt disponibile. Nu reprezintă sfaturi medicale."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рекомендации сгенерированы ИИ, по возможности с указанием источников. Не является медицинской консультацией."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由 AI 生成的指导，并在可能时附上来源。不构成医疗建议。"
           }
         }
       }
@@ -7731,6 +8013,194 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "全部次要肌群"
+          }
+        }
+      }
+    },
+    "Allow & Continue" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "السماح والمتابعة"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İcazə verin və davam edin"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erlauben & fortfahren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir y continuar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser et continuer"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अनुमति दें और जारी रखें"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consenti e continua"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "許可して続ける"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "허용하고 계속"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toestaan en doorgaan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwól i kontynuuj"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir e continuar"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permite și continuă"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить и продолжить"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许并继续"
+          }
+        }
+      }
+    },
+    "Allowed" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مسموح"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İcazə verilib"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erlaubt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorisé"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अनुमति दी गई"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentito"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "許可済み"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "허용됨"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toegestaan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dozwolone"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitido"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permis"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешено"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已允许"
           }
         }
       }
@@ -15349,6 +15819,100 @@
         }
       }
     },
+    "Delts AI features need to send some of your data off your device to answer you. Nothing is shared until you allow it." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تحتاج ميزات الذكاء الاصطناعي في Delts إلى إرسال بعض بياناتك خارج جهازك للرد عليك. لن تتم مشاركة أي شيء حتى تسمح بذلك."
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delts-in AI funksiyaları sizə cavab vermək üçün məlumatlarınızın bir hissəsini cihazınızdan kənara göndərməlidir. Siz icazə verməyincə heç nə paylaşılmır."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die KI-Funktionen von Delts müssen einige deiner Daten von deinem Gerät senden, um dir zu antworten. Nichts wird geteilt, bis du es erlaubst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las funciones de IA de Delts necesitan enviar algunos de tus datos fuera de tu dispositivo para responderte. No se comparte nada hasta que lo permitas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les fonctionnalités d'IA de Delts doivent envoyer certaines de vos données hors de votre appareil pour vous répondre. Rien n'est partagé tant que vous ne l'autorisez pas."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपको जवाब देने के लिए Delts की AI सुविधाओं को आपका कुछ डेटा आपके डिवाइस से बाहर भेजना होता है। जब तक आप अनुमति नहीं देते, कुछ भी साझा नहीं किया जाता।"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le funzioni IA di Delts devono inviare alcuni dei tuoi dati fuori dal dispositivo per risponderti. Nulla viene condiviso finché non lo consenti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeltsのAI機能が応答するには、一部のデータをデバイスの外に送信する必要があります。許可するまで何も共有されません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delts의 AI 기능이 답변하려면 일부 데이터를 기기 밖으로 전송해야 합니다. 허용하기 전에는 아무것도 공유되지 않습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De AI-functies van Delts moeten een deel van je gegevens van je apparaat versturen om je te kunnen antwoorden. Er wordt niets gedeeld totdat je toestemming geeft."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funkcje AI w Delts muszą wysłać część Twoich danych poza urządzenie, aby Ci odpowiedzieć. Nic nie jest udostępniane, dopóki nie wyrazisz zgody."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os recursos de IA do Delts precisam enviar alguns dos seus dados para fora do dispositivo para responder a você. Nada é compartilhado até você permitir."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funcțiile AI din Delts trebuie să trimită o parte din datele tale în afara dispozitivului pentru a-ți răspunde. Nimic nu este partajat până nu îți dai acordul."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы отвечать вам, функциям ИИ в Delts нужно отправлять часть ваших данных с устройства. Ничего не передаётся, пока вы не разрешите."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delts 的 AI 功能需要将你的部分数据发送到设备之外才能回答你。在你允许之前，不会共享任何内容。"
+          }
+        }
+      }
+    },
     "Delts is checking the App Store for a newer version." : {
       "localizations" : {
         "ar" : {
@@ -22217,6 +22781,100 @@
         }
       }
     },
+    "If you don't allow sharing, all AI features stay off — everything else in Delts keeps working. You can change this anytime in Settings → AI Data Sharing." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إذا لم تسمح بالمشاركة، تبقى جميع ميزات الذكاء الاصطناعي متوقفة، وكل شيء آخر في Delts يستمر في العمل. يمكنك تغيير ذلك في أي وقت من الإعدادات ← مشاركة بيانات الذكاء الاصطناعي."
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paylaşıma icazə verməsəniz, bütün AI funksiyaları söndürülmüş qalır — Delts-də qalan hər şey işləməyə davam edir. Bunu istənilən vaxt Ayarlar → AI ilə Məlumat Paylaşımı bölməsindən dəyişə bilərsiniz."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn du die Freigabe nicht erlaubst, bleiben alle KI-Funktionen deaktiviert – alles andere in Delts funktioniert weiterhin. Du kannst das jederzeit unter Einstellungen → KI-Datenfreigabe ändern."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si no permites compartir datos, todas las funciones de IA permanecen desactivadas; todo lo demás en Delts sigue funcionando. Puedes cambiarlo cuando quieras en Ajustes → Compartir datos con la IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si vous n'autorisez pas le partage, toutes les fonctionnalités d'IA restent désactivées — tout le reste de Delts continue de fonctionner. Vous pouvez modifier ce choix à tout moment dans Réglages → Partage de données avec l'IA."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अगर आप शेयरिंग की अनुमति नहीं देते, तो सभी AI सुविधाएँ बंद रहती हैं — Delts में बाकी सब कुछ काम करता रहता है। आप इसे कभी भी सेटिंग्स → AI डेटा शेयरिंग में बदल सकते हैं।"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se non consenti la condivisione, tutte le funzioni IA restano disattivate: tutto il resto di Delts continua a funzionare. Puoi cambiare questa scelta in qualsiasi momento in Impostazioni → Condivisione dati con l'IA."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有を許可しない場合、AI機能はすべてオフのままになります。Deltsのその他の機能は引き続き使えます。この設定は「設定 → AIデータ共有」からいつでも変更できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "공유를 허용하지 않으면 모든 AI 기능이 꺼진 상태로 유지되며, Delts의 다른 기능은 계속 사용할 수 있습니다. 설정 → AI 데이터 공유에서 언제든지 변경할 수 있습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als je delen niet toestaat, blijven alle AI-functies uit — al het andere in Delts blijft gewoon werken. Je kunt dit altijd wijzigen via Instellingen → AI-gegevensdeling."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeśli nie wyrazisz zgody na udostępnianie, wszystkie funkcje AI pozostaną wyłączone — cała reszta Delts działa dalej. Możesz to zmienić w każdej chwili w Ustawienia → Udostępnianie danych AI."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se você não permitir o compartilhamento, todos os recursos de IA permanecem desativados — todo o resto do Delts continua funcionando. Você pode mudar isso quando quiser em Ajustes → Compartilhamento de dados com a IA."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dacă nu permiți partajarea, toate funcțiile AI rămân dezactivate — tot restul din Delts continuă să funcționeze. Poți schimba oricând această opțiune din Configurări → Partajarea datelor cu AI."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если вы не разрешите передачу, все функции ИИ останутся отключёнными — всё остальное в Delts продолжит работать. Изменить это можно в любой момент: Настройки → Передача данных ИИ."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如果你不允许共享，所有 AI 功能将保持关闭——Delts 的其他功能照常使用。你可以随时在“设置 → AI 数据共享”中更改。"
+          }
+        }
+      }
+    },
     "Imperial" : {
       "localizations" : {
         "ar" : {
@@ -27575,6 +28233,100 @@
         }
       }
     },
+    "Not Now" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ليس الآن"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İndi yox"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt nicht"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora no"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus tard"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अभी नहीं"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non ora"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今はしない"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "나중에"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet nu"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie teraz"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora não"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nu acum"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не сейчас"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂不"
+          }
+        }
+      }
+    },
     "Not selected" : {
       "localizations" : {
         "ar" : {
@@ -27665,6 +28417,100 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未选择"
+          }
+        }
+      }
+    },
+    "Off" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إيقاف"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Söndürülüb"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactivé"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "बंद"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disattivato"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オフ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "끔"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyłączone"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desativado"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dezactivat"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выкл."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
           }
         }
       }
@@ -31993,6 +32839,100 @@
         }
       }
     },
+    "Read the Privacy Policy" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "قراءة سياسة الخصوصية"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Məxfilik Siyasətini oxuyun"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datenschutzerklärung lesen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leer la política de privacidad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lire la politique de confidentialité"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "निजता नीति पढ़ें"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leggi l'informativa sulla privacy"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プライバシーポリシーを読む"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "개인정보 처리방침 읽기"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lees het privacybeleid"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przeczytaj politykę prywatności"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ler a Política de Privacidade"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Citește politica de confidențialitate"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прочитать политику конфиденциальности"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阅读隐私政策"
+          }
+        }
+      }
+    },
     "Release" : {
       "localizations" : {
         "ar" : {
@@ -33399,6 +34339,100 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "继续训练计时器"
+          }
+        }
+      }
+    },
+    "Review" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مراجعة"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nəzərdən keçirin"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Überprüfen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revisar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérifier"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "समीक्षा करें"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rivedi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確認"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "검토"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bekijken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przejrzyj"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revisar"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revizuiește"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Просмотреть"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看"
           }
         }
       }
@@ -35467,6 +36501,100 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "性别"
+          }
+        }
+      }
+    },
+    "Share data with the AI Coach?" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "هل تريد مشاركة البيانات مع مدرب الذكاء الاصطناعي؟"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Məlumatlar AI Məşqçi ilə paylaşılsın?"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daten mit dem KI-Coach teilen?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Compartir datos con el Coach de IA?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partager des données avec le Coach IA ?"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI कोच के साथ डेटा साझा करें?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Condividere i dati con il Coach IA?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AIコーチとデータを共有しますか？"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 코치와 데이터를 공유할까요?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gegevens delen met de AI-coach?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Udostępnić dane Trenerowi AI?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartilhar dados com o Coach de IA?"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partajezi datele cu Antrenorul AI?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Передавать данные ИИ-тренеру?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "与 AI 教练共享数据？"
           }
         }
       }
@@ -37828,6 +38956,7 @@
       }
     },
     "Support on Ko-fi" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -38857,6 +39986,100 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "自动更新检查已就绪。此应用的 App Store 页面尚未上线。"
+          }
+        }
+      }
+    },
+    "The Delts server (delts.fit) and Google's Gemini API (Google LLC), which generates the response. Your data is not sold and is not used for advertising." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "خادم Delts (delts.fit) وواجهة Gemini API من Google (Google LLC)، التي تُنشئ الرد. لا تُباع بياناتك ولا تُستخدم في الإعلانات."
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delts serveri (delts.fit) və cavabı yaradan Google-un Gemini API-si (Google LLC). Məlumatlarınız satılmır və reklam üçün istifadə olunmur."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Delts-Server (delts.fit) und Googles Gemini-API (Google LLC), die die Antwort generiert. Deine Daten werden nicht verkauft und nicht für Werbung verwendet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El servidor de Delts (delts.fit) y la API Gemini de Google (Google LLC), que genera la respuesta. Tus datos no se venden ni se usan para publicidad."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le serveur Delts (delts.fit) et l'API Gemini de Google (Google LLC), qui génère la réponse. Vos données ne sont ni vendues ni utilisées à des fins publicitaires."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delts सर्वर (delts.fit) और Google का Gemini API (Google LLC), जो जवाब जनरेट करता है। आपका डेटा बेचा नहीं जाता और न ही विज्ञापन के लिए इस्तेमाल किया जाता है।"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il server Delts (delts.fit) e l'API Gemini di Google (Google LLC), che genera la risposta. I tuoi dati non vengono venduti né usati per la pubblicità."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deltsサーバー（delts.fit）と、応答を生成するGoogleのGemini API（Google LLC）です。あなたのデータが販売されたり、広告に使われたりすることはありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delts 서버(delts.fit)와 응답을 생성하는 Google의 Gemini API(Google LLC)입니다. 데이터는 판매되지 않으며 광고에 사용되지 않습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De Delts-server (delts.fit) en Googles Gemini-API (Google LLC), die het antwoord genereert. Je gegevens worden niet verkocht en niet gebruikt voor advertenties."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serwer Delts (delts.fit) oraz interfejs Gemini API firmy Google (Google LLC), który generuje odpowiedź. Twoje dane nie są sprzedawane ani wykorzystywane do celów reklamowych."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O servidor do Delts (delts.fit) e a API Gemini do Google (Google LLC), que gera a resposta. Seus dados não são vendidos nem usados para publicidade."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serverul Delts (delts.fit) și API-ul Gemini de la Google (Google LLC), care generează răspunsul. Datele tale nu sunt vândute și nu sunt folosite pentru publicitate."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервер Delts (delts.fit) и Gemini API от Google (Google LLC), который генерирует ответ. Ваши данные не продаются и не используются для рекламы."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delts 服务器（delts.fit）和生成回答的 Google Gemini API（Google LLC）。你的数据不会被出售，也不会用于广告。"
           }
         }
       }
@@ -42533,6 +43756,100 @@
         }
       }
     },
+    "What is sent" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ما الذي يتم إرساله"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nə göndərilir"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was gesendet wird"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qué se envía"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce qui est envoyé"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "क्या भेजा जाता है"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa viene inviato"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信される情報"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "전송되는 정보"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat wordt verstuurd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Co jest wysyłane"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que é enviado"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce se trimite"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что отправляется"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送的内容"
+          }
+        }
+      }
+    },
     "What you want out of your training." : {
       "localizations" : {
         "ar" : {
@@ -42717,6 +44034,100 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "启用后，动作筛选仅显示主要目标与所选目标肌群匹配的动作。"
+          }
+        }
+      }
+    },
+    "Who receives it" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "من يتلقّاها"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunu kim alır"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wer die Daten erhält"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quién los recibe"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qui les reçoit"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "किसे भेजा जाता है"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chi li riceve"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信先"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "수신 대상"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie het ontvangt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kto je otrzymuje"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quem os recebe"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cine le primește"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кто их получает"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接收方"
           }
         }
       }
@@ -44419,6 +45830,100 @@
         }
       }
     },
+    "Your choice" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "خيارك"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seçim sizindir"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Entscheidung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tú decides"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre choix"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपकी पसंद"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La scelta è tua"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あなたの選択"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "선택은 자유입니다"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jouw keuze"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój wybór"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Você decide"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alegerea ta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш выбор"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由你决定"
+          }
+        }
+      }
+    },
     "Your Coach can see your profile, settings, body progress, and workout history. Ask anything — and attach a photo if it helps." : {
       "localizations" : {
         "ar" : {
@@ -44509,6 +46014,100 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "教练能看到你的个人资料、设置、身体进度和训练历史。尽管提问——需要时还可附上照片。"
+          }
+        }
+      }
+    },
+    "Your Coach messages, photos you choose to attach, and training context: profile basics (age, sex, height, weight, body fat), goals, settings, recent workouts, and body progress. Calorie estimates send the finished session and your body data." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "رسائلك مع المدرب، والصور التي تختار إرفاقها، وسياق التدريب: أساسيات الملف الشخصي (العمر، الجنس، الطول، الوزن، نسبة دهون الجسم)، والأهداف، والإعدادات، وآخر التمارين، وتقدم الجسم. وترسل تقديرات السعرات الحرارية الجلسة المكتملة وبيانات جسمك."
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Məşqçiyə yazdığınız mesajlar, əlavə etməyi seçdiyiniz şəkillər və məşq konteksti: profil əsasları (yaş, cins, boy, çəki, bədən yağı), hədəflər, ayarlar, son məşqlər və bədən irəliləyişi. Kalori hesablamaları bitmiş məşq sessiyasını və bədən məlumatlarınızı göndərir."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Coach-Nachrichten, Fotos, die du anhängst, und Trainingskontext: Profil-Basisdaten (Alter, Geschlecht, Größe, Gewicht, Körperfett), Ziele, Einstellungen, letzte Workouts und Körperfortschritt. Für Kalorienschätzungen werden die abgeschlossene Einheit und deine Körperdaten gesendet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus mensajes con el Coach, las fotos que decidas adjuntar y el contexto de entrenamiento: datos básicos del perfil (edad, sexo, estatura, peso, grasa corporal), objetivos, ajustes, entrenamientos recientes y progreso corporal. Las estimaciones de calorías envían la sesión terminada y tus datos corporales."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vos messages au Coach, les photos que vous choisissez de joindre et le contexte d'entraînement : informations de base du profil (âge, sexe, taille, poids, masse grasse), objectifs, réglages, entraînements récents et progression physique. Les estimations de calories envoient la séance terminée et vos données corporelles."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपके कोच मैसेज, जो फ़ोटो आप अटैच करना चुनते हैं, और ट्रेनिंग संदर्भ: प्रोफ़ाइल की बुनियादी जानकारी (उम्र, लिंग, लंबाई, वज़न, बॉडी फ़ैट), लक्ष्य, सेटिंग्स, हाल के वर्कआउट और शारीरिक प्रगति। कैलोरी अनुमान के लिए पूरा हुआ सेशन और आपके शरीर का डेटा भेजा जाता है।"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi messaggi al Coach, le foto che scegli di allegare e il contesto di allenamento: dati di base del profilo (età, sesso, altezza, peso, massa grassa), obiettivi, impostazioni, allenamenti recenti e progressi fisici. Le stime delle calorie inviano la sessione completata e i tuoi dati corporei."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コーチへのメッセージ、添付を選んだ写真、トレーニングのコンテキスト：プロフィールの基本情報（年齢、性別、身長、体重、体脂肪率）、目標、設定、最近のワークアウト、身体の進捗。カロリー推定では、終了したセッションと身体データが送信されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "코치에게 보내는 메시지, 첨부하기로 선택한 사진, 그리고 트레이닝 컨텍스트: 기본 프로필 정보(나이, 성별, 키, 몸무게, 체지방), 목표, 설정, 최근 운동, 신체 변화 기록. 칼로리 추정 시에는 완료된 세션과 신체 데이터가 전송됩니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je Coach-berichten, foto's die je kiest om bij te voegen en trainingscontext: basisprofiel (leeftijd, geslacht, lengte, gewicht, vetpercentage), doelen, instellingen, recente workouts en lichaamsvoortgang. Bij calorieschattingen worden de afgeronde sessie en je lichaamsgegevens verstuurd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoje wiadomości do Trenera, zdjęcia, które zdecydujesz się załączyć, oraz kontekst treningowy: podstawowe dane profilu (wiek, płeć, wzrost, waga, tkanka tłuszczowa), cele, ustawienia, ostatnie treningi i postępy sylwetki. Szacowanie kalorii wysyła ukończoną sesję i dane o Twoim ciele."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suas mensagens com o Coach, as fotos que você escolher anexar e o contexto de treino: dados básicos do perfil (idade, sexo, altura, peso, gordura corporal), metas, ajustes, treinos recentes e progresso corporal. As estimativas de calorias enviam a sessão concluída e seus dados corporais."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mesajele tale către Antrenor, fotografiile pe care alegi să le atașezi și contextul de antrenament: date de bază din profil (vârstă, sex, înălțime, greutate, grăsime corporală), obiective, configurări, antrenamente recente și progresul corporal. Estimările de calorii trimit sesiunea încheiată și datele despre corpul tău."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваши сообщения тренеру, фотографии, которые вы решите прикрепить, и тренировочный контекст: основные данные профиля (возраст, пол, рост, вес, процент жира), цели, настройки, недавние тренировки и прогресс тела. Для оценки калорий отправляются завершённая сессия и данные о вашем теле."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你发给教练的消息、你选择附加的照片，以及训练上下文：基本资料（年龄、性别、身高、体重、体脂）、目标、设置、最近的训练和身体进展。卡路里估算会发送已完成的训练和你的身体数据。"
           }
         }
       }
