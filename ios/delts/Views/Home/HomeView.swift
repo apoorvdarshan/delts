@@ -387,7 +387,7 @@ struct HomeView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color.deltsBackground)
+            .background(Color.deltsBackground.ignoresSafeArea())
             .listSectionSpacing(8)
             .scrollDismissesKeyboard(.interactively)
             .onTapGesture {
@@ -404,7 +404,8 @@ struct HomeView: View {
                 guard let id = newValue?.exerciseID else { return }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     withAnimation(.snappy(duration: 0.25)) {
-                        proxy.scrollTo(id, anchor: .center)
+                        // Lift just clear of the "Done" bar — not all the way to center.
+                        proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: 0.8))
                     }
                 }
             }
