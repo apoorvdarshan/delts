@@ -575,6 +575,7 @@ private struct WorkoutHistoryCard: View {
     var isBurnLocked: Bool = false
     var onBurnLockedTap: (() -> Void)? = nil
     let onDelete: () -> Void
+    @State private var isExpanded = false
 
     private var dateText: String {
         let formatter = DateFormatter()
@@ -642,9 +643,18 @@ private struct WorkoutHistoryCard: View {
                 }
 
                 InlineStat(icon: "dumbbell.fill", text: movesText)
+
+                Spacer(minLength: 0)
+
+                if !workout.exerciseLogs.isEmpty {
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.deltsMutedText)
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                }
             }
 
-            if !workout.exerciseLogs.isEmpty {
+            if isExpanded && !workout.exerciseLogs.isEmpty {
                 Rectangle()
                     .fill(Color.deltsHairline.opacity(0.22))
                     .frame(height: 0.5)
@@ -655,11 +665,17 @@ private struct WorkoutHistoryCard: View {
                         HistoryExerciseRow(exercise: exercise)
                     }
                 }
+                .transition(.opacity)
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard !workout.exerciseLogs.isEmpty else { return }
+            withAnimation(.snappy(duration: 0.28)) { isExpanded.toggle() }
+        }
         .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
