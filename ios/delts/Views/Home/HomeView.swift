@@ -398,6 +398,16 @@ struct HomeView: View {
                 focusedField = nil
                 dismissKeyboard()
             }
+            .onChange(of: focusedField) { _, newValue in
+                // Lift the focused row clear of the keyboard + "Done" accessory bar
+                // so every set field (incl. RPE on the right) is tappable.
+                guard let id = newValue?.exerciseID else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.snappy(duration: 0.25)) {
+                        proxy.scrollTo(id, anchor: .center)
+                    }
+                }
+            }
             .animation(.snappy, value: selectedDate)
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
