@@ -44,6 +44,7 @@ struct HomeView: View {
     @ObservedObject private var premium = PremiumStore.shared
     @AppStorage("apple_health_enabled") private var appleHealthEnabled = false
     @State private var burnByDateKey: [String: Int] = WorkoutBurnStore.load()
+    @State private var durationByDateKey: [String: Int] = WorkoutDurationStore.load()
     @State private var estimatingBurnDateKeys: Set<String> = []
     @State private var isPaywallPresented = false
 
@@ -118,6 +119,10 @@ struct HomeView: View {
 
     private var selectedBurnKcal: Int? {
         burnByDateKey[selectedDateKey]
+    }
+
+    private var selectedDurationMinutes: Int? {
+        durationByDateKey[selectedDateKey]
     }
 
     private var isEstimatingSelectedBurn: Bool {
@@ -306,6 +311,7 @@ struct HomeView: View {
                         toggleTimer: handleSessionTimerTap,
                         stopTimer: stopSessionTimer,
                         discardTimer: discardSessionTimer,
+                        completedDurationMinutes: selectedDurationMinutes,
                         burnKcal: selectedBurnKcal,
                         isEstimatingBurn: isEstimatingSelectedBurn,
                         burnLocked: !premium.isSubscribed,
@@ -758,6 +764,11 @@ struct HomeView: View {
         )
         modelContext.insert(completedWorkout)
         try? modelContext.save()
+
+        // Session duration is free (no subscription) and shows in the Home "Time"
+        // stat. Each completed session overwrites it, like the Burn stat.
+        durationByDateKey[selectedDateKey] = durationMinutes
+        WorkoutDurationStore.save(durationByDateKey)
 
         if premium.isSubscribed && !AIConsent.hasDecided {
             // First AI use: disclose what is shared and ask permission (Guideline 5.1.2).

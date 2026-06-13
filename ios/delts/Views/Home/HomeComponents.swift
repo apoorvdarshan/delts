@@ -120,6 +120,7 @@ struct StartWorkoutHero: View {
     let toggleTimer: () -> Void
     let stopTimer: () -> Void
     let discardTimer: () -> Void
+    var completedDurationMinutes: Int? = nil
     var burnKcal: Int? = nil
     var isEstimatingBurn: Bool = false
     var burnLocked: Bool = false
@@ -128,6 +129,11 @@ struct StartWorkoutHero: View {
     private var calorieBurnText: String {
         if let burnKcal { return String(localized: "\(burnKcal) kcal") }
         return String(localized: "-- kcal")
+    }
+
+    private var durationText: String {
+        if let completedDurationMinutes { return String(localized: "\(completedDurationMinutes) min") }
+        return String(localized: "-- min")
     }
 
     var body: some View {
@@ -163,6 +169,8 @@ struct StartWorkoutHero: View {
                 setCount: setCount,
                 workoutCount: workoutCount,
                 repCount: repCount,
+                durationText: durationText,
+                durationActive: completedDurationMinutes != nil,
                 calorieBurnText: calorieBurnText,
                 calorieBurnActive: burnKcal != nil,
                 calorieBurnLoading: isEstimatingBurn,
@@ -388,6 +396,8 @@ struct HomeSessionStatsStrip: View {
     let setCount: Int
     let workoutCount: Int
     let repCount: Int
+    let durationText: String
+    var durationActive: Bool = false
     let calorieBurnText: String
     var calorieBurnActive: Bool = false
     var calorieBurnLoading: Bool = false
@@ -420,6 +430,15 @@ struct HomeSessionStatsStrip: View {
                 value: "\(repCount)",
                 systemImage: "repeat",
                 isActive: repCount > 0
+            )
+
+            HomeMetricDivider()
+
+            HomeMetricCard(
+                label: String(localized: "Time"),
+                value: durationText,
+                systemImage: "clock.fill",
+                isActive: durationActive
             )
 
             HomeMetricDivider()

@@ -166,3 +166,22 @@ enum WorkoutBurnStore {
         UserDefaults.standard.set(data, forKey: key)
     }
 }
+
+/// Persists the last completed session duration (minutes) per workout day.
+/// Used by the Home "Time" stat. Free — unlike Burn, no subscription required.
+enum WorkoutDurationStore {
+    private static let key = "delts.workoutDuration.v1"
+
+    static func load() -> [String: Int] {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let value = try? JSONDecoder().decode([String: Int].self, from: data) else {
+            return [:]
+        }
+        return value
+    }
+
+    static func save(_ value: [String: Int]) {
+        guard let data = try? JSONEncoder().encode(value) else { return }
+        UserDefaults.standard.set(data, forKey: key)
+    }
+}
