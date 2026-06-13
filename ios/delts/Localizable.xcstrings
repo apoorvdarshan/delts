@@ -14033,6 +14033,100 @@
         }
       }
     },
+    "Copied!" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تم النسخ!"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopyalandı!"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopiert!"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Copiado!"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copié !"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "कॉपी हो गया!"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiato!"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コピーしました！"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "복사됨!"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gekopieerd!"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skopiowano!"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiado!"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiat!"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скопировано!"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已复制！"
+          }
+        }
+      }
+    },
     "Copy from day" : {
       "localizations" : {
         "ar" : {
@@ -15063,6 +15157,100 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "自定义分化"
+          }
+        }
+      }
+    },
+    "Customer ID" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "معرّف العميل"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Müştəri ID-si"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kundennummer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID de cliente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identifiant client"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ग्राहक ID"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID cliente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顧客ID"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "고객 ID"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klant-ID"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identyfikator klienta"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID do cliente"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID client"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID клиента"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "客户 ID"
           }
         }
       }
@@ -17606,6 +17794,7 @@
       }
     },
     "Enter reps and optional RPE for each set." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -17695,6 +17884,100 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "为每组输入次数和可选的 RPE。"
+          }
+        }
+      }
+    },
+    "Enter weight, reps, and optional RPE for each set." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أدخل الوزن والتكرارات وRPE اختياريًا لكل مجموعة."
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hər set üçün çəkini, təkrar sayını və istəyə bağlı RPE daxil edin."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib für jeden Satz Gewicht, Wdh. und optional RPE ein."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Introduce el peso, las reps y el RPE opcional para cada serie."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisissez le poids, les reps et le RPE (facultatif) de chaque série."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "हर सेट के लिए वज़न, रेप्स और वैकल्पिक RPE दर्ज करें।"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserisci peso, ripetizioni e RPE facoltativo per ogni serie."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "各セットの重量、レップ数、任意でRPEを入力します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "세트마다 무게, 횟수, RPE(선택)를 입력하세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voer per set gewicht, reps en optioneel RPE in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wpisz ciężar, powtórzenia i opcjonalne RPE dla każdej serii."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informe o peso, as repetições e o RPE opcional de cada série."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Introdu greutatea, repetările și, opțional, RPE pentru fiecare serie."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите вес, повторы и при желании RPE для каждого подхода."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为每组输入重量、次数和可选的 RPE。"
           }
         }
       }
@@ -29174,6 +29457,7 @@
       }
     },
     "Opens set reps and RPE input" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -29263,6 +29547,100 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打开组次数和 RPE 输入"
+          }
+        }
+      }
+    },
+    "Opens set weight, reps and RPE input" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يفتح إدخال وزن المجموعة وتكراراتها وRPE"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set çəkisi, təkrarı və RPE daxiletməsini açır"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnet die Eingabe für Gewicht, Wdh. und RPE"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre la entrada de peso, reps y RPE de la serie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre la saisie du poids, des reps et du RPE"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सेट वज़न, रेप्स और RPE इनपुट खोलता है"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apre l'inserimento di peso, ripetizioni e RPE della serie"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "セットの重量、レップ数、RPEの入力を開きます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "세트 무게, 횟수, RPE 입력을 엽니다"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opent invoer voor gewicht, reps en RPE van de set"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwiera wprowadzanie ciężaru, powtórzeń i RPE dla serii"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre o campo de peso, repetições e RPE da série"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deschide introducerea de greutate, repetări și RPE"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открывает ввод веса, повторов и RPE подхода"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开组重量、次数和 RPE 输入"
           }
         }
       }
@@ -43474,6 +43852,100 @@
         }
       }
     },
+    "Weight (%@)" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الوزن (%@)"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çəki (%@)"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gewicht (%@)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peso (%@)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poids (%@)"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "वज़न (%@)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peso (%@)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重量（%@）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "무게 (%@)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gewicht (%@)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ciężar (%@)"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peso (%@)"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Greutate (%@)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вес (%@)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重量（%@）"
+          }
+        }
+      }
+    },
     "Weight for set %lld" : {
       "localizations" : {
         "ar" : {
@@ -43940,6 +44412,200 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你希望通过训练获得什么。"
+          }
+        }
+      }
+    },
+    "What's New in %@:\n%@" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الجديد في %1$@:\n%2$@"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ versiyasında yeniliklər:\n%2$@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Funktionen in %1$@:\n%2$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "What's New in %1$@:\n%2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novedades de %1$@:\n%2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveautés de %1$@ :\n%2$@"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ में नया क्या है:\n%2$@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novità della versione %1$@:\n%2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@の新機能:\n%2$@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@의 새로운 기능:\n%2$@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuw in %1$@:\n%2$@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Co nowego w %1$@:\n%2$@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novidades da versão %1$@:\n%2$@"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noutăți în %1$@:\n%2$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что нового в %1$@:\n%2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 新功能：\n%2$@"
+          }
+        }
+      }
+    },
+    "What's New:\n%@" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الجديد:\n%@"
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeniliklər:\n%@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Funktionen:\n%@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novedades:\n%@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveautés :\n%@"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "नया क्या है:\n%@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novità:\n%@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新機能:\n%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새로운 기능:\n%@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuw:\n%@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Co nowego:\n%@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novidades:\n%@"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noutăți:\n%@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что нового:\n%@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新功能：\n%@"
           }
         }
       }

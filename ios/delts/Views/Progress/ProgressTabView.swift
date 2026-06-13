@@ -759,8 +759,17 @@ private struct HistoryExerciseRow: View {
 
     private func setSummary(_ set: CompletedSetLog) -> String {
         var parts: [String] = []
-        let weight = set.weightDisplay
-        if !weight.isEmpty { parts.append(weight) }
+        let weightValue = set.weight.trimmingCharacters(in: .whitespaces)
+        if !weightValue.isEmpty {
+            // Stored unit is canonical ("kg"/"lb"); localize it for display.
+            let unit: String
+            switch set.weightUnit {
+            case "lb": unit = String(localized: "lb")
+            case "kg": unit = String(localized: "kg")
+            default: unit = set.weightUnit ?? ""
+            }
+            parts.append(unit.isEmpty ? weightValue : "\(weightValue) \(unit)")
+        }
         let reps = set.reps.trimmingCharacters(in: .whitespaces)
         if !reps.isEmpty { parts.append(String(localized: "\(reps) reps")) }
         if let rpe = set.rpe?.trimmingCharacters(in: .whitespaces), !rpe.isEmpty {

@@ -63,9 +63,15 @@ struct HomeView: View {
         RPEScale(rawValue: rpeScaleRaw) ?? .strength
     }
 
-    /// "kg" or "lb" per the profile weight-unit setting (same as 1RM / body weight).
+    /// Localized "kg"/"lb" for display in the set-logger fields (same as 1RM / body weight).
     private var weightUnit: String {
         weightMeasurementSystemRaw == "imperial" ? String(localized: "lb") : String(localized: "kg")
+    }
+
+    /// Canonical, non-localized unit persisted with each set and sent to the AI,
+    /// so stored data and AI prompts stay consistent regardless of device language.
+    private var weightUnitCanonical: String {
+        weightMeasurementSystemRaw == "imperial" ? "lb" : "kg"
     }
 
     private var selectedCompletedSetCount: Int {
@@ -697,7 +703,7 @@ struct HomeView: View {
         guard !selectedExercises.isEmpty else { return }
 
         let durationSeconds = max(currentSessionElapsedSeconds, selectedTimerElapsedSeconds)
-        let unit = weightUnit
+        let unit = weightUnitCanonical
         let logs = selectedExercises.map { exercise in
             let reps = exercise.normalizedSetReps
             let rpe = exercise.normalizedSetRPE
@@ -773,7 +779,7 @@ struct HomeView: View {
         let service = calorieService
         let healthEnabled = appleHealthEnabled
         let healthKit = healthKit
-        let unit = weightUnit
+        let unit = weightUnitCanonical
 
         Task { @MainActor in
             // Retry a couple times so a transient Gemini hiccup doesn't drop the estimate.

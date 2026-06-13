@@ -236,6 +236,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         case reps
         case setReps
         case setRPE
+        case setWeights
         case addedAt
         case isDone
     }
@@ -255,6 +256,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         reps = try container.decodeIfPresent(String.self, forKey: .reps) ?? ""
         setReps = try container.decodeIfPresent([String].self, forKey: .setReps) ?? []
         setRPE = try container.decodeIfPresent([String].self, forKey: .setRPE) ?? []
+        setWeights = try container.decodeIfPresent([String].self, forKey: .setWeights) ?? []
         addedAt = try container.decodeIfPresent(Date.self, forKey: .addedAt) ?? Date()
         isDone = try container.decodeIfPresent(Bool.self, forKey: .isDone) ?? false
         normalizeStoredSets()
@@ -275,6 +277,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         try container.encode(repsSummary, forKey: .reps)
         try container.encode(normalizedSetReps, forKey: .setReps)
         try container.encode(normalizedSetRPE, forKey: .setRPE)
+        try container.encode(normalizedSetWeights, forKey: .setWeights)
         try container.encode(addedAt, forKey: .addedAt)
         try container.encode(isDone, forKey: .isDone)
     }
