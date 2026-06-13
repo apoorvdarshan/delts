@@ -601,12 +601,14 @@ struct HomeView: View {
                 item: detailItem(for: exercise)
             )
         } else {
-            ContentUnavailableView(
-                "Workout removed",
-                systemImage: "trash",
-                description: Text("This workout is no longer in this day.")
-            )
-            .deltsScreen()
+            // Reached only if the exercise was removed while routing here (e.g. a
+            // stray tap during swipe-delete). Pop straight back instead of showing
+            // an empty state.
+            Color.deltsBackground
+                .ignoresSafeArea()
+                .onAppear {
+                    DispatchQueue.main.async { selectedWorkoutRoute = nil }
+                }
         }
     }
 
@@ -991,6 +993,11 @@ struct HomeView: View {
     }
 
     private func removeExercise(_ id: UUID) {
+        // If the detail page for this exercise is open (or a stray swipe-tap just
+        // routed to it), close it so we don't strand on a "Workout removed" screen.
+        if selectedWorkoutRoute?.exerciseID == id {
+            selectedWorkoutRoute = nil
+        }
         updateSelectedPlan { plan in
             plan.exercises.removeAll { $0.id == id }
         }
