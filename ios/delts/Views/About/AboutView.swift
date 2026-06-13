@@ -26,6 +26,7 @@ struct AboutSettingsSection: View {
     @Environment(\.openURL) private var openURL
     @ObservedObject var updateChecker: AppUpdateChecker
     @State private var activeAlert: AboutAlert?
+    @State private var whatsNewExpanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -39,6 +40,11 @@ struct AboutSettingsSection: View {
                             ) {
                                 checkForUpdates()
                             }
+                            AboutDivider()
+                            WhatsNewRow(
+                                version: appVersionText,
+                                isExpanded: $whatsNewExpanded
+                            )
                             AboutDivider()
                             AboutActionRow(
                                 title: String(localized: "Rate Delts"),
@@ -474,6 +480,70 @@ private struct AboutFieldRow<Content: View>: View {
             }
             .padding(.vertical, 9)
             .contentShape(Rectangle())
+        }
+    }
+}
+
+/// Bundled, in-app release notes for the current version. Update `highlights`
+/// each release; the version header is read live from the app bundle.
+enum DeltsReleaseNotes {
+    static let highlights: [String] = [
+        String(localized: "Log the weight you lift on every set — shown in kg or lb to match your profile."),
+        String(localized: "Set weights flow into your workout history, Apple Health, and the AI Coach."),
+        String(localized: "See what's new right here in About after every update."),
+        String(localized: "Polish, refinements, and fixes.")
+    ]
+}
+
+/// Expandable "What's New" row: tap to reveal the current version's highlights.
+private struct WhatsNewRow: View {
+    let version: String
+    @Binding var isExpanded: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.snappy(duration: 0.28)) { isExpanded.toggle() }
+            } label: {
+                AboutFieldRow(title: String(localized: "What's New"), systemImage: "sparkles", tint: .deltsSecondaryAccent) {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.deltsMutedText.opacity(0.72))
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                        .frame(minWidth: 72, minHeight: 38, alignment: .trailing)
+                }
+            }
+            .deltsPressable()
+            .accessibilityLabel(String(localized: "What's New"))
+            .accessibilityValue(isExpanded ? String(localized: "Expanded") : String(localized: "Collapsed"))
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Delts \(version)")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Color.deltsCharcoal)
+
+                    ForEach(DeltsReleaseNotes.highlights, id: \.self) { line in
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(Color.deltsAccent)
+                                .padding(.top, 1)
+
+                            Text(line)
+                                .font(.subheadline)
+                                .foregroundStyle(Color.deltsMutedText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 49)
+                .padding(.trailing, 4)
+                .padding(.top, 2)
+                .padding(.bottom, 14)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
     }
 }
