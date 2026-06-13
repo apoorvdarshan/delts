@@ -1378,6 +1378,14 @@ struct WorkoutPickerSheet: View {
                         .font(.headline.weight(.heavy))
                         .foregroundStyle(Color.deltsAccent)
                 }
+                // The nav-bar Done is hidden while the search field is active, so
+                // surface a Done on the keyboard accessory bar to dismiss the keyboard.
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { dismissKeyboard() }
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.deltsAccent)
+                }
             }
         }
         .onAppear {
