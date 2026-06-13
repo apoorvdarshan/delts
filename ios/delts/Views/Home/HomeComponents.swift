@@ -569,17 +569,20 @@ struct EmptyRoutineRow: View {
 struct PlannedExerciseRow: View {
     let exercise: PlannedRoutineExercise
     let rpeScale: RPEScale
+    let weightUnit: String
     let isLoggingEnabled: Bool
     let openDetail: () -> Void
     let updateSets: (Int) -> Void
     let updateSetReps: (Int, String) -> Void
     let updateSetRPE: (Int, String) -> Void
+    let updateSetWeights: (Int, String) -> Void
     let focusedField: FocusState<PlannedSetFocus?>.Binding
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         let setReps = exercise.normalizedSetReps
         let setRPE = exercise.normalizedSetRPE
+        let setWeights = exercise.normalizedSetWeights
 
         VStack(alignment: .leading, spacing: 12) {
             Button(action: openDetail) {
@@ -649,7 +652,14 @@ struct PlannedExerciseRow: View {
                             exerciseID: exercise.id,
                             setIndex: index,
                             rpeScale: rpeScale,
+                            weightUnit: weightUnit,
                             isEnabled: isLoggingEnabled,
+                            weight: Binding(
+                                get: {
+                                    setWeights.indices.contains(index) ? setWeights[index] : ""
+                                },
+                                set: { updateSetWeights(index, $0) }
+                            ),
                             reps: Binding(
                                 get: {
                                     let values = exercise.normalizedSetReps
@@ -695,22 +705,35 @@ struct PlannedSetField: View {
     let exerciseID: UUID
     let setIndex: Int
     let rpeScale: RPEScale
+    let weightUnit: String
     let isEnabled: Bool
+    @Binding var weight: String
     @Binding var reps: String
     @Binding var rpe: String
     let focusedRepsField: FocusState<PlannedSetFocus?>.Binding
 
     var body: some View {
+        let weightFocus = PlannedSetFocus(exerciseID: exerciseID, setIndex: setIndex, field: .weight)
         let repsFocus = PlannedSetFocus(exerciseID: exerciseID, setIndex: setIndex, field: .reps)
         let rpeFocus = PlannedSetFocus(exerciseID: exerciseID, setIndex: setIndex, field: .rpe)
 
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Text("Set \(setIndex + 1)")
                 .font(.system(.subheadline, design: .rounded, weight: .bold))
                 .foregroundStyle(Color.deltsMutedText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
-                .frame(width: 54, alignment: .leading)
+                .frame(width: 46, alignment: .leading)
+
+            PlannedSetValueField(
+                placeholder: weightUnit,
+                text: $weight,
+                keyboardType: .decimalPad,
+                focus: weightFocus,
+                isEnabled: isEnabled,
+                focusedRepsField: focusedRepsField
+            )
+            .frame(maxWidth: .infinity)
 
             PlannedSetValueField(
                 placeholder: String(localized: "Reps"),
@@ -723,7 +746,7 @@ struct PlannedSetField: View {
             .frame(maxWidth: .infinity)
 
             PlannedSetValueField(
-                placeholder: String(localized: "RPE \(rpeScale.inputPlaceholder)"),
+                placeholder: rpeScale.inputPlaceholder,
                 text: $rpe,
                 keyboardType: rpeScale.allowsDecimalInput ? .decimalPad : .numberPad,
                 focus: rpeFocus,
@@ -734,7 +757,7 @@ struct PlannedSetField: View {
         }
         .padding(.vertical, 7)
         .contentShape(Rectangle())
-        .accessibilityHint("Opens set reps and RPE input")
+        .accessibilityHint("Opens set weight, reps and RPE input")
     }
 }
 
@@ -823,10 +846,12 @@ struct GuidedWorkoutSessionView: View {
     let timerStartedAt: Date?
     let timerElapsedSeconds: Int
     let rpeScale: RPEScale
+    let weightUnit: String
     let isLoggingEnabled: Bool
     let updateSets: (UUID, Int) -> Void
     let updateSetReps: (UUID, Int, String) -> Void
     let updateSetRPE: (UUID, Int, String) -> Void
+    let updateSetWeights: (UUID, Int, String) -> Void
     let markDone: (UUID, Bool) -> Void
     let onFinish: () -> Void
     @State private var currentIndex = 0
@@ -980,6 +1005,7 @@ struct GuidedWorkoutSessionView: View {
     private func guidedSetLogger(_ exercise: PlannedRoutineExercise) -> some View {
         let setReps = exercise.normalizedSetReps
         let setRPE = exercise.normalizedSetRPE
+        let setWeights = exercise.normalizedSetWeights
 
         return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 12) {
@@ -988,7 +1014,7 @@ struct GuidedWorkoutSessionView: View {
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(Color.deltsCharcoal)
 
-                    Text("Enter reps and optional RPE for each set.")
+                    Text("Enter weight, reps, and optional RPE for each set.")
                         .font(.caption)
                         .foregroundStyle(Color.deltsMutedText)
                 }
@@ -1047,7 +1073,14 @@ struct GuidedWorkoutSessionView: View {
                         exerciseID: exercise.id,
                         setIndex: index,
                         rpeScale: rpeScale,
+                        weightUnit: weightUnit,
                         isEnabled: isLoggingEnabled,
+                        weight: Binding(
+                            get: {
+                                setWeights.indices.contains(index) ? setWeights[index] : ""
+                            },
+                            set: { updateSetWeights(exercise.id, index, $0) }
+                        ),
                         reps: Binding(
                             get: {
                                 let values = exercise.normalizedSetReps

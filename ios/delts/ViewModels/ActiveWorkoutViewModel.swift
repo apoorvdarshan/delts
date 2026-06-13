@@ -57,12 +57,15 @@ final class ActiveWorkoutViewModel: ObservableObject {
 
     func makeCompletedWorkout(finishedAt: Date = Date()) -> CompletedWorkout {
         let elapsedSeconds = max(0, Int(finishedAt.timeIntervalSince(startedAt)))
+        let unit = Self.weightUnit
         let logs = exercises.enumerated().map { exerciseIndex, exercise in
             let sets = (0..<max(exercise.sets, 1)).map { setIndex in
-                CompletedSetLog(
+                let weight = (weightInputs[safe: exerciseIndex]?[safe: setIndex] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                return CompletedSetLog(
                     setNumber: setIndex + 1,
                     completed: completedSets[safe: exerciseIndex]?[safe: setIndex] ?? false,
-                    weight: weightInputs[safe: exerciseIndex]?[safe: setIndex] ?? "",
+                    weight: weight,
+                    weightUnit: weight.isEmpty ? nil : unit,
                     reps: repInputs[safe: exerciseIndex]?[safe: setIndex] ?? "",
                     rpe: normalizedRPEInput(exerciseIndex: exerciseIndex, setIndex: setIndex)
                 )
@@ -82,6 +85,13 @@ final class ActiveWorkoutViewModel: ObservableObject {
             planSummary: plan.summary,
             exerciseLogs: logs
         )
+    }
+
+    /// "kg" or "lb" per the profile weight-unit setting (mirrors HomeView).
+    static var weightUnit: String {
+        UserDefaults.standard.string(forKey: "profile_weight_measurement_system") == "imperial"
+            ? String(localized: "lb")
+            : String(localized: "kg")
     }
 
     static func elapsedDisplay(_ seconds: Int) -> String {

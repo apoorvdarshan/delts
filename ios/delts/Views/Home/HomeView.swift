@@ -36,6 +36,7 @@ struct HomeView: View {
     @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
     @AppStorage("profile_show_only_target_primary_filters") private var showOnlyTargetPrimaryFilters = false
     @AppStorage(RPEScale.storageKey) private var rpeScaleRaw = RPEScale.strength.rawValue
+    @AppStorage("profile_weight_measurement_system") private var weightMeasurementSystemRaw = "metric"
 
     private let service = ExerciseLibraryService.shared
     private let calorieService = CalorieEstimateService()
@@ -60,6 +61,11 @@ struct HomeView: View {
 
     private var rpeScale: RPEScale {
         RPEScale(rawValue: rpeScaleRaw) ?? .strength
+    }
+
+    /// "kg" or "lb" per the profile weight-unit setting (same as 1RM / body weight).
+    private var weightUnit: String {
+        weightMeasurementSystemRaw == "imperial" ? String(localized: "lb") : String(localized: "kg")
     }
 
     private var selectedCompletedSetCount: Int {
@@ -315,6 +321,7 @@ struct HomeView: View {
                             PlannedExerciseRow(
                                 exercise: exercise,
                                 rpeScale: rpeScale,
+                                weightUnit: weightUnit,
                                 isLoggingEnabled: isSessionTimerRunning,
                                 openDetail: {
                                     selectedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: exercise.id)
@@ -335,6 +342,10 @@ struct HomeView: View {
                                         let previous = values.indices.contains(setIndex) ? values[setIndex] : ""
                                         exercise.setRPE(scale.sanitizedInput(rpe, previousValue: previous), forSet: setIndex)
                                     }
+                                },
+                                updateSetWeights: { setIndex, weight in
+                                    guard isSessionTimerRunning else { return }
+                                    updateExercise(exercise.id) { $0.setWeight(weight, forSet: setIndex) }
                                 },
                                 focusedField: $focusedField
                             )
@@ -423,6 +434,7 @@ struct HomeView: View {
                     timerStartedAt: selectedTimerStartedAt,
                     timerElapsedSeconds: selectedTimerElapsedSeconds,
                     rpeScale: rpeScale,
+                    weightUnit: weightUnit,
                     isLoggingEnabled: isSessionTimerRunning,
                     updateSets: { exerciseID, sets in
                         guard isSessionTimerRunning else { return }
@@ -440,6 +452,10 @@ struct HomeView: View {
                             let previous = values.indices.contains(setIndex) ? values[setIndex] : ""
                             exercise.setRPE(scale.sanitizedInput(rpe, previousValue: previous), forSet: setIndex)
                         }
+                    },
+                    updateSetWeights: { exerciseID, setIndex, weight in
+                        guard isSessionTimerRunning else { return }
+                        updateExercise(exerciseID) { $0.setWeight(weight, forSet: setIndex) }
                     },
                     markDone: { exerciseID, isDone in
                         guard isSessionTimerRunning else { return }
@@ -681,19 +697,24 @@ struct HomeView: View {
         guard !selectedExercises.isEmpty else { return }
 
         let durationSeconds = max(currentSessionElapsedSeconds, selectedTimerElapsedSeconds)
+        let unit = weightUnit
         let logs = selectedExercises.map { exercise in
             let reps = exercise.normalizedSetReps
             let rpe = exercise.normalizedSetRPE
+            let weights = exercise.normalizedSetWeights
             let sets = (0..<max(exercise.sets, 1)).map { index in
                 let repValue = reps.indices.contains(index) ? reps[index] : ""
                 let rpeValue = rpe.indices.contains(index) ? rpe[index] : ""
+                let weightValue = weights.indices.contains(index) ? weights[index] : ""
                 let trimmedReps = repValue.trimmingCharacters(in: .whitespacesAndNewlines)
                 let trimmedRPE = rpeValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                let trimmedWeight = weightValue.trimmingCharacters(in: .whitespacesAndNewlines)
 
                 return CompletedSetLog(
                     setNumber: index + 1,
-                    completed: exercise.isDone || !trimmedReps.isEmpty || !trimmedRPE.isEmpty,
-                    weight: "",
+                    completed: exercise.isDone || !trimmedReps.isEmpty || !trimmedRPE.isEmpty || !trimmedWeight.isEmpty,
+                    weight: trimmedWeight,
+                    weightUnit: trimmedWeight.isEmpty ? nil : unit,
                     reps: trimmedReps,
                     rpe: trimmedRPE.isEmpty ? nil : trimmedRPE
                 )
@@ -752,6 +773,7 @@ struct HomeView: View {
         let service = calorieService
         let healthEnabled = appleHealthEnabled
         let healthKit = healthKit
+        let unit = weightUnit
 
         Task { @MainActor in
             // Retry a couple times so a transient Gemini hiccup doesn't drop the estimate.
@@ -761,6 +783,7 @@ struct HomeView: View {
                     kcal = try await service.estimate(
                         durationMinutes: durationMinutes,
                         exercises: exercises,
+                        weightUnit: unit,
                         bio: bio
                     )
                     break

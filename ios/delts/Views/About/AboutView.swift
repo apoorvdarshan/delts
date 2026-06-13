@@ -269,8 +269,11 @@ struct AboutSettingsSection: View {
                 message: Text("Delts is checking the App Store for a newer version."),
                 dismissButton: .default(Text("OK"))
             )
-        case let .available(version, storeURL):
-            let message = String(localized: "Version \(version) is available. You are on \(appVersionText).")
+        case let .available(version, storeURL, releaseNotes):
+            var message = String(localized: "Version \(version) is available. You are on \(appVersionText).")
+            if let releaseNotes {
+                message += "\n\n" + String(localized: "What's New:\n\(releaseNotes)")
+            }
             if let storeURL {
                 return Alert(
                     title: Text("Update Available"),
@@ -287,11 +290,15 @@ struct AboutSettingsSection: View {
                 message: Text(message),
                 dismissButton: .default(Text("OK"))
             )
-        case let .upToDate(latestVersion):
+        case let .upToDate(latestVersion, releaseNotes):
             let latestText = latestVersion.map { String(localized: " Latest App Store version: \($0).") } ?? ""
+            var message = String(localized: "You are on \(appVersionText).\(latestText)")
+            if let releaseNotes {
+                message += "\n\n" + String(localized: "What's New in \(latestVersion ?? appVersionText):\n\(releaseNotes)")
+            }
             return Alert(
                 title: Text("Delts Is Up to Date"),
-                message: Text("You are on \(appVersionText).\(latestText)"),
+                message: Text(message),
                 dismissButton: .default(Text("OK"))
             )
         case .unavailable:

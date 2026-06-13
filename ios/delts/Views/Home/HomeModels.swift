@@ -54,6 +54,7 @@ struct CopyableWorkoutDay: Identifiable, Hashable {
 
 struct PlannedSetFocus: Hashable {
     enum Field: Hashable {
+        case weight
         case reps
         case rpe
     }
@@ -77,6 +78,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
     var reps: String = ""
     var setReps: [String] = [""]
     var setRPE: [String] = [""]
+    var setWeights: [String] = [""]
     var addedAt: Date = Date()
     var isDone: Bool = false
 
@@ -98,6 +100,18 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
     var normalizedSetRPE: [String] {
         let count = max(sets, 1)
         var values = setRPE
+        if values.count < count {
+            values.append(contentsOf: Array(repeating: "", count: count - values.count))
+        }
+        if values.count > count {
+            values = Array(values.prefix(count))
+        }
+        return values
+    }
+
+    var normalizedSetWeights: [String] {
+        let count = max(sets, 1)
+        var values = setWeights
         if values.count < count {
             values.append(contentsOf: Array(repeating: "", count: count - values.count))
         }
@@ -130,17 +144,24 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         let clampedCount = min(max(count, 1), 12)
         var repValues = normalizedSetReps
         var rpeValues = normalizedSetRPE
+        var weightValues = normalizedSetWeights
         if repValues.count < clampedCount {
             repValues.append(contentsOf: Array(repeating: "", count: clampedCount - repValues.count))
         }
         if rpeValues.count < clampedCount {
             rpeValues.append(contentsOf: Array(repeating: "", count: clampedCount - rpeValues.count))
         }
+        if weightValues.count < clampedCount {
+            // Carry the last weight forward — sets usually share a working weight.
+            weightValues.append(contentsOf: Array(repeating: weightValues.last ?? "", count: clampedCount - weightValues.count))
+        }
         repValues = Array(repValues.prefix(clampedCount))
         rpeValues = Array(rpeValues.prefix(clampedCount))
+        weightValues = Array(weightValues.prefix(clampedCount))
         sets = clampedCount
         setReps = repValues
         setRPE = rpeValues
+        setWeights = weightValues
         reps = Self.summary(for: repValues)
     }
 
@@ -159,6 +180,13 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         setRPE = values
     }
 
+    mutating func setWeight(_ value: String, forSet index: Int) {
+        var values = normalizedSetWeights
+        guard values.indices.contains(index) else { return }
+        values[index] = value
+        setWeights = values
+    }
+
     mutating func setDone(_ isDone: Bool) {
         self.isDone = isDone
     }
@@ -172,6 +200,7 @@ struct PlannedRoutineExercise: Codable, Identifiable, Hashable {
         copy.reps = ""
         copy.setReps = [""]
         copy.setRPE = [""]
+        copy.setWeights = [""]
         return copy
     }
 

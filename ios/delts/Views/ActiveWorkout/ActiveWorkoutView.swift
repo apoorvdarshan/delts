@@ -15,6 +15,7 @@ struct ActiveWorkoutView: View {
     @StateObject private var viewModel: ActiveWorkoutViewModel
     @FocusState private var focusedField: ActiveWorkoutLogField?
     @AppStorage(RPEScale.storageKey) private var rpeScaleRaw = RPEScale.strength.rawValue
+    @AppStorage("profile_weight_measurement_system") private var weightMeasurementSystemRaw = "metric"
     @State private var now = Date()
 
     init(plan: WorkoutPlan, startIndex: Int = 0) {
@@ -330,7 +331,7 @@ struct ActiveWorkoutView: View {
             setStamp(setIndex)
 
             setEntryField(
-                title: String(localized: "Weight"),
+                title: String(localized: "Weight (\(weightUnit))"),
                 placeholder: "0",
                 text: weightBinding(setIndex),
                 keyboardType: .decimalPad,
@@ -411,7 +412,7 @@ struct ActiveWorkoutView: View {
 
     private func weightEntryField(_ setIndex: Int) -> some View {
         setEntryField(
-            title: String(localized: "Weight"),
+            title: String(localized: "Weight (\(weightUnit))"),
             placeholder: "0",
             text: weightBinding(setIndex),
             keyboardType: .decimalPad,
@@ -583,6 +584,10 @@ struct ActiveWorkoutView: View {
     private var currentPositionText: String {
         guard !viewModel.exercises.isEmpty else { return String(localized: "Exercise 0 of 0") }
         return String(localized: "Exercise \(viewModel.currentExerciseIndex + 1) of \(viewModel.exercises.count)")
+    }
+
+    private var weightUnit: String {
+        weightMeasurementSystemRaw == "imperial" ? String(localized: "lb") : String(localized: "kg")
     }
 
     private var rpeScale: RPEScale {

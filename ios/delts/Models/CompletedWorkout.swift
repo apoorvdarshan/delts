@@ -6,6 +6,8 @@ struct CompletedSetLog: Codable, Identifiable, Hashable {
     var setNumber: Int
     var completed: Bool
     var weight: String
+    /// Unit the weight was logged in ("kg" or "lb"); nil for older logs or no weight.
+    var weightUnit: String?
     var reps: String
     var rpe: String?
 
@@ -14,6 +16,7 @@ struct CompletedSetLog: Codable, Identifiable, Hashable {
         setNumber: Int,
         completed: Bool,
         weight: String,
+        weightUnit: String? = nil,
         reps: String,
         rpe: String? = nil
     ) {
@@ -21,8 +24,16 @@ struct CompletedSetLog: Codable, Identifiable, Hashable {
         self.setNumber = setNumber
         self.completed = completed
         self.weight = weight
+        self.weightUnit = weightUnit
         self.reps = reps
         self.rpe = rpe
+    }
+
+    /// "82.5 kg" style display, or empty if no weight logged.
+    var weightDisplay: String {
+        let trimmed = weight.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return "" }
+        return weightUnit.map { "\(trimmed) \($0)" } ?? trimmed
     }
 }
 

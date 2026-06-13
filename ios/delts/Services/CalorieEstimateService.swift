@@ -19,8 +19,8 @@ struct CalorieEstimateService {
         case parse
     }
 
-    func estimate(durationMinutes: Int, exercises: [PlannedRoutineExercise], bio: Bio) async throws -> Int {
-        try await run(prompt: Self.prompt(durationMinutes: durationMinutes, exerciseLines: Self.lines(from: exercises), bio: bio))
+    func estimate(durationMinutes: Int, exercises: [PlannedRoutineExercise], weightUnit: String, bio: Bio) async throws -> Int {
+        try await run(prompt: Self.prompt(durationMinutes: durationMinutes, exerciseLines: Self.lines(from: exercises, weightUnit: weightUnit), bio: bio))
     }
 
     func estimate(durationMinutes: Int, exerciseLogs: [CompletedExerciseLog], bio: Bio) async throws -> Int {
@@ -86,16 +86,19 @@ struct CalorieEstimateService {
 
     private static func clamp(_ value: Int) -> Int { min(max(value, 0), 5000) }
 
-    private static func lines(from exercises: [PlannedRoutineExercise]) -> [String] {
+    private static func lines(from exercises: [PlannedRoutineExercise], weightUnit: String) -> [String] {
         exercises.map { exercise in
             let reps = exercise.normalizedSetReps
             let rpe = exercise.normalizedSetRPE
+            let weights = exercise.normalizedSetWeights
             let setCount = max(exercise.sets, 1)
             var setParts: [String] = []
             for index in 0..<setCount {
                 let repValue = reps.indices.contains(index) ? reps[index].trimmingCharacters(in: .whitespaces) : ""
                 let rpeValue = rpe.indices.contains(index) ? rpe[index].trimmingCharacters(in: .whitespaces) : ""
+                let weightValue = weights.indices.contains(index) ? weights[index].trimmingCharacters(in: .whitespaces) : ""
                 var part = repValue.isEmpty ? "?" : "\(repValue) reps"
+                if !weightValue.isEmpty { part += " @ \(weightValue) \(weightUnit)" }
                 if !rpeValue.isEmpty { part += " @RPE \(rpeValue)" }
                 setParts.append(part)
             }
@@ -110,7 +113,9 @@ struct CalorieEstimateService {
             for set in log.sets {
                 let reps = set.reps.trimmingCharacters(in: .whitespaces)
                 let rpe = set.rpe?.trimmingCharacters(in: .whitespaces) ?? ""
+                let weight = set.weightDisplay
                 var part = reps.isEmpty ? "?" : "\(reps) reps"
+                if !weight.isEmpty { part += " @ \(weight)" }
                 if !rpe.isEmpty { part += " @RPE \(rpe)" }
                 setParts.append(part)
             }

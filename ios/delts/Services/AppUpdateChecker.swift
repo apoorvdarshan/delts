@@ -4,8 +4,8 @@ import Foundation
 enum AppUpdateCheckResult: Equatable {
     case idle
     case checking
-    case available(version: String, storeURL: URL?)
-    case upToDate(latestVersion: String?)
+    case available(version: String, storeURL: URL?, releaseNotes: String?)
+    case upToDate(latestVersion: String?, releaseNotes: String?)
     case unavailable
     case failed(message: String)
 }
@@ -89,6 +89,9 @@ final class AppUpdateChecker: ObservableObject {
             }
 
             let storeURL = listing.trackViewUrl.flatMap(URL.init(string:))
+            let releaseNotes = listing.releaseNotes?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .nilIfEmpty
             latestVersion = appStoreVersion
             appStoreURL = storeURL
             defaults.set(appStoreVersion, forKey: Self.latestVersionKey)
@@ -97,14 +100,14 @@ final class AppUpdateChecker: ObservableObject {
             if Self.isVersion(appStoreVersion, newerThan: currentVersion) {
                 isUpdateAvailable = true
                 defaults.set(true, forKey: Self.updateAvailableKey)
-                let result = AppUpdateCheckResult.available(version: appStoreVersion, storeURL: storeURL)
+                let result = AppUpdateCheckResult.available(version: appStoreVersion, storeURL: storeURL, releaseNotes: releaseNotes)
                 lastResult = result
                 return result
             }
 
             isUpdateAvailable = false
             defaults.set(false, forKey: Self.updateAvailableKey)
-            let result = AppUpdateCheckResult.upToDate(latestVersion: appStoreVersion)
+            let result = AppUpdateCheckResult.upToDate(latestVersion: appStoreVersion, releaseNotes: releaseNotes)
             lastResult = result
             return result
         } catch {
@@ -182,4 +185,9 @@ private struct AppStoreLookupResponse: Decodable {
 private struct AppStoreLookupResult: Decodable {
     let version: String?
     let trackViewUrl: String?
+    let releaseNotes: String?
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }

@@ -191,10 +191,10 @@ enum CoachContextBuilder {
                 let setText = exercise.sets
                     .filter { $0.completed }
                     .map { set -> String in
-                        var summary = set.weight.trimmingCharacters(in: .whitespaces)
+                        var summary = set.weightDisplay
                         let reps = set.reps.trimmingCharacters(in: .whitespaces)
                         if !reps.isEmpty {
-                            summary += summary.isEmpty ? "\(reps) reps" : "×\(reps)"
+                            summary += summary.isEmpty ? "\(reps) reps" : " × \(reps)"
                         }
                         if let rpe = set.rpe?.trimmingCharacters(in: .whitespaces), !rpe.isEmpty {
                             summary += " @RPE \(rpe)"

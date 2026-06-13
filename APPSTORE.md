@@ -25,6 +25,12 @@ App Store Connect submission details for Delts. Each field is in a code block fo
 
 ## What's New
 
+    Version 1.1
+
+    • Log the weight you lift on every set, right next to reps and RPE. Weights show in kg or lb based on your profile units, and flow into your workout history, Apple Health, and the AI Coach.
+    • "Check for Updates" now shows what's new in the latest version.
+    • Refinements and fixes.
+
 ## Description
 
     Delts is a focused iPhone workout planner and tracker for gym sessions.

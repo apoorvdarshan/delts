@@ -759,6 +759,8 @@ private struct HistoryExerciseRow: View {
 
     private func setSummary(_ set: CompletedSetLog) -> String {
         var parts: [String] = []
+        let weight = set.weightDisplay
+        if !weight.isEmpty { parts.append(weight) }
         let reps = set.reps.trimmingCharacters(in: .whitespaces)
         if !reps.isEmpty { parts.append(String(localized: "\(reps) reps")) }
         if let rpe = set.rpe?.trimmingCharacters(in: .whitespaces), !rpe.isEmpty {
