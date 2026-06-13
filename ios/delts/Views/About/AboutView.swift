@@ -542,9 +542,10 @@ private struct WhatsNewRow: View {
                 .padding(.trailing, 4)
                 .padding(.top, 2)
                 .padding(.bottom, 14)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .transition(.opacity)
             }
         }
+        .clipped()
     }
 }
 
