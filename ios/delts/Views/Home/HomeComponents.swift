@@ -1269,6 +1269,19 @@ private struct GuidedInstructionSection: View {
     }
 }
 
+private extension View {
+    /// Keeps custom toolbar items (like the picker's Done button) visible while a
+    /// `.searchable` field is active. No-op below iOS 17.1.
+    @ViewBuilder
+    func keepsToolbarDuringSearch() -> some View {
+        if #available(iOS 17.1, *) {
+            self.searchPresentationToolbarBehavior(.avoidHidingContent)
+        } else {
+            self
+        }
+    }
+}
+
 struct WorkoutPickerSheet: View {
     @Binding var searchText: String
     @Binding var source: WorkoutPickerSource
@@ -1364,6 +1377,7 @@ struct WorkoutPickerSheet: View {
             .listStyle(.plain)
             .contentMargins(.top, 0, for: .scrollContent)
             .background(Color.deltsBackground)
+            .scrollDismissesKeyboard(.immediately)
             .contentShape(Rectangle())
             .onTapGesture {
                 dismissKeyboard()
@@ -1378,15 +1392,10 @@ struct WorkoutPickerSheet: View {
                         .font(.headline.weight(.heavy))
                         .foregroundStyle(Color.deltsAccent)
                 }
-                // The nav-bar Done is hidden while the search field is active, so
-                // surface a Done on the keyboard accessory bar to dismiss the keyboard.
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") { dismissKeyboard() }
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(Color.deltsAccent)
-                }
             }
+            // Keep the "Done" button visible while the search field is active
+            // (iOS hides toolbar content during search by default).
+            .keepsToolbarDuringSearch()
         }
         .onAppear {
             normalizePrimaryFilterSelection()
