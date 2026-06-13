@@ -330,14 +330,10 @@ struct HomeView: View {
                                 weightUnit: weightUnit,
                                 isLoggingEnabled: isSessionTimerRunning,
                                 openDetail: {
-                                    // While entering set data, a header tap dismisses the
-                                    // keyboard instead of navigating away (avoids losing your place).
-                                    if focusedField != nil {
-                                        focusedField = nil
-                                        dismissKeyboard()
-                                    } else {
-                                        selectedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: exercise.id)
-                                    }
+                                    // While entering set data, ignore header taps entirely —
+                                    // don't navigate away and don't dismiss the keyboard.
+                                    guard focusedField == nil else { return }
+                                    selectedWorkoutRoute = PlannedWorkoutDetailRoute(exerciseID: exercise.id)
                                 },
                                 updateSets: { sets in
                                     guard isSessionTimerRunning else { return }
