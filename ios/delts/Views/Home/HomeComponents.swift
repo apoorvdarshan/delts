@@ -825,7 +825,14 @@ private struct PlannedSetSelectionTextField: View {
             .multilineTextAlignment(.center)
             .focused(focusedRepsField, equals: focus)
             .onTapGesture {
-                moveCursorToEnd()
+                // Tapping a field always focuses it — even when another field in the
+                // row currently holds the keyboard — so you can jump weight→reps→RPE
+                // without dismissing and re-showing the keyboard.
+                if focusedRepsField.wrappedValue == focus {
+                    moveCursorToEnd()
+                } else {
+                    focusedRepsField.wrappedValue = focus
+                }
             }
             .onChange(of: focusedRepsField.wrappedValue) { _, value in
                 guard value == focus else { return }
