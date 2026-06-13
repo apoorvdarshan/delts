@@ -27,9 +27,11 @@ App Store Connect submission details for Delts. Each field is in a code block fo
 
     Version 1.1
 
-    • Log the weight you lift on every set, right next to reps and RPE. Weights show in kg or lb based on your profile units, and flow into your workout history, Apple Health, and the AI Coach.
-    • "Check for Updates" now shows what's new in the latest version.
-    • Refinements and fixes.
+    • Log the weight you lift on every set, right next to reps and RPE. Weights show in kg or lb based on your profile units and flow into your workout history, Apple Health, and the AI Coach.
+    • See your session time on Home, alongside calorie burn.
+    • Workout history now collapses by default — tap any session to expand the set-by-set details.
+    • A new What's New section in About shows what changed each update.
+    • Smoother set logging (tap straight between weight, reps, and RPE) and many small fixes.
 
 ## Description
 

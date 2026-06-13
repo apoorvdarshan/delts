@@ -25414,7 +25414,102 @@
         }
       }
     },
+    "Log the weight you lift on every set — in kg or lb to match your profile. It flows into your history, Apple Health, and the AI Coach." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "سجّل الوزن الذي ترفعه في كل مجموعة — بالـ kg أو lb بحسب ملفك الشخصي. ينتقل إلى سجلّك وتطبيق “صحة” ومدرب الذكاء الاصطناعي."
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hər setdə qaldırdığın çəkini qeyd et — profilinə uyğun kg və ya lb ilə. Tarixçənə, Apple Health-ə və AI Məşqçiyə ötürülür."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erfasse das Gewicht, das du in jedem Satz bewegst — in kg oder lb passend zu deinem Profil. Es fließt in deinen Verlauf, in Apple Health und in den KI-Coach."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registra el peso que levantas en cada serie, en kg o lb según tu perfil. Pasa a tu historial, a Apple Salud y al Coach IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrez le poids que vous soulevez à chaque série, en kg ou lb selon votre profil. Il alimente votre historique, Apple Santé et le Coach IA."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "हर सेट में उठाया वज़न दर्ज करें — अपनी प्रोफ़ाइल के अनुसार kg या lb में। यह आपके इतिहास, Apple Health और AI कोच में जाता है।"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registra il peso che sollevi a ogni serie, in kg o lb in base al tuo profilo. Confluisce nella cronologia, in Salute e nel Coach AI."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "各セットで挙げた重量を記録 — プロフィールに合わせて kg または lb で。履歴、ヘルスケア、AIコーチに反映されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "매 세트에서 든 무게를 기록하세요 — 프로필에 맞춰 kg 또는 lb로. 기록, Apple 건강, AI 코치로 이어집니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leg het gewicht vast dat je per set tilt — in kg of lb, passend bij je profiel. Het stroomt door naar je geschiedenis, Apple Gezondheid en de AI-coach."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisuj ciężar podnoszony w każdej serii — w kg lub lb, zgodnie z profilem. Trafia do historii, Apple Zdrowie i Trenera AI."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registre o peso que você levanta em cada série, em kg ou lb conforme seu perfil. Ele vai para seu histórico, a Saúde e o Coach de IA."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notează greutatea ridicată la fiecare set — în kg sau lb, potrivit profilului tău. Ajunge în istoric, în Sănătate și la Antrenorul AI."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Записывайте вес в каждом подходе — в kg или lb в соответствии с профилем. Он попадает в историю, в Здоровье и к ИИ-тренеру."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记录每组所举的重量——根据你的资料以 kg 或 lb 为单位。它会同步到历史记录、健康和 AI 教练。"
+          }
+        }
+      }
+    },
     "Log the weight you lift on every set — shown in kg or lb to match your profile." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -32090,6 +32185,7 @@
       }
     },
     "Polish, refinements, and fixes." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -36695,6 +36791,100 @@
         }
       }
     },
+    "See your session time on Home, right next to calorie burn." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اطّلع على وقت جلستك في الرئيسية، بجوار حرق السعرات مباشرةً."
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seans vaxtını Əsas səhifədə, kalori sərfinin düz yanında gör."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sieh deine Trainingszeit im Start-Tab, direkt neben dem Kalorienverbrauch."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mira el tiempo de tu sesión en Inicio, justo al lado de las calorías quemadas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consultez la durée de votre séance sur l’Accueil, juste à côté des calories brûlées."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अपने सेशन का समय होम पर देखें, ठीक कैलोरी बर्न के बगल में।"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedi la durata della sessione nella Home, proprio accanto alle calorie bruciate."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "セッション時間をホームで、消費カロリーのすぐ隣に表示します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "세션 시간을 홈에서 소모 칼로리 바로 옆에 확인하세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bekijk je sessietijd op Home, direct naast de calorieverbranding."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobacz czas sesji na karcie Start, tuż obok spalonych kalorii."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veja o tempo da sua sessão no Início, bem ao lado da queima de calorias."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vezi durata sesiunii pe Acasă, chiar lângă caloriile arse."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Смотрите время тренировки на Главной, прямо рядом с расходом калорий."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在主页查看本次训练时长，就在卡路里消耗旁边。"
+          }
+        }
+      }
+    },
     "Select all" : {
       "localizations" : {
         "ar" : {
@@ -37166,6 +37356,7 @@
       }
     },
     "Set weights flow into your workout history, Apple Health, and the AI Coach." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -38007,6 +38198,100 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "跳过"
+          }
+        }
+      }
+    },
+    "Smoother set logging and lots of small fixes." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تسجيل أسلس للمجموعات والعديد من الإصلاحات الصغيرة."
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daha rahat set qeydi və çoxlu kiçik düzəlişlər."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flüssigeres Erfassen der Sätze und viele kleine Verbesserungen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registro de series más fluido y muchas pequeñas correcciones."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisie des séries plus fluide et de nombreuses petites corrections."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सेट लॉगिंग और भी सहज, साथ ही कई छोटे सुधार।"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrazione delle serie più fluida e tante piccole correzioni."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "セット記録がよりスムーズに。細かな修正も多数。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "세트 기록이 더 부드러워졌고 자잘한 수정도 많습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vloeiender sets vastleggen en veel kleine verbeteringen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Płynniejsze zapisywanie serii i wiele drobnych poprawek."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registro de séries mais fluido e várias pequenas correções."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notarea seturilor mai fluidă și multe corecturi mici."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Более плавная запись подходов и множество мелких исправлений."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "组记录更流畅，以及大量细节修复。"
           }
         }
       }
@@ -41591,6 +41876,7 @@
       }
     },
     "This workout is no longer in this day." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -46302,6 +46588,100 @@
         }
       }
     },
+    "Workout history now collapses by default — tap any session to expand the set details." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يُطوى سجل التمارين افتراضيًا الآن — اضغط على أي جلسة لعرض تفاصيل المجموعات."
+          }
+        },
+        "az" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Məşq tarixçəsi indi standart olaraq yığılır — set təfərrüatlarını açmaq üçün istənilən seansa toxun."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Trainingsverlauf ist jetzt standardmäßig eingeklappt — tippe auf eine Einheit, um die Satzdetails einzublenden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El historial de entrenos ahora aparece contraído por defecto: toca una sesión para ver los detalles de las series."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’historique des entraînements est désormais réduit par défaut : touchez une séance pour afficher le détail des séries."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "वर्कआउट इतिहास अब डिफ़ॉल्ट रूप से संक्षिप्त रहता है — सेट विवरण देखने के लिए किसी भी सेशन पर टैप करें।"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La cronologia degli allenamenti ora è compressa per impostazione predefinita: tocca una sessione per espandere i dettagli delle serie."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ワークアウト履歴がデフォルトで折りたたまれるようになりました。セッションをタップするとセットの詳細を表示します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "운동 기록이 이제 기본적으로 접혀 있습니다 — 세션을 탭하면 세트 세부 정보가 펼쳐집니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De trainingsgeschiedenis is nu standaard ingeklapt — tik op een sessie om de setdetails uit te klappen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historia treningów jest teraz domyślnie zwinięta — dotknij dowolnej sesji, aby rozwinąć szczegóły serii."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O histórico de treinos agora fica recolhido por padrão: toque em uma sessão para expandir os detalhes das séries."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Istoricul antrenamentelor este acum restrâns implicit — atinge orice sesiune pentru a extinde detaliile seturilor."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "История тренировок теперь по умолчанию свёрнута — коснитесь любой тренировки, чтобы раскрыть детали подходов."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "训练历史现在默认折叠——点按任意训练即可展开各组详情。"
+          }
+        }
+      }
+    },
     "Workout of the day" : {
       "localizations" : {
         "ar" : {
@@ -46679,6 +47059,7 @@
       }
     },
     "Workout removed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

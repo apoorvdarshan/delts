@@ -36,10 +36,11 @@ Delts is built by **Apoorv Darshan, ACE Certified Personal Trainer** — the tra
 
 - Timer-first workout tracking — the red button starts and ends the session, with a Lock Screen Live Activity.
 - Daily workout board with exercise cards, sets, reps, RPE, muscles, and equipment.
-- Set, rep, and RPE logging for active workouts (strength RPE or CR10).
-- AI Coach chat (Premium) that sees your real workouts, progress, and goals — with photo attachments.
+- Per-set logging of weight, reps, and RPE for active workouts (strength RPE or CR10); weight shows in kg or lb to match your profile.
+- Session stats on Home — sets, workouts, reps, time, and calorie burn — updated per session.
+- AI Coach chat (Premium) that sees your real workouts (including logged weights), progress, and goals — with photo attachments.
 - Automatic calorie-burn estimates (Premium) after every session, from your workout and body data.
-- Workout history with per-session detail, synced to Apple Health as workouts.
+- Workout history that collapses by default and expands per session, synced to Apple Health as workouts.
 - Exercise library — 845 exercises with target muscle, equipment, level, and split-based browsing.
 - Weight and body fat progress charts with ranges, averages, net change, and goal lines.
 - Optional Apple Health import/write support for weight, body fat, and workouts.

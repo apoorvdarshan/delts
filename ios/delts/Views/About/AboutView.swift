@@ -488,10 +488,11 @@ private struct AboutFieldRow<Content: View>: View {
 /// each release; the version header is read live from the app bundle.
 enum DeltsReleaseNotes {
     static let highlights: [String] = [
-        String(localized: "Log the weight you lift on every set — shown in kg or lb to match your profile."),
-        String(localized: "Set weights flow into your workout history, Apple Health, and the AI Coach."),
+        String(localized: "Log the weight you lift on every set — in kg or lb to match your profile. It flows into your history, Apple Health, and the AI Coach."),
+        String(localized: "See your session time on Home, right next to calorie burn."),
+        String(localized: "Workout history now collapses by default — tap any session to expand the set details."),
         String(localized: "See what's new right here in About after every update."),
-        String(localized: "Polish, refinements, and fixes.")
+        String(localized: "Smoother set logging and lots of small fixes.")
     ]
 }
 
