@@ -390,10 +390,11 @@ struct HomeView: View {
             .background(Color.deltsBackground.ignoresSafeArea())
             .listSectionSpacing(8)
             .scrollDismissesKeyboard(.interactively)
-            .onChange(of: focusedField) { _, newValue in
-                // Lift the focused row clear of the keyboard + "Done" accessory bar
-                // so every set field (incl. RPE on the right) is tappable.
-                guard let id = newValue?.exerciseID else { return }
+            .onChange(of: focusedField) { oldValue, newValue in
+                // Lift the focused row clear of the keyboard + "Done" accessory bar.
+                // Only scroll when moving to a different exercise — switching
+                // weight→reps→RPE within the same row shouldn't re-scroll.
+                guard let id = newValue?.exerciseID, id != oldValue?.exerciseID else { return }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     withAnimation(.snappy(duration: 0.25)) {
                         // Lift just clear of the "Done" bar — not all the way to center.
