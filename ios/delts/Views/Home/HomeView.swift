@@ -390,6 +390,14 @@ struct HomeView: View {
             .background(Color.deltsBackground)
             .listSectionSpacing(8)
             .scrollDismissesKeyboard(.interactively)
+            .onTapGesture {
+                // Tap empty space to dismiss the keyboard. Taps on the set fields
+                // are consumed by the fields themselves (child gestures win), so
+                // switching weight→reps→RPE still works without dismissing.
+                guard focusedField != nil else { return }
+                focusedField = nil
+                dismissKeyboard()
+            }
             .animation(.snappy, value: selectedDate)
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
