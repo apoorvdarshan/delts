@@ -1,5 +1,6 @@
 import StoreKit
 import SwiftUI
+import UIKit
 
 /// Settings section for Delts Premium: plan status, manage, restore, upgrade.
 struct SubscriptionSettingsSection: View {
@@ -9,6 +10,7 @@ struct SubscriptionSettingsSection: View {
     @State private var isRestoring = false
     @State private var showAIConsent = false
     @State private var aiConsentGranted = AIConsent.isGranted
+    @State private var didCopyID = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -58,6 +60,20 @@ struct SubscriptionSettingsSection: View {
                     tint: .deltsSecondaryAccent
                 ) {
                     restore()
+                }
+                divider
+                actionRow(
+                    title: String(localized: "Customer ID"),
+                    systemImage: "number",
+                    value: didCopyID ? String(localized: "Copied!") : String(premium.appUserID.suffix(6)),
+                    tint: .deltsSecondaryAccent
+                ) {
+                    UIPasteboard.general.string = premium.appUserID
+                    didCopyID = true
+                    Task {
+                        try? await Task.sleep(nanoseconds: 1_600_000_000)
+                        didCopyID = false
+                    }
                 }
             }
             .padding(.horizontal, 14)

@@ -66,6 +66,11 @@ final class PremiumStore: ObservableObject {
     var canUseCoach: Bool { isSubscribed }
     var canEstimateCalories: Bool { isSubscribed }
 
+    /// RevenueCat App User ID for this install (anonymous unless logged in).
+    /// Used to identify this customer in the RevenueCat dashboard, e.g. to grant
+    /// a promotional entitlement.
+    var appUserID: String { Purchases.shared.appUserID }
+
     private func apply(_ info: CustomerInfo) {
         let entitlement = info.entitlements[Self.entitlementID]
             ?? info.entitlements.active.values.first
