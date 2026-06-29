@@ -98,37 +98,3 @@ private struct DeltsPrimaryButtonStyle: ButtonStyle {
         ]
     }
 }
-
-struct GlassIconButton: View {
-    let title: String
-    let systemImage: String
-    var tint: Color = .deltsAccent
-    var action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 19, weight: .semibold))
-                    .frame(width: 34, height: 34)
-                    .foregroundStyle(tint)
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.deltsCharcoal)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.deltsMutedText)
-            }
-            .padding(14)
-            .background(Color.deltsPanel.opacity(0.22), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.deltsHairline.opacity(0.34), lineWidth: 0.5)
-            )
-        }
-        .deltsPressable()
-    }
-}
