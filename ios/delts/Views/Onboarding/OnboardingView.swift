@@ -303,7 +303,7 @@ struct OnboardingView: View {
                 }
                 .padding(.top, 6)
 
-                Text("Loving the red button? Tell the App Store.")
+                Text("Enjoying Delts? Tell the App Store.")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.deltsMutedText)
                     .multilineTextAlignment(.center)
