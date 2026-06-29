@@ -9,7 +9,7 @@ struct AboutView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                AboutSettingsSection(updateChecker: updateChecker)
+                AboutSettingsSection(updateChecker: updateChecker, scope: .about)
                     .padding(.horizontal, 20)
                     .padding(.top, 14)
                     .padding(.bottom, 120)
@@ -22,14 +22,23 @@ struct AboutView: View {
     }
 }
 
+/// Which half of the settings/about content a section list renders.
+enum AboutSectionScope {
+    case settings
+    case about
+    case all
+}
+
 struct AboutSettingsSection: View {
     @Environment(\.openURL) private var openURL
     @ObservedObject var updateChecker: AppUpdateChecker
+    var scope: AboutSectionScope = .all
     @State private var activeAlert: AboutAlert?
     @State private var whatsNewExpanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
+            if scope != .about {
                     AboutSection(title: String(localized: "Release")) {
                         AboutRowStack {
                             AboutActionRow(
@@ -87,7 +96,9 @@ struct AboutSettingsSection: View {
                             }
                         }
                     }
+            }
 
+            if scope != .settings {
                     AboutSection(title: String(localized: "Contact")) {
                         AboutRowStack {
                             AboutActionRow(
@@ -205,6 +216,7 @@ struct AboutSettingsSection: View {
                             }
                         }
                     }
+            }
         }
         .alert(item: $activeAlert) { alert in
             switch alert {

@@ -64,14 +64,14 @@ struct ContentView: View {
                 .tabItem { Label(DeltsTab.workouts.title, systemImage: DeltsTab.workouts.systemImage) }
                 .tag(DeltsTab.workouts)
 
-            PreferencesView()
-                .tabItem { Label(DeltsTab.display.title, systemImage: DeltsTab.display.systemImage) }
-                .tag(DeltsTab.display)
+            SettingsView(updateChecker: updateChecker)
+                .tabItem { Label(DeltsTab.settings.title, systemImage: DeltsTab.settings.systemImage) }
+                .tag(DeltsTab.settings)
+                .badge(updateChecker.isUpdateAvailable ? Text("") : nil)
 
             AboutView(updateChecker: updateChecker)
                 .tabItem { Label(DeltsTab.about.title, systemImage: DeltsTab.about.systemImage) }
                 .tag(DeltsTab.about)
-                .badge(updateChecker.isUpdateAvailable ? Text("") : nil)
         }
     }
 
@@ -84,7 +84,7 @@ struct ContentView: View {
 
 private enum DeltsTab: String, CaseIterable, Identifiable {
     case workouts
-    case display
+    case settings
     case about
 
     var id: String { rawValue }
@@ -108,7 +108,7 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .workouts: return String(localized: "Workouts")
-        case .display: return String(localized: "Display")
+        case .settings: return String(localized: "Settings")
         case .about: return String(localized: "About")
         }
     }
@@ -116,7 +116,7 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .workouts: return "list.clipboard.fill"
-        case .display: return "paintpalette.fill"
+        case .settings: return "gearshape.fill"
         case .about: return "info.circle.fill"
         }
     }

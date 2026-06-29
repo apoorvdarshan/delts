@@ -3,12 +3,24 @@ import SwiftData
 import SwiftUI
 import UIKit
 
-struct PreferencesView: View {
+struct SettingsView: View {
+    @ObservedObject var updateChecker: AppUpdateChecker
+
     var body: some View {
         NavigationStack {
-            ProfileEditorView(sections: [.appPreferences])
-                .navigationTitle("Display")
-                .navigationBarTitleDisplayMode(.inline)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    ProfileEditorView(sections: [.appPreferences], embedded: true)
+                    AboutSettingsSection(updateChecker: updateChecker, scope: .settings)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 14)
+                .padding(.bottom, 120)
+            }
+            .deltsScreen()
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 }
