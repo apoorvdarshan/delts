@@ -5,7 +5,6 @@ import UIKit
 
 private enum OnboardingStep: Int, CaseIterable {
     case welcome
-    case library
     case rate
     case terms
 }
@@ -126,31 +125,10 @@ struct OnboardingView: View {
         switch step {
         case .welcome:
             welcomeStep
-        case .library:
-            profileStep(
-                profile: profile,
-                icon: "line.3.horizontal.decrease",
-                title: String(localized: "Set up your library"),
-                subtitle: String(localized: "Pick your split, equipment, and target muscles so the exercise library fits you."),
-                section: .libraryFilters
-            )
         case .rate:
             rateStep
         case .terms:
             termsStep
-        }
-    }
-
-    private func profileStep(
-        profile: UserProfile,
-        icon: String,
-        title: String,
-        subtitle: String,
-        section: ProfileSectionKind
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 18) {
-            stepHeader(icon: icon, title, subtitle)
-            ProfileEditorView(profile: profile, sections: [section], embedded: true)
         }
     }
 
@@ -177,7 +155,7 @@ struct OnboardingView: View {
                     .foregroundStyle(Color.deltsCharcoal)
                     .multilineTextAlignment(.center)
 
-                Text("A clean home for the exercise library. Set up your profile so the library fits your split, equipment, and goals.")
+                Text("A clean home for the exercise library — hundreds of moves with form cues, filters, and clear instructions.")
                     .font(.subheadline)
                     .foregroundStyle(Color.deltsMutedText)
                     .multilineTextAlignment(.center)
@@ -202,8 +180,8 @@ struct OnboardingView: View {
                 cardDivider
                 welcomeHighlight(
                     "person.text.rectangle",
-                    String(localized: "Tailored to you"),
-                    String(localized: "Your profile shapes what you see")
+                    String(localized: "Clear instructions"),
+                    String(localized: "Step-by-step cues for every move")
                 )
             }
             .padding(.vertical, 6)

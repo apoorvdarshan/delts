@@ -27,7 +27,6 @@ struct ProfileView: View {
 }
 
 enum ProfileSectionKind: CaseIterable {
-    case libraryFilters
     case appPreferences
     case about
 }
@@ -64,28 +63,9 @@ struct ProfileEditorView: View {
     @ViewBuilder
     private var sectionStack: some View {
         VStack(alignment: .leading, spacing: 18) {
-            if sections.contains(.libraryFilters) { libraryFiltersSection }
             if sections.contains(.appPreferences) { appPreferencesSection }
             if sections.contains(.about), let updateChecker {
                 AboutSettingsSection(updateChecker: updateChecker)
-            }
-        }
-    }
-
-    private var libraryFiltersSection: some View {
-        ProfileSection(
-            title: String(localized: "Library"),
-            subtitle: String(localized: "Group the exercise library by your training split."),
-            systemImage: "square.split.2x2"
-        ) {
-            ProfileRowStack {
-                ProfileMenuPicker(
-                    title: String(localized: "Workout split"),
-                    systemImage: "square.split.2x2",
-                    selection: splitBinding,
-                    options: WorkoutSplit.selectableCases,
-                    label: { $0.title }
-                )
             }
         }
     }
@@ -127,15 +107,6 @@ struct ProfileEditorView: View {
         }
     }
 
-    private var splitBinding: Binding<WorkoutSplit> {
-        Binding {
-            // `.custom` is retired from the picker; show it as Full Body (same behavior).
-            profile.workoutSplit == .custom ? .fullBody : profile.workoutSplit
-        } set: { newValue in
-            profile.workoutSplit = newValue
-            profile.updatedAt = Date()
-        }
-    }
 }
 
 

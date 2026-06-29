@@ -15,11 +15,7 @@ struct WorkoutsView: View {
 }
 
 private struct ExerciseLibraryBrowserView: View {
-    @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
-    @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
-    @AppStorage("profile_show_only_target_primary_filters") private var showOnlyTargetPrimaryFilters = false
     @State private var searchText = ""
-    @State private var selectedSplitGroupTitles: Set<String> = []
     @State private var selectedLevels: Set<String> = []
     @State private var selectedRawEquipment: Set<String> = []
     @State private var selectedPrimaryMuscles: Set<String> = []
@@ -31,67 +27,12 @@ private struct ExerciseLibraryBrowserView: View {
 
     private let service = ExerciseLibraryService.shared
 
-    private var selectedWorkoutSplit: WorkoutSplit {
-        profiles.first?.workoutSplit ?? .fullBody
-    }
-
-    private var splitFilterTitle: String {
-        // Always label the split chip "Body Part"; the grouping options inside it
-        // still follow the selected workout split.
-        String(localized: "Body Part")
-    }
-
-    private var usesBodyPartSplitFilter: Bool {
-        selectedWorkoutSplit == .fullBody || selectedWorkoutSplit == .custom
-    }
-
-    private var splitGroups: [WorkoutSplitMuscleGroup] {
-        let groups = WorkoutSplitMuscleGroup.groups(for: selectedWorkoutSplit)
-        guard groups.isEmpty else { return groups }
-
-        let muscles = Set(service.availablePrimaryMuscles + service.availableSecondaryMuscles)
-        return muscles.sorted().map { muscle in
-            WorkoutSplitMuscleGroup(title: muscle, muscles: [muscle])
-        }
-    }
-
-    private var selectedSplitGroups: [WorkoutSplitMuscleGroup] {
-        splitGroups.filter { selectedSplitGroupTitles.contains($0.title) }
-    }
-
-    private var shouldShowPrimaryFilter: Bool {
-        !(usesBodyPartSplitFilter && !selectedSplitGroupTitles.isEmpty)
-    }
-
     private var primaryFilterOptions: [String] {
-        let baseOptions: [String]
-        if selectedSplitGroups.isEmpty {
-            baseOptions = service.availablePrimaryMuscles
-        } else {
-            let allowedMuscles = Set(selectedSplitGroups.flatMap(\.muscles))
-            baseOptions = service.availablePrimaryMuscles.filter { allowedMuscles.contains($0) }
-        }
-        return targetFilteredPrimaryOptions(baseOptions)
+        service.availablePrimaryMuscles
     }
 
     private var profileRawEquipmentOptions: [String] {
         service.availableRawEquipment
-    }
-
-    private var profileTargetPrimaryMuscles: Set<String> {
-        datasetStoredSet(datasetPrimaryMusclesRaw, allowedValues: service.availablePrimaryMuscles)
-    }
-
-    private var effectivePrimaryMuscleSelection: Set<String> {
-        if !selectedPrimaryMuscles.isEmpty {
-            return selectedPrimaryMuscles
-        }
-        guard shouldApplyTargetPrimaryFilter else { return [] }
-        return Set(primaryFilterOptions)
-    }
-
-    private var shouldApplyTargetPrimaryFilter: Bool {
-        shouldShowPrimaryFilter && showOnlyTargetPrimaryFilters
     }
 
     private var effectiveRawEquipmentSelection: Set<String> {
@@ -102,18 +43,13 @@ private struct ExerciseLibraryBrowserView: View {
     }
 
     private var items: [ExerciseLibraryItem] {
-        let primaryMuscleSelection = effectivePrimaryMuscleSelection
-        if shouldApplyTargetPrimaryFilter && primaryMuscleSelection.isEmpty {
-            return []
-        }
-
         let rawEquipmentSelection = effectiveRawEquipmentSelection
         guard !rawEquipmentSelection.isEmpty else { return [] }
 
-        let filtered = service.filtered(
+        return service.filtered(
             levels: selectedLevels,
             rawEquipment: rawEquipmentSelection,
-            primaryMuscles: primaryMuscleSelection,
+            primaryMuscles: selectedPrimaryMuscles,
             secondaryMuscles: selectedSecondaryMuscles,
             forces: selectedForces,
             mechanics: selectedMechanics,
@@ -121,17 +57,10 @@ private struct ExerciseLibraryBrowserView: View {
             sort: selectedSort,
             searchText: searchText
         )
-        guard !selectedSplitGroups.isEmpty else { return filtered }
-        let selectedMuscles = Set(selectedSplitGroups.flatMap(\.muscles))
-        return filtered.filter { item in
-            item.primaryMuscles.contains { selectedMuscles.contains($0) } ||
-                item.secondaryMuscles.contains { selectedMuscles.contains($0) }
-        }
     }
 
     private var hasActiveFilters: Bool {
         !searchText.isEmpty ||
-            !selectedSplitGroupTitles.isEmpty ||
             !selectedLevels.isEmpty ||
             !selectedRawEquipment.isEmpty ||
             !selectedPrimaryMuscles.isEmpty ||
@@ -145,7 +74,7 @@ private struct ExerciseLibraryBrowserView: View {
     private var filterStateSnapshot: ExerciseFilterState {
         ExerciseFilterState(
             searchText: searchText,
-            splitGroups: selectedSplitGroupTitles,
+            splitGroups: [],
             levels: selectedLevels,
             rawEquipment: selectedRawEquipment,
             primaryMuscles: selectedPrimaryMuscles,
@@ -219,19 +148,6 @@ private struct ExerciseLibraryBrowserView: View {
         .onChange(of: filterStateSnapshot) { _, state in
             ExerciseFilterStateStore.save(state, key: ExerciseFilterStateStore.workoutsKey)
         }
-        .onChange(of: selectedWorkoutSplit) {
-            selectedSplitGroupTitles.removeAll()
-            normalizePrimaryFilterSelection()
-        }
-        .onChange(of: selectedSplitGroupTitles) {
-            normalizePrimaryFilterSelection()
-        }
-        .onChange(of: datasetPrimaryMusclesRaw) {
-            normalizePrimaryFilterSelection()
-        }
-        .onChange(of: showOnlyTargetPrimaryFilters) {
-            normalizePrimaryFilterSelection()
-        }
     }
 
     private var filters: some View {
@@ -241,35 +157,17 @@ private struct ExerciseLibraryBrowserView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 9) {
                     filterMenuPill(
-                        title: splitFilterTitle,
-                        value: selectionTitle(selectedSplitGroupTitles),
-                        systemImage: "square.grid.2x2",
-                        isActive: !selectedSplitGroupTitles.isEmpty
+                        title: String(localized: "Primary"),
+                        value: primaryFilterTitle,
+                        systemImage: "scope",
+                        isActive: !selectedPrimaryMuscles.isEmpty
                     ) {
-                        menuChoice(String(localized: "All \(splitFilterTitle)"), isSelected: selectedSplitGroupTitles.isEmpty) {
-                            selectedSplitGroupTitles.removeAll()
+                        menuChoice(allPrimaryMenuTitle, isSelected: selectedPrimaryMuscles.isEmpty) {
+                            selectedPrimaryMuscles.removeAll()
                         }
-                        ForEach(splitGroups) { group in
-                            muscleMenuChoice(group.title, muscles: group.muscles, isSelected: selectedSplitGroupTitles.contains(group.title)) {
-                                selectedSplitGroupTitles = [group.title]
-                            }
-                        }
-                    }
-
-                    if shouldShowPrimaryFilter {
-                        filterMenuPill(
-                            title: String(localized: "Primary"),
-                            value: primaryFilterTitle,
-                            systemImage: "scope",
-                            isActive: !selectedPrimaryMuscles.isEmpty
-                        ) {
-                            menuChoice(allPrimaryMenuTitle, isSelected: selectedPrimaryMuscles.isEmpty) {
-                                selectedPrimaryMuscles.removeAll()
-                            }
-                            ForEach(primaryFilterOptions, id: \.self) { muscle in
-                                muscleMenuChoice(muscle, muscles: [muscle], isSelected: selectedPrimaryMuscles.contains(muscle)) {
-                                    selectedPrimaryMuscles = [muscle]
-                                }
+                        ForEach(primaryFilterOptions, id: \.self) { muscle in
+                            muscleMenuChoice(muscle, muscles: [muscle], isSelected: selectedPrimaryMuscles.contains(muscle)) {
+                                selectedPrimaryMuscles = [muscle]
                             }
                         }
                     }
@@ -399,7 +297,6 @@ private struct ExerciseLibraryBrowserView: View {
 
     private func resetFilters() {
         searchText = ""
-        selectedSplitGroupTitles.removeAll()
         selectedLevels.removeAll()
         selectedRawEquipment.removeAll()
         selectedPrimaryMuscles.removeAll()
@@ -412,7 +309,6 @@ private struct ExerciseLibraryBrowserView: View {
 
     private func applyFilterState(_ state: ExerciseFilterState) {
         searchText = state.searchText
-        selectedSplitGroupTitles = singleStoredSelection(state.splitGroups)
         selectedLevels = singleStoredSelection(state.levels)
         selectedRawEquipment = singleStoredSelection(state.rawEquipment)
         selectedPrimaryMuscles = singleStoredSelection(state.primaryMuscles)
@@ -424,11 +320,6 @@ private struct ExerciseLibraryBrowserView: View {
     }
 
     private func normalizePrimaryFilterSelection() {
-        if !shouldShowPrimaryFilter {
-            selectedPrimaryMuscles.removeAll()
-            return
-        }
-
         let validOptions = Set(primaryFilterOptions)
         guard !validOptions.isEmpty else {
             selectedPrimaryMuscles.removeAll()
@@ -437,23 +328,9 @@ private struct ExerciseLibraryBrowserView: View {
         selectedPrimaryMuscles = singleStoredSelection(selectedPrimaryMuscles.intersection(validOptions))
     }
 
-    private func targetFilteredPrimaryOptions(_ options: [String]) -> [String] {
-        guard showOnlyTargetPrimaryFilters else { return options }
-        let targetMuscles = profileTargetPrimaryMuscles
-        return options.filter { targetMuscles.contains($0) }
-    }
-
     private func normalizeEquipmentFilterSelection() {
         let validOptions = Set(profileRawEquipmentOptions)
         selectedRawEquipment = singleStoredSelection(selectedRawEquipment.intersection(validOptions))
-    }
-
-    private func datasetStoredSet(_ rawValue: String, allowedValues: [String]) -> Set<String> {
-        let allowedValues = Set(allowedValues)
-        return Set(rawValue
-            .split(separator: "|")
-            .map(String.init)
-            .filter { allowedValues.contains($0) })
     }
 
     private func selectionTitle(_ selection: Set<String>) -> String {
