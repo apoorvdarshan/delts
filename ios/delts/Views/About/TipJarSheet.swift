@@ -1,6 +1,7 @@
+import StoreKit
 import SwiftUI
 
-/// "Support Delts" tip jar — optional one-off tips via RevenueCat. The app
+/// "Support Delts" tip jar — optional one-off tips via StoreKit. The app
 /// stays fully free; this unlocks nothing.
 struct TipJarSheet: View {
     @ObservedObject private var store = TipStore.shared
@@ -24,8 +25,8 @@ struct TipJarSheet: View {
                         unavailable
                     } else {
                         VStack(spacing: 12) {
-                            ForEach(Array(store.tips.enumerated()), id: \.element.id) { index, tip in
-                                tipRow(tip, emoji: emoji[min(index, emoji.count - 1)])
+                            ForEach(Array(store.tips.enumerated()), id: \.element.id) { index, product in
+                                tipRow(product, emoji: emoji[min(index, emoji.count - 1)])
                             }
                         }
 
@@ -81,16 +82,16 @@ struct TipJarSheet: View {
         .padding(.top, 6)
     }
 
-    private func tipRow(_ tip: TipStore.Tip, emoji: String) -> some View {
+    private func tipRow(_ product: Product, emoji: String) -> some View {
         Button {
-            Task { await store.purchase(tip) }
+            Task { await store.purchase(product) }
         } label: {
             HStack(spacing: 14) {
                 Text(emoji)
                     .font(.title2)
                     .frame(width: 30)
 
-                Text(tip.title)
+                Text(product.displayName)
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(Color.deltsCharcoal)
                     .lineLimit(1)
@@ -98,7 +99,7 @@ struct TipJarSheet: View {
 
                 Spacer(minLength: 8)
 
-                Text(tip.displayPrice)
+                Text(product.displayPrice)
                     .font(.headline.weight(.bold))
                     .monospacedDigit()
                     .foregroundStyle(Color.deltsOnAccent)
