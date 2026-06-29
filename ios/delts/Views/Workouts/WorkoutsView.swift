@@ -608,7 +608,6 @@ private struct ExerciseLibraryRow: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Color.deltsHairline.opacity(0.38), lineWidth: 0.5)
         }
-        .shadow(color: Color.black.opacity(0.28), radius: 7, x: 0, y: 4)
         .accessibilityHidden(true)
     }
 
@@ -695,6 +694,11 @@ struct ExerciseLibraryDetailView: View {
             .allowsHitTesting(false)
 
             if isMetricsPresented {
+                Color.black.opacity(0.5)
+                    .frame(width: width, height: 294)
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+
                 ExerciseHeroMetricOverlay(item: item)
                     .padding(.top, 8)
                     .padding(.leading, 24)
@@ -762,17 +766,17 @@ private struct ExerciseHeroMetricOverlay: View {
     private func metricButton(title: String, value: String, systemImage: String, compact: Bool = true, valueLineLimit: Int = 1) -> some View {
         let valueFontSize: CGFloat = compact ? 15 : (valueLineLimit > 2 ? 13 : 14)
         let labelColor = colorScheme == .light ? Color.deltsSecondaryAccent : Color.deltsAccent
-        let fillColor = colorScheme == .light ? Color.deltsBackground.opacity(0.70) : Color.deltsBackground.opacity(0.20)
-        let strokeColor = colorScheme == .light ? Color.deltsSecondaryAccent.opacity(0.34) : Color.deltsAccent.opacity(0.40)
+        let fillColor = colorScheme == .light ? Color.deltsBackground.opacity(0.92) : Color.deltsBackground.opacity(0.55)
+        let strokeColor = colorScheme == .light ? Color.deltsHairline.opacity(0.45) : Color.deltsHairline.opacity(0.32)
 
         return VStack(alignment: .leading, spacing: 3) {
             Label(title, systemImage: systemImage)
-                .font(.system(size: 10, weight: .black, design: .rounded))
+                .font(.system(size: 10, weight: .bold, design: .rounded))
                 .foregroundStyle(labelColor)
                 .lineLimit(1)
 
             Text(value)
-                .font(.system(size: valueFontSize, weight: .black, design: .rounded))
+                .font(.system(size: valueFontSize, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.deltsCharcoal)
                 .lineLimit(valueLineLimit)
                 .minimumScaleFactor(0.50)
@@ -794,9 +798,9 @@ private struct ExerciseHeroMetricOverlay: View {
         }
         .overlay {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(strokeColor, lineWidth: 0.8)
+                .stroke(strokeColor, lineWidth: 0.6)
         }
-        .shadow(color: colorScheme == .light ? .clear : Color.black.opacity(0.18), radius: colorScheme == .light ? 0 : 8, x: 0, y: colorScheme == .light ? 0 : 4)
+        .shadow(color: Color.black.opacity(colorScheme == .light ? 0.12 : 0.32), radius: 9, x: 0, y: 4)
     }
 }
 
