@@ -57,30 +57,6 @@ struct ExerciseLibraryService {
     }
 
     func filtered(
-        level: String?,
-        rawEquipment: String?,
-        primaryMuscle: String?,
-        secondaryMuscle: String?,
-        force: String?,
-        mechanic: String?,
-        category: String?,
-        sort: ExerciseLibrarySort,
-        searchText: String
-    ) -> [ExerciseLibraryItem] {
-        filtered(
-            levels: Set([level].compactMap(\.self)),
-            rawEquipment: Set([rawEquipment].compactMap(\.self)),
-            primaryMuscles: Set([primaryMuscle].compactMap(\.self)),
-            secondaryMuscles: Set([secondaryMuscle].compactMap(\.self)),
-            forces: Set([force].compactMap(\.self)),
-            mechanics: Set([mechanic].compactMap(\.self)),
-            categories: Set([category].compactMap(\.self)),
-            sort: sort,
-            searchText: searchText
-        )
-    }
-
-    func filtered(
         levels: Set<String>,
         rawEquipment: Set<String>,
         primaryMuscles: Set<String>,

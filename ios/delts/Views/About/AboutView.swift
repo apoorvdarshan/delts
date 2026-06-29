@@ -26,13 +26,12 @@ struct AboutView: View {
 enum AboutSectionScope {
     case settings
     case about
-    case all
 }
 
 struct AboutSettingsSection: View {
     @Environment(\.openURL) private var openURL
     @ObservedObject var updateChecker: AppUpdateChecker
-    var scope: AboutSectionScope = .all
+    var scope: AboutSectionScope
     @State private var activeAlert: AboutAlert?
     @State private var whatsNewExpanded = false
 
@@ -497,9 +496,10 @@ private struct AboutFieldRow<Content: View>: View {
 /// each release; the version header is read live from the app bundle.
 enum DeltsReleaseNotes {
     static let highlights: [String] = [
-        String(localized: "Delts is now completely free — the subscription and paywall are gone."),
-        String(localized: "Streamlined to what matters most: a powerful exercise library and your training profile."),
-        String(localized: "Lighter and faster — the AI Coach, Home dashboard, and Progress tracking have been retired.")
+        String(localized: "Delts is now a free, focused exercise library — browse hundreds of moves with form instructions and rich filters."),
+        String(localized: "Rebuilt around three simple tabs: Workouts, Settings, and About."),
+        String(localized: "Completely private — no account, no ads, no tracking. Everything stays on your device."),
+        String(localized: "Lighter and faster, with a cleaner Settings layout and inline update checks.")
     ]
 }
 

@@ -9,7 +9,7 @@ struct SettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    ProfileEditorView(sections: [.appPreferences], embedded: true)
+                    ProfileEditorView()
                     AboutSettingsSection(updateChecker: updateChecker, scope: .settings)
                 }
                 .padding(.horizontal, 20)
@@ -24,47 +24,13 @@ struct SettingsView: View {
     }
 }
 
-enum ProfileSectionKind: CaseIterable {
-    case appPreferences
-    case about
-}
-
 struct ProfileEditorView: View {
-    var updateChecker: AppUpdateChecker?
-    var sections: Set<ProfileSectionKind> = Set(ProfileSectionKind.allCases)
-    var embedded: Bool = false
     @AppStorage(AppAppearance.storageKey) private var appAppearanceRaw = AppAppearance.system.rawValue
     @AppStorage(DeltsTheme.storageKey) private var deltsThemeRaw = DeltsTheme.lime.rawValue
 
     var body: some View {
-        Group {
-            if embedded {
-                sectionStack
-            } else {
-                ScrollView {
-                    sectionStack
-                        .padding(.horizontal, 20)
-                        .padding(.top, 10)
-                        .padding(.bottom, 18)
-                }
-                .deltsScreen()
-                .contentMargins(.bottom, 110, for: .scrollContent)
-                .scrollDismissesKeyboard(.interactively)
-                .tint(Color.deltsAccent)
-                .toolbar(.hidden, for: .navigationBar)
-            }
-        }
-        .background(ProfileKeyboardDismissTapInstaller())
-    }
-
-    @ViewBuilder
-    private var sectionStack: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            if sections.contains(.appPreferences) { appPreferencesSection }
-            if sections.contains(.about), let updateChecker {
-                AboutSettingsSection(updateChecker: updateChecker)
-            }
-        }
+        appPreferencesSection
+            .background(ProfileKeyboardDismissTapInstaller())
     }
 
     private var appPreferencesSection: some View {

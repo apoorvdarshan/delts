@@ -1,10 +1,8 @@
-import StoreKit
 import SwiftUI
 import UIKit
 
 private enum OnboardingStep: Int, CaseIterable {
     case welcome
-    case rate
     case terms
 }
 
@@ -16,7 +14,6 @@ struct OnboardingView: View {
     @State private var stepIndex = 0
     @State private var goingForward = true
     @State private var agreedToTerms = false
-    @State private var didRequestReview = false
     @State private var welcomeRevealed = false
 
     private let steps = OnboardingStep.allCases
@@ -112,8 +109,6 @@ struct OnboardingView: View {
         switch step {
         case .welcome:
             welcomeStep
-        case .rate:
-            rateStep
         case .terms:
             termsStep
         }
@@ -132,7 +127,7 @@ struct OnboardingView: View {
                 .padding(.top, 16)
 
             VStack(spacing: 10) {
-                Text("LET'S GET YOU SET UP")
+                Text("YOUR EXERCISE LIBRARY")
                     .font(.caption.weight(.heavy))
                     .tracking(2.4)
                     .foregroundStyle(Color.deltsAccent)
@@ -180,7 +175,7 @@ struct OnboardingView: View {
             .opacity(welcomeRevealed ? 1 : 0)
             .offset(y: welcomeRevealed ? 0 : 20)
 
-            Text("Takes under a minute · Edit anytime in Settings")
+            Text("Free · No account · No ads")
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(Color.deltsMutedText.opacity(0.85))
                 .opacity(welcomeRevealed ? 1 : 0)
@@ -224,78 +219,6 @@ struct OnboardingView: View {
         .padding(.vertical, 11)
     }
 
-    // MARK: - Rate
-
-    private var rateStep: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            stepHeader(icon: "star.fill", String(localized: "Enjoying Delts?"), String(localized: "A rating helps other lifters find the app. It only takes a second."))
-
-            VStack(spacing: 22) {
-                HStack(alignment: .center, spacing: 10) {
-                    ForEach(0..<5, id: \.self) { index in
-                        Image(systemName: "star.fill")
-                            .font(.system(size: starSize(for: index), weight: .bold))
-                            .foregroundStyle(Color.deltsAccent)
-                            .shadow(color: Color.deltsAccent.opacity(0.45), radius: 9, y: 2)
-                    }
-                }
-                .padding(.top, 6)
-
-                Text("Enjoying Delts? Tell the App Store.")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.deltsMutedText)
-                    .multilineTextAlignment(.center)
-
-                Button {
-                    requestReview()
-                    withAnimation(.snappy(duration: 0.25)) { didRequestReview = true }
-                } label: {
-                    Label(
-                        didRequestReview ? "Thanks!" : "Rate Delts",
-                        systemImage: didRequestReview ? "checkmark" : "star.fill"
-                    )
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(Color.deltsOnAccent)
-                    .padding(.horizontal, 26)
-                    .padding(.vertical, 13)
-                    .background(Color.deltsAccent, in: Capsule())
-                    .shadow(color: Color.deltsAccent.opacity(0.35), radius: 12, y: 5)
-                }
-                .deltsPressable()
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 32)
-            .padding(.horizontal, 18)
-            .background {
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(Color.deltsPanel.opacity(0.18))
-                    .overlay {
-                        RadialGradient(
-                            colors: [Color.deltsAccent.opacity(0.10), .clear],
-                            center: .top,
-                            startRadius: 0,
-                            endRadius: 240
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-                    }
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .stroke(Color.deltsHairline.opacity(0.24), lineWidth: 0.5)
-            }
-
-            Text("You can rate or review anytime from Settings → About.")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.deltsMutedText)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func starSize(for index: Int) -> CGFloat {
-        let sizes: [CGFloat] = [22, 27, 32, 27, 22]
-        return sizes[index]
-    }
-
     // MARK: - Terms
 
     private var termsStep: some View {
@@ -304,11 +227,11 @@ struct OnboardingView: View {
 
             VStack(spacing: 0) {
                 termsLinkRow("hand.raised.fill", String(localized: "Privacy Policy"), "delts.fit/privacy") {
-                    open("https://delts.fit/privacy")
+                    open("https://delts.fit/privacy.html")
                 }
                 cardDivider
                 termsLinkRow("doc.text.fill", String(localized: "Terms"), "delts.fit/terms") {
-                    open("https://delts.fit/terms")
+                    open("https://delts.fit/terms.html")
                 }
             }
             .padding(.vertical, 4)
@@ -482,7 +405,7 @@ struct OnboardingView: View {
                     .frame(width: 32, height: 32)
                     .background(Color.deltsAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
-                Text("Step \(stepIndex) of \(steps.count - 1)")
+                Text("Step \(stepIndex + 1) of \(steps.count)")
                     .font(.caption.weight(.heavy))
                     .tracking(1.6)
                     .textCase(.uppercase)
@@ -507,13 +430,5 @@ struct OnboardingView: View {
     private func open(_ string: String) {
         guard let url = URL(string: string) else { return }
         openURL(url)
-    }
-
-    private func requestReview() {
-        guard let scene = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .first(where: { $0.activationState == .foregroundActive })
-        else { return }
-        SKStoreReviewController.requestReview(in: scene)
     }
 }

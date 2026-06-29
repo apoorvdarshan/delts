@@ -73,7 +73,6 @@ private struct ExerciseLibraryBrowserView: View {
     private var filterStateSnapshot: ExerciseFilterState {
         ExerciseFilterState(
             searchText: searchText,
-            splitGroups: [],
             levels: selectedLevels,
             rawEquipment: selectedRawEquipment,
             primaryMuscles: selectedPrimaryMuscles,
@@ -94,11 +93,19 @@ private struct ExerciseLibraryBrowserView: View {
                     .padding(.bottom, 18)
 
                 if items.isEmpty {
-                    ContentUnavailableView(
-                        "No exercises match",
-                        systemImage: "line.3.horizontal.decrease",
-                        description: Text("Reset filters or search a different body part, machine, or exercise.")
-                    )
+                    ContentUnavailableView {
+                        Label("No exercises match", systemImage: "line.3.horizontal.decrease")
+                    } description: {
+                        Text("Reset filters or search a different body part, machine, or exercise.")
+                    } actions: {
+                        if hasActiveFilters {
+                            Button {
+                                withAnimation(.snappy) { resetFilters() }
+                            } label: {
+                                Label("Reset filters", systemImage: "arrow.counterclockwise")
+                            }
+                        }
+                    }
                     .frame(maxWidth: .infinity, minHeight: 300)
                     .padding(.horizontal, 20)
                 } else {

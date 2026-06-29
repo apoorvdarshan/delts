@@ -62,7 +62,7 @@ struct ContentView: View {
             SettingsView(updateChecker: updateChecker)
                 .tabItem { Label(DeltsTab.settings.title, systemImage: DeltsTab.settings.systemImage) }
                 .tag(DeltsTab.settings)
-                .badge(updateChecker.isUpdateAvailable ? Text("") : nil)
+                .badge(updateChecker.isUpdateAvailable ? Text("●") : nil)
 
             AboutView(updateChecker: updateChecker)
                 .tabItem { Label(DeltsTab.about.title, systemImage: DeltsTab.about.systemImage) }
