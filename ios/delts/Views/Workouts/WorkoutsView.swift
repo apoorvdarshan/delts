@@ -588,7 +588,7 @@ private struct ExerciseLibraryRow: View {
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(Color.deltsHairline)
         }
-        .padding(.vertical, 13)
+        .padding(.vertical, 15)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }
@@ -608,6 +608,7 @@ private struct ExerciseLibraryRow: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Color.deltsHairline.opacity(0.38), lineWidth: 0.5)
         }
+        .shadow(color: Color.black.opacity(0.28), radius: 7, x: 0, y: 4)
         .accessibilityHidden(true)
     }
 
@@ -620,11 +621,17 @@ private struct LibraryTag: View {
 
     var body: some View {
         Label(title, systemImage: systemImage)
-            .font(.caption2.weight(.semibold))
+            .font(.caption2.weight(.bold))
             .labelStyle(.titleAndIcon)
             .foregroundStyle(tint)
             .lineLimit(1)
             .minimumScaleFactor(0.78)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(Color.deltsPanel.opacity(0.28), in: Capsule())
+            .overlay {
+                Capsule().stroke(Color.deltsHairline.opacity(0.22), lineWidth: 0.5)
+            }
             .accessibilityElement(children: .combine)
     }
 }
@@ -677,6 +684,15 @@ struct ExerciseLibraryDetailView: View {
             )
             .frame(width: width, height: 294)
             .frame(width: width, height: 294, alignment: .bottomLeading)
+
+            LinearGradient(
+                colors: [Color.deltsBackground.opacity(0), Color.deltsBackground.opacity(0.55), Color.deltsBackground],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(width: width, height: 150)
+            .frame(width: width, height: 294, alignment: .bottom)
+            .allowsHitTesting(false)
 
             if isMetricsPresented {
                 ExerciseHeroMetricOverlay(item: item)
@@ -788,24 +804,52 @@ private struct DetailInstructionSection: View {
     let instructions: [String]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("Instructions", systemImage: "list.number")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(Color.deltsCharcoal)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 10) {
+                Image(systemName: "list.number")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.deltsAccent)
+                    .frame(width: 30, height: 30)
+                    .background(Color.deltsAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                Text("Instructions")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(Color.deltsCharcoal)
+
+                Spacer(minLength: 0)
+
+                Text("\(instructions.count)")
+                    .font(.caption.weight(.bold))
+                    .monospacedDigit()
+                    .foregroundStyle(Color.deltsSecondaryAccent)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(Color.deltsSecondaryAccent.opacity(0.12), in: Capsule())
+            }
 
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(Array(instructions.enumerated()), id: \.offset) { index, instruction in
-                    HStack(alignment: .top, spacing: 10) {
+                    HStack(alignment: .top, spacing: 13) {
                         Text("\(index + 1)")
-                            .font(.caption.weight(.bold))
+                            .font(.subheadline.weight(.heavy))
+                            .monospacedDigit()
                             .foregroundStyle(Color.deltsOnAccent)
-                            .frame(width: 24, height: 24)
+                            .frame(width: 27, height: 27)
                             .background(Color.deltsAccent, in: Circle())
+                            .shadow(color: Color.deltsAccent.opacity(0.35), radius: 6, y: 2)
 
                         Text(instruction)
-                            .font(.body)
-                            .foregroundStyle(Color.deltsMutedText)
+                            .font(.callout)
+                            .foregroundStyle(Color.deltsCharcoal.opacity(0.86))
+                            .lineSpacing(4)
                             .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(14)
+                    .background(Color.deltsPanel.opacity(0.16), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(Color.deltsHairline.opacity(0.20), lineWidth: 0.5)
                     }
                 }
             }
