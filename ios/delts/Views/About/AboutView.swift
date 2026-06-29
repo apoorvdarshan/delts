@@ -91,7 +91,7 @@ struct AboutSettingsSection: View {
             }
 
             if scope != .settings {
-                    AboutSection(title: String(localized: "Contact")) {
+                    AboutSection(title: String(localized: "Connect")) {
                         AboutRowStack {
                             AboutActionRow(
                                 title: String(localized: "Contact Us"),
@@ -128,11 +128,7 @@ struct AboutSettingsSection: View {
                             ) {
                                 open(AboutLinks.linkedInURL)
                             }
-                        }
-                    }
-
-                    AboutSection(title: String(localized: "Support & Links")) {
-                        AboutRowStack {
+                            AboutDivider()
                             AboutActionRow(
                                 title: String(localized: "Open Source"),
                                 systemImage: "curlybraces.square.fill",
