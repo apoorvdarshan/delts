@@ -243,7 +243,8 @@ private struct ExerciseLibraryBrowserView: View {
                     filterMenuPill(
                         title: splitFilterTitle,
                         value: selectionTitle(selectedSplitGroupTitles),
-                        systemImage: "square.grid.2x2"
+                        systemImage: "square.grid.2x2",
+                        isActive: !selectedSplitGroupTitles.isEmpty
                     ) {
                         menuChoice(String(localized: "All \(splitFilterTitle)"), isSelected: selectedSplitGroupTitles.isEmpty) {
                             selectedSplitGroupTitles.removeAll()
@@ -259,7 +260,8 @@ private struct ExerciseLibraryBrowserView: View {
                         filterMenuPill(
                             title: String(localized: "Primary"),
                             value: primaryFilterTitle,
-                            systemImage: "scope"
+                            systemImage: "scope",
+                            isActive: !selectedPrimaryMuscles.isEmpty
                         ) {
                             menuChoice(allPrimaryMenuTitle, isSelected: selectedPrimaryMuscles.isEmpty) {
                                 selectedPrimaryMuscles.removeAll()
@@ -275,7 +277,8 @@ private struct ExerciseLibraryBrowserView: View {
                     filterMenuPill(
                         title: String(localized: "Secondary"),
                         value: selectionTitle(selectedSecondaryMuscles),
-                        systemImage: "scope"
+                        systemImage: "scope",
+                        isActive: !selectedSecondaryMuscles.isEmpty
                     ) {
                         menuChoice(String(localized: "All Secondary"), isSelected: selectedSecondaryMuscles.isEmpty) {
                             selectedSecondaryMuscles.removeAll()
@@ -290,7 +293,8 @@ private struct ExerciseLibraryBrowserView: View {
                     filterMenuPill(
                         title: String(localized: "Equipment"),
                         value: equipmentFilterTitle,
-                        systemImage: "dumbbell.fill"
+                        systemImage: "dumbbell.fill",
+                        isActive: !selectedRawEquipment.isEmpty
                     ) {
                         menuChoice(allEquipmentMenuTitle, isSelected: selectedRawEquipment.isEmpty) {
                             selectedRawEquipment.removeAll()
@@ -305,7 +309,8 @@ private struct ExerciseLibraryBrowserView: View {
                     filterMenuPill(
                         title: String(localized: "Level"),
                         value: selectionTitle(selectedLevels),
-                        systemImage: "chart.bar.fill"
+                        systemImage: "chart.bar.fill",
+                        isActive: !selectedLevels.isEmpty
                     ) {
                         menuChoice(String(localized: "All Levels"), isSelected: selectedLevels.isEmpty) { selectedLevels.removeAll() }
                         ForEach(service.availableLevels, id: \.self) { level in
@@ -318,7 +323,8 @@ private struct ExerciseLibraryBrowserView: View {
                     filterMenuPill(
                         title: String(localized: "Force"),
                         value: selectionTitle(selectedForces),
-                        systemImage: "arrow.left.arrow.right"
+                        systemImage: "arrow.left.arrow.right",
+                        isActive: !selectedForces.isEmpty
                     ) {
                         menuChoice(String(localized: "All Forces"), isSelected: selectedForces.isEmpty) { selectedForces.removeAll() }
                         ForEach(service.availableForces, id: \.self) { force in
@@ -331,7 +337,8 @@ private struct ExerciseLibraryBrowserView: View {
                     filterMenuPill(
                         title: String(localized: "Mechanic"),
                         value: selectionTitle(selectedMechanics),
-                        systemImage: "gearshape"
+                        systemImage: "gearshape",
+                        isActive: !selectedMechanics.isEmpty
                     ) {
                         menuChoice(String(localized: "All Mechanics"), isSelected: selectedMechanics.isEmpty) { selectedMechanics.removeAll() }
                         ForEach(service.availableMechanics, id: \.self) { mechanic in
@@ -344,7 +351,8 @@ private struct ExerciseLibraryBrowserView: View {
                     filterMenuPill(
                         title: String(localized: "Category"),
                         value: categoryFilterTitle,
-                        systemImage: "tag"
+                        systemImage: "tag",
+                        isActive: !selectedCategories.isEmpty
                     ) {
                         menuChoice(String(localized: "All Categories"), isSelected: selectedCategories.isEmpty) { selectedCategories.removeAll() }
                         ForEach(service.availableCategoryCounts) { categoryCount in
@@ -463,12 +471,13 @@ private struct ExerciseLibraryBrowserView: View {
         title: String,
         value: String,
         systemImage: String,
+        isActive: Bool,
         @ViewBuilder content: () -> Content
     ) -> some View {
         Menu {
             content()
         } label: {
-            FilterMenuPill(title: title, value: value, systemImage: systemImage)
+            FilterMenuPill(title: title, value: value, systemImage: systemImage, isActive: isActive)
         }
         .deltsPressable()
     }
@@ -654,9 +663,10 @@ private struct FilterMenuPill: View {
     let title: String
     let value: String
     let systemImage: String
+    let isActive: Bool
 
     private var isDefaultValue: Bool {
-        value == "All" || value == "Name"
+        !isActive
     }
 
     var body: some View {
