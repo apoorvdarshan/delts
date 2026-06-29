@@ -628,8 +628,8 @@ private struct SupportTipPicker: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// Tier emojis by ascending price index (small / medium / large).
-    private let tierEmoji = ["☕️", "🥪", "🎉"]
+    /// Pixel-art tier icons by ascending price index (small / medium / large).
+    private let tierAsset = ["TipSmall", "TipMedium", "TipLarge"]
 
     /// Which tip is mid-purchase, so only that tile shows the spinner + accent.
     @State private var purchasingID: String?
@@ -739,7 +739,7 @@ private struct SupportTipPicker: View {
         ForEach(Array(store.tips.enumerated()), id: \.element.id) { index, product in
             SupportTipTile(
                 product: product,
-                emoji: tierEmoji[min(index, tierEmoji.count - 1)],
+                assetName: tierAsset[min(index, tierAsset.count - 1)],
                 isPurchasing: store.isPurchasing && purchasingID == product.id,
                 isDisabled: store.isPurchasing
             ) {
@@ -827,7 +827,7 @@ private struct SupportTipPicker: View {
 /// The selected look is reused to signal an in-flight purchase.
 private struct SupportTipTile: View {
     let product: Product
-    let emoji: String
+    let assetName: String
     let isPurchasing: Bool
     let isDisabled: Bool
     let action: () -> Void
@@ -841,11 +841,14 @@ private struct SupportTipTile: View {
                             .controlSize(.small)
                             .tint(Color.deltsAccent)
                     } else {
-                        Text(emoji)
-                            .font(.system(size: 26))
+                        Image(assetName)
+                            .resizable()
+                            .interpolation(.none) // keep the pixel art crisp
+                            .scaledToFit()
+                            .padding(1)
                     }
                 }
-                .frame(width: 42, height: 42)
+                .frame(width: 44, height: 44)
 
                 VStack(spacing: 2) {
                     Text(product.displayName)
