@@ -3,25 +3,12 @@ import SwiftData
 import SwiftUI
 import UIKit
 
-struct ProfileView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
-    @ObservedObject var updateChecker: AppUpdateChecker
-
+struct PreferencesView: View {
     var body: some View {
         NavigationStack {
-            Group {
-                if let profile = profiles.first {
-                    ProfileEditorView(profile: profile, updateChecker: updateChecker)
-                } else {
-                    ProfileLoadingView()
-                }
-            }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .onDisappear {
-                try? modelContext.save()
-            }
+            ProfileEditorView(sections: [.appPreferences])
+                .navigationTitle("Display")
+                .navigationBarTitleDisplayMode(.inline)
         }
     }
 }
@@ -32,7 +19,6 @@ enum ProfileSectionKind: CaseIterable {
 }
 
 struct ProfileEditorView: View {
-    @Bindable var profile: UserProfile
     var updateChecker: AppUpdateChecker?
     var sections: Set<ProfileSectionKind> = Set(ProfileSectionKind.allCases)
     var embedded: Bool = false
@@ -109,32 +95,6 @@ struct ProfileEditorView: View {
 
 }
 
-
-private struct ProfileLoadingView: View {
-    var body: some View {
-        ScrollView {
-            HStack(alignment: .center, spacing: 14) {
-                ProgressView()
-                    .tint(Color.deltsAccent)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Creating your default profile")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(Color.deltsCharcoal)
-
-                    Text("This only takes a moment.")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.deltsMutedText)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
-            .padding(.top, 18)
-        }
-        .deltsScreen()
-        .contentMargins(.bottom, 110, for: .scrollContent)
-    }
-}
 
 private struct ProfileKeyboardDismissTapInstaller: UIViewRepresentable {
     func makeCoordinator() -> Coordinator {
