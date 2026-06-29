@@ -142,7 +142,7 @@ struct OnboardingView: View {
                 profile: profile,
                 icon: "scalemass.fill",
                 title: String(localized: "Body metrics"),
-                subtitle: String(localized: "Used for progress tracking and calorie estimates."),
+                subtitle: String(localized: "Your current body data and targets, saved to your profile."),
                 section: .bodyMetrics
             )
         case .goals:
@@ -204,7 +204,7 @@ struct OnboardingView: View {
                     .foregroundStyle(Color.deltsCharcoal)
                     .multilineTextAlignment(.center)
 
-                Text("A gym app built around the red session timer. Set up your profile so plans, progress, and calorie estimates fit you.")
+                Text("A clean home for the exercise library. Set up your profile so the library fits your split, equipment, and goals.")
                     .font(.subheadline)
                     .foregroundStyle(Color.deltsMutedText)
                     .multilineTextAlignment(.center)
@@ -216,21 +216,21 @@ struct OnboardingView: View {
 
             VStack(spacing: 0) {
                 welcomeHighlight(
-                    "figure.strengthtraining.traditional",
-                    String(localized: "Plan & time sessions"),
-                    String(localized: "The red button runs your workout")
+                    "list.clipboard.fill",
+                    String(localized: "Full exercise library"),
+                    String(localized: "Hundreds of moves with form cues")
                 )
                 cardDivider
                 welcomeHighlight(
-                    "chart.line.uptrend.xyaxis",
-                    String(localized: "Track your progress"),
-                    String(localized: "Weight, body fat, and workout history")
+                    "line.3.horizontal.decrease",
+                    String(localized: "Filter to your gym"),
+                    String(localized: "By muscle, equipment, and level")
                 )
                 cardDivider
                 welcomeHighlight(
-                    "sparkles",
-                    String(localized: "AI Coach"),
-                    String(localized: "Chat, photos, and calorie estimates")
+                    "person.text.rectangle",
+                    String(localized: "Tailored to you"),
+                    String(localized: "Your profile shapes what you see")
                 )
             }
             .padding(.vertical, 6)

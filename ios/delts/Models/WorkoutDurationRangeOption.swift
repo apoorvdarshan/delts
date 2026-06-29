@@ -1,6 +1,6 @@
-import Combine
-import SwiftUI
+import Foundation
 
+/// Preset workout-duration ranges shown in the profile preferences picker.
 struct WorkoutDurationRangeOption: Hashable, Identifiable {
     let lowerBound: Int
     let upperBound: Int?
@@ -73,62 +73,5 @@ struct WorkoutDurationRangeOption: Hashable, Identifiable {
             return "\(Int(hours))"
         }
         return hours.formatted(.number.precision(.fractionLength(1)))
-    }
-}
-
-@MainActor
-final class PlanViewModel: ObservableObject {
-    @Published var selectedMuscleGroup: MuscleGroup = .chest
-    @Published var selectedGoal: FitnessGoal = .muscleGain
-    @Published var selectedExperience: ExperienceLevel = .intermediate
-    @Published var selectedEquipment: Set<Equipment> = [.dumbbells, .barbell, .bench, .cableMachine, .bodyweight]
-    @Published var selectedDurationRange: WorkoutDurationRangeOption = WorkoutDurationRangeOption.options[2]
-    @Published var isGenerating = false
-    @Published var statusMessage: String?
-
-    private let localGenerator = LocalWorkoutGenerator()
-    private let geminiService = GeminiWorkoutService()
-
-    func generateWorkout(profile: UserProfile?) async -> WorkoutPlan? {
-        isGenerating = true
-        statusMessage = nil
-        defer { isGenerating = false }
-
-        let activeProfile = profile ?? UserProfile.defaultProfile()
-        let equipment = selectedEquipment.isEmpty ? activeProfile.availableEquipment : selectedEquipment
-
-        let isPremium = await MainActor.run { PremiumStore.shared.isSubscribed }
-        if GeminiConfig.isAIEnabled && isPremium {
-            do {
-                return try await geminiService.generateWorkout(
-                    profile: activeProfile,
-                    muscleGroup: selectedMuscleGroup,
-                    goal: selectedGoal,
-                    equipment: equipment,
-                    durationRange: selectedDurationRange
-                )
-            } catch {
-                statusMessage = "AI generation failed. Built an offline plan instead."
-            }
-        } else {
-            statusMessage = String(localized: "Offline plan generated from your profile.")
-        }
-
-        return localGenerator.generate(
-            profile: activeProfile,
-            muscleGroup: selectedMuscleGroup,
-            goal: selectedGoal,
-            equipment: equipment,
-            durationRange: selectedDurationRange,
-            experience: selectedExperience
-        )
-    }
-
-    func syncDefaults(from profile: UserProfile?) {
-        guard let profile else { return }
-        selectedExperience = profile.experienceLevel
-        selectedGoal = FitnessGoal.planCases.contains(profile.mainGoal) ? profile.mainGoal : .muscleGain
-        selectedDurationRange = WorkoutDurationRangeOption.matching(minutes: profile.workoutDurationMinutes)
-        selectedEquipment = profile.availableEquipment
     }
 }

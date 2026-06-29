@@ -5,25 +5,18 @@
 //  Created by Apoorv Darshan on 22/05/26.
 //
 
-import RevenueCat
 import SwiftData
 import SwiftUI
 
 @main
 struct deltsApp: App {
-    init() {
-        Purchases.logLevel = .warn
-        Purchases.configure(withAPIKey: PremiumStore.revenueCatAPIKey)
-    }
-
     private let modelContainer: ModelContainer = {
         let schema = Schema([
             UserProfile.self,
             Exercise.self,
             WorkoutPlan.self,
             WorkoutExercise.self,
-            CompletedWorkout.self,
-            CoachMessageRecord.self
+            CompletedWorkout.self
         ])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
