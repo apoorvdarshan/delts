@@ -36,12 +36,9 @@ private struct ExerciseLibraryBrowserView: View {
     }
 
     private var splitFilterTitle: String {
-        switch selectedWorkoutSplit {
-        case .fullBody, .custom:
-            return String(localized: "Body Part")
-        default:
-            return selectedWorkoutSplit.title
-        }
+        // Always label the split chip "Body Part"; the grouping options inside it
+        // still follow the selected workout split.
+        String(localized: "Body Part")
     }
 
     private var usesBodyPartSplitFilter: Bool {
