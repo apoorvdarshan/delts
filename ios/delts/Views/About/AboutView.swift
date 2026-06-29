@@ -34,6 +34,7 @@ struct AboutSettingsSection: View {
     var scope: AboutSectionScope
     @State private var activeAlert: AboutAlert?
     @State private var whatsNewExpanded = false
+    @State private var showTipJar = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -149,6 +150,19 @@ struct AboutSettingsSection: View {
                         }
                     }
 
+                    AboutSection(title: String(localized: "Support")) {
+                        AboutRowStack {
+                            AboutActionRow(
+                                title: String(localized: "Support Delts"),
+                                systemImage: "heart.fill",
+                                value: String(localized: "Tip jar"),
+                                tint: .deltsAccent
+                            ) {
+                                showTipJar = true
+                            }
+                        }
+                    }
+
                     AboutSection(title: String(localized: "Built by")) {
                         VStack(spacing: 14) {
                             AboutRowStack {
@@ -215,6 +229,9 @@ struct AboutSettingsSection: View {
                     dismissButton: .default(Text("OK"))
                 )
             }
+        }
+        .sheet(isPresented: $showTipJar) {
+            TipJarSheet()
         }
     }
 

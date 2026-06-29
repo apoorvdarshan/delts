@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		BAAE1C8C2FDA1934009ED017 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = BAAE1C8A2FDA1934009ED017 /* InfoPlist.xcstrings */; };
 		BAAE1C8D2FDA1934009ED017 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = BAAE1C8B2FDA1934009ED017 /* Localizable.xcstrings */; };
+		BF0000000000000000000001 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = BF0000000000000000000003 /* RevenueCat */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -38,6 +39,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BF0000000000000000000001 /* RevenueCat in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -90,6 +92,7 @@
 			);
 			name = delts;
 			packageProductDependencies = (
+				BF0000000000000000000003 /* RevenueCat */,
 			);
 			productName = delts;
 			productReference = BAE99A722FC0922800559E0F /* delts.app */;
@@ -135,6 +138,7 @@
 			mainGroup = BAE99A692FC0922800559E0F;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				BF0000000000000000000002 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = BAE99A732FC0922800559E0F /* Products */;
@@ -401,6 +405,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BF0000000000000000000002 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BF0000000000000000000003 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BF0000000000000000000002 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = RevenueCat;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 	};
 	rootObject = BAE99A6A2FC0922800559E0F /* Project object */;
