@@ -92,38 +92,30 @@ private struct ExerciseLibraryBrowserView: View {
                     .padding(.top, 18)
                     .padding(.bottom, 18)
 
+                ResultsHeader(
+                    count: items.count,
+                    noun: String(localized: "exercise"),
+                    subtitle: selectedSort.title,
+                    selectedSort: $selectedSort,
+                    canReset: hasActiveFilters,
+                    onReset: {
+                        withAnimation(.snappy) {
+                            resetFilters()
+                        }
+                    }
+                )
+                .padding(.horizontal, 20)
+                .padding(.bottom, 4)
+
                 if items.isEmpty {
                     ContentUnavailableView {
                         Label("No exercises match", systemImage: "line.3.horizontal.decrease")
                     } description: {
-                        Text("Reset filters or search a different body part, machine, or exercise.")
-                    } actions: {
-                        if hasActiveFilters {
-                            Button {
-                                withAnimation(.snappy) { resetFilters() }
-                            } label: {
-                                Label("Reset filters", systemImage: "arrow.counterclockwise")
-                            }
-                        }
+                        Text("Try a different muscle, equipment, or search — or reset the filters above.")
                     }
-                    .frame(maxWidth: .infinity, minHeight: 300)
+                    .frame(maxWidth: .infinity, minHeight: 260)
                     .padding(.horizontal, 20)
                 } else {
-                    ResultsHeader(
-                        count: items.count,
-                        noun: String(localized: "exercise"),
-                        subtitle: selectedSort.title,
-                        selectedSort: $selectedSort,
-                        canReset: hasActiveFilters,
-                        onReset: {
-                            withAnimation(.snappy) {
-                                resetFilters()
-                            }
-                        }
-                    )
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 4)
-
                     ForEach(items) { item in
                         NavigationLink {
                             ExerciseLibraryDetailView(item: item)
@@ -537,7 +529,7 @@ private struct ResultsHeader: View {
                 } label: {
                     Label("Sort", systemImage: "arrow.up.arrow.down")
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(selectedSort == .name ? Color.deltsMutedText : Color.deltsAccent)
+                        .foregroundStyle(count == 0 ? Color.deltsMutedText : (selectedSort == .name ? Color.deltsMutedText : Color.deltsAccent))
                         .lineLimit(1)
                         .padding(.horizontal, 11)
                         .frame(height: 34)
@@ -549,6 +541,7 @@ private struct ResultsHeader: View {
                 }
                 .buttonStyle(.plain)
                 .deltsPressable()
+                .disabled(count == 0)
             }
         }
         .padding(.top, 6)
