@@ -684,15 +684,6 @@ struct ExerciseLibraryDetailView: View {
             .frame(width: width, height: 294)
             .frame(width: width, height: 294, alignment: .bottomLeading)
 
-            LinearGradient(
-                colors: [Color.deltsBackground.opacity(0), Color.deltsBackground.opacity(0.55), Color.deltsBackground],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(width: width, height: 150)
-            .frame(width: width, height: 294, alignment: .bottom)
-            .allowsHitTesting(false)
-
             if isMetricsPresented {
                 Color.black.opacity(0.5)
                     .frame(width: width, height: 294)
