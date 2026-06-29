@@ -17,7 +17,6 @@ struct WorkoutsView: View {
 private struct ExerciseLibraryBrowserView: View {
     @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
     @AppStorage("profile_dataset_primary_muscles") private var datasetPrimaryMusclesRaw = ""
-    @AppStorage("profile_dataset_raw_equipment") private var datasetRawEquipmentRaw = ""
     @AppStorage("profile_show_only_target_primary_filters") private var showOnlyTargetPrimaryFilters = false
     @State private var searchText = ""
     @State private var selectedSplitGroupTitles: Set<String> = []
@@ -79,8 +78,7 @@ private struct ExerciseLibraryBrowserView: View {
     }
 
     private var profileRawEquipmentOptions: [String] {
-        let selectedEquipment = datasetStoredSet(datasetRawEquipmentRaw, allowedValues: service.availableRawEquipment)
-        return service.availableRawEquipment.filter { selectedEquipment.contains($0) }
+        service.availableRawEquipment
     }
 
     private var profileTargetPrimaryMuscles: Set<String> {
@@ -236,9 +234,6 @@ private struct ExerciseLibraryBrowserView: View {
         }
         .onChange(of: showOnlyTargetPrimaryFilters) {
             normalizePrimaryFilterSelection()
-        }
-        .onChange(of: datasetRawEquipmentRaw) {
-            normalizeEquipmentFilterSelection()
         }
     }
 
