@@ -77,6 +77,12 @@ enum WorkoutSplit: String, CaseIterable, Identifiable, Codable, Hashable {
 
     var id: String { rawValue }
     var title: String { rawValue }
+
+    /// Splits offered in the picker. `.custom` is retired (it behaved the same as
+    /// Full Body) but kept as a case so previously stored values still decode.
+    static var selectableCases: [WorkoutSplit] {
+        allCases.filter { $0 != .custom }
+    }
 }
 
 enum BodyFocus: String, CaseIterable, Identifiable, Codable, Hashable {

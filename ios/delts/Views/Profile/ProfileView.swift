@@ -127,7 +127,8 @@ struct ProfileEditorView: View {
 
     private var splitBinding: Binding<WorkoutSplit> {
         Binding {
-            profile.workoutSplit
+            // `.custom` is retired from the picker; show it as Full Body (same behavior).
+            profile.workoutSplit == .custom ? .fullBody : profile.workoutSplit
         } set: { newValue in
             profile.workoutSplit = newValue
             profile.updatedAt = Date()
@@ -613,7 +614,7 @@ private struct ProfileWorkoutSplitPickerSheet: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(WorkoutSplit.allCases) { split in
+                        ForEach(WorkoutSplit.selectableCases) { split in
                             Button {
                                 selection = split
                             } label: {
