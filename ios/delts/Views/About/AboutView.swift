@@ -41,14 +41,7 @@ struct AboutSettingsSection: View {
             if scope != .about {
                     AboutSection(title: String(localized: "Release")) {
                         AboutRowStack {
-                            AboutActionRow(
-                                title: String(localized: "Check for Updates"),
-                                systemImage: "arrow.down.circle.fill",
-                                value: appVersionText,
-                                tint: .deltsSecondaryAccent
-                            ) {
-                                checkForUpdates()
-                            }
+                            CheckForUpdatesRow(updateChecker: updateChecker, version: appVersionText)
                             AboutDivider()
                             WhatsNewRow(
                                 version: appVersionText,
@@ -226,8 +219,6 @@ struct AboutSettingsSection: View {
                     message: Text(placeholder.message),
                     dismissButton: .default(Text("OK"))
                 )
-            case let .update(result):
-                return updateAlert(for: result)
             }
         }
     }
@@ -270,67 +261,68 @@ struct AboutSettingsSection: View {
         openURL(url)
     }
 
-    private func checkForUpdates() {
-        guard !updateChecker.isChecking else { return }
+}
 
-        Task {
-            let result = await updateChecker.checkForUpdates()
-            activeAlert = .update(result)
+/// "Check for Updates" row: runs the check inline with a spinner and shows the
+/// result on the row itself (no popup). What's New lives in the row below.
+private struct CheckForUpdatesRow: View {
+    @ObservedObject var updateChecker: AppUpdateChecker
+    let version: String
+    @Environment(\.openURL) private var openURL
+    @State private var statusText: String?
+    @State private var storeURL: URL?
+
+    var body: some View {
+        Button {
+            if let storeURL {
+                openURL(storeURL)
+            } else {
+                runCheck()
+            }
+        } label: {
+            AboutFieldRow(title: String(localized: "Check for Updates"), systemImage: "arrow.down.circle.fill", tint: .deltsSecondaryAccent) {
+                trailing
+            }
+        }
+        .deltsPressable()
+        .disabled(updateChecker.isChecking)
+    }
+
+    @ViewBuilder
+    private var trailing: some View {
+        if updateChecker.isChecking {
+            ProgressView()
+                .controlSize(.small)
+                .tint(Color.deltsAccent)
+                .frame(minWidth: 72, minHeight: 38, alignment: .trailing)
+        } else {
+            AboutValueLabel(text: statusText ?? version, showsChevron: storeURL != nil)
         }
     }
 
-    private func updateAlert(for result: AppUpdateCheckResult) -> Alert {
-        switch result {
-        case .idle, .checking:
-            return Alert(
-                title: Text("Checking for Updates"),
-                message: Text("Delts is checking the App Store for a newer version."),
-                dismissButton: .default(Text("OK"))
-            )
-        case let .available(version, storeURL, releaseNotes):
-            var message = String(localized: "Version \(version) is available. You are on \(appVersionText).")
-            if let releaseNotes {
-                message += "\n\n" + String(localized: "What's New:\n\(releaseNotes)")
+    private func runCheck() {
+        guard !updateChecker.isChecking else { return }
+        Task {
+            let result = await updateChecker.checkForUpdates()
+            withAnimation(.snappy(duration: 0.2)) {
+                apply(result)
             }
-            if let storeURL {
-                return Alert(
-                    title: Text("Update Available"),
-                    message: Text(message),
-                    primaryButton: .default(Text("Open")) {
-                        open(storeURL)
-                    },
-                    secondaryButton: .cancel()
-                )
-            }
+        }
+    }
 
-            return Alert(
-                title: Text("Update Available"),
-                message: Text(message),
-                dismissButton: .default(Text("OK"))
-            )
-        case let .upToDate(latestVersion, releaseNotes):
-            let latestText = latestVersion.map { String(localized: " Latest App Store version: \($0).") } ?? ""
-            var message = String(localized: "You are on \(appVersionText).\(latestText)")
-            if let releaseNotes {
-                message += "\n\n" + String(localized: "What's New in \(latestVersion ?? appVersionText):\n\(releaseNotes)")
-            }
-            return Alert(
-                title: Text("Delts Is Up to Date"),
-                message: Text(message),
-                dismissButton: .default(Text("OK"))
-            )
-        case .unavailable:
-            return Alert(
-                title: Text("Update Check Ready"),
-                message: Text("The automatic update checker is ready. The App Store listing is not live for this bundle yet."),
-                dismissButton: .default(Text("OK"))
-            )
-        case let .failed(message):
-            return Alert(
-                title: Text("Update Check Failed"),
-                message: Text(message),
-                dismissButton: .default(Text("OK"))
-            )
+    private func apply(_ result: AppUpdateCheckResult) {
+        switch result {
+        case let .available(_, url, _):
+            statusText = String(localized: "Update available")
+            storeURL = url
+        case .upToDate, .unavailable:
+            statusText = String(localized: "Up to date")
+            storeURL = nil
+        case .failed:
+            statusText = String(localized: "Check failed — try again")
+            storeURL = nil
+        case .idle, .checking:
+            break
         }
     }
 }
@@ -373,14 +365,11 @@ private enum AboutPlaceholder: Identifiable {
 
 private enum AboutAlert: Identifiable {
     case placeholder(AboutPlaceholder)
-    case update(AppUpdateCheckResult)
 
     var id: String {
         switch self {
         case let .placeholder(placeholder):
             return "placeholder-\(placeholder.id)"
-        case .update:
-            return "update"
         }
     }
 }
