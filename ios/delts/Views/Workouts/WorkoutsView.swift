@@ -1026,6 +1026,8 @@ struct ExerciseLibraryDetailView: View {
         .deltsScreen()
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarBackground(Color.deltsBackground, for: .navigationBar)
     }
 
     private func detailHero(width: CGFloat) -> some View {
