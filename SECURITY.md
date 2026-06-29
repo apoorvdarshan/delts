@@ -24,9 +24,7 @@ Security fixes are handled on the active `main` branch unless a release branch i
 
 Security-sensitive areas include:
 
-- Apple Health permissions and HealthKit data handling.
-- Local workout, body weight, and body fat records.
-- App settings stored with `UserDefaults`.
+- App preferences and exercise filter state stored with `UserDefaults`.
 - Any future networking, account, subscription, or analytics code.
 
 ## Disclosure

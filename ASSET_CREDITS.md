@@ -1,22 +1,8 @@
 # Asset Credits
 
-Target muscle selector images are bundled as cropped derivatives from Wikimedia Commons-hosted royalty-free sources.
-
-- Male front, chest, core, quads, calves, hips, and neck crops: CC0, [Nash Jocic Bodybuilding Competition 2](https://commons.wikimedia.org/wiki/File:Nash_Jocic_Bodybuilding_Competition_2.jpg)
-- Male back, lats, middle back, lower back, traps, biceps, and triceps crops: Public domain, [Shirtless man with back muscles - Nawid collection](https://commons.wikimedia.org/wiki/File:Shirtless_man_with_back_muscles_-_Nawid_collection.jpg)
-- Male arms, forearms, hamstrings, and glutes crops: CC BY 2.0, [Hulking out](https://commons.wikimedia.org/wiki/File:Hulking_out_(7452189324).jpg)
-- Female chest, shoulders, neck, biceps, and forearms crops: CC BY 2.0, [FBB Pectoralis muscle flex](https://commons.wikimedia.org/wiki/File:FBB_Pectoralis_muscle_flex.jpg)
-- Female back, lats, middle back, lower back, traps, arms, and triceps crops: CC BY 2.0, [BodybuildingWoman](https://commons.wikimedia.org/wiki/File:BodybuildingWoman.jpg)
-- Female core, quads, and hips crops: CC BY-SA 4.0, [Anna Kushkian IFBB 2026](https://commons.wikimedia.org/wiki/File:Anna_Kushkian_IFBB_2026.jpg)
-- Female legs, hamstrings, glutes, and calves crops: CC0, [Female bodybuilder 2016 Women bodybuilding](https://commons.wikimedia.org/wiki/File:Female_bodybuilder_2016_Women_bodybuilding.jpg)
-
-Body fat selector images are AI-generated reference images created for this app and bundled locally in the asset catalog.
-
-Start timer red button artwork is an AI-generated product-style image created for this app and bundled locally in the asset catalog.
+Exercise data, names, instructions, and images come from the [Free Exercise DB](https://github.com/yuhonas/free-exercise-db) and are bundled locally under `ios/delts/Resources/FreeExerciseDB/` (see its `LICENSE.md` and `README.md`).
 
 App icon artwork was provided by the project owner and bundled locally in the asset catalog.
-
-1RM lift glyphs are original vector artwork created for this app and bundled locally in the asset catalog.
 
 Menu muscle glyph assets are cropped/rasterized derivatives of SVG muscle paths from [`react-muscle-highlighter`](https://github.com/soroojshehryar/react-muscle-highlighter) 1.2.0, MIT License. The generated app assets are bundled locally in the asset catalog and do not depend on the upstream repository at runtime.
 

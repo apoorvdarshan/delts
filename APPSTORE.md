@@ -4,84 +4,59 @@ App Store Connect submission details for Delts. Each field is in a code block fo
 
 ## App Name
 
-    Delts - Workout Tracker
+    Delts - Exercise Library
 
 ## Subtitle (30 chars max)
 
-    Gym Timer & Progress
+    Free Exercise Library & Guide
 
 ## Promotional Text (170 chars max)
 
-    One red button runs your workout. Log sets and RPE, track body progress, and train with an AI coach that knows your real workouts. In 16 languages.
+    A free, private exercise library — browse hundreds of moves with form instructions and powerful filters. No account, no ads, no tracking. In 16 languages.
 
 ## Keywords (100 chars max)
 
-    workout,gym,fitness,timer,ai,coach,sets,reps,RPE,weight,bodyfat,tracker,progress,calorie,training
+    exercise,library,gym,fitness,workout,muscle,form,instructions,strength,training,free,reference
 
 ## Category
 
     Primary: Health & Fitness
-    Secondary: Productivity
+    Secondary: Education
 
 ## What's New
 
-    Version 1.1
+    Version 1.2
 
-    • Log the weight you lift on every set, right next to reps and RPE. Weights show in kg or lb based on your profile units and flow into your workout history, Apple Health, and the AI Coach.
-    • See your session time on Home, alongside calorie burn.
-    • Workout history now collapses by default — tap any session to expand the set-by-set details.
-    • A new What's New section in About shows what changed each update.
-    • Smoother set logging (tap straight between weight, reps, and RPE) and many small fixes.
+    Delts is now a free, focused exercise library.
+
+    • Browse hundreds of exercises with step-by-step form instructions and visuals.
+    • Powerful filters — muscle, equipment, level, force, mechanic, and category — plus search and sort.
+    • Rebuilt around three simple tabs: Workouts, Settings, and About.
+    • Completely private: no account, no ads, no tracking. Everything stays on your device.
+    • Lighter and faster, with a cleaner Settings layout.
 
 ## Description
 
-    Delts is a focused iPhone workout planner and tracker for gym sessions.
+    Delts is a clean, fast exercise library for iPhone.
 
-    Build your daily workout, start the red timer, log the work you actually perform, and review progress over time. Delts keeps planning, workout timing, set logging, calorie estimates, and body progress in one clean app.
+    Search and filter a large catalog of exercises, then open any move for step-by-step form instructions and visuals. No account, no ads, no tracking, no subscriptions — Delts is completely free and everything stays on your device.
 
-    Built by an ACE Certified Personal Trainer. The core app is free; Delts Premium unlocks the AI features.
-
-    WORKOUT TIMER
-    Start and end the workout from the main red timer. Session timing is tracked from that workout state, keeping planned exercises separate from performed work.
-
-    DAILY WORKOUT BOARD
-    Add exercises for today, review sets, reps, RPE, target muscles, and equipment, and keep the session organized before training starts.
+    Built by an ACE Certified Personal Trainer.
 
     EXERCISE LIBRARY
-    Browse exercises by target muscles, equipment, level, and workout split. Exercise details include imagery and instructions.
+    Browse hundreds of exercises with names, target muscles, equipment, level, and category. Open any exercise for clear, step-by-step instructions and imagery.
 
-    SET, REP, AND RPE LOGGING
-    Log reps and effort during an active workout. Choose the RPE style that fits your training.
+    POWERFUL FILTERS
+    Narrow the library by primary muscle, secondary muscle, equipment, level, force, mechanic, and category — then search by name and sort the results.
 
-    AI COACH (PREMIUM)
-    Chat with a coach that sees your real training: workouts, sets, body progress, and goals. Attach photos of equipment, meals, or form and get answers grounded in your own data.
-
-    CALORIE BURN (PREMIUM)
-    Stop the timer and Delts estimates the session's calorie burn from your workout and body data, shows it on Home, and writes the workout to Apple Health.
-
-    WORKOUT HISTORY
-    Every session is saved with time, calories, and per-set detail. Deleting a session also removes it from Apple Health.
-
-    PROGRESS
-    Track weight and body fat with readable charts, averages, net change, goal lines, and week/month/3M/6M/1Y/all-time ranges.
-
-    BODY COMPOSITION
-    Log exact body fat values or use visual body fat ranges. Current and goal body fat modes are remembered separately.
-
-    APPLE HEALTH
-    Optional Apple Health access can read and write supported weight and body fat data when permission is granted.
-
-    PERSONAL SETTINGS
-    Set training goals, target muscles, issues, workout frequency, workout duration range, split, equipment, and optional strength anchors.
+    SIMPLE AND PRIVATE
+    Three focused tabs — Workouts, Settings, and About. No sign-up, no ads, no analytics, no data collection. Your preferences stay on your device.
 
     THEMES
-    Choose Lime, Cyan, Pink, Amber, or Violet. The app tint and Home Screen icon update together.
+    Choose Lime, Cyan, Pink, Amber, or Violet. The app tint and Home Screen icon update together. Pick light, dark, or system appearance.
 
     IN YOUR LANGUAGE
     Delts is localized into 16 languages: English, Arabic, Azerbaijani, German, Spanish, French, Hindi, Italian, Japanese, Korean, Dutch, Polish, Brazilian Portuguese, Romanian, Russian, and Simplified Chinese.
-
-    DELTS PREMIUM
-    Everything local is free forever. Delts Premium is an auto-renewing subscription (weekly or yearly) that unlocks the AI Coach and automatic calorie-burn estimates. Payment is charged to your Apple ID; manage or cancel anytime in your App Store account settings.
 
     Delts is not medical advice. Consult a qualified professional before changing your training routine, especially if you have medical concerns or injuries.
 
@@ -109,10 +84,8 @@ App Store Connect submission details for Delts. Each field is in a code block fo
 
     1) Delts is iPhone-first. Please review on iPhone.
     2) No test account is required.
-    3) Apple Health access is optional. Reviewers can decline Health permissions and still use core app features.
-    4) To test Health integration, grant body weight and body fat permissions when prompted from Settings.
+    3) The app is completely free with no in-app purchases, ads, accounts, or data collection.
+    4) It requests no permissions (no Health, camera, photos, or notifications).
     5) Theme changes can trigger the normal iOS alternate app icon confirmation.
-    6) AI features (Coach tab, calorie-burn estimates) require the Delts Premium subscription. Both subscriptions are available for sandbox purchase during review; all non-AI features work without subscribing.
-    7) The app is localized into 16 languages and follows the device or per-app language setting.
-    8) Support contacts: apoorvdarshan@gmail.com and ad13dtu@gmail.com.
-
+    6) The app is localized into 16 languages and follows the device or per-app language setting.
+    7) Support contacts: apoorvdarshan@gmail.com and ad13dtu@gmail.com.
