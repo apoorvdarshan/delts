@@ -39,7 +39,7 @@ final class UserProfile: Identifiable {
         mainGoal: FitnessGoal = .muscleGain,
         bodyFocus: Set<BodyFocus> = [.boulderShoulders, .bigArms, .fullBodyAesthetic],
         workoutFrequencyPerWeek: Int = 4,
-        workoutSplit: WorkoutSplit = .pushPullLegs,
+        workoutSplit: WorkoutSplit = .fullBody,
         workoutDurationMinutes: Int = 60,
         availableEquipment: Set<Equipment> = [.dumbbells, .barbell, .bench, .cableMachine, .latPulldown, .legPress, .bodyweight],
         benchPressOneRM: Double = 0,
