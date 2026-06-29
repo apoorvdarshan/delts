@@ -307,6 +307,14 @@ private struct CheckForUpdatesRow: View {
             withAnimation(.snappy(duration: 0.2)) {
                 apply(result)
             }
+            // A non-actionable result (up to date / failed) clears after a moment,
+            // returning the row to showing the current version like before.
+            if storeURL == nil {
+                try? await Task.sleep(for: .seconds(2.5))
+                withAnimation(.snappy(duration: 0.2)) {
+                    statusText = nil
+                }
+            }
         }
     }
 
