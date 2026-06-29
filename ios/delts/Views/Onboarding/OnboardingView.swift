@@ -1,5 +1,4 @@
 import StoreKit
-import SwiftData
 import SwiftUI
 import UIKit
 
@@ -10,9 +9,7 @@ private enum OnboardingStep: Int, CaseIterable {
 }
 
 struct OnboardingView: View {
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.openURL) private var openURL
-    @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
     @AppStorage("delts_onboarding_complete") private var onboardingComplete = false
     @AppStorage("delts_terms_accepted_at") private var termsAcceptedAt = 0.0
 
@@ -27,29 +24,19 @@ struct OnboardingView: View {
     private var step: OnboardingStep { steps[min(stepIndex, steps.count - 1)] }
 
     var body: some View {
-        Group {
-            if let profile = profiles.first {
-                content(profile: profile)
-            } else {
-                ProgressView()
-                    .controlSize(.large)
-                    .tint(Color.deltsAccent)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        }
-        .deltsScreen()
-        .task { ensureProfile() }
+        content
+            .deltsScreen()
     }
 
     // MARK: - Layout
 
-    private func content(profile: UserProfile) -> some View {
+    private var content: some View {
         VStack(spacing: 0) {
             progressHeader
 
             ZStack(alignment: .top) {
                 ScrollView {
-                    stepBody(profile: profile)
+                    stepBody
                         .padding(.horizontal, 20)
                         .padding(.top, 10)
                         .padding(.bottom, 28)
@@ -121,7 +108,7 @@ struct OnboardingView: View {
     // MARK: - Steps
 
     @ViewBuilder
-    private func stepBody(profile: UserProfile) -> some View {
+    private var stepBody: some View {
         switch step {
         case .welcome:
             welcomeStep
@@ -465,7 +452,6 @@ struct OnboardingView: View {
             return
         }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        try? modelContext.save()
         goingForward = true
         withAnimation(.snappy(duration: 0.32)) {
             stepIndex = min(stepIndex + 1, steps.count - 1)
@@ -483,7 +469,6 @@ struct OnboardingView: View {
     private func finish() {
         guard agreedToTerms else { return }
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        try? modelContext.save()
         termsAcceptedAt = Date().timeIntervalSince1970
         onboardingComplete = true
     }
@@ -517,12 +502,6 @@ struct OnboardingView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func ensureProfile() {
-        guard profiles.isEmpty else { return }
-        modelContext.insert(UserProfile.defaultProfile())
-        try? modelContext.save()
     }
 
     private func open(_ string: String) {

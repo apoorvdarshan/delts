@@ -5,12 +5,9 @@
 //  Created by Apoorv Darshan on 22/05/26.
 //
 
-import SwiftData
 import SwiftUI
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-
     init() {
         // Re-show onboarding on demand (testing) without touching any user data.
         if ProcessInfo.processInfo.arguments.contains("--delts-show-onboarding") {
@@ -18,7 +15,6 @@ struct ContentView: View {
         }
     }
 
-    @Query(sort: \UserProfile.updatedAt, order: .reverse) private var profiles: [UserProfile]
     @State private var selectedTab: DeltsTab = .initialTab
     @StateObject private var updateChecker = AppUpdateChecker()
     @AppStorage(AppAppearance.storageKey) private var appAppearanceRaw = AppAppearance.system.rawValue
@@ -35,7 +31,6 @@ struct ContentView: View {
             .preferredColorScheme(appAppearance.preferredColorScheme)
             .id("\(appAppearanceRaw)-\(deltsThemeRaw)")
             .task {
-                ensureDefaultProfile()
                 await updateChecker.checkForUpdatesIfNeeded()
             }
     }
@@ -75,11 +70,6 @@ struct ContentView: View {
         }
     }
 
-    private func ensureDefaultProfile() {
-        guard profiles.isEmpty else { return }
-        modelContext.insert(UserProfile.defaultProfile())
-        try? modelContext.save()
-    }
 }
 
 private enum DeltsTab: String, CaseIterable, Identifiable {
@@ -124,11 +114,4 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [
-            UserProfile.self,
-            Exercise.self,
-            WorkoutPlan.self,
-            WorkoutExercise.self,
-            CompletedWorkout.self
-        ], inMemory: true)
 }
