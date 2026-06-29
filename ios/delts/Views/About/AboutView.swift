@@ -34,7 +34,6 @@ struct AboutSettingsSection: View {
     var scope: AboutSectionScope
     @State private var activeAlert: AboutAlert?
     @State private var whatsNewExpanded = false
-    @State private var showTipJar = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -152,14 +151,7 @@ struct AboutSettingsSection: View {
 
                     AboutSection(title: String(localized: "Support")) {
                         AboutRowStack {
-                            AboutActionRow(
-                                title: String(localized: "Support Delts"),
-                                systemImage: "heart.fill",
-                                value: String(localized: "Tip jar"),
-                                tint: .deltsAccent
-                            ) {
-                                showTipJar = true
-                            }
+                            SupportTipPicker()
                         }
                     }
 
@@ -229,9 +221,6 @@ struct AboutSettingsSection: View {
                     dismissButton: .default(Text("OK"))
                 )
             }
-        }
-        .sheet(isPresented: $showTipJar) {
-            TipJarSheet()
         }
     }
 
@@ -625,5 +614,278 @@ private extension UIWindowScene {
 private extension UIViewController {
     var deltsTopPresentedController: UIViewController {
         presentedViewController?.deltsTopPresentedController ?? self
+    }
+}
+
+// MARK: - Support tip picker (inline, echoes the Theme swatch grid)
+
+/// Inline "Support Delts" tip jar for the About screen. Echoes the Theme picker:
+/// every available tip tier is shown at once as a tappable tile, and tapping one
+/// launches the StoreKit purchase directly — the system sheet is the confirm. No
+/// sheet, no select-then-confirm. The whole app stays free; tips unlock nothing.
+private struct SupportTipPicker: View {
+    @ObservedObject private var store = TipStore.shared
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Tier emojis by ascending price index (small / medium / large).
+    private let tierEmoji = ["☕️", "🥪", "🎉"]
+
+    /// Which tip is mid-purchase, so only that tile shows the spinner + accent.
+    @State private var purchasingID: String?
+    /// Drives the one-shot heart bounce on the thanks state.
+    @State private var celebrate = false
+
+    /// One flexible column per available tip — mirrors the Theme grid exactly.
+    private var columns: [GridItem] {
+        store.tips.map { _ in GridItem(.flexible(), spacing: 8) }
+    }
+
+    var body: some View {
+        // A control block like the Theme/Profile blocks: a steady label over the
+        // swappable content. Lives inside AboutRowStack's card, so it inherits the
+        // exact surface + inset (no new surface code, no doubled card).
+        VStack(alignment: .leading, spacing: 10) {
+            AboutFieldLabel(
+                title: String(localized: "Support Delts"),
+                systemImage: "heart.fill",
+                tint: .deltsAccent
+            )
+
+            Group {
+                if store.showThanks {
+                    thanks
+                } else {
+                    content
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .animation(.snappy(duration: 0.28), value: store.showThanks)
+        .animation(.snappy(duration: 0.28), value: store.isLoading)
+        .animation(.snappy(duration: 0.28), value: store.tips.count)
+        .animation(.easeOut(duration: 0.2), value: store.lastErrorMessage)
+        .task { await store.loadTips() }
+        .sensoryFeedback(trigger: store.showThanks) { _, isThanks in
+            isThanks ? .success : nil
+        }
+        .onChange(of: store.showThanks) { _, isThanks in
+            guard isThanks else {
+                celebrate = false
+                return
+            }
+            // Inline picker: gently revert the celebration back to the tiles.
+            Task {
+                try? await Task.sleep(for: .seconds(2.4))
+                store.showThanks = false
+            }
+        }
+        .onChange(of: store.lastErrorMessage) { _, message in
+            // Inline, auto-clearing error — no alert, matching this section's ethos.
+            guard message != nil else { return }
+            Task {
+                try? await Task.sleep(for: .seconds(4))
+                store.lastErrorMessage = nil
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Delts is free forever — tips are optional and unlock nothing.")
+                .font(.footnote)
+                .foregroundStyle(Color.deltsMutedText)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if store.tips.isEmpty {
+                if store.isLoading {
+                    loading
+                } else {
+                    unavailable
+                }
+            } else {
+                tiles
+            }
+
+            if let message = store.lastErrorMessage {
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Color.deltsWarning)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .transition(.opacity)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var tiles: some View {
+        // 3-up grid normally; collapse to a full-width vertical stack at
+        // accessibility text sizes so emoji + name + price never get crushed.
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(spacing: 8) {
+                tileForEach
+            }
+        } else {
+            LazyVGrid(columns: columns, spacing: 8) {
+                tileForEach
+            }
+        }
+    }
+
+    private var tileForEach: some View {
+        ForEach(Array(store.tips.enumerated()), id: \.element.id) { index, product in
+            SupportTipTile(
+                product: product,
+                emoji: tierEmoji[min(index, tierEmoji.count - 1)],
+                isPurchasing: store.isPurchasing && purchasingID == product.id,
+                isDisabled: store.isPurchasing
+            ) {
+                purchase(product)
+            }
+        }
+    }
+
+    private var loading: some View {
+        ProgressView()
+            .controlSize(.regular)
+            .tint(Color.deltsAccent)
+            .frame(maxWidth: .infinity, minHeight: 92)
+            .accessibilityLabel(String(localized: "Loading tip options"))
+    }
+
+    private var unavailable: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Tips aren't available right now.")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button {
+                Task { await store.loadTips() }
+            } label: {
+                Text("Tap to try again")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Color.deltsAccent)
+            }
+            .buttonStyle(.plain)
+            .deltsPressable()
+        }
+        .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
+    }
+
+    private var thanks: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "heart.fill")
+                .font(.system(size: 34, weight: .bold))
+                .foregroundStyle(Color.deltsAccent)
+                .scaleEffect(celebrate || reduceMotion ? 1 : 0.6)
+                .symbolEffect(.bounce, value: celebrate && !reduceMotion)
+
+            Text("Thank you 💚")
+                .font(.headline.weight(.bold))
+                .foregroundStyle(Color.deltsCharcoal)
+
+            Text("Your support keeps Delts free for everyone.")
+                .font(.caption)
+                .foregroundStyle(Color.deltsMutedText)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, minHeight: 116)
+        .transition(.opacity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(String(localized: "Thank you for supporting Delts. The app stays free."))
+        .onAppear {
+            purchasingID = nil
+            if reduceMotion {
+                celebrate = true
+            } else {
+                celebrate = false
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
+                    celebrate = true
+                }
+            }
+        }
+    }
+
+    private func purchase(_ product: Product) {
+        guard !store.isPurchasing else { return }
+        store.lastErrorMessage = nil
+        purchasingID = product.id
+        Task {
+            await store.purchase(product) // triggers the system purchase UI
+            purchasingID = nil            // success flips store.showThanks itself
+        }
+    }
+}
+
+/// One tip tier tile — a faithful clone of the Theme option tile, with the tier
+/// emoji where the icon preview sits and the tier name + price stacked beneath.
+/// The selected look is reused to signal an in-flight purchase.
+private struct SupportTipTile: View {
+    let product: Product
+    let emoji: String
+    let isPurchasing: Bool
+    let isDisabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 7) {
+                ZStack {
+                    if isPurchasing {
+                        ProgressView()
+                            .controlSize(.small)
+                            .tint(Color.deltsAccent)
+                    } else {
+                        Text(emoji)
+                            .font(.system(size: 26))
+                    }
+                }
+                .frame(width: 42, height: 42)
+
+                VStack(spacing: 2) {
+                    Text(product.displayName)
+                        .font(.caption2.weight(.heavy))
+                        .foregroundStyle(isPurchasing ? Color.deltsCharcoal : Color.deltsMutedText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+
+                    Text(product.displayPrice)
+                        .font(.caption2.weight(.bold))
+                        .monospacedDigit()
+                        .foregroundStyle(Color.deltsAccent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity, minHeight: 92)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(isPurchasing ? Color.deltsAccent.opacity(0.16) : Color.deltsPanel.opacity(0.20))
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(
+                        isPurchasing ? Color.deltsAccent.opacity(0.78) : Color.deltsHairline.opacity(0.26),
+                        lineWidth: isPurchasing ? 1.2 : 0.6
+                    )
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .opacity(isDisabled && !isPurchasing ? 0.5 : 1)
+        }
+        .buttonStyle(.plain)
+        .deltsPressable()
+        .disabled(isDisabled)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(product.displayName), \(product.displayPrice)")
+        .accessibilityHint(String(localized: "Leaves an optional tip to support Delts"))
+        .accessibilityValue(isPurchasing ? Text(String(localized: "Purchasing")) : Text(""))
+        .accessibilityAddTraits(.isButton)
     }
 }
