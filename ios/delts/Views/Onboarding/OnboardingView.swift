@@ -5,10 +5,7 @@ import UIKit
 
 private enum OnboardingStep: Int, CaseIterable {
     case welcome
-    case personal
-    case body
-    case goals
-    case preferences
+    case library
     case rate
     case terms
 }
@@ -129,37 +126,13 @@ struct OnboardingView: View {
         switch step {
         case .welcome:
             welcomeStep
-        case .personal:
+        case .library:
             profileStep(
                 profile: profile,
-                icon: "person.fill",
-                title: String(localized: "Your details"),
-                subtitle: String(localized: "A few basics so Delts can tailor plans to you."),
-                section: .personalDetails
-            )
-        case .body:
-            profileStep(
-                profile: profile,
-                icon: "scalemass.fill",
-                title: String(localized: "Body metrics"),
-                subtitle: String(localized: "Your current body data and targets, saved to your profile."),
-                section: .bodyMetrics
-            )
-        case .goals:
-            profileStep(
-                profile: profile,
-                icon: "target",
-                title: String(localized: "Training goals"),
-                subtitle: String(localized: "What you want out of your training."),
-                section: .trainingGoals
-            )
-        case .preferences:
-            profileStep(
-                profile: profile,
-                icon: "slider.horizontal.3",
-                title: String(localized: "Workout preferences"),
-                subtitle: String(localized: "How and where you like to train."),
-                section: .workoutPreferences
+                icon: "line.3.horizontal.decrease",
+                title: String(localized: "Set up your library"),
+                subtitle: String(localized: "Pick your split, equipment, and target muscles so the exercise library fits you."),
+                section: .libraryFilters
             )
         case .rate:
             rateStep
