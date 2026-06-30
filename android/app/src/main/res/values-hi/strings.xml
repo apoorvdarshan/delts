@@ -85,4 +85,6 @@
     <string name="sec_legal">कानूनी</string>
     <string name="privacy_policy">गोपनीयता नीति</string>
     <string name="terms">शर्तें</string>
+    <string name="app_preferences_subtitle">Delts के लिए प्रदर्शन विकल्प।</string>
+    <string name="tap_to_retry">फिर से प्रयास करने के लिए टैप करें</string>
 </resources>

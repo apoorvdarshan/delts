@@ -89,4 +89,6 @@
     <string name="sec_legal">قانوني</string>
     <string name="privacy_policy">سياسة الخصوصية</string>
     <string name="terms">الشروط</string>
+    <string name="app_preferences_subtitle">خيارات العرض لتطبيق Delts.</string>
+    <string name="tap_to_retry">اضغط للمحاولة مرة أخرى</string>
 </resources>

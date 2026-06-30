@@ -1,7 +1,8 @@
 package com.apoorvdarshan.delts.ui.theme
 
+import android.content.ComponentName
 import android.content.Context
-import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -22,7 +23,9 @@ val LocalDeltsColors = staticCompositionLocalOf {
  * App-wide theme + appearance state, persisted to SharedPreferences — the analog
  * of the iOS `@AppStorage(DeltsTheme.storageKey)` / `AppAppearance.storageKey`.
  */
-class ThemeController(private val prefs: SharedPreferences) {
+class ThemeController(private val context: Context) {
+    private val prefs = context.getSharedPreferences("delts_prefs", Context.MODE_PRIVATE)
+
     var theme by mutableStateOf(readTheme())
         private set
     var appearance by mutableStateOf(readAppearance())
@@ -31,6 +34,37 @@ class ThemeController(private val prefs: SharedPreferences) {
     fun selectTheme(value: DeltsTheme) {
         theme = value
         prefs.edit().putString(KEY_THEME, value.name).apply()
+        applyLauncherIcon(value)
+    }
+
+    /** Swaps the home-screen icon to the chosen accent via activity-aliases (iOS parity). */
+    private fun applyLauncherIcon(value: DeltsTheme) {
+        val pm = context.packageManager
+        val pkg = context.packageName
+        val aliasFor = mapOf(
+            DeltsTheme.LIME to "LimeAlias",
+            DeltsTheme.CYAN to "CyanAlias",
+            DeltsTheme.PINK to "PinkAlias",
+            DeltsTheme.AMBER to "AmberAlias",
+            DeltsTheme.VIOLET to "VioletAlias"
+        )
+        // Enable the target first so the package never has zero launcher components.
+        aliasFor[value]?.let {
+            pm.setComponentEnabledSetting(
+                ComponentName(pkg, "$pkg.$it"),
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                PackageManager.DONT_KILL_APP
+            )
+        }
+        aliasFor.forEach { (t, name) ->
+            if (t != value) {
+                pm.setComponentEnabledSetting(
+                    ComponentName(pkg, "$pkg.$name"),
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+            }
+        }
     }
 
     fun selectAppearance(value: AppAppearance) {
@@ -51,7 +85,7 @@ class ThemeController(private val prefs: SharedPreferences) {
         private const val KEY_APPEARANCE = "app_appearance"
 
         fun from(context: Context): ThemeController =
-            ThemeController(context.getSharedPreferences("delts_prefs", Context.MODE_PRIVATE))
+            ThemeController(context.applicationContext)
     }
 }
 

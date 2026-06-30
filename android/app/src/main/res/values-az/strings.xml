@@ -85,4 +85,6 @@
     <string name="sec_legal">Hüquqi</string>
     <string name="privacy_policy">Məxfilik Siyasəti</string>
     <string name="terms">Şərtlər</string>
+    <string name="app_preferences_subtitle">Delts üçün görüntü seçimləri.</string>
+    <string name="tap_to_retry">Yenidən cəhd etmək üçün toxunun</string>
 </resources>
