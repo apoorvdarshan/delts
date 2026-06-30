@@ -20,6 +20,15 @@ class ExerciseRepository private constructor(val exercises: List<ExerciseItem>) 
     val availableMechanics: List<String> by lazy { sortedUnique(exercises.map { it.mechanic }) }
     val availableCategories: List<String> by lazy { sortedUnique(exercises.map { it.category }) }
 
+    /** Categories ordered by exercise count (desc), then name (asc) — mirrors iOS availableCategoryCounts. */
+    val availableCategoriesByCount: List<String> by lazy {
+        exercises.groupingBy { it.category }.eachCount()
+            .entries
+            .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }
+                .thenBy(String.CASE_INSENSITIVE_ORDER) { it.key })
+            .map { it.key }
+    }
+
     fun filtered(
         levels: Set<String> = emptySet(),
         equipment: Set<String> = emptySet(),
@@ -46,7 +55,8 @@ class ExerciseRepository private constructor(val exercises: List<ExerciseItem>) 
     }
 
     private fun comparator(sort: ExerciseSort): Comparator<ExerciseItem> {
-        val byName = Comparator<ExerciseItem> { a, b -> a.name.compareTo(b.name, ignoreCase = true) }
+        // Case-SENSITIVE to match Swift's `<` (the dataset is ASCII, so ordinal == Swift order).
+        val byName = Comparator<ExerciseItem> { a, b -> a.name.compareTo(b.name) }
         fun field(selector: (ExerciseItem) -> String): Comparator<ExerciseItem> =
             Comparator<ExerciseItem> { a, b -> selector(a).compareTo(selector(b), ignoreCase = true) }.then(byName)
         return when (sort) {

@@ -1,5 +1,11 @@
 package com.apoorvdarshan.delts.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.Info
@@ -35,9 +42,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.apoorvdarshan.delts.R
@@ -45,25 +56,24 @@ import com.apoorvdarshan.delts.data.ExerciseItem
 import com.apoorvdarshan.delts.ui.components.AnimatedExerciseImage
 import com.apoorvdarshan.delts.ui.theme.LocalDeltsColors
 
+private val HERO_HEIGHT = 294.dp
+
 @Composable
 fun ExerciseDetailScreen(item: ExerciseItem, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val colors = LocalDeltsColors.current
     var showMetrics by remember { mutableStateOf(false) }
 
     Column(modifier.fillMaxSize()) {
-        // Top bar: back + title
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .background(colors.background)
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+        // Top bar: back (start) + centered title
+        Box(
+            Modifier.fillMaxWidth().background(colors.background).padding(vertical = 8.dp, horizontal = 8.dp),
+            contentAlignment = Alignment.Center
         ) {
             Icon(
                 Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = stringResource(R.string.back),
                 tint = colors.accent,
-                modifier = Modifier.size(40.dp).clip(CircleShape).clickable { onBack() }.padding(8.dp)
+                modifier = Modifier.align(Alignment.CenterStart).size(40.dp).clip(CircleShape).clickable { onBack() }.padding(8.dp)
             )
             Text(
                 item.name,
@@ -71,46 +81,71 @@ fun ExerciseDetailScreen(item: ExerciseItem, onBack: () -> Unit, modifier: Modif
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
-                modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 52.dp)
             )
-            Spacer(Modifier.size(40.dp))
         }
 
-        LazyColumn(Modifier.fillMaxSize()) {
-            item(key = "hero") {
-                Box(Modifier.fillMaxWidth().height(294.dp).background(colors.panel.copy(alpha = 0.32f))) {
-                    if (item.imagePaths.isNotEmpty()) {
-                        AnimatedExerciseImage(item.imagePaths, Modifier.fillMaxSize())
-                    }
-
-                    if (showMetrics) {
-                        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)))
-                        MetricGrid(item, Modifier.padding(start = 20.dp, top = 12.dp, end = 80.dp))
-                    }
-
-                    // Info toggle (top-right)
-                    Icon(
-                        Icons.Filled.Info,
-                        contentDescription = stringResource(if (showMetrics) R.string.hide_details else R.string.show_details),
-                        tint = colors.accent,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(14.dp)
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(colors.background.copy(alpha = 0.78f))
-                            .border(0.7.dp, colors.hairline.copy(alpha = 0.42f), CircleShape)
-                            .clickable { showMetrics = !showMetrics }
-                            .padding(10.dp)
-                    )
+        // Pinned hero over scrollable instructions (mirrors the iOS ZStack).
+        Box(Modifier.fillMaxSize()) {
+            LazyColumn(Modifier.fillMaxSize()) {
+                item(key = "herospace") { Spacer(Modifier.height(HERO_HEIGHT)) }
+                item(key = "instructions") {
+                    InstructionSection(item.instructions, Modifier.padding(horizontal = 20.dp, vertical = 24.dp))
                 }
+                item(key = "pad") { Spacer(Modifier.size(40.dp)) }
             }
 
-            item(key = "instructions") {
-                InstructionSection(item.instructions, Modifier.padding(horizontal = 20.dp, vertical = 24.dp))
-            }
-            item(key = "pad") { Spacer(Modifier.size(40.dp)) }
+            Hero(item = item, showMetrics = showMetrics, onToggle = { showMetrics = !showMetrics })
         }
+    }
+}
+
+@Composable
+private fun Hero(item: ExerciseItem, showMetrics: Boolean, onToggle: () -> Unit) {
+    val colors = LocalDeltsColors.current
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(HERO_HEIGHT)
+            .clip(RoundedCornerShape(20.dp))
+            .background(colors.panel.copy(alpha = 0.32f))
+            .border(0.5.dp, colors.hairline.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+    ) {
+        AnimatedExerciseImage(item.imagePaths, Modifier.fillMaxSize(), fallbackLabel = item.name)
+
+        AnimatedVisibility(
+            visible = showMetrics,
+            modifier = Modifier.matchParentSize(),
+            enter = fadeIn(tween(280)),
+            exit = fadeOut(tween(280))
+        ) {
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)))
+        }
+
+        AnimatedVisibility(
+            visible = showMetrics,
+            modifier = Modifier.align(Alignment.TopStart),
+            enter = slideInHorizontally(tween(280)) { it } + fadeIn(tween(280)),
+            exit = slideOutHorizontally(tween(280)) { it } + fadeOut(tween(280))
+        ) {
+            MetricGrid(item, Modifier.padding(start = 24.dp, top = 8.dp, end = 84.dp))
+        }
+
+        Icon(
+            Icons.Filled.Info,
+            contentDescription = stringResource(if (showMetrics) R.string.hide_details else R.string.show_details),
+            tint = colors.accent,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(colors.background.copy(alpha = 0.78f))
+                .border(0.7.dp, colors.hairline.copy(alpha = 0.42f), CircleShape)
+                .clickable { onToggle() }
+                .padding(12.dp)
+        )
     }
 }
 
@@ -118,35 +153,47 @@ fun ExerciseDetailScreen(item: ExerciseItem, onBack: () -> Unit, modifier: Modif
 private fun MetricGrid(item: ExerciseItem, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MetricCard(stringResource(R.string.label_level), item.level, Icons.Filled.BarChart, Modifier.weight(1f))
-            MetricCard(stringResource(R.string.label_category), item.category, Icons.Filled.Tag, Modifier.weight(1f))
+            MetricCard(stringResource(R.string.label_level), item.level, Icons.Filled.BarChart, 1, 15.sp, Modifier.weight(1f))
+            MetricCard(stringResource(R.string.label_category), item.category, Icons.Filled.Tag, 1, 15.sp, Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MetricCard(stringResource(R.string.label_force), item.force, Icons.Filled.SwapHoriz, Modifier.weight(1f))
-            MetricCard(stringResource(R.string.label_mechanic), item.mechanic, Icons.Filled.Settings, Modifier.weight(1f))
+            MetricCard(stringResource(R.string.label_force), item.force, Icons.Filled.SwapHoriz, 1, 15.sp, Modifier.weight(1f))
+            MetricCard(stringResource(R.string.label_mechanic), item.mechanic, Icons.Filled.Settings, 1, 15.sp, Modifier.weight(1f))
         }
-        MetricCard(stringResource(R.string.label_primary), item.primaryMusclesTitle, Icons.Filled.GpsFixed, Modifier.fillMaxWidth())
-        MetricCard(stringResource(R.string.label_secondary), item.secondaryMusclesTitle, Icons.Filled.GpsFixed, Modifier.fillMaxWidth())
-        MetricCard(stringResource(R.string.label_equipment), item.equipment, Icons.Filled.FitnessCenter, Modifier.fillMaxWidth())
+        MetricCard(stringResource(R.string.label_primary), item.primaryMusclesTitle, Icons.Filled.GpsFixed, 2, 14.sp, Modifier.fillMaxWidth())
+        MetricCard(stringResource(R.string.label_secondary), item.secondaryMusclesTitle, Icons.Filled.GpsFixed, 3, 13.sp, Modifier.fillMaxWidth())
+        MetricCard(stringResource(R.string.label_equipment), item.equipment, Icons.Filled.FitnessCenter, 2, 14.sp, Modifier.fillMaxWidth())
     }
 }
 
 @Composable
-private fun MetricCard(title: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier = Modifier) {
+private fun MetricCard(title: String, value: String, icon: ImageVector, valueMaxLines: Int, valueSize: androidx.compose.ui.unit.TextUnit, modifier: Modifier = Modifier) {
     val colors = LocalDeltsColors.current
+    val dark = colors.isDark
+    val labelColor = if (dark) colors.accent else colors.secondaryAccent
+    val fill = if (dark) colors.background.copy(alpha = 0.55f) else colors.background.copy(alpha = 0.92f)
+    val stroke = if (dark) colors.hairline.copy(alpha = 0.32f) else colors.hairline.copy(alpha = 0.45f)
     Column(
         modifier
+            .shadow(6.dp, RoundedCornerShape(16.dp), clip = false)
             .clip(RoundedCornerShape(16.dp))
-            .background(colors.background.copy(alpha = 0.55f))
-            .border(0.6.dp, colors.hairline.copy(alpha = 0.32f), RoundedCornerShape(16.dp))
+            .background(fill)
+            .border(0.6.dp, stroke, RoundedCornerShape(16.dp))
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Icon(icon, null, tint = colors.accent, modifier = Modifier.size(11.dp))
-            Text(title, color = colors.accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            Icon(icon, null, tint = labelColor, modifier = Modifier.size(11.dp))
+            Text(title, color = labelColor, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1)
         }
-        Text(value, color = colors.charcoal, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text(
+            value,
+            color = colors.charcoal,
+            fontSize = valueSize,
+            fontWeight = FontWeight.Bold,
+            maxLines = valueMaxLines,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -159,7 +206,7 @@ private fun InstructionSection(instructions: List<String>, modifier: Modifier = 
                 Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(colors.accent.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("≣", color = colors.accent, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Icon(Icons.Filled.FormatListNumbered, null, tint = colors.accent, modifier = Modifier.size(18.dp))
             }
             Text(stringResource(R.string.instructions), color = colors.charcoal, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.weight(1f))
@@ -181,16 +228,16 @@ private fun InstructionSection(instructions: List<String>, modifier: Modifier = 
                     horizontalArrangement = Arrangement.spacedBy(13.dp)
                 ) {
                     Box(
-                        Modifier.size(27.dp).clip(CircleShape).background(colors.accent),
+                        Modifier.size(27.dp).shadow(6.dp, CircleShape, clip = false).clip(CircleShape).background(colors.accent),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("${index + 1}", color = colors.onAccent, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                        Text("${index + 1}", color = colors.onAccent, fontSize = 15.sp, fontWeight = FontWeight.Black)
                     }
                     Text(
                         instruction,
                         color = colors.charcoal.copy(alpha = 0.86f),
-                        fontSize = 15.sp,
-                        lineHeight = 21.sp,
+                        fontSize = 16.sp,
+                        lineHeight = 22.sp,
                         modifier = Modifier.weight(1f)
                     )
                 }

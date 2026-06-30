@@ -205,7 +205,7 @@ private fun FilterRow(repo: ExerciseRepository, vm: WorkoutsViewModel) {
         FilterPill(stringResource(R.string.label_level), Icons.Filled.BarChart, vm.levels, allLabel, repo.availableLevels) { vm.levels = it }
         FilterPill(stringResource(R.string.label_force), Icons.Filled.SwapHoriz, vm.forces, allLabel, repo.availableForces) { vm.forces = it }
         FilterPill(stringResource(R.string.label_mechanic), Icons.Filled.Settings, vm.mechanics, allLabel, repo.availableMechanics) { vm.mechanics = it }
-        FilterPill(stringResource(R.string.label_category), Icons.Filled.Tag, vm.categories, allLabel, repo.availableCategories) { vm.categories = it }
+        FilterPill(stringResource(R.string.label_category), Icons.Filled.Tag, vm.categories, allLabel, repo.availableCategoriesByCount) { vm.categories = it }
     }
 }
 
@@ -401,9 +401,7 @@ private fun ExerciseRow(item: ExerciseItem, onClick: () -> Unit) {
                 .background(colors.panel.copy(alpha = 0.32f))
                 .border(0.5.dp, colors.hairline.copy(alpha = 0.38f), RoundedCornerShape(18.dp))
         ) {
-            if (item.imagePaths.isNotEmpty()) {
-                AnimatedExerciseImage(item.imagePaths, Modifier.fillMaxSize())
-            }
+            AnimatedExerciseImage(item.imagePaths, Modifier.fillMaxSize())
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Text(item.name, color = colors.charcoal, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)

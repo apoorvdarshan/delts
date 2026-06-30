@@ -1,34 +1,49 @@
 package com.apoorvdarshan.delts.ui.components
 
+import android.provider.Settings
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.apoorvdarshan.delts.data.ExerciseRepository
+import com.apoorvdarshan.delts.ui.theme.LocalDeltsColors
 import kotlinx.coroutines.delay
 
 /**
  * Muted, cycling exercise visual — the Android analog of the iOS
- * `AnimatedExerciseVisual`. Mirrors it exactly: all frames are stacked and the
- * current one is shown at full opacity while the others are hidden (alpha 0),
- * switching every 0.85s with an INSTANT cut (no fade, no blink), plus the same
- * desaturated / higher-contrast / slightly-darker color treatment.
+ * `AnimatedExerciseVisual`. All frames are stacked and the current one is shown
+ * at full opacity (instant cut every 0.85s, no fade), with iOS's desaturated /
+ * higher-contrast / darker color treatment. Honors the system "remove
+ * animations" setting, and shows a fallback visual when there are no images.
  */
 private val ExerciseImageFilter: ColorFilter = run {
-    // saturation(0.30) then grayscale(0.36) ≈ net saturation ~0.19
     val saturation = ColorMatrix().apply { setToSaturation(0.19f) }
     val contrast = 1.10f
-    val translate = (1f - contrast) * 127.5f + (-0.05f * 255f) // contrast pivot + brightness(-0.05)
+    val translate = (1f - contrast) * 127.5f + (-0.05f * 255f)
     val contrastBrightness = ColorMatrix(
         floatArrayOf(
             contrast, 0f, 0f, 0f, translate,
@@ -37,7 +52,7 @@ private val ExerciseImageFilter: ColorFilter = run {
             0f, 0f, 0f, 1f, 0f
         )
     )
-    contrastBrightness.timesAssign(saturation) // apply saturation first, then contrast+brightness
+    contrastBrightness.timesAssign(saturation)
     ColorFilter.colorMatrix(contrastBrightness)
 }
 
@@ -45,12 +60,42 @@ private val ExerciseImageFilter: ColorFilter = run {
 fun AnimatedExerciseImage(
     imagePaths: List<String>,
     modifier: Modifier = Modifier,
-    contentScale: ContentScale = ContentScale.Crop
+    contentScale: ContentScale = ContentScale.Crop,
+    fallbackLabel: String? = null
 ) {
+    val colors = LocalDeltsColors.current
+
+    if (imagePaths.isEmpty()) {
+        Box(
+            modifier.background(
+                Brush.linearGradient(listOf(colors.panel, colors.card, colors.accent.copy(alpha = 0.12f)))
+            ),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(Icons.Filled.FitnessCenter, null, tint = colors.charcoal, modifier = Modifier.size(36.dp))
+                if (!fallbackLabel.isNullOrBlank()) {
+                    Text(
+                        fallbackLabel.uppercase(),
+                        color = colors.charcoal,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.2.sp
+                    )
+                }
+            }
+        }
+        return
+    }
+
+    val context = LocalContext.current
+    val animationsEnabled = remember {
+        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) != 0f
+    }
     var index by remember(imagePaths) { mutableIntStateOf(0) }
 
-    LaunchedEffect(imagePaths) {
-        if (imagePaths.size > 1) {
+    LaunchedEffect(imagePaths, animationsEnabled) {
+        if (imagePaths.size > 1 && animationsEnabled) {
             while (true) {
                 delay(850)
                 index = (index + 1) % imagePaths.size
@@ -58,8 +103,6 @@ fun AnimatedExerciseImage(
         }
     }
 
-    // Stack every frame; show only the current one at full opacity (instant swap,
-    // no cross-fade) — identical to the iOS ZStack + opacity(0/1) approach.
     Box(modifier) {
         imagePaths.forEachIndexed { i, path ->
             AsyncImage(

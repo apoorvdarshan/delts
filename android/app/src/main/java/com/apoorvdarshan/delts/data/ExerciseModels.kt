@@ -83,7 +83,8 @@ data class ExerciseItem(
         fun metadataTitle(value: String?): String {
             val trimmed = value?.trim().orEmpty()
             if (trimmed.isEmpty()) return "Unspecified"
-            return trimmed.split(" ").joinToString(" ") { word ->
+            // Split on runs of whitespace (drops empties) to match Swift's split(separator:" ").
+            return trimmed.split(Regex("\\s+")).joinToString(" ") { word ->
                 word.split("-").joinToString("-") { segment ->
                     if (segment.isEmpty()) {
                         ""
