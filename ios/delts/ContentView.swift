@@ -8,49 +8,23 @@
 import SwiftUI
 
 struct ContentView: View {
-    init() {
-        // Re-show onboarding on demand (testing) without touching any user data.
-        if ProcessInfo.processInfo.arguments.contains("--delts-show-onboarding") {
-            UserDefaults.standard.set(false, forKey: "delts_onboarding_complete")
-        }
-    }
-
     @State private var selectedTab: DeltsTab = .initialTab
     @StateObject private var updateChecker = AppUpdateChecker()
     @AppStorage(AppAppearance.storageKey) private var appAppearanceRaw = AppAppearance.system.rawValue
     @AppStorage(DeltsTheme.storageKey) private var deltsThemeRaw = DeltsTheme.lime.rawValue
-    @AppStorage("delts_onboarding_complete") private var onboardingComplete = false
 
     private var appAppearance: AppAppearance {
         AppAppearance(rawValue: appAppearanceRaw) ?? .system
     }
 
     var body: some View {
-        rootView
+        tabRoot
             .tint(Color.deltsAccent)
             .preferredColorScheme(appAppearance.preferredColorScheme)
             .id("\(appAppearanceRaw)-\(deltsThemeRaw)")
             .task {
                 await updateChecker.checkForUpdatesIfNeeded()
             }
-    }
-
-    @ViewBuilder
-    private var rootView: some View {
-        if !onboardingComplete && !skipsOnboardingForLaunchArgs {
-            OnboardingView()
-        } else {
-            tabRoot
-        }
-    }
-
-    private var skipsOnboardingForLaunchArgs: Bool {
-        let arguments = ProcessInfo.processInfo.arguments
-        if arguments.contains("--delts-tab") || arguments.contains("--delts-skip-onboarding") {
-            return true
-        }
-        let environment = ProcessInfo.processInfo.environment
-        return environment["DELTS_INITIAL_TAB"] != nil || environment["DELTS_SKIP_ONBOARDING"] != nil
     }
 
     private var tabRoot: some View {
