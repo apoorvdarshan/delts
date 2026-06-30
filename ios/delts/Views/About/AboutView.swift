@@ -189,6 +189,14 @@ struct AboutSettingsSection: View {
                         }
                     }
 
+                    AboutSection(title: String(localized: "Also by the developer")) {
+                        AboutRowStack {
+                            FudAIPromoRow {
+                                open(AboutLinks.fudAIURL)
+                            }
+                        }
+                    }
+
                     AboutSection(title: String(localized: "Legal")) {
                         AboutRowStack {
                             AboutActionRow(
@@ -338,6 +346,7 @@ private struct CheckForUpdatesRow: View {
 
 private enum AboutLinks {
     static let appStoreShareURL: URL? = URL(string: "https://apps.apple.com/app/id6778653288")
+    static let fudAIURL = URL(string: "https://apps.apple.com/app/id6758935726")
     static let contactEmail = "ad13dtu@gmail.com"
     static let contactEmailURL = URL(string: "mailto:\(contactEmail)")
     static let githubIssueURL = URL(string: "https://github.com/apoorvdarshan/delts/issues/new")
@@ -614,6 +623,104 @@ private extension UIWindowScene {
 private extension UIViewController {
     var deltsTopPresentedController: UIViewController {
         presentedViewController?.deltsTopPresentedController ?? self
+    }
+}
+
+// MARK: - Cross-promotion: "Fud AI" (same developer)
+
+/// Compact, App-Store-style cross-promotion row for the developer's other app,
+/// "Fud AI". It lives inside an `AboutRowStack` so it reads as "one more row" in
+/// the About list — restrained, not a banner ad. Shows the real rounded app
+/// icon, the app name + a one-line descriptor, and a quiet tinted "Get" capsule.
+/// Tapping anywhere opens the App Store listing (it does not install in place),
+/// so the combined VoiceOver label says "opens in App Store" explicitly.
+private struct FudAIPromoRow: View {
+    /// Opens the App Store listing. Pass `{ open(AboutLinks.fudAIURL) }`.
+    let action: () -> Void
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private let appName = "Fud AI" // proper noun — intentionally not localized
+    private let descriptor = String(localized: "AI calorie tracker")
+
+    var body: some View {
+        Button(action: action) {
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    // Keep the icon leading, but stack name / descriptor / Get into
+                    // a left-aligned column so nothing is crushed at large sizes.
+                    HStack(alignment: .top, spacing: 12) {
+                        icon
+                        VStack(alignment: .leading, spacing: 8) {
+                            labels
+                            getCapsule
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    HStack(spacing: 12) {
+                        icon
+                        labels
+                        Spacer(minLength: 12)
+                        getCapsule
+                    }
+                }
+            }
+            .padding(.vertical, 12) // AboutRowStack already supplies the .horizontal 14 inset
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .deltsPressable()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(String(localized: "Fud AI, AI calorie tracker, opens in App Store"))
+        .accessibilityAddTraits(.isLink)
+    }
+
+    /// The real 512px app icon (a pink broccoli on a solid black field). Because
+    /// it is dark-on-dark and not transparent, it is clipped to an iOS app-icon
+    /// rounded square (~22% radius) and given a hairline so its black edge reads
+    /// against the dark card. It is a smooth logo, so it uses default
+    /// interpolation — not `.interpolation(.none)`, which is for the pixel tips.
+    private var icon: some View {
+        Image("FudAIIcon")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 54, height: 54)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.deltsHairline.opacity(0.4), lineWidth: 0.5)
+            }
+    }
+
+    private var labels: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(appName)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.deltsCharcoal)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+
+            Text(descriptor)
+                .font(.subheadline)
+                .foregroundStyle(Color.deltsMutedText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// Quiet, App-Store-flavored affordance: a tinted accent capsule rather than a
+    /// loud solid CTA, so it stays restrained on the dark theme. "Get" is the App
+    /// Store's universal word for a free app; the honesty that it leaves the app
+    /// lives in the combined accessibility label. The capsule is hidden from VO.
+    private var getCapsule: some View {
+        Text("Get")
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(Color.deltsAccent)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 7)
+            .background(Capsule().fill(Color.deltsAccent.opacity(0.16)))
+            .accessibilityHidden(true)
     }
 }
 
