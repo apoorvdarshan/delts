@@ -1,58 +1,106 @@
 package com.apoorvdarshan.delts.ui.theme
 
-import android.app.Activity
-import android.os.Build
+import android.content.Context
+import android.content.SharedPreferences
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
+/** Provides the resolved Delts palette to the tree (the analog of `Color.delts*`). */
+val LocalDeltsColors = staticCompositionLocalOf {
+    deltsColors(DeltsTheme.LIME, dark = true, darker = false)
+}
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+/**
+ * App-wide theme + appearance state, persisted to SharedPreferences — the analog
+ * of the iOS `@AppStorage(DeltsTheme.storageKey)` / `AppAppearance.storageKey`.
+ */
+class ThemeController(private val prefs: SharedPreferences) {
+    var theme by mutableStateOf(readTheme())
+        private set
+    var appearance by mutableStateOf(readAppearance())
+        private set
 
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
-)
-
-@Composable
-fun DeltsTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
-) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    fun selectTheme(value: DeltsTheme) {
+        theme = value
+        prefs.edit().putString(KEY_THEME, value.name).apply()
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    fun selectAppearance(value: AppAppearance) {
+        appearance = value
+        prefs.edit().putString(KEY_APPEARANCE, value.name).apply()
+    }
+
+    private fun readTheme(): DeltsTheme =
+        runCatching { DeltsTheme.valueOf(prefs.getString(KEY_THEME, null) ?: "") }
+            .getOrDefault(DeltsTheme.LIME)
+
+    private fun readAppearance(): AppAppearance =
+        runCatching { AppAppearance.valueOf(prefs.getString(KEY_APPEARANCE, null) ?: "") }
+            .getOrDefault(AppAppearance.SYSTEM)
+
+    companion object {
+        private const val KEY_THEME = "delts_theme"
+        private const val KEY_APPEARANCE = "app_appearance"
+
+        fun from(context: Context): ThemeController =
+            ThemeController(context.getSharedPreferences("delts_prefs", Context.MODE_PRIVATE))
+    }
+}
+
+@Composable
+fun DeltsAppTheme(
+    controller: ThemeController,
+    content: @Composable () -> Unit
+) {
+    val systemDark = isSystemInDarkTheme()
+    val appearance = controller.appearance
+    val dark = when (appearance) {
+        AppAppearance.SYSTEM -> systemDark
+        AppAppearance.LIGHT -> false
+        AppAppearance.DARK, AppAppearance.DARKER -> true
+    }
+    val darker = appearance == AppAppearance.DARKER
+    val colors = deltsColors(controller.theme, dark, darker)
+
+    val scheme = if (dark) {
+        darkColorScheme(
+            primary = colors.accent,
+            onPrimary = colors.onAccent,
+            secondary = colors.secondaryAccent,
+            background = colors.background,
+            onBackground = colors.charcoal,
+            surface = colors.card,
+            onSurface = colors.charcoal,
+            surfaceVariant = colors.panel,
+            outline = colors.hairline
+        )
+    } else {
+        lightColorScheme(
+            primary = colors.accent,
+            onPrimary = colors.onAccent,
+            secondary = colors.secondaryAccent,
+            background = colors.background,
+            onBackground = colors.charcoal,
+            surface = colors.card,
+            onSurface = colors.charcoal,
+            surfaceVariant = colors.panel,
+            outline = colors.hairline
+        )
+    }
+
+    CompositionLocalProvider(LocalDeltsColors provides colors) {
+        MaterialTheme(
+            colorScheme = scheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }
