@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -45,6 +46,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.apoorvdarshan.delts.R
 import com.apoorvdarshan.delts.ui.components.ActionRow
 import com.apoorvdarshan.delts.ui.components.DeltsCard
@@ -104,19 +106,53 @@ private fun ThemeBlock(controller: ThemeController) {
     val colors = LocalDeltsColors.current
     Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(stringResource(R.string.pref_theme), color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             DeltsTheme.entries.forEach { theme ->
                 val selected = controller.theme == theme
-                Box(
+                val accent = theme.accent(colors.isDark)
+                Column(
                     Modifier
-                        .size(46.dp)
-                        .clip(CircleShape)
-                        .background(theme.accent(colors.isDark))
-                        .border(if (selected) 3.dp else 0.dp, colors.charcoal, CircleShape)
-                        .clickable { controller.selectTheme(theme) },
-                    contentAlignment = Alignment.Center
+                        .weight(1f)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (selected) accent.copy(alpha = 0.16f) else colors.panel.copy(alpha = 0.20f))
+                        .border(
+                            if (selected) 1.2.dp else 0.6.dp,
+                            if (selected) accent.copy(alpha = 0.78f) else colors.hairline.copy(alpha = 0.26f),
+                            RoundedCornerShape(16.dp)
+                        )
+                        .clickable { controller.selectTheme(theme) }
+                        .padding(vertical = 8.dp, horizontal = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    if (selected) Icon(Icons.Filled.Check, stringResource(theme.titleRes), tint = colors.onAccent, modifier = Modifier.size(20.dp))
+                    Box(contentAlignment = Alignment.TopEnd) {
+                        AsyncImage(
+                            model = "file:///android_asset/brand/theme_${theme.name.lowercase()}.png",
+                            contentDescription = stringResource(theme.titleRes),
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .border(0.6.dp, colors.hairline.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                        )
+                        if (selected) {
+                            Icon(
+                                Icons.Filled.Check, null, tint = accent,
+                                modifier = Modifier
+                                    .offset(x = 4.dp, y = (-4).dp)
+                                    .size(16.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Black.copy(alpha = 0.86f))
+                                    .padding(1.dp)
+                            )
+                        }
+                    }
+                    Text(
+                        stringResource(theme.titleRes),
+                        color = if (selected) colors.charcoal else colors.mutedText,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        maxLines = 1
+                    )
                 }
             }
         }

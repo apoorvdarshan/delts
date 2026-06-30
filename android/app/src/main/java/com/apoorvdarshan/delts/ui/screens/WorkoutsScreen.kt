@@ -62,7 +62,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.apoorvdarshan.delts.R
 import com.apoorvdarshan.delts.ui.components.AnimatedExerciseImage
 import com.apoorvdarshan.delts.data.ExerciseItem
@@ -194,9 +196,9 @@ private fun FilterRow(repo: ExerciseRepository, vm: WorkoutsViewModel) {
         val allLabel = stringResource(R.string.filter_all)
         FilterPill(stringResource(R.string.label_primary), Icons.Filled.GpsFixed, vm.primaryMuscles,
             stringResource(R.string.filter_all_count, repo.availablePrimaryMuscles.size),
-            repo.availablePrimaryMuscles) { vm.primaryMuscles = it }
+            repo.availablePrimaryMuscles, glyphFor = { muscleGlyphAsset(it) }) { vm.primaryMuscles = it }
         FilterPill(stringResource(R.string.label_secondary), Icons.Filled.GpsFixed, vm.secondaryMuscles, allLabel,
-            repo.availableSecondaryMuscles) { vm.secondaryMuscles = it }
+            repo.availableSecondaryMuscles, glyphFor = { muscleGlyphAsset(it) }) { vm.secondaryMuscles = it }
         FilterPill(stringResource(R.string.label_equipment), Icons.Filled.FitnessCenter, vm.equipment,
             stringResource(R.string.filter_all_count, repo.availableEquipment.size),
             repo.availableEquipment) { vm.equipment = it }
@@ -207,6 +209,31 @@ private fun FilterRow(repo: ExerciseRepository, vm: WorkoutsViewModel) {
     }
 }
 
+/** Maps a muscle name to its bundled glyph asset (mirrors iOS MuscleGlyphAsset). */
+fun muscleGlyphAsset(name: String): String {
+    val key = when (name.lowercase()) {
+        "abdominals" -> "abs"
+        "abductors" -> "abductors"
+        "adductors" -> "adductors"
+        "biceps" -> "biceps"
+        "triceps" -> "triceps"
+        "forearms" -> "forearms"
+        "calves" -> "calves"
+        "chest" -> "chest"
+        "glutes" -> "glutes"
+        "hamstrings" -> "hamstrings"
+        "lats" -> "lats"
+        "lower back" -> "lower_back"
+        "middle back" -> "middle_back"
+        "neck" -> "neck"
+        "quadriceps" -> "quadriceps"
+        "shoulders" -> "shoulders"
+        "traps" -> "traps"
+        else -> "generic"
+    }
+    return "file:///android_asset/muscle/muscle_icon_$key.png"
+}
+
 @Composable
 private fun FilterPill(
     title: String,
@@ -214,6 +241,7 @@ private fun FilterPill(
     selected: Set<String>,
     emptyDisplay: String,
     options: List<String>,
+    glyphFor: ((String) -> String)? = null,
     onSelect: (Set<String>) -> Unit
 ) {
     val colors = LocalDeltsColors.current
@@ -263,6 +291,16 @@ private fun FilterPill(
                 DropdownMenuItem(
                     text = { Text(option, color = if (isSel) colors.accent else colors.charcoal, fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal) },
                     onClick = { onSelect(setOf(option)); expanded = false },
+                    leadingIcon = glyphFor?.let { fn ->
+                        {
+                            AsyncImage(
+                                model = fn(option),
+                                contentDescription = null,
+                                colorFilter = ColorFilter.tint(if (isSel) colors.accent else colors.secondaryAccent),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    },
                     trailingIcon = if (isSel) {
                         { Icon(Icons.Filled.Check, null, tint = colors.accent) }
                     } else null

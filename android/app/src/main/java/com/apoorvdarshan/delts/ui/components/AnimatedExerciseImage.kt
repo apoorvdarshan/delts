@@ -1,7 +1,6 @@
 package com.apoorvdarshan.delts.ui.components
 
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -10,6 +9,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
@@ -18,9 +18,11 @@ import com.apoorvdarshan.delts.data.ExerciseRepository
 import kotlinx.coroutines.delay
 
 /**
- * Muted, cross-fading exercise visual — the Android analog of the iOS
- * `AnimatedExerciseVisual`. Cycles through the exercise's images every 0.85s and
- * applies the same desaturated / higher-contrast / slightly-darker treatment.
+ * Muted, cycling exercise visual — the Android analog of the iOS
+ * `AnimatedExerciseVisual`. Mirrors it exactly: all frames are stacked and the
+ * current one is shown at full opacity while the others are hidden (alpha 0),
+ * switching every 0.85s with an INSTANT cut (no fade, no blink), plus the same
+ * desaturated / higher-contrast / slightly-darker color treatment.
  */
 private val ExerciseImageFilter: ColorFilter = run {
     // saturation(0.30) then grayscale(0.36) ≈ net saturation ~0.19
@@ -56,15 +58,18 @@ fun AnimatedExerciseImage(
         }
     }
 
-    Crossfade(targetState = index, animationSpec = tween(durationMillis = 450), label = "exercise-frame") { i ->
-        val path = imagePaths.getOrNull(i)
-        if (path != null) {
+    // Stack every frame; show only the current one at full opacity (instant swap,
+    // no cross-fade) — identical to the iOS ZStack + opacity(0/1) approach.
+    Box(modifier) {
+        imagePaths.forEachIndexed { i, path ->
             AsyncImage(
                 model = ExerciseRepository.imageAssetUri(path),
                 contentDescription = null,
                 contentScale = contentScale,
                 colorFilter = ExerciseImageFilter,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(if (i == index) 1f else 0f)
             )
         }
     }
