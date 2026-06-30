@@ -83,7 +83,7 @@ fun AboutScreen(modifier: Modifier = Modifier) {
 
         SectionTitle(stringResource(R.string.sec_also_by))
         DeltsCard {
-            FudAIPromoRow { openUrl(context, "https://apps.apple.com/app/id6758935726") }
+            FudAIPromoRow { openUrl(context, "https://play.google.com/store/apps/details?id=com.apoorvdarshan.calorietracker") }
         }
 
         SectionTitle(stringResource(R.string.sec_legal))
