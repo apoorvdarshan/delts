@@ -276,6 +276,7 @@ private fun FilterPill(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
+            modifier = Modifier.heightIn(max = 340.dp),
             containerColor = colors.card,
             shape = RoundedCornerShape(16.dp)
         ) {
