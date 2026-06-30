@@ -61,7 +61,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
+import com.apoorvdarshan.delts.ui.components.AnimatedExerciseImage
 import com.apoorvdarshan.delts.data.ExerciseItem
 import com.apoorvdarshan.delts.data.ExerciseRepository
 import com.apoorvdarshan.delts.data.ExerciseSort
@@ -337,7 +337,6 @@ private fun ExerciseRow(item: ExerciseItem, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        val firstImage = item.imagePaths.firstOrNull()
         Box(
             Modifier
                 .size(104.dp)
@@ -345,12 +344,8 @@ private fun ExerciseRow(item: ExerciseItem, onClick: () -> Unit) {
                 .background(colors.panel.copy(alpha = 0.32f))
                 .border(0.5.dp, colors.hairline.copy(alpha = 0.38f), RoundedCornerShape(18.dp))
         ) {
-            if (firstImage != null) {
-                AsyncImage(
-                    model = ExerciseRepository.imageAssetUri(firstImage),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize()
-                )
+            if (item.imagePaths.isNotEmpty()) {
+                AnimatedExerciseImage(item.imagePaths, Modifier.fillMaxSize())
             }
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {

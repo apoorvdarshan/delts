@@ -40,9 +40,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.apoorvdarshan.delts.data.ExerciseItem
-import com.apoorvdarshan.delts.data.ExerciseRepository
+import com.apoorvdarshan.delts.ui.components.AnimatedExerciseImage
 import com.apoorvdarshan.delts.ui.theme.LocalDeltsColors
 
 @Composable
@@ -78,17 +77,9 @@ fun ExerciseDetailScreen(item: ExerciseItem, onBack: () -> Unit, modifier: Modif
 
         LazyColumn(Modifier.fillMaxSize()) {
             item(key = "hero") {
-                Box(Modifier.fillMaxWidth().height(294.dp)) {
-                    val firstImage = item.imagePaths.firstOrNull()
-                    if (firstImage != null) {
-                        AsyncImage(
-                            model = ExerciseRepository.imageAssetUri(firstImage),
-                            contentDescription = "${item.name} visual",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize().background(colors.panel.copy(alpha = 0.32f))
-                        )
-                    } else {
-                        Box(Modifier.fillMaxSize().background(colors.panel.copy(alpha = 0.32f)))
+                Box(Modifier.fillMaxWidth().height(294.dp).background(colors.panel.copy(alpha = 0.32f))) {
+                    if (item.imagePaths.isNotEmpty()) {
+                        AnimatedExerciseImage(item.imagePaths, Modifier.fillMaxSize())
                     }
 
                     if (showMetrics) {
