@@ -245,19 +245,25 @@ private fun FilterPill(
             }
             Icon(Icons.Filled.KeyboardArrowDown, null, tint = colors.mutedText, modifier = Modifier.size(16.dp))
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            containerColor = colors.card,
+            shape = RoundedCornerShape(16.dp)
+        ) {
             DropdownMenuItem(
-                text = { Text(emptyDisplay) },
+                text = { Text(emptyDisplay, color = if (!active) colors.accent else colors.charcoal, fontWeight = if (!active) FontWeight.Bold else FontWeight.Normal) },
                 onClick = { onSelect(emptySet()); expanded = false },
                 trailingIcon = if (!active) {
                     { Icon(Icons.Filled.Check, null, tint = colors.accent) }
                 } else null
             )
             options.forEach { option ->
+                val isSel = selected.contains(option)
                 DropdownMenuItem(
-                    text = { Text(option) },
+                    text = { Text(option, color = if (isSel) colors.accent else colors.charcoal, fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal) },
                     onClick = { onSelect(setOf(option)); expanded = false },
-                    trailingIcon = if (selected.contains(option)) {
+                    trailingIcon = if (isSel) {
                         { Icon(Icons.Filled.Check, null, tint = colors.accent) }
                     } else null
                 )
@@ -298,12 +304,18 @@ private fun ResultsHeader(
                     tint = if (count == 0) colors.mutedText else if (selectedSort == ExerciseSort.NAME) colors.mutedText else colors.accent,
                     enabled = count > 0, onClick = { sortExpanded = true }
                 )
-                DropdownMenu(expanded = sortExpanded, onDismissRequest = { sortExpanded = false }) {
+                DropdownMenu(
+                    expanded = sortExpanded,
+                    onDismissRequest = { sortExpanded = false },
+                    containerColor = colors.card,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
                     ExerciseSort.entries.forEach { sort ->
+                        val isSel = selectedSort == sort
                         DropdownMenuItem(
-                            text = { Text(stringResource(sort.titleRes)) },
+                            text = { Text(stringResource(sort.titleRes), color = if (isSel) colors.accent else colors.charcoal, fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal) },
                             onClick = { onSort(sort); sortExpanded = false },
-                            trailingIcon = if (selectedSort == sort) {
+                            trailingIcon = if (isSel) {
                                 { Icon(Icons.Filled.Check, null, tint = colors.accent) }
                             } else null
                         )
