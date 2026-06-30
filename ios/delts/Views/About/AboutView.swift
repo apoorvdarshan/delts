@@ -22,9 +22,29 @@ struct AboutView: View {
     }
 }
 
-/// Which half of the settings/about content a section list renders.
+struct SupportView: View {
+    @ObservedObject var updateChecker: AppUpdateChecker
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                AboutSettingsSection(updateChecker: updateChecker, scope: .support)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 14)
+                    .padding(.bottom, 120)
+            }
+            .deltsScreen()
+            .navigationTitle("Support")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
+        }
+    }
+}
+
+/// Which of the three meta tabs a section list renders into.
 enum AboutSectionScope {
     case settings
+    case support
     case about
 }
 
@@ -37,7 +57,7 @@ struct AboutSettingsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            if scope != .about {
+            if scope == .settings {
                     AboutSection(title: String(localized: "Release")) {
                         AboutRowStack {
                             CheckForUpdatesRow(updateChecker: updateChecker, version: appVersionText)
@@ -46,24 +66,6 @@ struct AboutSettingsSection: View {
                                 version: appVersionText,
                                 isExpanded: $whatsNewExpanded
                             )
-                            AboutDivider()
-                            AboutActionRow(
-                                title: String(localized: "Rate Delts"),
-                                systemImage: "star.fill",
-                                value: String(localized: "Native prompt"),
-                                tint: .deltsSecondaryAccent
-                            ) {
-                                requestAppReview()
-                            }
-                            AboutDivider()
-                            AboutActionRow(
-                                title: String(localized: "Share Delts"),
-                                systemImage: "square.and.arrow.up",
-                                value: String(localized: "App Store link"),
-                                tint: .deltsSecondaryAccent
-                            ) {
-                                shareApp()
-                            }
                         }
                     }
 
@@ -90,7 +92,7 @@ struct AboutSettingsSection: View {
                     }
             }
 
-            if scope != .settings {
+            if scope == .support {
                     AboutSection(title: String(localized: "Connect")) {
                         AboutRowStack {
                             AboutActionRow(
@@ -149,12 +151,36 @@ struct AboutSettingsSection: View {
                         }
                     }
 
+                    AboutSection(title: String(localized: "Spread the Word")) {
+                        AboutRowStack {
+                            AboutActionRow(
+                                title: String(localized: "Rate Delts"),
+                                systemImage: "star.fill",
+                                value: String(localized: "Native prompt"),
+                                tint: .deltsSecondaryAccent
+                            ) {
+                                requestAppReview()
+                            }
+                            AboutDivider()
+                            AboutActionRow(
+                                title: String(localized: "Share Delts"),
+                                systemImage: "square.and.arrow.up",
+                                value: String(localized: "App Store link"),
+                                tint: .deltsSecondaryAccent
+                            ) {
+                                shareApp()
+                            }
+                        }
+                    }
+
                     AboutSection(title: String(localized: "Support")) {
                         AboutRowStack {
                             SupportTipPicker()
                         }
                     }
+            }
 
+            if scope == .about {
                     AboutSection(title: String(localized: "Built by")) {
                         VStack(spacing: 14) {
                             AboutRowStack {

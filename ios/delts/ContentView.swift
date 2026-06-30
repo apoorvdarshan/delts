@@ -38,6 +38,10 @@ struct ContentView: View {
                 .tag(DeltsTab.settings)
                 .badge(updateChecker.isUpdateAvailable ? Text("●") : nil)
 
+            SupportView(updateChecker: updateChecker)
+                .tabItem { Label(DeltsTab.support.title, systemImage: DeltsTab.support.systemImage) }
+                .tag(DeltsTab.support)
+
             AboutView(updateChecker: updateChecker)
                 .tabItem { Label(DeltsTab.about.title, systemImage: DeltsTab.about.systemImage) }
                 .tag(DeltsTab.about)
@@ -49,6 +53,7 @@ struct ContentView: View {
 private enum DeltsTab: String, CaseIterable, Identifiable {
     case workouts
     case settings
+    case support
     case about
 
     var id: String { rawValue }
@@ -73,6 +78,7 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
         switch self {
         case .workouts: return String(localized: "Workouts")
         case .settings: return String(localized: "Settings")
+        case .support: return String(localized: "Support")
         case .about: return String(localized: "About")
         }
     }
@@ -81,6 +87,7 @@ private enum DeltsTab: String, CaseIterable, Identifiable {
         switch self {
         case .workouts: return "list.clipboard.fill"
         case .settings: return "gearshape.fill"
+        case .support: return "heart.fill"
         case .about: return "info.circle.fill"
         }
     }
