@@ -1,52 +1,405 @@
 package com.apoorvdarshan.delts.ui.screens
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.GpsFixed
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.apoorvdarshan.delts.data.ExerciseItem
 import com.apoorvdarshan.delts.data.ExerciseRepository
+import com.apoorvdarshan.delts.data.ExerciseSort
+import com.apoorvdarshan.delts.ui.WorkoutsViewModel
 import com.apoorvdarshan.delts.ui.theme.LocalDeltsColors
 
 @Composable
 fun WorkoutsScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val repo = remember { ExerciseRepository.get(context) }
-    val colors = LocalDeltsColors.current
+    val vm: WorkoutsViewModel = viewModel()
 
-    Column(modifier = modifier.fillMaxSize()) {
-        Text(
-            text = "Workouts",
-            color = colors.charcoal,
-            fontWeight = FontWeight.Bold,
-            fontSize = 28.sp,
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp)
+    val openItem = vm.openExerciseId?.let { id -> repo.exercises.firstOrNull { it.id == id } }
+    if (openItem != null) {
+        BackHandler { vm.openExerciseId = null }
+        ExerciseDetailScreen(item = openItem, onBack = { vm.openExerciseId = null }, modifier = modifier)
+        return
+    }
+
+    val items = remember(
+        vm.search, vm.levels, vm.equipment, vm.primaryMuscles, vm.secondaryMuscles,
+        vm.forces, vm.mechanics, vm.categories, vm.sort
+    ) {
+        repo.filtered(
+            levels = vm.levels,
+            equipment = vm.equipment,
+            primaryMuscles = vm.primaryMuscles,
+            secondaryMuscles = vm.secondaryMuscles,
+            forces = vm.forces,
+            mechanics = vm.mechanics,
+            categories = vm.categories,
+            sort = vm.sort,
+            searchText = vm.search
         )
-        Text(
-            text = "${repo.exercises.size} exercises",
-            color = colors.mutedText,
-            fontSize = 14.sp,
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 8.dp)
-        )
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(repo.exercises, key = { it.id }) { item ->
-                Text(
-                    text = item.name,
-                    color = colors.charcoal,
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
-                )
-                HorizontalDivider(color = colors.hairline.copy(alpha = 0.28f), thickness = 0.5.dp)
+    }
+
+    LazyColumn(modifier = modifier.fillMaxSize()) {
+        item(key = "filters") {
+            Column(
+                Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                SearchPill(value = vm.search, onValueChange = { vm.search = it })
+                FilterRow(repo, vm)
             }
         }
+        item(key = "header") {
+            ResultsHeader(
+                count = items.size,
+                sortTitle = vm.sort.title,
+                canReset = vm.hasActiveFilters,
+                onReset = vm::reset,
+                selectedSort = vm.sort,
+                onSort = { vm.sort = it },
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+            )
+        }
+        if (items.isEmpty()) {
+            item(key = "empty") { EmptyState() }
+        } else {
+            items(items, key = { it.id }) { item ->
+                ExerciseRow(item = item, onClick = { vm.openExerciseId = item.id })
+                HorizontalDivider(
+                    color = LocalDeltsColors.current.hairline.copy(alpha = 0.28f),
+                    thickness = 0.5.dp,
+                    modifier = Modifier.padding(start = 144.dp, end = 20.dp)
+                )
+            }
+        }
+        item(key = "bottompad") { Spacer(Modifier.size(24.dp)) }
+    }
+}
+
+@Composable
+private fun SearchPill(value: String, onValueChange: (String) -> Unit) {
+    val colors = LocalDeltsColors.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 50.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(colors.panel.copy(alpha = 0.62f))
+            .border(0.5.dp, colors.hairline.copy(alpha = 0.52f), RoundedCornerShape(22.dp))
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            Icons.Filled.Search,
+            contentDescription = null,
+            tint = if (value.isEmpty()) colors.secondaryAccent else colors.accent,
+            modifier = Modifier.size(18.dp)
+        )
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = TextStyle(color = colors.charcoal, fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+            cursorBrush = SolidColor(colors.accent),
+            decorationBox = { inner ->
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+                    if (value.isEmpty()) {
+                        Text("Search", color = colors.mutedText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                    inner()
+                }
+            },
+            modifier = Modifier.weight(1f)
+        )
+        if (value.isNotEmpty()) {
+            Icon(
+                Icons.Filled.Cancel,
+                contentDescription = "Clear search",
+                tint = colors.mutedText,
+                modifier = Modifier.size(18.dp).clip(CircleShape).clickable { onValueChange("") }
+            )
+        }
+    }
+}
+
+@Composable
+private fun FilterRow(repo: ExerciseRepository, vm: WorkoutsViewModel) {
+    Row(
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(9.dp)
+    ) {
+        FilterPill("Primary", Icons.Filled.GpsFixed, vm.primaryMuscles, "All ${repo.availablePrimaryMuscles.size}",
+            repo.availablePrimaryMuscles) { vm.primaryMuscles = it }
+        FilterPill("Secondary", Icons.Filled.GpsFixed, vm.secondaryMuscles, "All",
+            repo.availableSecondaryMuscles) { vm.secondaryMuscles = it }
+        FilterPill("Equipment", Icons.Filled.FitnessCenter, vm.equipment, "All ${repo.availableEquipment.size}",
+            repo.availableEquipment) { vm.equipment = it }
+        FilterPill("Level", Icons.Filled.BarChart, vm.levels, "All", repo.availableLevels) { vm.levels = it }
+        FilterPill("Force", Icons.Filled.SwapHoriz, vm.forces, "All", repo.availableForces) { vm.forces = it }
+        FilterPill("Mechanic", Icons.Filled.Settings, vm.mechanics, "All", repo.availableMechanics) { vm.mechanics = it }
+        FilterPill("Category", Icons.Filled.Tag, vm.categories, "All", repo.availableCategories) { vm.categories = it }
+    }
+}
+
+@Composable
+private fun FilterPill(
+    title: String,
+    icon: ImageVector,
+    selected: Set<String>,
+    emptyDisplay: String,
+    options: List<String>,
+    onSelect: (Set<String>) -> Unit
+) {
+    val colors = LocalDeltsColors.current
+    var expanded by remember { mutableStateOf(false) }
+    val active = selected.isNotEmpty()
+    val value = if (active) selected.first() else emptyDisplay
+
+    Box {
+        Row(
+            modifier = Modifier
+                .heightIn(min = 46.dp)
+                .widthIn(min = 112.dp)
+                .clip(RoundedCornerShape(17.dp))
+                .background(colors.panel.copy(alpha = if (active) 0.46f else 0.30f))
+                .border(
+                    0.5.dp,
+                    (if (active) colors.accent else colors.hairline).copy(alpha = if (active) 0.42f else 0.30f),
+                    RoundedCornerShape(17.dp)
+                )
+                .clickable { expanded = true }
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            Icon(icon, null, tint = if (active) colors.accent else colors.secondaryAccent, modifier = Modifier.size(18.dp))
+            Column {
+                Text(title.uppercase(), color = colors.mutedText, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(value, color = colors.charcoal, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            }
+            Icon(Icons.Filled.KeyboardArrowDown, null, tint = colors.mutedText, modifier = Modifier.size(16.dp))
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(emptyDisplay) },
+                onClick = { onSelect(emptySet()); expanded = false },
+                trailingIcon = if (!active) {
+                    { Icon(Icons.Filled.Check, null, tint = colors.accent) }
+                } else null
+            )
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = { onSelect(setOf(option)); expanded = false },
+                    trailingIcon = if (selected.contains(option)) {
+                        { Icon(Icons.Filled.Check, null, tint = colors.accent) }
+                    } else null
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResultsHeader(
+    count: Int,
+    sortTitle: String,
+    canReset: Boolean,
+    onReset: () -> Unit,
+    selectedSort: ExerciseSort,
+    onSort: (ExerciseSort) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = LocalDeltsColors.current
+    var sortExpanded by remember { mutableStateOf(false) }
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                "$count ${if (count == 1) "exercise" else "exercises"}",
+                color = colors.charcoal, fontSize = 17.sp, fontWeight = FontWeight.SemiBold
+            )
+            Text(sortTitle, color = colors.mutedText, fontSize = 12.sp)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            CapsuleButton(
+                text = "Reset", icon = Icons.Filled.Refresh,
+                tint = if (canReset) colors.secondaryAccent else colors.mutedText,
+                enabled = canReset, onClick = onReset
+            )
+            Box {
+                CapsuleButton(
+                    text = "Sort", icon = Icons.Filled.SwapVert,
+                    tint = if (count == 0) colors.mutedText else if (selectedSort == ExerciseSort.NAME) colors.mutedText else colors.accent,
+                    enabled = count > 0, onClick = { sortExpanded = true }
+                )
+                DropdownMenu(expanded = sortExpanded, onDismissRequest = { sortExpanded = false }) {
+                    ExerciseSort.entries.forEach { sort ->
+                        DropdownMenuItem(
+                            text = { Text(sort.title) },
+                            onClick = { onSort(sort); sortExpanded = false },
+                            trailingIcon = if (selectedSort == sort) {
+                                { Icon(Icons.Filled.Check, null, tint = colors.accent) }
+                            } else null
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CapsuleButton(text: String, icon: ImageVector, tint: Color, enabled: Boolean, onClick: () -> Unit) {
+    val colors = LocalDeltsColors.current
+    Row(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(colors.panel.copy(alpha = 0.30f))
+            .border(0.5.dp, colors.hairline.copy(alpha = 0.30f), CircleShape)
+            .then(if (enabled) Modifier.clickable { onClick() } else Modifier)
+            .padding(horizontal = 11.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Icon(icon, null, tint = tint, modifier = Modifier.size(15.dp))
+        Text(text, color = tint, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun ExerciseRow(item: ExerciseItem, onClick: () -> Unit) {
+    val colors = LocalDeltsColors.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(horizontal = 20.dp, vertical = 15.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        val firstImage = item.imagePaths.firstOrNull()
+        Box(
+            Modifier
+                .size(104.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(colors.panel.copy(alpha = 0.32f))
+                .border(0.5.dp, colors.hairline.copy(alpha = 0.38f), RoundedCornerShape(18.dp))
+        ) {
+            if (firstImage != null) {
+                AsyncImage(
+                    model = ExerciseRepository.imageAssetUri(firstImage),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            Text(item.name, color = colors.charcoal, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Tag(item.primaryMusclesTitle, Icons.Filled.GpsFixed)
+                Tag(item.equipment, Icons.Filled.FitnessCenter)
+                Tag(item.level, Icons.Filled.BarChart)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Icon(Icons.Filled.Storage, null, tint = colors.secondaryAccent, modifier = Modifier.size(13.dp))
+                Text(item.databaseMetadataSummary, color = colors.secondaryAccent, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = colors.hairline, modifier = Modifier.size(20.dp))
+    }
+}
+
+@Composable
+private fun Tag(title: String, icon: ImageVector) {
+    val colors = LocalDeltsColors.current
+    Row(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(colors.panel.copy(alpha = 0.28f))
+            .border(0.5.dp, colors.hairline.copy(alpha = 0.22f), CircleShape)
+            .padding(horizontal = 9.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(icon, null, tint = colors.mutedText, modifier = Modifier.size(11.dp))
+        Text(title, color = colors.mutedText, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+@Composable
+private fun EmptyState() {
+    val colors = LocalDeltsColors.current
+    Column(
+        Modifier.fillMaxWidth().heightIn(min = 240.dp).padding(horizontal = 32.dp, vertical = 48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text("No exercises match", color = colors.charcoal, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Text(
+            "Try a different muscle, equipment, or search — or reset the filters above.",
+            color = colors.mutedText, fontSize = 14.sp,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
     }
 }
