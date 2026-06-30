@@ -1,17 +1,18 @@
 package com.apoorvdarshan.delts.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import com.apoorvdarshan.delts.R
 
 /** sRGB component helper mirroring the iOS UIColor(red:green:blue:) values 1:1. */
 private fun rgb(r: Double, g: Double, b: Double) = Color(r.toFloat(), g.toFloat(), b.toFloat(), 1f)
 
 /** The five accent themes, mirroring iOS `DeltsTheme`. */
-enum class DeltsTheme(val title: String) {
-    LIME("Lime"),
-    CYAN("Cyan"),
-    PINK("Pink"),
-    AMBER("Amber"),
-    VIOLET("Violet");
+enum class DeltsTheme(val titleRes: Int) {
+    LIME(R.string.theme_lime),
+    CYAN(R.string.theme_cyan),
+    PINK(R.string.theme_pink),
+    AMBER(R.string.theme_amber),
+    VIOLET(R.string.theme_violet);
 
     fun accent(dark: Boolean): Color = when (this) {
         LIME -> if (dark) rgb(0.70, 0.94, 0.26) else rgb(0.374, 0.565, 0.075)
@@ -31,11 +32,11 @@ enum class DeltsTheme(val title: String) {
 }
 
 /** Display appearance options, mirroring iOS `AppAppearance`. */
-enum class AppAppearance(val title: String) {
-    SYSTEM("System"),
-    LIGHT("Light"),
-    DARK("Dark"),
-    DARKER("Darker")
+enum class AppAppearance(val titleRes: Int) {
+    SYSTEM(R.string.appearance_system),
+    LIGHT(R.string.appearance_light),
+    DARK(R.string.appearance_dark),
+    DARKER(R.string.appearance_darker)
 }
 
 /** Resolved Delts palette for the current theme + appearance (the iOS `Color.delts*` set). */

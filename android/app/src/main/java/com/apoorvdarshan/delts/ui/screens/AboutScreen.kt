@@ -31,10 +31,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.apoorvdarshan.delts.R
 import com.apoorvdarshan.delts.ui.components.ActionRow
 import com.apoorvdarshan.delts.ui.components.DeltsCard
 import com.apoorvdarshan.delts.ui.components.RowDivider
@@ -53,9 +55,9 @@ fun AboutScreen(modifier: Modifier = Modifier) {
             .padding(horizontal = 20.dp)
             .padding(top = 8.dp, bottom = 32.dp)
     ) {
-        SectionTitle("Built by")
+        SectionTitle(stringResource(R.string.sec_built_by))
         DeltsCard {
-            ActionRow("Apoorv Darshan", Icons.Filled.Person, "Creator") {
+            ActionRow("Apoorv Darshan", Icons.Filled.Person, stringResource(R.string.creator)) {
                 openUrl(context, "https://x.com/apoorvdarshan")
             }
         }
@@ -72,25 +74,25 @@ fun AboutScreen(modifier: Modifier = Modifier) {
         ) {
             AsyncImage(
                 model = "file:///android_asset/brand/ace_badge.png",
-                contentDescription = "ACE Certified Personal Trainer",
+                contentDescription = stringResource(R.string.ace_cert),
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.size(104.dp)
             )
-            Text("ACE Certified Personal Trainer", color = colors.mutedText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.ace_cert), color = colors.mutedText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         }
 
-        SectionTitle("Also by the developer")
+        SectionTitle(stringResource(R.string.sec_also_by))
         DeltsCard {
             FudAIPromoRow { openUrl(context, "https://apps.apple.com/app/id6758935726") }
         }
 
-        SectionTitle("Legal")
+        SectionTitle(stringResource(R.string.sec_legal))
         DeltsCard {
-            ActionRow("Privacy Policy", Icons.Filled.Shield, "delts.fit/privacy") {
+            ActionRow(stringResource(R.string.privacy_policy), Icons.Filled.Shield, "delts.fit/privacy") {
                 openUrl(context, "https://delts.fit/privacy.html")
             }
             RowDivider()
-            ActionRow("Terms", Icons.Filled.Description, "delts.fit/terms") {
+            ActionRow(stringResource(R.string.terms), Icons.Filled.Description, "delts.fit/terms") {
                 openUrl(context, "https://delts.fit/terms.html")
             }
         }
@@ -116,7 +118,7 @@ private fun FudAIPromoRow(onClick: () -> Unit) {
         )
         Column(Modifier.weight(1f)) {
             Text("Fud AI", color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-            Text("AI calorie tracker", color = colors.mutedText, fontSize = 14.sp)
+            Text(stringResource(R.string.fud_descriptor), color = colors.mutedText, fontSize = 14.sp)
         }
         Box(
             Modifier
@@ -124,7 +126,7 @@ private fun FudAIPromoRow(onClick: () -> Unit) {
                 .background(colors.accent.copy(alpha = 0.16f))
                 .padding(horizontal = 16.dp, vertical = 7.dp)
         ) {
-            Text("Get", color = colors.accent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.get), color = colors.accent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

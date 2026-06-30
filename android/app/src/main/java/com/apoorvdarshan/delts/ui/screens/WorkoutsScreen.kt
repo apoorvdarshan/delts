@@ -54,6 +54,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -61,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.apoorvdarshan.delts.R
 import com.apoorvdarshan.delts.ui.components.AnimatedExerciseImage
 import com.apoorvdarshan.delts.data.ExerciseItem
 import com.apoorvdarshan.delts.data.ExerciseRepository
@@ -111,7 +114,7 @@ fun WorkoutsScreen(modifier: Modifier = Modifier) {
         item(key = "header") {
             ResultsHeader(
                 count = items.size,
-                sortTitle = vm.sort.title,
+                sortTitle = stringResource(vm.sort.titleRes),
                 canReset = vm.hasActiveFilters,
                 onReset = vm::reset,
                 selectedSort = vm.sort,
@@ -164,7 +167,7 @@ private fun SearchPill(value: String, onValueChange: (String) -> Unit) {
             decorationBox = { inner ->
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
                     if (value.isEmpty()) {
-                        Text("Search", color = colors.mutedText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.search), color = colors.mutedText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                     }
                     inner()
                 }
@@ -174,7 +177,7 @@ private fun SearchPill(value: String, onValueChange: (String) -> Unit) {
         if (value.isNotEmpty()) {
             Icon(
                 Icons.Filled.Cancel,
-                contentDescription = "Clear search",
+                contentDescription = stringResource(R.string.clear_search),
                 tint = colors.mutedText,
                 modifier = Modifier.size(18.dp).clip(CircleShape).clickable { onValueChange("") }
             )
@@ -188,16 +191,19 @@ private fun FilterRow(repo: ExerciseRepository, vm: WorkoutsViewModel) {
         modifier = Modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(9.dp)
     ) {
-        FilterPill("Primary", Icons.Filled.GpsFixed, vm.primaryMuscles, "All ${repo.availablePrimaryMuscles.size}",
+        val allLabel = stringResource(R.string.filter_all)
+        FilterPill(stringResource(R.string.label_primary), Icons.Filled.GpsFixed, vm.primaryMuscles,
+            stringResource(R.string.filter_all_count, repo.availablePrimaryMuscles.size),
             repo.availablePrimaryMuscles) { vm.primaryMuscles = it }
-        FilterPill("Secondary", Icons.Filled.GpsFixed, vm.secondaryMuscles, "All",
+        FilterPill(stringResource(R.string.label_secondary), Icons.Filled.GpsFixed, vm.secondaryMuscles, allLabel,
             repo.availableSecondaryMuscles) { vm.secondaryMuscles = it }
-        FilterPill("Equipment", Icons.Filled.FitnessCenter, vm.equipment, "All ${repo.availableEquipment.size}",
+        FilterPill(stringResource(R.string.label_equipment), Icons.Filled.FitnessCenter, vm.equipment,
+            stringResource(R.string.filter_all_count, repo.availableEquipment.size),
             repo.availableEquipment) { vm.equipment = it }
-        FilterPill("Level", Icons.Filled.BarChart, vm.levels, "All", repo.availableLevels) { vm.levels = it }
-        FilterPill("Force", Icons.Filled.SwapHoriz, vm.forces, "All", repo.availableForces) { vm.forces = it }
-        FilterPill("Mechanic", Icons.Filled.Settings, vm.mechanics, "All", repo.availableMechanics) { vm.mechanics = it }
-        FilterPill("Category", Icons.Filled.Tag, vm.categories, "All", repo.availableCategories) { vm.categories = it }
+        FilterPill(stringResource(R.string.label_level), Icons.Filled.BarChart, vm.levels, allLabel, repo.availableLevels) { vm.levels = it }
+        FilterPill(stringResource(R.string.label_force), Icons.Filled.SwapHoriz, vm.forces, allLabel, repo.availableForces) { vm.forces = it }
+        FilterPill(stringResource(R.string.label_mechanic), Icons.Filled.Settings, vm.mechanics, allLabel, repo.availableMechanics) { vm.mechanics = it }
+        FilterPill(stringResource(R.string.label_category), Icons.Filled.Tag, vm.categories, allLabel, repo.availableCategories) { vm.categories = it }
     }
 }
 
@@ -275,27 +281,27 @@ private fun ResultsHeader(
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         Column(Modifier.weight(1f)) {
             Text(
-                "$count ${if (count == 1) "exercise" else "exercises"}",
+                pluralStringResource(R.plurals.exercises_count, count, count),
                 color = colors.charcoal, fontSize = 17.sp, fontWeight = FontWeight.SemiBold
             )
             Text(sortTitle, color = colors.mutedText, fontSize = 12.sp)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             CapsuleButton(
-                text = "Reset", icon = Icons.Filled.Refresh,
+                text = stringResource(R.string.reset), icon = Icons.Filled.Refresh,
                 tint = if (canReset) colors.secondaryAccent else colors.mutedText,
                 enabled = canReset, onClick = onReset
             )
             Box {
                 CapsuleButton(
-                    text = "Sort", icon = Icons.Filled.SwapVert,
+                    text = stringResource(R.string.sort), icon = Icons.Filled.SwapVert,
                     tint = if (count == 0) colors.mutedText else if (selectedSort == ExerciseSort.NAME) colors.mutedText else colors.accent,
                     enabled = count > 0, onClick = { sortExpanded = true }
                 )
                 DropdownMenu(expanded = sortExpanded, onDismissRequest = { sortExpanded = false }) {
                     ExerciseSort.entries.forEach { sort ->
                         DropdownMenuItem(
-                            text = { Text(sort.title) },
+                            text = { Text(stringResource(sort.titleRes)) },
                             onClick = { onSort(sort); sortExpanded = false },
                             trailingIcon = if (selectedSort == sort) {
                                 { Icon(Icons.Filled.Check, null, tint = colors.accent) }
@@ -389,9 +395,9 @@ private fun EmptyState() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text("No exercises match", color = colors.charcoal, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.empty_title), color = colors.charcoal, fontSize = 17.sp, fontWeight = FontWeight.Bold)
         Text(
-            "Try a different muscle, equipment, or search — or reset the filters above.",
+            stringResource(R.string.empty_subtitle),
             color = colors.mutedText, fontSize = 14.sp,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center

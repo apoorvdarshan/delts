@@ -20,6 +20,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import com.apoorvdarshan.delts.R
 import com.apoorvdarshan.delts.ui.screens.AboutScreen
 import com.apoorvdarshan.delts.ui.screens.SettingsScreen
 import com.apoorvdarshan.delts.ui.screens.SupportScreen
@@ -27,11 +29,11 @@ import com.apoorvdarshan.delts.ui.screens.WorkoutsScreen
 import com.apoorvdarshan.delts.ui.theme.LocalDeltsColors
 import com.apoorvdarshan.delts.ui.theme.ThemeController
 
-enum class DeltsTab(val title: String, val icon: ImageVector) {
-    WORKOUTS("Workouts", Icons.AutoMirrored.Filled.List),
-    SETTINGS("Settings", Icons.Filled.Settings),
-    SUPPORT("Support", Icons.Filled.Favorite),
-    ABOUT("About", Icons.Filled.Info)
+enum class DeltsTab(val titleRes: Int, val icon: ImageVector) {
+    WORKOUTS(R.string.tab_workouts, Icons.AutoMirrored.Filled.List),
+    SETTINGS(R.string.tab_settings, Icons.Filled.Settings),
+    SUPPORT(R.string.tab_support, Icons.Filled.Favorite),
+    ABOUT(R.string.tab_about, Icons.Filled.Info)
 }
 
 @Composable
@@ -45,11 +47,12 @@ fun DeltsApp(controller: ThemeController) {
         bottomBar = {
             NavigationBar(containerColor = colors.card) {
                 DeltsTab.entries.forEach { entry ->
+                    val title = stringResource(entry.titleRes)
                     NavigationBarItem(
                         selected = entry == tab,
                         onClick = { tab = entry },
-                        icon = { Icon(entry.icon, contentDescription = entry.title) },
-                        label = { Text(entry.title) },
+                        icon = { Icon(entry.icon, contentDescription = title) },
+                        label = { Text(title) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = colors.accent,
                             selectedTextColor = colors.accent,

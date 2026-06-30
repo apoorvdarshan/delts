@@ -36,10 +36,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.apoorvdarshan.delts.R
 import com.apoorvdarshan.delts.data.ExerciseItem
 import com.apoorvdarshan.delts.ui.components.AnimatedExerciseImage
 import com.apoorvdarshan.delts.ui.theme.LocalDeltsColors
@@ -60,7 +61,7 @@ fun ExerciseDetailScreen(item: ExerciseItem, onBack: () -> Unit, modifier: Modif
         ) {
             Icon(
                 Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
+                contentDescription = stringResource(R.string.back),
                 tint = colors.accent,
                 modifier = Modifier.size(40.dp).clip(CircleShape).clickable { onBack() }.padding(8.dp)
             )
@@ -90,7 +91,7 @@ fun ExerciseDetailScreen(item: ExerciseItem, onBack: () -> Unit, modifier: Modif
                     // Info toggle (top-right)
                     Icon(
                         Icons.Filled.Info,
-                        contentDescription = if (showMetrics) "Hide details" else "Show details",
+                        contentDescription = stringResource(if (showMetrics) R.string.hide_details else R.string.show_details),
                         tint = colors.accent,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
@@ -117,16 +118,16 @@ fun ExerciseDetailScreen(item: ExerciseItem, onBack: () -> Unit, modifier: Modif
 private fun MetricGrid(item: ExerciseItem, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MetricCard("Level", item.level, Icons.Filled.BarChart, Modifier.weight(1f))
-            MetricCard("Category", item.category, Icons.Filled.Tag, Modifier.weight(1f))
+            MetricCard(stringResource(R.string.label_level), item.level, Icons.Filled.BarChart, Modifier.weight(1f))
+            MetricCard(stringResource(R.string.label_category), item.category, Icons.Filled.Tag, Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MetricCard("Force", item.force, Icons.Filled.SwapHoriz, Modifier.weight(1f))
-            MetricCard("Mechanic", item.mechanic, Icons.Filled.Settings, Modifier.weight(1f))
+            MetricCard(stringResource(R.string.label_force), item.force, Icons.Filled.SwapHoriz, Modifier.weight(1f))
+            MetricCard(stringResource(R.string.label_mechanic), item.mechanic, Icons.Filled.Settings, Modifier.weight(1f))
         }
-        MetricCard("Primary", item.primaryMusclesTitle, Icons.Filled.GpsFixed, Modifier.fillMaxWidth())
-        MetricCard("Secondary", item.secondaryMusclesTitle, Icons.Filled.GpsFixed, Modifier.fillMaxWidth())
-        MetricCard("Equipment", item.equipment, Icons.Filled.FitnessCenter, Modifier.fillMaxWidth())
+        MetricCard(stringResource(R.string.label_primary), item.primaryMusclesTitle, Icons.Filled.GpsFixed, Modifier.fillMaxWidth())
+        MetricCard(stringResource(R.string.label_secondary), item.secondaryMusclesTitle, Icons.Filled.GpsFixed, Modifier.fillMaxWidth())
+        MetricCard(stringResource(R.string.label_equipment), item.equipment, Icons.Filled.FitnessCenter, Modifier.fillMaxWidth())
     }
 }
 
@@ -160,7 +161,7 @@ private fun InstructionSection(instructions: List<String>, modifier: Modifier = 
             ) {
                 Text("≣", color = colors.accent, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
-            Text("Instructions", color = colors.charcoal, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.instructions), color = colors.charcoal, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.weight(1f))
             Box(
                 Modifier.clip(CircleShape).background(colors.secondaryAccent.copy(alpha = 0.12f)).padding(horizontal = 9.dp, vertical = 4.dp)

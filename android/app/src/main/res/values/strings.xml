@@ -1,3 +1,102 @@
 <resources>
     <string name="app_name">Delts</string>
+
+    <!-- Tabs -->
+    <string name="tab_workouts">Workouts</string>
+    <string name="tab_settings">Settings</string>
+    <string name="tab_support">Support</string>
+    <string name="tab_about">About</string>
+
+    <!-- Shared labels (filters / sort / metrics) -->
+    <string name="label_name">Name</string>
+    <string name="label_level">Level</string>
+    <string name="label_primary">Primary</string>
+    <string name="label_secondary">Secondary</string>
+    <string name="label_category">Category</string>
+    <string name="label_force">Force</string>
+    <string name="label_mechanic">Mechanic</string>
+    <string name="label_equipment">Equipment</string>
+
+    <!-- Workouts -->
+    <string name="search">Search</string>
+    <plurals name="exercises_count">
+        <item quantity="one">%d exercise</item>
+        <item quantity="other">%d exercises</item>
+    </plurals>
+    <string name="filter_all">All</string>
+    <string name="filter_all_count">All %d</string>
+    <string name="reset">Reset</string>
+    <string name="sort">Sort</string>
+    <string name="empty_title">No exercises match</string>
+    <string name="empty_subtitle">Try a different muscle, equipment, or search — or reset the filters above.</string>
+    <string name="clear_search">Clear search</string>
+
+    <!-- Exercise detail -->
+    <string name="back">Back</string>
+    <string name="instructions">Instructions</string>
+    <string name="show_details">Show details</string>
+    <string name="hide_details">Hide details</string>
+
+    <!-- Settings -->
+    <string name="sec_app_preferences">App Preferences</string>
+    <string name="pref_theme">Theme</string>
+    <string name="pref_appearance">Appearance</string>
+    <string name="appearance_system">System</string>
+    <string name="appearance_light">Light</string>
+    <string name="appearance_dark">Dark</string>
+    <string name="appearance_darker">Darker</string>
+    <string name="theme_lime">Lime</string>
+    <string name="theme_cyan">Cyan</string>
+    <string name="theme_pink">Pink</string>
+    <string name="theme_amber">Amber</string>
+    <string name="theme_violet">Violet</string>
+    <string name="sec_release">Release</string>
+    <string name="check_for_updates">Check for Updates</string>
+    <string name="whats_new">What\'s New</string>
+    <string name="whats_new_version">Delts %1$s</string>
+    <string name="highlight_1">Delts is a free, focused exercise library — browse hundreds of moves with form instructions and rich filters.</string>
+    <string name="highlight_2">Built around four simple tabs: Workouts, Settings, Support, and About.</string>
+    <string name="highlight_3">Completely private — no account, no ads, no tracking. Everything stays on your device.</string>
+    <string name="highlight_4">Lighter and faster, with a clean layout and five color themes.</string>
+    <string name="sec_feedback">Feedback</string>
+    <string name="report_issue">Report an Issue</string>
+    <string name="request_feature">Request a Feature</string>
+    <string name="value_github">GitHub</string>
+
+    <!-- Support -->
+    <string name="sec_connect">Connect</string>
+    <string name="contact_us">Contact Us</string>
+    <string name="follow_x">Follow on X</string>
+    <string name="instagram">Instagram</string>
+    <string name="linkedin">LinkedIn</string>
+    <string name="open_source">Open Source</string>
+    <string name="product_hunt">Product Hunt</string>
+    <string name="vote_for_delts">Vote for Delts</string>
+    <string name="value_play_store">Play Store</string>
+    <string name="value_play_store_link">Play Store link</string>
+    <string name="sec_spread">Spread the Word</string>
+    <string name="rate_delts">Rate Delts</string>
+    <string name="share_delts">Share Delts</string>
+    <string name="sec_support">Support</string>
+    <string name="support_delts">Support Delts</string>
+    <string name="tips_blurb">Delts is free forever — tips are optional and unlock nothing.</string>
+    <string name="tips_unavailable_title">Tips aren\'t available yet</string>
+    <string name="tips_unavailable_sub">They go live once the Play Store products are set up.</string>
+    <string name="tip_small">Small Tip</string>
+    <string name="tip_medium">Medium Tip</string>
+    <string name="tip_large">Large Tip</string>
+    <string name="thanks_title">Thank you 💚</string>
+    <string name="thanks_sub">Your support keeps Delts free for everyone.</string>
+    <string name="share_text">Check out Delts — a free exercise library. https://play.google.com/store/apps/details?id=com.apoorvdarshan.delts</string>
+
+    <!-- About -->
+    <string name="sec_built_by">Built by</string>
+    <string name="creator">Creator</string>
+    <string name="ace_cert">ACE Certified Personal Trainer</string>
+    <string name="sec_also_by">Also by the developer</string>
+    <string name="fud_descriptor">AI calorie tracker</string>
+    <string name="get">Get</string>
+    <string name="sec_legal">Legal</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="terms">Terms</string>
 </resources>

@@ -42,12 +42,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.android.billingclient.api.ProductDetails
+import com.apoorvdarshan.delts.R
 import com.apoorvdarshan.delts.billing.TipBillingManager
 import com.apoorvdarshan.delts.ui.components.ActionRow
 import com.apoorvdarshan.delts.ui.components.DeltsCard
@@ -71,31 +73,32 @@ fun SupportScreen(modifier: Modifier = Modifier) {
             .padding(horizontal = 20.dp)
             .padding(top = 8.dp, bottom = 32.dp)
     ) {
-        SectionTitle("Connect")
+        SectionTitle(stringResource(R.string.sec_connect))
         DeltsCard {
-            ActionRow("Contact Us", Icons.Filled.Email, "ad13dtu@gmail.com") { sendEmail(context, "ad13dtu@gmail.com") }
+            ActionRow(stringResource(R.string.contact_us), Icons.Filled.Email, "ad13dtu@gmail.com") { sendEmail(context, "ad13dtu@gmail.com") }
             RowDivider()
-            ActionRow("Follow on X", Icons.Filled.AlternateEmail, "@apoorvdarshan") { openUrl(context, "https://x.com/apoorvdarshan") }
+            ActionRow(stringResource(R.string.follow_x), Icons.Filled.AlternateEmail, "@apoorvdarshan") { openUrl(context, "https://x.com/apoorvdarshan") }
             RowDivider()
-            ActionRow("Instagram", Icons.Filled.PhotoCamera, "@delts.fit") { openUrl(context, "https://www.instagram.com/delts.fit") }
+            ActionRow(stringResource(R.string.instagram), Icons.Filled.PhotoCamera, "@delts.fit") { openUrl(context, "https://www.instagram.com/delts.fit") }
             RowDivider()
-            ActionRow("LinkedIn", Icons.Filled.Business, "Delts") { openUrl(context, "https://www.linkedin.com/company/delts") }
+            ActionRow(stringResource(R.string.linkedin), Icons.Filled.Business, "Delts") { openUrl(context, "https://www.linkedin.com/company/delts") }
             RowDivider()
-            ActionRow("Open Source", Icons.Filled.Code, "GitHub") { openUrl(context, "https://github.com/apoorvdarshan/delts") }
+            ActionRow(stringResource(R.string.open_source), Icons.Filled.Code, stringResource(R.string.value_github)) { openUrl(context, "https://github.com/apoorvdarshan/delts") }
             RowDivider()
-            ActionRow("Product Hunt", Icons.AutoMirrored.Filled.Send, "Vote for Delts") { openUrl(context, "https://www.producthunt.com/products/delts") }
+            ActionRow(stringResource(R.string.product_hunt), Icons.AutoMirrored.Filled.Send, stringResource(R.string.vote_for_delts)) { openUrl(context, "https://www.producthunt.com/products/delts") }
         }
 
-        SectionTitle("Spread the Word")
+        SectionTitle(stringResource(R.string.sec_spread))
         DeltsCard {
-            ActionRow("Rate Delts", Icons.Filled.Star, "Play Store") { openUrl(context, "https://play.google.com/store/apps/details?id=com.apoorvdarshan.delts") }
+            ActionRow(stringResource(R.string.rate_delts), Icons.Filled.Star, stringResource(R.string.value_play_store)) { openUrl(context, "https://play.google.com/store/apps/details?id=com.apoorvdarshan.delts") }
             RowDivider()
-            ActionRow("Share Delts", Icons.Filled.Share, "Play Store link") {
-                shareText(context, "Check out Delts — a free exercise library. https://play.google.com/store/apps/details?id=com.apoorvdarshan.delts")
+            val shareMessage = stringResource(R.string.share_text)
+            ActionRow(stringResource(R.string.share_delts), Icons.Filled.Share, stringResource(R.string.value_play_store_link)) {
+                shareText(context, shareMessage)
             }
         }
 
-        SectionTitle("Support")
+        SectionTitle(stringResource(R.string.sec_support))
         DeltsCard {
             TipJar(manager)
         }
@@ -108,18 +111,22 @@ private fun TipJar(manager: TipBillingManager) {
     val context = LocalContext.current
     val activity = context as? Activity
     val tierIcons = listOf("brand/tip_small.png", "brand/tip_medium.png", "brand/tip_large.png")
-    val tierNames = listOf("Small Tip", "Medium Tip", "Large Tip")
+    val tierNames = listOf(
+        stringResource(R.string.tip_small),
+        stringResource(R.string.tip_medium),
+        stringResource(R.string.tip_large)
+    )
 
     Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
             Box(Modifier.size(38.dp), contentAlignment = Alignment.CenterStart) {
                 Icon(Icons.Filled.Favorite, null, tint = colors.accent, modifier = Modifier.size(21.dp))
             }
-            Text("Support Delts", color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.support_delts), color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
 
         Text(
-            "Delts is free forever — tips are optional and unlock nothing.",
+            stringResource(R.string.tips_blurb),
             color = colors.mutedText, fontSize = 13.sp
         )
 
@@ -132,8 +139,8 @@ private fun TipJar(manager: TipBillingManager) {
             }
             manager.products.isEmpty() -> {
                 Column(Modifier.fillMaxWidth().heightIn(min = 80.dp).padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Tips aren't available yet", color = colors.charcoal, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                    Text("They go live once the Play Store products are set up.", color = colors.mutedText, fontSize = 12.sp)
+                    Text(stringResource(R.string.tips_unavailable_title), color = colors.charcoal, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.tips_unavailable_sub), color = colors.mutedText, fontSize = 12.sp)
                 }
             }
             else -> {
@@ -206,9 +213,9 @@ private fun ThanksState() {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Icon(Icons.Filled.Favorite, null, tint = colors.accent, modifier = Modifier.size(34.dp))
-        Text("Thank you 💚", color = colors.charcoal, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.thanks_title), color = colors.charcoal, fontSize = 17.sp, fontWeight = FontWeight.Bold)
         Text(
-            "Your support keeps Delts free for everyone.",
+            stringResource(R.string.thanks_sub),
             color = colors.mutedText, fontSize = 12.sp, textAlign = TextAlign.Center
         )
     }
@@ -228,5 +235,5 @@ private fun shareText(context: android.content.Context, text: String) {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)
     }
-    runCatching { context.startActivity(Intent.createChooser(intent, "Share Delts")) }
+    runCatching { context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_delts))) }
 }

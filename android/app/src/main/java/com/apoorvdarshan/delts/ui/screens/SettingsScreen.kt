@@ -41,9 +41,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.apoorvdarshan.delts.R
 import com.apoorvdarshan.delts.ui.components.ActionRow
 import com.apoorvdarshan.delts.ui.components.DeltsCard
 import com.apoorvdarshan.delts.ui.components.RowDivider
@@ -52,13 +54,6 @@ import com.apoorvdarshan.delts.ui.theme.AppAppearance
 import com.apoorvdarshan.delts.ui.theme.DeltsTheme
 import com.apoorvdarshan.delts.ui.theme.LocalDeltsColors
 import com.apoorvdarshan.delts.ui.theme.ThemeController
-
-private val releaseHighlights = listOf(
-    "Delts is a free, focused exercise library — browse hundreds of moves with form instructions and rich filters.",
-    "Built around four simple tabs: Workouts, Settings, Support, and About.",
-    "Completely private — no account, no ads, no tracking. Everything stays on your device.",
-    "Lighter and faster, with a clean layout and five color themes."
-)
 
 @Composable
 fun SettingsScreen(controller: ThemeController, modifier: Modifier = Modifier) {
@@ -75,29 +70,29 @@ fun SettingsScreen(controller: ThemeController, modifier: Modifier = Modifier) {
             .padding(horizontal = 20.dp)
             .padding(top = 8.dp, bottom = 32.dp)
     ) {
-        SectionTitle("App Preferences")
+        SectionTitle(stringResource(R.string.sec_app_preferences))
         DeltsCard {
             ThemeBlock(controller)
             RowDivider()
             AppearanceBlock(controller)
         }
 
-        SectionTitle("Release")
+        SectionTitle(stringResource(R.string.sec_release))
         DeltsCard {
-            ActionRow("Check for Updates", Icons.Filled.SystemUpdate, version) {
+            ActionRow(stringResource(R.string.check_for_updates), Icons.Filled.SystemUpdate, version) {
                 openUrl(context, "https://play.google.com/store/apps/details?id=com.apoorvdarshan.delts")
             }
             RowDivider()
             WhatsNewRow(version)
         }
 
-        SectionTitle("Feedback")
+        SectionTitle(stringResource(R.string.sec_feedback))
         DeltsCard {
-            ActionRow("Report an Issue", Icons.Filled.BugReport, "GitHub", tint = Color(0xFFE5534B)) {
+            ActionRow(stringResource(R.string.report_issue), Icons.Filled.BugReport, stringResource(R.string.value_github), tint = Color(0xFFE5534B)) {
                 openUrl(context, "https://github.com/apoorvdarshan/delts/issues/new")
             }
             RowDivider()
-            ActionRow("Request a Feature", Icons.Filled.Lightbulb, "GitHub") {
+            ActionRow(stringResource(R.string.request_feature), Icons.Filled.Lightbulb, stringResource(R.string.value_github)) {
                 openUrl(context, "https://github.com/apoorvdarshan/delts/issues/new?labels=enhancement")
             }
         }
@@ -108,7 +103,7 @@ fun SettingsScreen(controller: ThemeController, modifier: Modifier = Modifier) {
 private fun ThemeBlock(controller: ThemeController) {
     val colors = LocalDeltsColors.current
     Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Theme", color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.pref_theme), color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             DeltsTheme.entries.forEach { theme ->
                 val selected = controller.theme == theme
@@ -121,7 +116,7 @@ private fun ThemeBlock(controller: ThemeController) {
                         .clickable { controller.selectTheme(theme) },
                     contentAlignment = Alignment.Center
                 ) {
-                    if (selected) Icon(Icons.Filled.Check, theme.title, tint = colors.onAccent, modifier = Modifier.size(20.dp))
+                    if (selected) Icon(Icons.Filled.Check, stringResource(theme.titleRes), tint = colors.onAccent, modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -132,7 +127,7 @@ private fun ThemeBlock(controller: ThemeController) {
 private fun AppearanceBlock(controller: ThemeController) {
     val colors = LocalDeltsColors.current
     Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Appearance", color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.pref_appearance), color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             AppAppearance.entries.forEach { option ->
                 val selected = controller.appearance == option
@@ -151,7 +146,7 @@ private fun AppearanceBlock(controller: ThemeController) {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        option.title,
+                        stringResource(option.titleRes),
                         color = if (selected) colors.charcoal else colors.mutedText,
                         fontSize = 12.sp,
                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
@@ -176,7 +171,7 @@ private fun WhatsNewRow(version: String) {
             Box(Modifier.size(38.dp), contentAlignment = Alignment.CenterStart) {
                 Icon(Icons.Filled.AutoAwesome, null, tint = colors.secondaryAccent, modifier = Modifier.size(21.dp))
             }
-            Text("What's New", color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.whats_new), color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowRight, null,
                 tint = colors.mutedText.copy(alpha = 0.72f),
@@ -184,9 +179,15 @@ private fun WhatsNewRow(version: String) {
             )
         }
         AnimatedVisibility(expanded) {
+            val highlights = listOf(
+                stringResource(R.string.highlight_1),
+                stringResource(R.string.highlight_2),
+                stringResource(R.string.highlight_3),
+                stringResource(R.string.highlight_4)
+            )
             Column(Modifier.padding(start = 49.dp, end = 4.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Delts $version", color = colors.charcoal, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                releaseHighlights.forEach { line ->
+                Text(stringResource(R.string.whats_new_version, version), color = colors.charcoal, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                highlights.forEach { line ->
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Icon(Icons.Filled.CheckCircle, null, tint = colors.accent, modifier = Modifier.size(15.dp).padding(top = 1.dp))
                         Text(line, color = colors.mutedText, fontSize = 14.sp, lineHeight = 19.sp)

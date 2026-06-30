@@ -97,13 +97,13 @@ data class ExerciseItem(
 }
 
 /** Sort options, mirroring iOS `ExerciseLibrarySort`. */
-enum class ExerciseSort(val title: String) {
-    NAME("Name"),
-    LEVEL("Level"),
-    PRIMARY("Primary"),
-    SECONDARY("Secondary"),
-    CATEGORY("Category"),
-    FORCE("Force"),
-    MECHANIC("Mechanic"),
-    EQUIPMENT("Equipment")
+enum class ExerciseSort(val titleRes: Int) {
+    NAME(com.apoorvdarshan.delts.R.string.label_name),
+    LEVEL(com.apoorvdarshan.delts.R.string.label_level),
+    PRIMARY(com.apoorvdarshan.delts.R.string.label_primary),
+    SECONDARY(com.apoorvdarshan.delts.R.string.label_secondary),
+    CATEGORY(com.apoorvdarshan.delts.R.string.label_category),
+    FORCE(com.apoorvdarshan.delts.R.string.label_force),
+    MECHANIC(com.apoorvdarshan.delts.R.string.label_mechanic),
+    EQUIPMENT(com.apoorvdarshan.delts.R.string.label_equipment)
 }
