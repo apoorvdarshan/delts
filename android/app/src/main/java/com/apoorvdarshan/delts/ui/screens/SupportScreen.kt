@@ -30,14 +30,17 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.layout.ContentScale
@@ -48,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import kotlinx.coroutines.delay
 import com.android.billingclient.api.ProductDetails
 import com.apoorvdarshan.delts.R
 import com.apoorvdarshan.delts.billing.TipBillingManager
@@ -117,6 +121,13 @@ private fun TipJar(manager: TipBillingManager) {
         stringResource(R.string.tip_large)
     )
 
+    LaunchedEffect(manager.showThanks) {
+        if (manager.showThanks) { delay(2400); manager.showThanks = false }
+    }
+    LaunchedEffect(manager.errorMessage) {
+        if (manager.errorMessage != null) { delay(4000); manager.errorMessage = null }
+    }
+
     Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
             Box(Modifier.size(38.dp), contentAlignment = Alignment.CenterStart) {
@@ -138,24 +149,39 @@ private fun TipJar(manager: TipBillingManager) {
                 }
             }
             manager.products.isEmpty() -> {
-                Column(Modifier.fillMaxWidth().heightIn(min = 80.dp).padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(Modifier.fillMaxWidth().heightIn(min = 80.dp).padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(stringResource(R.string.tips_unavailable_title), color = colors.charcoal, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                     Text(stringResource(R.string.tips_unavailable_sub), color = colors.mutedText, fontSize = 12.sp)
+                    Text(
+                        stringResource(R.string.tap_to_retry),
+                        color = colors.accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.clickable { manager.retry() }
+                    )
                 }
             }
             else -> {
+                val anyPurchasing = manager.purchasingId != null
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     manager.products.forEachIndexed { index, product ->
+                        val isThis = manager.purchasingId == product.productId
                         TipTile(
                             iconAsset = tierIcons.getOrElse(index) { tierIcons.last() },
                             name = tierNames.getOrElse(index) { product.name },
                             price = product.oneTimePurchaseOfferDetails?.formattedPrice ?: "",
-                            purchasing = manager.purchasingId == product.productId,
+                            purchasing = isThis,
+                            disabled = anyPurchasing && !isThis,
                             modifier = Modifier.weight(1f),
-                            onClick = { activity?.let { manager.purchase(it, product) } }
+                            onClick = { if (!anyPurchasing) activity?.let { manager.purchase(it, product) } }
                         )
                     }
                 }
+            }
+        }
+
+        manager.errorMessage?.let { msg ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(Icons.Filled.Warning, null, tint = colors.warning, modifier = Modifier.size(15.dp))
+                Text(msg, color = colors.warning, fontSize = 12.sp, fontWeight = FontWeight.Medium)
             }
         }
     }
@@ -167,12 +193,14 @@ private fun TipTile(
     name: String,
     price: String,
     purchasing: Boolean,
+    disabled: Boolean = false,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val colors = LocalDeltsColors.current
     Column(
         modifier
+            .alpha(if (disabled) 0.5f else 1f)
             .heightIn(min = 92.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(if (purchasing) colors.accent.copy(alpha = 0.16f) else colors.panel.copy(alpha = 0.20f))

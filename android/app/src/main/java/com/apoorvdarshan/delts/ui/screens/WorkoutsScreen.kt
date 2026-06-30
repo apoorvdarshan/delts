@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,11 +23,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -58,6 +61,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -164,6 +168,10 @@ private fun SearchPill(value: String, onValueChange: (String) -> Unit) {
             value = value,
             onValueChange = onValueChange,
             singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                autoCorrectEnabled = false,
+                capitalization = KeyboardCapitalization.None
+            ),
             textStyle = TextStyle(color = colors.charcoal, fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
             cursorBrush = SolidColor(colors.accent),
             decorationBox = { inner ->
@@ -248,6 +256,7 @@ private fun FilterPill(
     var expanded by remember { mutableStateOf(false) }
     val active = selected.isNotEmpty()
     val value = if (active) selected.first() else emptyDisplay
+    val clearLabel = "${stringResource(R.string.filter_all)} $title"
 
     Box {
         Row(
@@ -281,7 +290,7 @@ private fun FilterPill(
             shape = RoundedCornerShape(16.dp)
         ) {
             DropdownMenuItem(
-                text = { Text(emptyDisplay, color = if (!active) colors.accent else colors.charcoal, fontWeight = if (!active) FontWeight.Bold else FontWeight.Normal) },
+                text = { Text(clearLabel, color = if (!active) colors.accent else colors.charcoal, fontWeight = if (!active) FontWeight.Bold else FontWeight.Normal) },
                 onClick = { onSelect(emptySet()); expanded = false },
                 trailingIcon = if (!active) {
                     { Icon(Icons.Filled.Check, null, tint = colors.accent) }
@@ -335,13 +344,13 @@ private fun ResultsHeader(
             CapsuleButton(
                 text = stringResource(R.string.reset), icon = Icons.Filled.Refresh,
                 tint = if (canReset) colors.secondaryAccent else colors.mutedText,
-                enabled = canReset, onClick = onReset
+                enabled = canReset, active = canReset, onClick = onReset
             )
             Box {
                 CapsuleButton(
                     text = stringResource(R.string.sort), icon = Icons.Filled.SwapVert,
                     tint = if (count == 0) colors.mutedText else if (selectedSort == ExerciseSort.NAME) colors.mutedText else colors.accent,
-                    enabled = count > 0, onClick = { sortExpanded = true }
+                    enabled = count > 0, active = selectedSort != ExerciseSort.NAME, onClick = { sortExpanded = true }
                 )
                 DropdownMenu(
                     expanded = sortExpanded,
@@ -366,13 +375,15 @@ private fun ResultsHeader(
 }
 
 @Composable
-private fun CapsuleButton(text: String, icon: ImageVector, tint: Color, enabled: Boolean, onClick: () -> Unit) {
+private fun CapsuleButton(text: String, icon: ImageVector, tint: Color, enabled: Boolean, active: Boolean = false, onClick: () -> Unit) {
     val colors = LocalDeltsColors.current
+    val bg = if (active) tint.copy(alpha = 0.12f) else colors.panel.copy(alpha = 0.30f)
+    val border = if (active) tint.copy(alpha = 0.32f) else colors.hairline.copy(alpha = 0.30f)
     Row(
         modifier = Modifier
             .clip(CircleShape)
-            .background(colors.panel.copy(alpha = 0.30f))
-            .border(0.5.dp, colors.hairline.copy(alpha = 0.30f), CircleShape)
+            .background(bg)
+            .border(0.5.dp, border, CircleShape)
             .then(if (enabled) Modifier.clickable { onClick() } else Modifier)
             .padding(horizontal = 11.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -405,7 +416,10 @@ private fun ExerciseRow(item: ExerciseItem, onClick: () -> Unit) {
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Text(item.name, color = colors.charcoal, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
                 Tag(item.primaryMusclesTitle, Icons.Filled.GpsFixed)
                 Tag(item.equipment, Icons.Filled.FitnessCenter)
                 Tag(item.level, Icons.Filled.BarChart)
@@ -444,6 +458,7 @@ private fun EmptyState() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        Icon(Icons.Filled.FilterListOff, null, tint = colors.mutedText, modifier = Modifier.size(40.dp))
         Text(stringResource(R.string.empty_title), color = colors.charcoal, fontSize = 17.sp, fontWeight = FontWeight.Bold)
         Text(
             stringResource(R.string.empty_subtitle),

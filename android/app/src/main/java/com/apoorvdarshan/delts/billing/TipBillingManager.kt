@@ -34,6 +34,7 @@ class TipBillingManager(context: Context) {
     var connecting by mutableStateOf(true)
         private set
     var showThanks by mutableStateOf(false)
+    var errorMessage by mutableStateOf<String?>(null)
     var purchasingId by mutableStateOf<String?>(null)
         private set
 
@@ -75,7 +76,13 @@ class TipBillingManager(context: Context) {
         }
     }
 
+    fun retry() {
+        errorMessage = null
+        connect()
+    }
+
     fun purchase(activity: Activity, product: ProductDetails) {
+        errorMessage = null
         purchasingId = product.productId
         val productParams = BillingFlowParams.ProductDetailsParams.newBuilder()
             .setProductDetails(product)
@@ -88,17 +95,21 @@ class TipBillingManager(context: Context) {
 
     private fun onPurchasesUpdated(result: BillingResult, purchases: List<Purchase>?) {
         purchasingId = null
-        if (result.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
-            purchases.forEach { purchase ->
-                if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-                    // Consumable tip: consume so it can be given again; unlocks nothing.
-                    val consumeParams = ConsumeParams.newBuilder()
-                        .setPurchaseToken(purchase.purchaseToken)
-                        .build()
-                    billingClient.consumeAsync(consumeParams) { _, _ -> }
-                    showThanks = true
+        when (result.responseCode) {
+            BillingClient.BillingResponseCode.OK -> {
+                purchases?.forEach { purchase ->
+                    if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
+                        // Consumable tip: consume so it can be given again; unlocks nothing.
+                        val consumeParams = ConsumeParams.newBuilder()
+                            .setPurchaseToken(purchase.purchaseToken)
+                            .build()
+                        billingClient.consumeAsync(consumeParams) { _, _ -> }
+                        showThanks = true
+                    }
                 }
             }
+            BillingClient.BillingResponseCode.USER_CANCELED -> { /* silent */ }
+            else -> { errorMessage = result.debugMessage.ifBlank { "The tip couldn't be completed. Please try again." } }
         }
     }
 

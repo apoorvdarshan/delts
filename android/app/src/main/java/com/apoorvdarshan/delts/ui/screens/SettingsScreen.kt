@@ -27,8 +27,13 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.UnfoldMore
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -73,6 +78,11 @@ fun SettingsScreen(controller: ThemeController, modifier: Modifier = Modifier) {
             .padding(top = 8.dp, bottom = 32.dp)
     ) {
         SectionTitle(stringResource(R.string.sec_app_preferences))
+        Text(
+            stringResource(R.string.app_preferences_subtitle),
+            color = colors.mutedText, fontSize = 13.sp,
+            modifier = Modifier.padding(start = 14.dp, bottom = 8.dp)
+        )
         DeltsCard {
             ThemeBlock(controller)
             RowDivider()
@@ -105,11 +115,17 @@ fun SettingsScreen(controller: ThemeController, modifier: Modifier = Modifier) {
 private fun ThemeBlock(controller: ThemeController) {
     val colors = LocalDeltsColors.current
     Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(stringResource(R.string.pref_theme), color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+            Box(Modifier.size(38.dp), contentAlignment = Alignment.CenterStart) {
+                Icon(Icons.Filled.Palette, null, tint = colors.secondaryAccent, modifier = Modifier.size(21.dp))
+            }
+            Text(stringResource(R.string.pref_theme), color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             DeltsTheme.entries.forEach { theme ->
                 val selected = controller.theme == theme
-                val accent = theme.accent(colors.isDark)
+                // iOS previewColor is always the vivid DARK accent, even in Light appearance.
+                val accent = theme.accent(dark = true)
                 Column(
                     Modifier
                         .weight(1f)
@@ -162,33 +178,35 @@ private fun ThemeBlock(controller: ThemeController) {
 @Composable
 private fun AppearanceBlock(controller: ThemeController) {
     val colors = LocalDeltsColors.current
-    Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(stringResource(R.string.pref_appearance), color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable { expanded = true }.padding(vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(11.dp)
+        ) {
+            Box(Modifier.size(38.dp), contentAlignment = Alignment.CenterStart) {
+                Icon(Icons.Filled.Contrast, null, tint = colors.secondaryAccent, modifier = Modifier.size(21.dp))
+            }
+            Text(stringResource(R.string.pref_appearance), color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Text(stringResource(controller.appearance.titleRes), color = colors.mutedText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Icon(Icons.Filled.UnfoldMore, null, tint = colors.mutedText, modifier = Modifier.size(18.dp))
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            containerColor = colors.card,
+            shape = RoundedCornerShape(16.dp)
+        ) {
             AppAppearance.entries.forEach { option ->
-                val selected = controller.appearance == option
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (selected) colors.accent.copy(alpha = 0.16f) else colors.panel.copy(alpha = 0.40f))
-                        .border(
-                            0.5.dp,
-                            if (selected) colors.accent.copy(alpha = 0.6f) else colors.hairline.copy(alpha = 0.24f),
-                            RoundedCornerShape(12.dp)
-                        )
-                        .clickable { controller.selectAppearance(option) }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        stringResource(option.titleRes),
-                        color = if (selected) colors.charcoal else colors.mutedText,
-                        fontSize = 12.sp,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                        maxLines = 1
-                    )
-                }
+                val sel = controller.appearance == option
+                DropdownMenuItem(
+                    text = { Text(stringResource(option.titleRes), color = if (sel) colors.accent else colors.charcoal, fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal) },
+                    onClick = { controller.selectAppearance(option); expanded = false },
+                    trailingIcon = if (sel) {
+                        { Icon(Icons.Filled.Check, null, tint = colors.accent) }
+                    } else null
+                )
             }
         }
     }
