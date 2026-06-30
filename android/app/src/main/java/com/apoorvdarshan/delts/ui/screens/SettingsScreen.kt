@@ -179,34 +179,37 @@ private fun ThemeBlock(controller: ThemeController) {
 private fun AppearanceBlock(controller: ThemeController) {
     val colors = LocalDeltsColors.current
     var expanded by remember { mutableStateOf(false) }
-    Box {
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable { expanded = true }.padding(vertical = 9.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(11.dp)
-        ) {
-            Box(Modifier.size(38.dp), contentAlignment = Alignment.CenterStart) {
-                Icon(Icons.Filled.Contrast, null, tint = colors.secondaryAccent, modifier = Modifier.size(21.dp))
-            }
-            Text(stringResource(R.string.pref_appearance), color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            Text(stringResource(controller.appearance.titleRes), color = colors.mutedText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-            Icon(Icons.Filled.UnfoldMore, null, tint = colors.mutedText, modifier = Modifier.size(18.dp))
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable { expanded = true }.padding(vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(11.dp)
+    ) {
+        Box(Modifier.size(38.dp), contentAlignment = Alignment.CenterStart) {
+            Icon(Icons.Filled.Contrast, null, tint = colors.secondaryAccent, modifier = Modifier.size(21.dp))
         }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            containerColor = colors.card,
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            AppAppearance.entries.forEach { option ->
-                val sel = controller.appearance == option
-                DropdownMenuItem(
-                    text = { Text(stringResource(option.titleRes), color = if (sel) colors.accent else colors.charcoal, fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal) },
-                    onClick = { controller.selectAppearance(option); expanded = false },
-                    trailingIcon = if (sel) {
-                        { Icon(Icons.Filled.Check, null, tint = colors.accent) }
-                    } else null
-                )
+        Text(stringResource(R.string.pref_appearance), color = colors.charcoal, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        // Anchor the menu to the trailing value/chevron so it opens on the right (not the left edge).
+        Box(contentAlignment = Alignment.CenterEnd) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text(stringResource(controller.appearance.titleRes), color = colors.mutedText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                Icon(Icons.Filled.UnfoldMore, null, tint = colors.mutedText, modifier = Modifier.size(18.dp))
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                containerColor = colors.card,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                AppAppearance.entries.forEach { option ->
+                    val sel = controller.appearance == option
+                    DropdownMenuItem(
+                        text = { Text(stringResource(option.titleRes), color = if (sel) colors.accent else colors.charcoal, fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal) },
+                        onClick = { controller.selectAppearance(option); expanded = false },
+                        trailingIcon = if (sel) {
+                            { Icon(Icons.Filled.Check, null, tint = colors.accent) }
+                        } else null
+                    )
+                }
             }
         }
     }
