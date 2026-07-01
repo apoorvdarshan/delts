@@ -2,8 +2,6 @@
 
 <img src="https://raw.githubusercontent.com/apoorvdarshan/fud-ai/main/web/assets/calorie%20logo%20transparent.png" width="120" height="120" alt="Fud AI logo">
 
-# Delts
-
 ### Delts has merged into **Fud AI**.
 
 Development continues as part of **[Fud AI](https://www.fud-ai.app/)** — an AI-powered calorie tracker.
