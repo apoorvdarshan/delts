@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="web/assets/delts-glyph.png" width="120" alt="Delts logo">
+<img src="https://raw.githubusercontent.com/apoorvdarshan/fud-ai/main/web/assets/calorie%20logo%20transparent.png" width="120" height="120" alt="Fud AI logo">
 
 # Delts
 
